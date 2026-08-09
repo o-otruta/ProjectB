@@ -9,12 +9,14 @@ namespace ProjectB.Combat
         private IObjectPool<Projectile> pool;
         private Transform target;
         private WeaponData data;
+        private bool isReturned;
 
         public void Initialize(WeaponData weaponData, Transform targetTransform, IObjectPool<Projectile> projectilePool)
         {
             data = weaponData;
             target = targetTransform;
             pool = projectilePool;
+            isReturned = false;
         }
 
         private void Update()
@@ -53,6 +55,9 @@ namespace ProjectB.Combat
 
         private void ReturnToPool()
         {
+            if (isReturned) return;
+            isReturned = true;
+            
             if (pool != null)
             {
                 pool.Release(this);

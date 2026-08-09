@@ -20,6 +20,8 @@ namespace ProjectB.LevelUp
                 return;
             }
             Instance = this;
+            transform.SetParent(null);
+            DontDestroyOnLoad(gameObject);
         }
 
         private void Start()

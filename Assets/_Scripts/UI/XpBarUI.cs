@@ -27,7 +27,7 @@ namespace ProjectB.UI
             }
         }
 
-        private void Start()
+        private void Awake()
         {
             if (heroExperience == null)
             {
@@ -35,14 +35,12 @@ namespace ProjectB.UI
                 if (player != null)
                 {
                     heroExperience = player.GetComponent<LevelUp.HeroExperience>();
-                    if (heroExperience != null)
-                    {
-                        heroExperience.OnXPChanged += UpdateXpBar;
-                        heroExperience.OnLevelUp += UpdateLevelText;
-                    }
                 }
             }
+        }
 
+        private void Start()
+        {
             if (heroExperience != null)
             {
                 UpdateLevelText(heroExperience.CurrentLevel);

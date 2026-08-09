@@ -134,8 +134,8 @@ namespace ProjectB.LevelUp
                 case CardType.StatBoost_Magnet:
                     if (heroExp != null)
                     {
-                        heroExp.magnetRadius += card.statAmount;
-                        Debug.Log($"Magnet radius increased to {heroExp.magnetRadius}");
+                        heroExp.MagnetRadius += card.statAmount;
+                        Debug.Log($"Magnet radius increased to {heroExp.MagnetRadius}");
                     }
                     break;
                 default:

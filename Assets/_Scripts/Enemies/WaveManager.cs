@@ -75,6 +75,12 @@ namespace ProjectB.Enemies
 
             for (int i = 0; i < enemiesToSpawn; i++)
             {
+                if (heroTarget == null || (heroTarget.TryGetComponent<ProjectB.Player.HeroHealth>(out var hp) && hp.IsDead))
+                {
+                    isSpawning = false;
+                    yield break;
+                }
+                
                 SpawnEnemy();
                 yield return new WaitForSeconds(waveConfig.spawnDelay);
             }

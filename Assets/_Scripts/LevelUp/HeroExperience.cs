@@ -10,7 +10,12 @@ namespace ProjectB.LevelUp
         [SerializeField] private int baseXP = 10;
         
         [Tooltip("Радиус магнита для сбора кристаллов")]
-        public float magnetRadius = 3f;
+        [SerializeField] private float _magnetRadius = 3f;
+        public float MagnetRadius
+        {
+            get => _magnetRadius;
+            set => _magnetRadius = Mathf.Max(0, value);
+        }
         
         [Tooltip("Скорость притягивания кристаллов")]
         [SerializeField] private float magnetSpeed = 15f;
@@ -32,7 +37,7 @@ namespace ProjectB.LevelUp
 
         private void Update()
         {
-            int count = Physics.OverlapSphereNonAlloc(transform.position, magnetRadius, magnetResults);
+            int count = Physics.OverlapSphereNonAlloc(transform.position, MagnetRadius, magnetResults);
             for (int i = 0; i < count; i++)
             {
                 if (magnetResults[i].TryGetComponent<XpCrystal>(out var crystal))
@@ -74,7 +79,7 @@ namespace ProjectB.LevelUp
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.position, magnetRadius);
+            Gizmos.DrawWireSphere(transform.position, MagnetRadius);
         }
     }
 }

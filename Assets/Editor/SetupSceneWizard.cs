@@ -163,8 +163,6 @@ public class SetupSceneWizard : EditorWindow
         if (mainCam != null) {
             var camCtrl = mainCam.gameObject.AddComponent<CameraController>();
             camCtrl.target = hero.transform;
-            camCtrl.offset = new Vector3(0, 15f, -10f);
-            camCtrl.smoothTime = 0.2f;
         }
 
         GameObject waveMgrGo = new GameObject("WaveManager");

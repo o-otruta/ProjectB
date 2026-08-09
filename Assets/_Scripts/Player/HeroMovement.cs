@@ -24,6 +24,7 @@ namespace ProjectB.Player
         void Update()
         {
             if (heroData == null || joystick == null) return;
+            if (TryGetComponent<HeroHealth>(out var hp) && hp.IsDead) return;
 
             // Перемещение по XZ (джойстик X это мирской X, джойстик Y это мирской Z)
             Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);

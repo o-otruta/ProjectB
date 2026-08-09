@@ -27,7 +27,7 @@ namespace ProjectB.Editor
             }
             else
             {
-                Debug.LogWarning("PlayerController not found. Cannot attach HeroExperience.");
+                Debug.LogWarning("HeroExperience could not be added (Player tag not found).");
             }
 
             // 2. Create XpManager

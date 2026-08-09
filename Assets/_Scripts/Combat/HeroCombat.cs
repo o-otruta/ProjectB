@@ -49,6 +49,7 @@ namespace ProjectB.Combat
         private void Update()
         {
             if (weaponData == null) return;
+            if (TryGetComponent<ProjectB.Player.HeroHealth>(out var hp) && hp.IsDead) return;
             if (projectilePool == null) InitializePool();
 
             if (Time.time >= nextFireTime)

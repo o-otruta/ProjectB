@@ -9,8 +9,8 @@ namespace ProjectB.Core
         [Tooltip("The character the camera should follow")]
         public Transform target;
         
-        [Tooltip("Offset relative to the target (e.g. 0, 10, -10 for 45 degrees)")]
-        public Vector3 offset = new Vector3(0, 10f, -10f);
+        [Tooltip("Offset relative to the target (e.g. 0, 15, -15 for 45 degrees)")]
+        public Vector3 offset = new Vector3(0, 15f, -15f);
         
         [Tooltip("How smoothly the camera catches up to the target")]
         public float smoothTime = 0.25f;

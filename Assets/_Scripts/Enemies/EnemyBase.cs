@@ -27,6 +27,7 @@ namespace ProjectB.Enemies
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
+            OnDied = null; // Clear all subscribers from previous lifecycle
             
             if (enemyData != null)
             {
