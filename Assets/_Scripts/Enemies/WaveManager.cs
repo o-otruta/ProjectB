@@ -104,7 +104,8 @@ namespace ProjectB.Enemies
             enemy.transform.position = spawnPos;
             
             // Re-initialize logic in EnemyBase
-            enemy.Initialize(baseEnemyData, heroTarget, enemyPool);
+            float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
+            enemy.Initialize(baseEnemyData, heroTarget, enemyPool, difficultyMultiplier);
             
             enemy.OnDied -= HandleEnemyDied; // Ensure no duplicate subscription
             enemy.OnDied += HandleEnemyDied;

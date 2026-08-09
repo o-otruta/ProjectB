@@ -12,8 +12,10 @@ namespace ProjectB.Enemies
         private Transform target;
         
         private int currentHp;
+        private int currentDamage;
         private float lastDamageTime;
         private bool isAlive;
+        private IDamageable targetDamageable;
 
         public bool IsDead => !isAlive;
 
@@ -22,7 +24,7 @@ namespace ProjectB.Enemies
         /// <summary>Радиус контактного урона (сумма радиусов героя и врага).</summary>
         private const float ContactRadius = 1.0f;
 
-        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool)
+        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f)
         {
             enemyData = data;
             target = heroTarget;
@@ -30,9 +32,11 @@ namespace ProjectB.Enemies
             
             if (enemyData != null)
             {
-                currentHp = enemyData.hp;
+                currentHp = Mathf.RoundToInt(enemyData.hp * difficultyMultiplier);
+                currentDamage = Mathf.RoundToInt(enemyData.contactDamage * difficultyMultiplier);
             }
             isAlive = true;
+            targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
         }
 
         private void Update()
@@ -40,7 +44,7 @@ namespace ProjectB.Enemies
             if (!isAlive || target == null || enemyData == null) return;
             
             // Проверяем, не мертв ли герой
-            if (target.TryGetComponent<IDamageable>(out var targetDamageable) && targetDamageable.IsDead)
+            if (targetDamageable != null && targetDamageable.IsDead)
             {
                 // Герой мертв, можно остановить врагов или переключить в Idle
                 return;
@@ -58,13 +62,12 @@ namespace ProjectB.Enemies
                 transform.rotation = Quaternion.LookRotation(direction);
             }
 
-            // Проверка контакта с героем по дистанции
             if (distSqr <= ContactRadius * ContactRadius 
                 && Time.time >= lastDamageTime + enemyData.damageCooldown)
             {
-                if (target.TryGetComponent<IDamageable>(out var damageable))
+                if (targetDamageable != null)
                 {
-                    damageable.TakeDamage(enemyData.contactDamage);
+                    targetDamageable.TakeDamage(currentDamage);
                     lastDamageTime = Time.time;
                 }
             }

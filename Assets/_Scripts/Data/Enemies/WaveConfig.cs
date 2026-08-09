@@ -25,5 +25,8 @@ namespace ProjectB.Data.Enemies
         
         [Tooltip("Максимальное количество врагов в одной волне (потолок)")]
         public int maxEnemiesPerWave = 50;
+
+        [Tooltip("Множитель увеличения здоровья и урона врагов с каждой волной (0.2 = +20% за волну)")]
+        public float difficultyPerWave = 0.01f;
     }
 }

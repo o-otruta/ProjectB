@@ -11,6 +11,8 @@ namespace ProjectB.Player
         
         [Tooltip("Модель персонажа (должна быть дочерним объектом), чтобы вращать только визуал, не трогая физику")]
         [SerializeField] private Transform visualModel; 
+        
+        private HeroHealth hp;
 
         void Start()
         {
@@ -19,12 +21,13 @@ namespace ProjectB.Player
             {
                 joystick = FindAnyObjectByType<VirtualJoystick>();
             }
+            hp = GetComponent<HeroHealth>();
         }
 
         void Update()
         {
             if (heroData == null || joystick == null) return;
-            if (TryGetComponent<HeroHealth>(out var hp) && hp.IsDead) return;
+            if (hp != null && hp.IsDead) return;
 
             // Перемещение по XZ (джойстик X это мирской X, джойстик Y это мирской Z)
             Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
