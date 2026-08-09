@@ -15,11 +15,11 @@ TagManager:
   - 
   - 
   - Enemy
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Hero
+  - Obstacles
+  - HeroProjectiles
+  - EnemyProjectiles
+  - Pickups
   - 
   - 
   - 

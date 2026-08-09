@@ -41,6 +41,9 @@ namespace ProjectB.Enemies
             targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
         }
 
+        private Vector3 currentMoveDir;
+        private float nextCheckTime;
+
         private void Update()
         {
             if (!isAlive || target == null || enemyData == null) return;
@@ -60,8 +63,42 @@ namespace ProjectB.Enemies
             if (distSqr > 0.01f)
             {
                 direction.Normalize();
-                transform.position += direction * (enemyData.speed * Time.deltaTime);
-                transform.rotation = Quaternion.LookRotation(direction);
+                
+                // Оптимизация: проверяем препятствия не каждый кадр, а раз в 0.1с
+                // Рассинхронизация по времени (Random) размазывает нагрузку по кадрам
+                if (Time.time >= nextCheckTime)
+                {
+                    nextCheckTime = Time.time + 0.1f + Random.Range(0f, 0.05f);
+                    currentMoveDir = direction;
+                    
+                    // SphereCast чуть выше земли, чтобы не цеплять пол
+                    Vector3 rayStart = transform.position + Vector3.up * 0.5f;
+                    // Проверяем только слой Obstacles (там где стены), игнорируем других врагов
+                    int obstacleMask = LayerMask.GetMask("Obstacles"); 
+                    
+                    if (Physics.SphereCast(rayStart, 0.4f, direction, out RaycastHit hit, 0.7f, obstacleMask))
+                    {
+                        // Игнорируем самого героя, чтобы враги не пытались его "обогнуть" как стену
+                        if (!hit.transform.IsChildOf(target))
+                        {
+                            // Проецируем вектор движения на плоскость стены (скольжение)
+                            currentMoveDir = Vector3.ProjectOnPlane(direction, hit.normal).normalized;
+                            
+                            // Если уперлись строго перпендикулярно, толкаем в сторону
+                            if (currentMoveDir.sqrMagnitude < 0.01f)
+                            {
+                                currentMoveDir = Vector3.Cross(hit.normal, Vector3.up).normalized;
+                            }
+                        }
+                    }
+                }
+
+                transform.position += currentMoveDir * (enemyData.speed * Time.deltaTime);
+                
+                if (currentMoveDir.sqrMagnitude > 0.01f)
+                {
+                    transform.rotation = Quaternion.LookRotation(currentMoveDir);
+                }
             }
 
             if (distSqr <= ContactRadius * ContactRadius 

@@ -14,6 +14,7 @@ namespace ProjectB.Player
         [SerializeField] private Transform visualModel; 
         
         private HeroHealth hp;
+        private Rigidbody rb;
 
         [Inject]
         public void Construct(VirtualJoystick joystick)
@@ -24,6 +25,25 @@ namespace ProjectB.Player
         void Start()
         {
             hp = GetComponent<HeroHealth>();
+            rb = GetComponent<Rigidbody>();
+        }
+
+        void FixedUpdate()
+        {
+            if (heroData == null || joystick == null || rb == null) return;
+            if (hp != null && hp.IsDead) 
+            {
+                rb.linearVelocity = Vector3.zero;
+                return;
+            }
+
+            // Перемещение по XZ (джойстик X это мирской X, джойстик Y это мирской Z)
+            Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
+            
+            // Устанавливаем скорость напрямую. 
+            // Это жестко контролирует движение и сбрасывает любые силы (импульсы),
+            // которые враги пытаются передать герою при столкновении.
+            rb.linearVelocity = moveDir * heroData.moveSpeed;
         }
 
         void Update()
@@ -31,10 +51,7 @@ namespace ProjectB.Player
             if (heroData == null || joystick == null) return;
             if (hp != null && hp.IsDead) return;
 
-            // Перемещение по XZ (джойстик X это мирской X, джойстик Y это мирской Z)
             Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
-            
-            transform.position += moveDir * (heroData.moveSpeed * Time.deltaTime);
             
             // Плавный поворот визуальной модели в сторону движения
             if (moveDir.sqrMagnitude > 0.01f && visualModel != null)

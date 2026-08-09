@@ -52,6 +52,10 @@ namespace ProjectB.LevelUp
                     
                     XpCrystal crystal = go.GetComponent<XpCrystal>();
                     if (crystal == null) crystal = go.AddComponent<XpCrystal>();
+                    
+                    // Назначаем правильный слой для оптимизации матрицы коллизий
+                    go.layer = LayerMask.NameToLayer("Pickups");
+                    
                     return crystal;
                 },
                 actionOnGet: c => c.gameObject.SetActive(true),
