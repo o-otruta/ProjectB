@@ -9,12 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b81d1253f195b34fa6c1e8c2ea66de5, type: 3}
+  m_Script: {fileID: 11500000, guid: 55b6fbd685c684349ac5bbb0305a727f, type: 3}
   m_Name: Card_Magnet
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.CardData
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatCardData
   cardName: Magnet Range +2
   description: Increases the pickup radius for crystals.
   icon: {fileID: 0}
   rarity: 1
-  cardType: 3
+  statType: 3
   statAmount: 2

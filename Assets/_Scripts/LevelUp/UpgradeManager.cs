@@ -14,18 +14,18 @@ namespace ProjectB.LevelUp
         
         private CardSelectionUI cardUI;
         private HeroExperience heroExp;
-        private HeroHealth heroHealth;
         private GameManager gameManager;
+        private IObjectResolver objectResolver;
         
         private int pendingLevelUps = 0;
 
         [Inject]
-        public void Construct(GameManager gameManager, CardSelectionUI cardUI, HeroExperience heroExp, HeroHealth heroHealth)
+        public void Construct(IObjectResolver resolver, GameManager gameManager, CardSelectionUI cardUI, HeroExperience heroExp)
         {
+            this.objectResolver = resolver;
             this.gameManager = gameManager;
             this.cardUI = cardUI;
             this.heroExp = heroExp;
-            this.heroHealth = heroHealth;
         }
 
         private void Start()
@@ -108,29 +108,8 @@ namespace ProjectB.LevelUp
 
         private void ApplyCardEffect(CardData card)
         {
-            Debug.Log($"[UpgradeManager] Applied card: {card.cardName} ({card.cardType})");
-
-            switch (card.cardType)
-            {
-                case CardType.StatBoost_MaxHP:
-                    if (heroHealth != null)
-                    {
-                        heroHealth.IncreaseMaxHealth((int)card.statAmount);
-                    }
-                    break;
-                case CardType.StatBoost_Damage:
-                    // TODO: Implement damage boost
-                    break;
-                case CardType.StatBoost_Speed:
-                    // TODO: Implement speed boost
-                    break;
-                case CardType.StatBoost_Magnet:
-                    if (heroExp != null)
-                    {
-                        heroExp.MagnetRadius += card.statAmount;
-                    }
-                    break;
-            }
+            Debug.Log($"[UpgradeManager] Applying card: {card.cardName}");
+            card.ApplyEffect(objectResolver);
         }
 
         private void ResumeGame()

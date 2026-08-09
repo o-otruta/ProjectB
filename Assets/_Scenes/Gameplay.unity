@@ -1357,9 +1357,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.UpgradeManager
   cardPool:
-  - {fileID: 11400000, guid: 0a6bda8119a5f49458ea140a8c72ade2, type: 2}
-  - {fileID: 11400000, guid: ae13321ad16f10443bf92cd78c031708, type: 2}
   - {fileID: 11400000, guid: b293357e7a2dccc4097ee7f996fa1194, type: 2}
+  - {fileID: 11400000, guid: ae13321ad16f10443bf92cd78c031708, type: 2}
+  - {fileID: 11400000, guid: 0a6bda8119a5f49458ea140a8c72ade2, type: 2}
 --- !u!1 &622970087
 GameObject:
   m_ObjectHideFlags: 0

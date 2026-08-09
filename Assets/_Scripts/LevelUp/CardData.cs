@@ -1,9 +1,9 @@
 using UnityEngine;
+using VContainer;
 
 namespace ProjectB.LevelUp
 {
-    [CreateAssetMenu(fileName = "NewCardData", menuName = "ProjectB/Card Data")]
-    public class CardData : ScriptableObject
+    public abstract class CardData : ScriptableObject
     {
         public string cardName;
         [TextArea(2, 4)]
@@ -11,10 +11,10 @@ namespace ProjectB.LevelUp
         public Sprite icon; // Если null, в UI можно ничего не показывать или ставить цвет
         public CardRarity rarity;
         
-        [Header("Effect Details")]
-        public CardType cardType;
-        
-        [Tooltip("Размер бонуса (например, +10 к HP, +0.5 к магниту)")]
-        public float statAmount;
+        /// <summary>
+        /// Применяет эффект карты к игре.
+        /// Разрешение зависимостей (например, HeroHealth) выполняется через переданный resolver.
+        /// </summary>
+        public abstract void ApplyEffect(IObjectResolver resolver);
     }
 }
