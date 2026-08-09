@@ -17,7 +17,7 @@ namespace ProjectB.Player
             // Пытаемся найти джойстик на сцене, если он не назначен
             if (joystick == null)
             {
-                joystick = FindFirstObjectByType<VirtualJoystick>();
+                joystick = FindAnyObjectByType<VirtualJoystick>();
             }
         }
 

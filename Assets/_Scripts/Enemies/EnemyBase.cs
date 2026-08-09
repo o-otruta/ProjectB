@@ -87,7 +87,12 @@ namespace ProjectB.Enemies
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;
             
-            // TODO: Спавн XP-кристалла
+            // Spawn XP-crystal
+            if (ProjectB.LevelUp.XpManager.Instance != null && enemyData != null)
+            {
+                ProjectB.LevelUp.XpManager.Instance.SpawnXp(transform.position, enemyData.xpDrop);
+            }
+            
             // TODO: Спавн монет
             
             OnDied?.Invoke(this);

@@ -8,6 +8,7 @@ namespace ProjectB.Player
     {
         [SerializeField] private HeroData heroData;
         private int currentHp;
+        private int currentMaxHp;
         private bool isDead;
 
         public bool IsDead => isDead;
@@ -16,13 +17,14 @@ namespace ProjectB.Player
         {
             if (heroData != null)
             {
-                currentHp = heroData.maxHp;
+                currentMaxHp = heroData.maxHp;
             }
             else
             {
                 Debug.LogWarning("HeroData is not assigned to HeroHealth!");
-                currentHp = 100;
+                currentMaxHp = 100;
             }
+            currentHp = currentMaxHp;
         }
 
         public void TakeDamage(int amount)
@@ -46,6 +48,21 @@ namespace ProjectB.Player
             isDead = true;
             Debug.Log("[HeroHealth] Hero has died. Game Over!");
             // TODO: Trigger Game Over Screen (Phase 1.9)
+        }
+
+        public void Heal(int amount)
+        {
+            if (isDead) return;
+            currentHp = Mathf.Min(currentHp + amount, currentMaxHp);
+            Debug.Log($"[HeroHealth] Healed {amount}. Current HP: {currentHp}");
+        }
+
+        public void IncreaseMaxHealth(int amount)
+        {
+            if (isDead) return;
+            currentMaxHp += amount;
+            currentHp += amount;
+            Debug.Log($"[HeroHealth] Max HP increased by {amount}. New Max HP: {currentMaxHp}");
         }
     }
 }

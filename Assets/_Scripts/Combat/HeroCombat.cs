@@ -18,22 +18,28 @@ namespace ProjectB.Combat
 
         private void Start()
         {
-            if (weaponData == null)
-            {
-                Debug.LogWarning("WeaponData not set on HeroCombat!");
-                return;
-            }
+            InitializePool();
+        }
+
+        private void InitializePool()
+        {
+            if (weaponData == null || projectilePool != null) return;
 
             projectileContainer = new GameObject("ProjectileContainer").transform;
 
             projectilePool = new ObjectPool<Projectile>(
                 createFunc: () => {
-                    var p = Instantiate(weaponData.projectilePrefab, projectileContainer).GetComponent<Projectile>();
+                    if (weaponData.projectilePrefab == null) return null;
+                    var obj = Instantiate(weaponData.projectilePrefab, projectileContainer);
+                    var p = obj.GetComponent<Projectile>();
+                    if (p == null) {
+                        Debug.LogError("Projectile prefab is missing Projectile component!");
+                    }
                     return p;
                 },
-                actionOnGet: p => p.gameObject.SetActive(true),
-                actionOnRelease: p => p.gameObject.SetActive(false),
-                actionOnDestroy: p => Destroy(p.gameObject),
+                actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
+                actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
+                actionOnDestroy: p => { if (p != null) Destroy(p.gameObject); },
                 collectionCheck: true,
                 defaultCapacity: 20,
                 maxSize: 100
@@ -43,6 +49,7 @@ namespace ProjectB.Combat
         private void Update()
         {
             if (weaponData == null) return;
+            if (projectilePool == null) InitializePool();
 
             if (Time.time >= nextFireTime)
             {
@@ -81,7 +88,10 @@ namespace ProjectB.Combat
 
         private void Fire(Transform target)
         {
+            if (projectilePool == null) return;
             Projectile p = projectilePool.Get();
+            if (p == null) return;
+            
             p.transform.position = firePoint != null ? firePoint.position : transform.position;
             p.Initialize(weaponData, target, projectilePool);
         }
