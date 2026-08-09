@@ -13,7 +13,7 @@ namespace ProjectB.Core
         public Vector3 offset = new Vector3(0, 15f, -15f);
         
         [Tooltip("How smoothly the camera catches up to the target")]
-        public float smoothTime = 0.25f;
+        public float smoothTime = 0.0f;
         
         [Header("Aspect Ratio Handling")]
         [Tooltip("If true, the camera will expand its vertical view on longer screens to prevent cropping sides")]

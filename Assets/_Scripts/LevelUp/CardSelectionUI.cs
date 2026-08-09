@@ -12,11 +12,13 @@ namespace ProjectB.LevelUp
         
         private HeroExperience heroExp;
         private HeroHealth heroHealth;
+        private Core.GameManager gameManager;
         // Для MVP: можно добавить ссылки на другие компоненты героя (HeroMovement, Weapon) если нужно
 
         private void Start()
         {
             selectionPanel.SetActive(false);
+            gameManager = FindAnyObjectByType<Core.GameManager>();
 
             // Находим компоненты героя
             var player = GameObject.FindGameObjectWithTag("Player");
@@ -56,7 +58,7 @@ namespace ProjectB.LevelUp
             if (pendingLevelUps > 0)
             {
                 pendingLevelUps--;
-                Time.timeScale = 0f;
+                if (gameManager != null) gameManager.PauseForLevelUp();
                 ShowCards();
                 selectionPanel.SetActive(true);
             }
@@ -146,7 +148,7 @@ namespace ProjectB.LevelUp
 
         private void ResumeGame()
         {
-            Time.timeScale = 1f;
+            if (gameManager != null) gameManager.ResumeFromLevelUp();
         }
     }
 }

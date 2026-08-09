@@ -14,14 +14,7 @@ namespace ProjectB.LevelUp
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
             Instance = this;
-            transform.SetParent(null);
-            DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
@@ -37,6 +30,8 @@ namespace ProjectB.LevelUp
             }
 
             Transform poolContainer = new GameObject("XpCrystalContainer").transform;
+            Material fallbackMaterial = new Material(Shader.Find("Standard"));
+            fallbackMaterial.color = Color.green;
 
             xpPool = new ObjectPool<XpCrystal>(
                 createFunc: () => {
@@ -52,7 +47,7 @@ namespace ProjectB.LevelUp
                         // Поворот чтобы выглядело как ромб
                         go.transform.rotation = Quaternion.Euler(45f, 45f, 0f);
                         
-                        go.GetComponent<Renderer>().material.color = Color.green;
+                        go.GetComponent<Renderer>().sharedMaterial = fallbackMaterial;
                         var col = go.GetComponent<Collider>();
                         col.isTrigger = true;
                     }

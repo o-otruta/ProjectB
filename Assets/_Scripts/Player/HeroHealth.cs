@@ -7,11 +7,17 @@ namespace ProjectB.Player
     public class HeroHealth : MonoBehaviour, IDamageable
     {
         [SerializeField] private HeroData heroData;
+        
+        public event System.Action<int, int> OnHealthChanged;
+        public event System.Action OnDied;
+
         private int currentHp;
         private int currentMaxHp;
         private bool isDead;
 
         public bool IsDead => isDead;
+        public int CurrentHp => currentHp;
+        public int MaxHp => currentMaxHp;
 
         private void Start()
         {
@@ -25,6 +31,7 @@ namespace ProjectB.Player
                 currentMaxHp = 100;
             }
             currentHp = currentMaxHp;
+            OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
 
         public void TakeDamage(int amount)
@@ -32,9 +39,10 @@ namespace ProjectB.Player
             if (isDead) return;
 
             currentHp -= amount;
-            Debug.Log($"[HeroHealth] Took {amount} damage. Current HP: {currentHp}");
+            if (currentHp < 0) currentHp = 0;
             
-            // TODO: Update HUD HP Bar
+            Debug.Log($"[HeroHealth] Took {amount} damage. Current HP: {currentHp}");
+            OnHealthChanged?.Invoke(currentHp, currentMaxHp);
             
             if (currentHp <= 0)
             {
@@ -47,7 +55,7 @@ namespace ProjectB.Player
             if (isDead) return;
             isDead = true;
             Debug.Log("[HeroHealth] Hero has died. Game Over!");
-            // TODO: Trigger Game Over Screen (Phase 1.9)
+            OnDied?.Invoke();
         }
 
         public void Heal(int amount)
@@ -55,6 +63,7 @@ namespace ProjectB.Player
             if (isDead) return;
             currentHp = Mathf.Min(currentHp + amount, currentMaxHp);
             Debug.Log($"[HeroHealth] Healed {amount}. Current HP: {currentHp}");
+            OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
 
         public void IncreaseMaxHealth(int amount)
@@ -63,6 +72,7 @@ namespace ProjectB.Player
             currentMaxHp += amount;
             currentHp += amount;
             Debug.Log($"[HeroHealth] Max HP increased by {amount}. New Max HP: {currentMaxHp}");
+            OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
     }
 }

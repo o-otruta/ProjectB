@@ -16,6 +16,7 @@ namespace ProjectB.Enemies
 
         private IObjectPool<EnemyBase> enemyPool;
         private int currentWave = 1;
+        public int CurrentWave => currentWave;
         private int enemiesAlive = 0;
         private bool isSpawning = false;
 
