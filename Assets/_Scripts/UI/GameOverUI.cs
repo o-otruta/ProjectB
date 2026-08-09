@@ -8,12 +8,12 @@ namespace ProjectB.UI
     {
         [SerializeField] private GameObject panel;
         [SerializeField] private TMPro.TextMeshProUGUI waveText;
-        private GameManager gameManager;
+        private IObjectResolver resolver;
 
         [Inject]
-        public void Construct(GameManager gameManager)
+        public void Construct(IObjectResolver resolver)
         {
-            this.gameManager = gameManager;
+            this.resolver = resolver;
         }
 
         private void Awake()
@@ -47,25 +47,25 @@ namespace ProjectB.UI
 
         public void OnRestartClicked()
         {
-            if (gameManager != null)
+            if (resolver != null)
             {
-                gameManager.RestartGame();
+                resolver.Resolve<GameManager>().RestartGame();
             }
         }
 
         public void OnMenuClicked()
         {
-            if (gameManager != null)
+            if (resolver != null)
             {
-                gameManager.GoToMenu();
+                resolver.Resolve<GameManager>().GoToMenu();
             }
         }
 
         public void OnReviveClicked()
         {
-            if (gameManager != null)
+            if (resolver != null)
             {
-                gameManager.ReviveHero();
+                resolver.Resolve<GameManager>().ReviveHero();
             }
         }
     }
