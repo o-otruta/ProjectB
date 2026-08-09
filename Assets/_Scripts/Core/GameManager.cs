@@ -27,6 +27,13 @@ namespace ProjectB.Core
 
         public GameState CurrentState => currentState;
 
+        private void Awake()
+        {
+            Application.targetFrameRate = 60;
+            // На мобилках vSync часто мешает targetFrameRate, поэтому отключаем его
+            QualitySettings.vSyncCount = 0; 
+        }
+
         private void Start()
         {
             currentState = GameState.Playing;

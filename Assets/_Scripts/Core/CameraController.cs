@@ -9,8 +9,8 @@ namespace ProjectB.Core
         [Tooltip("The character the camera should follow")]
         public Transform target;
         
-        [Tooltip("Offset relative to the target (e.g. 0, 15, -15 for 45 degrees)")]
-        public Vector3 offset = new Vector3(0, 15f, -15f);
+        [Tooltip("Offset relative to the target (e.g. 0, 20, -10 for a steeper top-down view)")]
+        public Vector3 offset = new Vector3(0, 20f, -10f);
         
         [Tooltip("How smoothly the camera catches up to the target")]
         public float smoothTime = 0.0f;
@@ -31,8 +31,11 @@ namespace ProjectB.Core
             cam = GetComponent<Camera>();
             defaultFOV = cam.fieldOfView;
             
-            // Устанавливаем поворот 45 градусов вниз (top-down 45°)
-            transform.rotation = Quaternion.Euler(45f, 0f, 0f);
+            // Автоматически поворачиваем камеру так, чтобы она смотрела на цель (исходя из offset)
+            if (offset != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(-offset);
+            }
             
             AdjustAspect();
         }

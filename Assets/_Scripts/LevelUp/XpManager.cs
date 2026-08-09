@@ -30,8 +30,12 @@ namespace ProjectB.LevelUp
             }
 
             Transform poolContainer = new GameObject("XpCrystalContainer").transform;
-            Material fallbackMaterial = new Material(Shader.Find("Standard"));
+            
+            // Safely get the default material by creating a temporary primitive, to avoid Shader.Find("Standard") crashing in URP/mobile
+            GameObject tempPrimitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Material fallbackMaterial = new Material(tempPrimitive.GetComponent<Renderer>().sharedMaterial);
             fallbackMaterial.color = Color.green;
+            Destroy(tempPrimitive);
 
             xpPool = new ObjectPool<XpCrystal>(
                 createFunc: () => {

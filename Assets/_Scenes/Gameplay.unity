@@ -1311,6 +1311,7 @@ GameObject:
   m_Component:
   - component: {fileID: 546764549}
   - component: {fileID: 546764548}
+  - component: {fileID: 546764550}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1348,6 +1349,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &546764550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 546764547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16df537d4c04a2842b47d633acf59d90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.UpgradeManager
+  cardPool:
+  - {fileID: 11400000, guid: 0a6bda8119a5f49458ea140a8c72ade2, type: 2}
+  - {fileID: 11400000, guid: ae13321ad16f10443bf92cd78c031708, type: 2}
+  - {fileID: 11400000, guid: b293357e7a2dccc4097ee7f996fa1194, type: 2}
+  cardUI: {fileID: 2099158790}
 --- !u!1 &622970087
 GameObject:
   m_ObjectHideFlags: 0
@@ -1554,7 +1572,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Core.CameraController
   target: {fileID: 1489294140}
-  offset: {x: 0, y: 15, z: -15}
+  offset: {x: 0, y: 20, z: -10}
   smoothTime: 0
   maintainHorizontalView: 1
   targetAspect: 0.5625
@@ -4697,10 +4715,6 @@ MonoBehaviour:
   - {fileID: 2077881138}
   - {fileID: 1364875317}
   - {fileID: 745542398}
-  cardPool:
-  - {fileID: 11400000, guid: 0a6bda8119a5f49458ea140a8c72ade2, type: 2}
-  - {fileID: 11400000, guid: ae13321ad16f10443bf92cd78c031708, type: 2}
-  - {fileID: 11400000, guid: b293357e7a2dccc4097ee7f996fa1194, type: 2}
 --- !u!1 &2111706374
 GameObject:
   m_ObjectHideFlags: 0
