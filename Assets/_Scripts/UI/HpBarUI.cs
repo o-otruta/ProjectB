@@ -1,18 +1,34 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ProjectB.Player;
+using VContainer;
 
 namespace ProjectB.UI
 {
     public class HpBarUI : MonoBehaviour
     {
-        [SerializeField] private HeroHealth heroHealth;
+        private HeroHealth heroHealth;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private TMPro.TextMeshProUGUI hpText;
+        private bool isInitialized = false;
+
+        [Inject]
+        public void Construct(HeroHealth heroHealth)
+        {
+            this.heroHealth = heroHealth;
+            isInitialized = true;
+            if (gameObject.activeInHierarchy)
+            {
+                Subscribe();
+            }
+        }
 
         private void OnEnable()
         {
-            Subscribe();
+            if (isInitialized)
+            {
+                Subscribe();
+            }
         }
 
         private void OnDisable()
@@ -30,14 +46,7 @@ namespace ProjectB.UI
 
         private void Subscribe()
         {
-            if (heroHealth == null)
-            {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    heroHealth = player.GetComponent<HeroHealth>();
-                }
-            }
+            if (heroHealth == null) return;
 
             if (heroHealth != null)
             {

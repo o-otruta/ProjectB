@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Pool;
+using VContainer;
+using UnityEngine.Pool;
 using ProjectB.Data.Enemies;
 using ProjectB.Player;
 
@@ -11,14 +13,24 @@ namespace ProjectB.Enemies
         [SerializeField] private WaveConfig waveConfig;
         [SerializeField] private EnemyData baseEnemyData;
         
-        [Tooltip("Цель, за которой будут следовать враги (герой)")]
-        [SerializeField] private Transform heroTarget;
+        private Transform heroTarget;
+        private ProjectB.LevelUp.XpManager xpManager;
 
         private IObjectPool<EnemyBase> enemyPool;
         private int currentWave = 1;
         public int CurrentWave => currentWave;
         private int enemiesAlive = 0;
         private bool isSpawning = false;
+
+        [Inject]
+        public void Construct(HeroHealth heroHealth, ProjectB.LevelUp.XpManager xpManager)
+        {
+            if (heroHealth != null)
+            {
+                heroTarget = heroHealth.transform;
+            }
+            this.xpManager = xpManager;
+        }
 
         private void Start()
         {
@@ -105,7 +117,7 @@ namespace ProjectB.Enemies
             
             // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(baseEnemyData, heroTarget, enemyPool, difficultyMultiplier);
+            enemy.Initialize(baseEnemyData, heroTarget, enemyPool, difficultyMultiplier, xpManager);
             
             enemy.OnDied -= HandleEnemyDied; // Ensure no duplicate subscription
             enemy.OnDied += HandleEnemyDied;

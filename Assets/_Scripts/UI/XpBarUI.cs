@@ -1,17 +1,33 @@
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace ProjectB.UI
 {
     public class XpBarUI : MonoBehaviour
     {
-        [SerializeField] private LevelUp.HeroExperience heroExperience;
+        private LevelUp.HeroExperience heroExperience;
         [SerializeField] private Slider xpSlider;
         [SerializeField] private TMPro.TextMeshProUGUI levelText;
+        private bool isInitialized = false;
+
+        [Inject]
+        public void Construct(LevelUp.HeroExperience heroExperience)
+        {
+            this.heroExperience = heroExperience;
+            isInitialized = true;
+            if (gameObject.activeInHierarchy)
+            {
+                Subscribe();
+            }
+        }
 
         private void OnEnable()
         {
-            Subscribe();
+            if (isInitialized)
+            {
+                Subscribe();
+            }
         }
 
         private void OnDisable()
@@ -30,14 +46,7 @@ namespace ProjectB.UI
 
         private void Subscribe()
         {
-            if (heroExperience == null)
-            {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    heroExperience = player.GetComponent<LevelUp.HeroExperience>();
-                }
-            }
+            if (heroExperience == null) return;
 
             if (heroExperience != null)
             {

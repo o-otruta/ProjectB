@@ -1,4 +1,5 @@
 using UnityEngine;
+using VContainer;
 using ProjectB.Core;
 
 namespace ProjectB.UI
@@ -7,18 +8,19 @@ namespace ProjectB.UI
     {
         [SerializeField] private GameObject panel;
         [SerializeField] private TMPro.TextMeshProUGUI waveText;
-        [SerializeField] private GameManager gameManager;
+        private GameManager gameManager;
+
+        [Inject]
+        public void Construct(GameManager gameManager)
+        {
+            this.gameManager = gameManager;
+        }
 
         private void Awake()
         {
             if (panel != null)
             {
                 panel.SetActive(false);
-            }
-
-            if (gameManager == null)
-            {
-                gameManager = FindAnyObjectByType<GameManager>();
             }
         }
 

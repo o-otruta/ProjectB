@@ -4,38 +4,35 @@ using UnityEngine;
 using ProjectB.Player;
 using ProjectB.UI;
 using ProjectB.Core;
+using VContainer;
 
 namespace ProjectB.LevelUp
 {
     public class UpgradeManager : MonoBehaviour
     {
         public List<CardData> cardPool; // Пул доступных карточек
-        [SerializeField] private CardSelectionUI cardUI;
         
+        private CardSelectionUI cardUI;
         private HeroExperience heroExp;
         private HeroHealth heroHealth;
         private GameManager gameManager;
         
         private int pendingLevelUps = 0;
 
+        [Inject]
+        public void Construct(GameManager gameManager, CardSelectionUI cardUI, HeroExperience heroExp, HeroHealth heroHealth)
+        {
+            this.gameManager = gameManager;
+            this.cardUI = cardUI;
+            this.heroExp = heroExp;
+            this.heroHealth = heroHealth;
+        }
+
         private void Start()
         {
-            gameManager = FindAnyObjectByType<GameManager>();
-            if (cardUI == null)
+            if (heroExp != null)
             {
-                cardUI = FindAnyObjectByType<CardSelectionUI>();
-            }
-
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                heroExp = player.GetComponent<HeroExperience>();
-                heroHealth = player.GetComponent<HeroHealth>();
-                
-                if (heroExp != null)
-                {
-                    heroExp.OnLevelUp += HandleLevelUp;
-                }
+                heroExp.OnLevelUp += HandleLevelUp;
             }
         }
 

@@ -4,6 +4,7 @@ using ProjectB.Player;
 using ProjectB.Enemies;
 using ProjectB.UI;
 using ProjectB.LevelUp;
+using VContainer;
 
 namespace ProjectB.Core
 {
@@ -17,11 +18,17 @@ namespace ProjectB.Core
 
     public class GameManager : MonoBehaviour
     {
-        [SerializeField] private HeroHealth heroHealth;
-        [SerializeField] private WaveManager waveManager;
-        [SerializeField] private GameOverUI gameOverUI;
-        // Optionally pass CardSelectionUI if GameManager needs to drive it directly, 
-        // but currently CardSelectionUI listens to HeroExperience directly.
+        private HeroHealth heroHealth;
+        private WaveManager waveManager;
+        private GameOverUI gameOverUI;
+        
+        [Inject]
+        public void Construct(HeroHealth heroHealth, WaveManager waveManager, GameOverUI gameOverUI)
+        {
+            this.heroHealth = heroHealth;
+            this.waveManager = waveManager;
+            this.gameOverUI = gameOverUI;
+        }
 
         private GameState currentState;
 
@@ -39,28 +46,9 @@ namespace ProjectB.Core
             currentState = GameState.Playing;
             Time.timeScale = 1f;
 
-            if (heroHealth == null)
-            {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    heroHealth = player.GetComponent<HeroHealth>();
-                }
-            }
-
             if (heroHealth != null)
             {
                 heroHealth.OnDied += HandleHeroDeath;
-            }
-
-            if (gameOverUI == null)
-            {
-                gameOverUI = FindAnyObjectByType<GameOverUI>();
-            }
-
-            if (waveManager == null)
-            {
-                waveManager = FindAnyObjectByType<WaveManager>();
             }
         }
 

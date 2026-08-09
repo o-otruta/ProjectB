@@ -1,33 +1,27 @@
 using UnityEngine;
 using UnityEngine.Pool;
+using VContainer;
 
 namespace ProjectB.LevelUp
 {
     public class XpManager : MonoBehaviour
     {
-        public static XpManager Instance { get; private set; }
-
         [SerializeField] private GameObject xpCrystalPrefab;
-        [SerializeField] private Transform heroTarget;
+        private Transform heroTarget;
 
         private IObjectPool<XpCrystal> xpPool;
 
-        private void Awake()
+        [Inject]
+        public void Construct(ProjectB.Player.HeroHealth heroHealth)
         {
-            Instance = this;
+            if (heroHealth != null)
+            {
+                heroTarget = heroHealth.transform;
+            }
         }
 
         private void Start()
         {
-            if (heroTarget == null)
-            {
-                // Попробуем найти героя по тегу, если не задан
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                {
-                    heroTarget = player.transform;
-                }
-            }
 
             Transform poolContainer = new GameObject("XpCrystalContainer").transform;
             

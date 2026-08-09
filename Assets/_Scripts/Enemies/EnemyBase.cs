@@ -10,6 +10,7 @@ namespace ProjectB.Enemies
         [SerializeField] private EnemyData enemyData;
         private IObjectPool<EnemyBase> pool;
         private Transform target;
+        private ProjectB.LevelUp.XpManager xpManager;
         
         private int currentHp;
         private int currentDamage;
@@ -24,11 +25,12 @@ namespace ProjectB.Enemies
         /// <summary>Радиус контактного урона (сумма радиусов героя и врага).</summary>
         private const float ContactRadius = 1.0f;
 
-        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f)
+        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null)
         {
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
+            this.xpManager = xpManager;
             
             if (enemyData != null)
             {
@@ -91,9 +93,9 @@ namespace ProjectB.Enemies
             isAlive = false;
             
             // Spawn XP-crystal
-            if (ProjectB.LevelUp.XpManager.Instance != null && enemyData != null)
+            if (xpManager != null && enemyData != null)
             {
-                ProjectB.LevelUp.XpManager.Instance.SpawnXp(transform.position, enemyData.xpDrop);
+                xpManager.SpawnXp(transform.position, enemyData.xpDrop);
             }
             
             // TODO: Спавн монет

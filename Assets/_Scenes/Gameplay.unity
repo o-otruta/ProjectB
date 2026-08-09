@@ -287,7 +287,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Enemies.WaveManager
   waveConfig: {fileID: 11400000, guid: 53fc3e9edb0905f468b0c71baab59c15, type: 2}
   baseEnemyData: {fileID: 11400000, guid: 71ec689c4571a4d4fb205bbc62eb08fc, type: 2}
-  heroTarget: {fileID: 1489294140}
 --- !u!4 &34485523
 Transform:
   m_ObjectHideFlags: 0
@@ -1331,9 +1330,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fd21abd8cc2c9242810d9d81d6842de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Core.GameManager
-  heroHealth: {fileID: 1489294142}
-  waveManager: {fileID: 34485522}
-  gameOverUI: {fileID: 35736060}
 --- !u!4 &546764549
 Transform:
   m_ObjectHideFlags: 0
@@ -1365,7 +1361,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0a6bda8119a5f49458ea140a8c72ade2, type: 2}
   - {fileID: 11400000, guid: ae13321ad16f10443bf92cd78c031708, type: 2}
   - {fileID: 11400000, guid: b293357e7a2dccc4097ee7f996fa1194, type: 2}
-  cardUI: {fileID: 2099158790}
 --- !u!1 &622970087
 GameObject:
   m_ObjectHideFlags: 0
@@ -2353,6 +2348,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 901072954}
+  - component: {fileID: 901072955}
   m_Layer: 0
   m_Name: '[Managers]'
   m_TagString: Untagged
@@ -2378,6 +2374,22 @@ Transform:
   - {fileID: 546764549}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &901072955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901072953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ac866409d779ca4abcb4b8c513cea2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameLifetimeScope
+  parentReference:
+    TypeName: 
+  autoRun: 1
+  autoInjectGameObjects: []
 --- !u!1 &1067613429
 GameObject:
   m_ObjectHideFlags: 0
@@ -2408,7 +2420,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.XpManager
   xpCrystalPrefab: {fileID: 0}
-  heroTarget: {fileID: 0}
 --- !u!4 &1067613431
 Transform:
   m_ObjectHideFlags: 0
@@ -3087,7 +3098,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Player.HeroMovement
   heroData: {fileID: 11400000, guid: 16d952ca2481f154ab1f0c676e8a63b7, type: 2}
-  joystick: {fileID: 0}
   visualModel: {fileID: 1489294140}
 --- !u!23 &1489294144
 MeshRenderer:
@@ -4571,7 +4581,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38a14ead9604bce4a961b75e253723cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.UI.HpBarUI
-  heroHealth: {fileID: 1489294142}
   hpSlider: {fileID: 2084576962}
   hpText: {fileID: 270039511}
 --- !u!114 &2084576962
@@ -4802,7 +4811,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51ce7421aaa58f748be3abd55f9b6b54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.UI.XpBarUI
-  heroExperience: {fileID: 1489294147}
   xpSlider: {fileID: 2111706377}
   levelText: {fileID: 32766173}
 --- !u!114 &2111706377

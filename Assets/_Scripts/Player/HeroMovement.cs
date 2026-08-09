@@ -1,26 +1,28 @@
 using UnityEngine;
 using ProjectB.Data;
 using ProjectB.UI;
+using VContainer;
 
 namespace ProjectB.Player
 {
     public class HeroMovement : MonoBehaviour
     {
         [SerializeField] private HeroData heroData;
-        [SerializeField] private VirtualJoystick joystick;
+        private VirtualJoystick joystick;
         
         [Tooltip("Модель персонажа (должна быть дочерним объектом), чтобы вращать только визуал, не трогая физику")]
         [SerializeField] private Transform visualModel; 
         
         private HeroHealth hp;
 
+        [Inject]
+        public void Construct(VirtualJoystick joystick)
+        {
+            this.joystick = joystick;
+        }
+
         void Start()
         {
-            // Пытаемся найти джойстик на сцене, если он не назначен
-            if (joystick == null)
-            {
-                joystick = FindAnyObjectByType<VirtualJoystick>();
-            }
             hp = GetComponent<HeroHealth>();
         }
 
