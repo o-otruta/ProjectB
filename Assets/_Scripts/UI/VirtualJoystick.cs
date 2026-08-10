@@ -8,11 +8,34 @@ namespace ProjectB.UI
         [SerializeField] private RectTransform background;
         [SerializeField] private RectTransform handle;
         [SerializeField] private float handleLimit = 100f;
+        [SerializeField] private bool isFloating = true;
 
         public Vector2 Direction { get; private set; }
 
+        private void Start()
+        {
+            if (isFloating && background != null)
+            {
+                background.gameObject.SetActive(false);
+            }
+        }
+
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (isFloating && background != null)
+            {
+                background.gameObject.SetActive(true);
+                
+                // Position the background exactly at the touch position
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    GetComponent<RectTransform>(), 
+                    eventData.position, 
+                    eventData.pressEventCamera, 
+                    out Vector2 localPoint);
+                    
+                background.localPosition = localPoint;
+            }
+            
             OnDrag(eventData);
         }
 
@@ -42,6 +65,11 @@ namespace ProjectB.UI
             if (handle != null)
             {
                 handle.anchoredPosition = Vector2.zero;
+            }
+
+            if (isFloating && background != null)
+            {
+                background.gameObject.SetActive(false);
             }
         }
     }
