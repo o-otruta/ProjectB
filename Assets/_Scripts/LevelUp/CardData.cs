@@ -11,6 +11,9 @@ namespace ProjectB.LevelUp
         public Sprite icon; // Если null, в UI можно ничего не показывать или ставить цвет
         public CardRarity rarity;
         
+        [Tooltip("Удалять ли карту из пула после получения (одноразовая)")]
+        public bool isConsumable = false;
+        
         /// <summary>
         /// Применяет эффект карты к игре.
         /// Разрешение зависимостей (например, HeroHealth) выполняется через переданный resolver.

@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
-using UnityEngine.Pool;
 using ProjectB.Data.Enemies;
 using ProjectB.Player;
 

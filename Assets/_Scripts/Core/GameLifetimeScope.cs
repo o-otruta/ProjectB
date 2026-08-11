@@ -6,6 +6,7 @@ using ProjectB.Enemies;
 using ProjectB.LevelUp;
 using ProjectB.Player;
 using ProjectB.UI;
+using ProjectB.Abilities;
 
 namespace ProjectB.Core
 {
@@ -30,6 +31,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HeroHealth>();
             builder.RegisterComponentInHierarchy<HeroExperience>();
             builder.RegisterComponentInHierarchy<HeroMovement>();
+            builder.RegisterComponentInHierarchy<HeroAbilities>();
 
             // Explicitly inject into all scene components
             builder.RegisterBuildCallback(resolver =>
@@ -48,6 +50,7 @@ namespace ProjectB.Core
                 resolver.Inject(resolver.Resolve<HeroHealth>());
                 resolver.Inject(resolver.Resolve<HeroExperience>());
                 resolver.Inject(resolver.Resolve<HeroMovement>());
+                resolver.Inject(resolver.Resolve<HeroAbilities>());
             });
         }
     }

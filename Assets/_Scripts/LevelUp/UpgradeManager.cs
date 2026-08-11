@@ -5,12 +5,17 @@ using ProjectB.Player;
 using ProjectB.UI;
 using ProjectB.Core;
 using VContainer;
+using ProjectB.Abilities;
 
 namespace ProjectB.LevelUp
 {
     public class UpgradeManager : MonoBehaviour
     {
+        [Tooltip("Количество карточек на выбор при повышении уровня")]
+        public int maxCardsToOffer = 3;
+        
         public List<CardData> cardPool; // Пул доступных карточек
+        private List<CardData> dynamicPool = new List<CardData>(); // Пул добавленных модификаторов
         
         private CardSelectionUI cardUI;
         private HeroExperience heroExp;
@@ -33,6 +38,12 @@ namespace ProjectB.LevelUp
             if (heroExp != null)
             {
                 heroExp.OnLevelUp += HandleLevelUp;
+            }
+            
+            // Initialize dynamic pool with base pool
+            if (cardPool != null)
+            {
+                dynamicPool.AddRange(cardPool);
             }
         }
 
@@ -62,9 +73,7 @@ namespace ProjectB.LevelUp
                 if (gameManager != null) gameManager.PauseForLevelUp();
                 
                 // Determine how many slots the UI has. By default 3 in our project.
-                int slots = 3; // Hardcoded fallback
-                
-                List<CardData> cardsToOffer = GetRandomCards(slots);
+                List<CardData> cardsToOffer = GetRandomCards(maxCardsToOffer);
                 if (cardsToOffer.Count > 0)
                 {
                     cardUI.ShowCards(cardsToOffer, OnCardSelected);
@@ -82,19 +91,57 @@ namespace ProjectB.LevelUp
             }
         }
 
+        public void AddCardsToPool(List<CardData> newCards)
+        {
+            if (newCards == null) return;
+            dynamicPool.AddRange(newCards);
+            Debug.Log($"[UpgradeManager] Added {newCards.Count} cards to dynamic pool. Total: {dynamicPool.Count}");
+        }
+
         private List<CardData> GetRandomCards(int count)
         {
-            if (cardPool == null || cardPool.Count == 0) return new List<CardData>();
+            if (dynamicPool == null || dynamicPool.Count == 0) return new List<CardData>();
             
-            int countToSelect = Mathf.Min(count, cardPool.Count);
+            List<CardData> validPool = new List<CardData>();
+            bool canAddActive = true;
+            bool canAddPassive = true;
+
+            HeroAbilities heroAbilities = null;
+            if (objectResolver.TryResolve<HeroAbilities>(out var abilities))
+            {
+                canAddActive = abilities.CanAddActive();
+                canAddPassive = abilities.CanAddPassive();
+                heroAbilities = abilities;
+            }
+
+            // Filter out abilities if slots are full or already acquired
+            foreach (var card in dynamicPool)
+            {
+                if (card is AbilityCardData abilityCard)
+                {
+                    // Skip if we already have this ability
+                    if (heroAbilities != null && heroAbilities.HasAbility(abilityCard.abilityData.id))
+                        continue;
+                        
+                    if (abilityCard.abilityData.type == AbilityType.Active && !canAddActive)
+                        continue;
+                    if (abilityCard.abilityData.type == AbilityType.Passive && !canAddPassive)
+                        continue;
+                }
+                
+                validPool.Add(card);
+            }
+
+            if (validPool.Count == 0) return new List<CardData>();
+
+            int countToSelect = Mathf.Min(count, validPool.Count);
             List<CardData> selectedCards = new List<CardData>();
-            List<CardData> poolCopy = new List<CardData>(cardPool);
 
             for (int i = 0; i < countToSelect; i++)
             {
-                int randomIndex = UnityEngine.Random.Range(0, poolCopy.Count);
-                selectedCards.Add(poolCopy[randomIndex]);
-                poolCopy.RemoveAt(randomIndex);
+                int randomIndex = UnityEngine.Random.Range(0, validPool.Count);
+                selectedCards.Add(validPool[randomIndex]);
+                validPool.RemoveAt(randomIndex);
             }
             
             return selectedCards;
@@ -102,6 +149,12 @@ namespace ProjectB.LevelUp
 
         private void OnCardSelected(CardData selectedCard)
         {
+            if (selectedCard.isConsumable)
+            {
+                dynamicPool.Remove(selectedCard);
+                Debug.Log($"[UpgradeManager] Removed consumable card {selectedCard.cardName} from pool.");
+            }
+            
             ApplyCardEffect(selectedCard);
             ProcessNextLevelUp();
         }

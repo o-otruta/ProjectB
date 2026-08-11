@@ -1325,10 +1325,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16df537d4c04a2842b47d633acf59d90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.UpgradeManager
+  maxCardsToOffer: 3
   cardPool:
-  - {fileID: 11400000, guid: b293357e7a2dccc4097ee7f996fa1194, type: 2}
-  - {fileID: 11400000, guid: ae13321ad16f10443bf92cd78c031708, type: 2}
-  - {fileID: 11400000, guid: 0a6bda8119a5f49458ea140a8c72ade2, type: 2}
+  - {fileID: 11400000, guid: 562f10a73d7e9d641bea19fd7567a998, type: 2}
+  - {fileID: 11400000, guid: 63998293161f1354b9eee9d1afc5a0a7, type: 2}
+  - {fileID: 11400000, guid: f4faa5406de3d414d96779c18c8e7ec5, type: 2}
+  - {fileID: 11400000, guid: 4b048b5d3ee406943998068d5ed2ba85, type: 2}
 --- !u!1 &622970087
 GameObject:
   m_ObjectHideFlags: 0
@@ -2970,11 +2972,41 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1489294139 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3655051533755666143, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
+  m_PrefabInstance: {fileID: 4400341457765853066}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1489294140 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 422264164039342723, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
   m_PrefabInstance: {fileID: 4400341457765853066}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1489294149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1489294139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99ec3dabb0b0b5742ae445b8161b7891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Companions.CompanionManager
+  activeCompanions: []
+--- !u!114 &1489294150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1489294139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0efc3670a1bca1343b3d90376facc137, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.HeroAbilities
 --- !u!1 &1505356331
 GameObject:
   m_ObjectHideFlags: 0
@@ -4885,10 +4917,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hero
       objectReference: {fileID: 0}
+    - target: {fileID: 5126261024346061716, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
+      propertyPath: baseXP
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3655051533755666143, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1489294149}
+    - targetCorrespondingSourceObject: {fileID: 3655051533755666143, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1489294150}
   m_SourcePrefab: {fileID: 100100000, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
