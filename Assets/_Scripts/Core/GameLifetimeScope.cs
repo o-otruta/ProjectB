@@ -34,24 +34,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HeroAbilities>();
 
             // Explicitly inject into all scene components
-            builder.RegisterBuildCallback(resolver =>
-            {
-                resolver.Inject(resolver.Resolve<GameManager>());
-                resolver.Inject(resolver.Resolve<WaveManager>());
-                resolver.Inject(resolver.Resolve<XpManager>());
-                resolver.Inject(resolver.Resolve<UpgradeManager>());
-                
-                resolver.Inject(resolver.Resolve<VirtualJoystick>());
-                resolver.Inject(resolver.Resolve<CardSelectionUI>());
-                resolver.Inject(resolver.Resolve<GameOverUI>());
-                resolver.Inject(resolver.Resolve<HpBarUI>());
-                resolver.Inject(resolver.Resolve<XpBarUI>());
-                
-                resolver.Inject(resolver.Resolve<HeroHealth>());
-                resolver.Inject(resolver.Resolve<HeroExperience>());
-                resolver.Inject(resolver.Resolve<HeroMovement>());
-                resolver.Inject(resolver.Resolve<HeroAbilities>());
-            });
+            // (Removed explicit RegisterBuildCallback to prevent double injection)
         }
     }
 }

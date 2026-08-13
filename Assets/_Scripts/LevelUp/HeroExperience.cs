@@ -19,6 +19,8 @@ namespace ProjectB.LevelUp
         
         [Tooltip("Скорость притягивания кристаллов")]
         [SerializeField] private float magnetSpeed = 15f;
+        
+        [SerializeField] private LayerMask pickupLayer;
 
         public int CurrentLevel { get; private set; } = 1;
         public int CurrentXP { get; private set; } = 0;
@@ -37,7 +39,7 @@ namespace ProjectB.LevelUp
 
         private void Update()
         {
-            int count = Physics.OverlapSphereNonAlloc(transform.position, MagnetRadius, magnetResults);
+            int count = Physics.OverlapSphereNonAlloc(transform.position, MagnetRadius, magnetResults, pickupLayer);
             for (int i = 0; i < count; i++)
             {
                 if (magnetResults[i].TryGetComponent<XpCrystal>(out var crystal))

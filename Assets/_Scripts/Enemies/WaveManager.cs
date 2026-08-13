@@ -10,12 +10,12 @@ namespace ProjectB.Enemies
     public class WaveManager : MonoBehaviour
     {
         [SerializeField] private WaveConfig waveConfig;
-        [SerializeField] private EnemyData baseEnemyData;
+        [SerializeField] private System.Collections.Generic.List<EnemyData> enemyTypes;
         
         private Transform heroTarget;
         private ProjectB.LevelUp.XpManager xpManager;
 
-        private IObjectPool<EnemyBase> enemyPool;
+        private System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
         private int currentWave = 1;
         public int CurrentWave => currentWave;
         private int enemiesAlive = 0;
@@ -33,40 +33,45 @@ namespace ProjectB.Enemies
 
         private void Start()
         {
-            if (waveConfig == null || baseEnemyData == null || heroTarget == null)
+            if (waveConfig == null || enemyTypes == null || enemyTypes.Count == 0 || heroTarget == null)
             {
-                Debug.LogError("WaveManager missing references!");
+                Debug.LogError("WaveManager missing references or enemy types!");
                 return;
             }
 
             Transform enemyContainer = new GameObject("EnemyContainer").transform;
+            enemyPools = new System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>>();
 
-            enemyPool = new ObjectPool<EnemyBase>(
-                createFunc: () => {
-                    GameObject go;
-                    if (baseEnemyData.modelPrefab != null) {
-                        go = Instantiate(baseEnemyData.modelPrefab, enemyContainer);
-                    } else {
-                        // Fallback, if no prefab assigned, create a default capsule
-                        go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                        go.transform.SetParent(enemyContainer);
-                        go.GetComponent<Renderer>().material.color = Color.red;
-                        go.GetComponent<Collider>().isTrigger = true; // Enemy needs trigger
-                    }
-                    
-                    EnemyBase enemy = go.GetComponent<EnemyBase>();
-                    if (enemy == null) enemy = go.AddComponent<EnemyBase>();
-                    return enemy;
-                },
-                actionOnGet: e => e.gameObject.SetActive(true),
-                actionOnRelease: e => {
-                    e.gameObject.SetActive(false);
-                },
-                actionOnDestroy: e => Destroy(e.gameObject),
-                collectionCheck: false,
-                defaultCapacity: 50,
-                maxSize: 300
-            );
+            foreach (var enemyData in enemyTypes)
+            {
+                var pool = new ObjectPool<EnemyBase>(
+                    createFunc: () => {
+                        GameObject go;
+                        if (enemyData.modelPrefab != null) {
+                            go = Instantiate(enemyData.modelPrefab, enemyContainer);
+                        } else {
+                            // Fallback, if no prefab assigned, create a default capsule
+                            go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                            go.transform.SetParent(enemyContainer);
+                            go.GetComponent<Renderer>().material.color = Color.red;
+                            go.GetComponent<Collider>().isTrigger = true; // Enemy needs trigger
+                        }
+                        
+                        EnemyBase enemy = go.GetComponent<EnemyBase>();
+                        if (enemy == null) enemy = go.AddComponent<EnemyBase>();
+                        return enemy;
+                    },
+                    actionOnGet: e => e.gameObject.SetActive(true),
+                    actionOnRelease: e => {
+                        e.gameObject.SetActive(false);
+                    },
+                    actionOnDestroy: e => Destroy(e.gameObject),
+                    collectionCheck: false,
+                    defaultCapacity: 50,
+                    maxSize: 300
+                );
+                enemyPools.Add(enemyData, pool);
+            }
 
             StartCoroutine(StartWaveDelay());
         }
@@ -102,7 +107,11 @@ namespace ProjectB.Enemies
 
         private void SpawnEnemy()
         {
-            EnemyBase enemy = enemyPool.Get();
+            // Randomly select an enemy type
+            EnemyData selectedType = enemyTypes[Random.Range(0, enemyTypes.Count)];
+            IObjectPool<EnemyBase> pool = enemyPools[selectedType];
+            
+            EnemyBase enemy = pool.Get();
             
             // Random point on circle around hero
             float angle = Random.Range(0f, Mathf.PI * 2);
@@ -116,7 +125,7 @@ namespace ProjectB.Enemies
             
             // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(baseEnemyData, heroTarget, enemyPool, difficultyMultiplier, xpManager);
+            enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier, xpManager);
             
             enemy.OnDied -= HandleEnemyDied; // Ensure no duplicate subscription
             enemy.OnDied += HandleEnemyDied;

@@ -48,12 +48,9 @@ namespace ProjectB.UI
         {
             if (heroHealth == null) return;
 
-            if (heroHealth != null)
-            {
-                heroHealth.OnHealthChanged -= UpdateHpBar;
-                heroHealth.OnHealthChanged += UpdateHpBar;
-                UpdateHpBar(heroHealth.CurrentHp, heroHealth.MaxHp);
-            }
+            heroHealth.OnHealthChanged -= UpdateHpBar;
+            heroHealth.OnHealthChanged += UpdateHpBar;
+            UpdateHpBar(heroHealth.CurrentHp, heroHealth.MaxHp);
         }
 
         private void UpdateHpBar(int currentHp, int maxHp)

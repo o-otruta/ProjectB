@@ -25,6 +25,7 @@ namespace ProjectB.Core
         private Camera cam;
         private Vector3 velocity = Vector3.zero;
         private float defaultFOV;
+        private float lastAspect;
 
         void Start()
         {
@@ -37,12 +38,20 @@ namespace ProjectB.Core
                 transform.rotation = Quaternion.LookRotation(-offset);
             }
             
+            lastAspect = (float)Screen.width / Screen.height;
             AdjustAspect();
         }
 
         void LateUpdate()
         {
             if (target == null) return;
+            
+            float currentAspect = (float)Screen.width / Screen.height;
+            if (Mathf.Abs(currentAspect - lastAspect) > 0.01f)
+            {
+                lastAspect = currentAspect;
+                AdjustAspect();
+            }
 
             // Плавное следование за целью через SmoothDamp
             Vector3 targetPosition = target.position + offset;

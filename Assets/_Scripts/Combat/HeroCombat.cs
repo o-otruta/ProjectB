@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Data.Combat;
+using VContainer;
 
 namespace ProjectB.Combat
 {
@@ -14,9 +15,14 @@ namespace ProjectB.Combat
         private ProjectB.Player.HeroHealth hp;
         private Transform projectilesRoot;
 
+        [Inject]
+        public void Construct(ProjectB.Player.HeroHealth heroHealth)
+        {
+            hp = heroHealth;
+        }
+
         private void Start()
         {
-            hp = GetComponent<ProjectB.Player.HeroHealth>();
             projectilesRoot = new GameObject("ProjectilesRoot").transform;
             
             // Инициализация стартового оружия

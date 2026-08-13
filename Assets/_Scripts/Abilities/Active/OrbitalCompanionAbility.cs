@@ -136,7 +136,7 @@ namespace ProjectB.Abilities
             float radius = OrbitalData.baseArea / 2f;
             foreach (var inst in instances)
             {
-                int count = Physics.OverlapSphereNonAlloc(inst.position, radius, hitBuffer);
+                int count = Physics.OverlapSphereNonAlloc(inst.position, radius, hitBuffer, ActiveData.targetLayer);
                 for (int i = 0; i < count; i++)
                 {
                     var enemy = hitBuffer[i].GetComponent<EnemyBase>();

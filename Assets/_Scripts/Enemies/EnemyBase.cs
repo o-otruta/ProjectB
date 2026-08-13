@@ -27,6 +27,7 @@ namespace ProjectB.Enemies
 
         public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null)
         {
+            OnDied = null;
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
@@ -38,6 +39,7 @@ namespace ProjectB.Enemies
                 currentDamage = Mathf.RoundToInt(enemyData.contactDamage * difficultyMultiplier);
             }
             isAlive = true;
+            lastDamageTime = 0f;
             targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
         }
 
