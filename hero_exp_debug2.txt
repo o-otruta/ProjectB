@@ -1,0 +1,1 @@
+pickupLayer value: 0 (Fixed to -1)

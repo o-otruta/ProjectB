@@ -5,7 +5,7 @@ using ProjectB.Data.Enemies;
 
 namespace ProjectB.Enemies
 {
-    public class EnemyBase : MonoBehaviour, IDamageable
+    public class EnemyBase : MonoBehaviour, IDamageable, ISlowable
     {
         [SerializeField] private EnemyData enemyData;
         private IObjectPool<EnemyBase> pool;
@@ -17,6 +17,8 @@ namespace ProjectB.Enemies
         private float lastDamageTime;
         private bool isAlive;
         private IDamageable targetDamageable;
+        private float slowFactor = 1f;
+        private float slowTimer = 0f;
 
         public bool IsDead => !isAlive;
 
@@ -40,6 +42,8 @@ namespace ProjectB.Enemies
             }
             isAlive = true;
             lastDamageTime = 0f;
+            slowFactor = 1f;
+            slowTimer = 0f;
             targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
         }
 
@@ -50,6 +54,15 @@ namespace ProjectB.Enemies
         {
             if (!isAlive || target == null || enemyData == null) return;
             
+            if (slowTimer > 0)
+            {
+                slowTimer -= Time.deltaTime;
+                if (slowTimer <= 0)
+                {
+                    slowFactor = 1f;
+                }
+            }
+
             // Проверяем, не мертв ли герой
             if (targetDamageable != null && targetDamageable.IsDead)
             {
@@ -95,7 +108,7 @@ namespace ProjectB.Enemies
                     }
                 }
 
-                transform.position += currentMoveDir * (enemyData.speed * Time.deltaTime);
+                transform.position += currentMoveDir * (enemyData.speed * slowFactor * Time.deltaTime);
                 
                 if (currentMoveDir.sqrMagnitude > 0.01f)
                 {
@@ -153,6 +166,24 @@ namespace ProjectB.Enemies
             {
                 gameObject.SetActive(false);
             }
+        }
+
+        public void ApplySlow(float factor, float duration)
+        {
+            if (factor < slowFactor)
+            {
+                slowFactor = factor;
+            }
+            if (duration > slowTimer)
+            {
+                slowTimer = duration;
+            }
+        }
+
+        public void ApplyPull(Vector3 pullDelta)
+        {
+            if (!isAlive) return;
+            transform.position += pullDelta;
         }
     }
 }

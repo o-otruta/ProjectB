@@ -1,0 +1,1 @@
+magnetRadius=3, pickupLayer=UnityEngine.LayerMask, upgradeManager=False

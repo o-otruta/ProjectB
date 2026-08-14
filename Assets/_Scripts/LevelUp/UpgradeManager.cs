@@ -139,12 +139,50 @@ namespace ProjectB.LevelUp
 
             for (int i = 0; i < countToSelect; i++)
             {
-                int randomIndex = UnityEngine.Random.Range(0, validPool.Count);
-                selectedCards.Add(validPool[randomIndex]);
-                validPool.RemoveAt(randomIndex);
+                CardData selectedCard = GetWeightedRandomCard(validPool);
+                if (selectedCard != null)
+                {
+                    selectedCards.Add(selectedCard);
+                    validPool.Remove(selectedCard);
+                }
             }
             
             return selectedCards;
+        }
+
+        private CardData GetWeightedRandomCard(List<CardData> validPool)
+        {
+            float totalWeight = 0f;
+            foreach (var card in validPool)
+            {
+                totalWeight += GetRarityWeight(card.rarity);
+            }
+
+            float randomValue = UnityEngine.Random.Range(0f, totalWeight);
+            float currentWeight = 0f;
+
+            foreach (var card in validPool)
+            {
+                currentWeight += GetRarityWeight(card.rarity);
+                if (randomValue <= currentWeight)
+                {
+                    return card;
+                }
+            }
+
+            return validPool[0]; // Fallback
+        }
+
+        private float GetRarityWeight(CardRarity rarity)
+        {
+            switch (rarity)
+            {
+                case CardRarity.Common: return 50f;
+                case CardRarity.Rare: return 30f;
+                case CardRarity.Epic: return 15f;
+                case CardRarity.Legendary: return 5f;
+                default: return 50f;
+            }
         }
 
         private void OnCardSelected(CardData selectedCard)

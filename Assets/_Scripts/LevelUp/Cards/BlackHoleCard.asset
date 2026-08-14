@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: BlackHoleCard
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
+  cardName: "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C: \u0427\u0435\u0440\u043D\u0430\u044F
+    \u0414\u044B\u0440\u0430"
+  description: "\u0417\u0430\u0442\u044F\u0433\u0438\u0432\u0430\u0435\u0442 \u0438
+    \u0443\u043D\u0438\u0447\u0442\u043E\u0436\u0430\u0435\u0442 \u0432\u0440\u0430\u0433\u043E\u0432"
+  icon: {fileID: 0}
+  rarity: 0
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: e381772a05e7def418b8defb3909e0c2, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: ffdd399dcee055045997b035ed6fe90e, type: 2}

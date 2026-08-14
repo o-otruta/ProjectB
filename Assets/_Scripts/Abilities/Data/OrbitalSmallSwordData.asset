@@ -17,10 +17,12 @@ MonoBehaviour:
   description: A small sword that orbits around you.
   icon: {fileID: 0}
   type: 0
-  maxLevel: 5
   baseDamage: 15
   baseCooldown: 0
   baseArea: 1
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 256
   prefab: {fileID: 0}
   count: 2
   orbitSpeed: 120

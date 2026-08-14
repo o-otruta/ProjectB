@@ -6,6 +6,10 @@ namespace ProjectB.Abilities
         Damage,
         Speed,
         Radius,
-        Cooldown
+        Cooldown,
+        Area,
+        Duration,
+        PierceCount,
+        SlowAmount
     }
 }

@@ -10,15 +10,17 @@ namespace ProjectB.Abilities
         private List<Transform> instances = new List<Transform>();
         private float currentAngle = 0f;
 
-        private float lastDamageTime = 0f;
-        // Simple tick rate for now, ideally per target
         private float tickRate = 0.5f; 
+        private Dictionary<EntityId, float> enemyDamageCooldowns = new Dictionary<EntityId, float>();
+        private float nextCleanupTime = 0f;
+        private List<EntityId> keysToRemove = new List<EntityId>();
 
         // Modifiable stats
         private int currentCount;
         private float currentDamage;
         private float currentSpeed;
         private float currentRadius;
+        private float currentArea;
 
         public override void Initialize(AbilityData data)
         {
@@ -28,6 +30,7 @@ namespace ProjectB.Abilities
             currentDamage = OrbitalData.baseDamage;
             currentSpeed = OrbitalData.orbitSpeed;
             currentRadius = OrbitalData.orbitDistance;
+            currentArea = OrbitalData.baseArea;
 
             SpawnInstances();
         }
@@ -48,6 +51,9 @@ namespace ProjectB.Abilities
                     break;
                 case ModifierType.Radius:
                     currentRadius += value;
+                    break;
+                case ModifierType.Area:
+                    currentArea += value;
                     break;
             }
         }
@@ -105,13 +111,8 @@ namespace ProjectB.Abilities
             currentAngle %= 360f;
             RecalculatePositions();
 
-            // Handle AOE overlap manually or rely on OnTriggerStay.
-            // Using OverlapSphere on each instance is cleaner for controlling tick rate.
-            if (Time.time - lastDamageTime >= tickRate)
-            {
-                lastDamageTime = Time.time;
-                ApplyDamageTick();
-            }
+            ApplyDamageTick();
+            CleanupCooldowns();
         }
 
         private void RecalculatePositions()
@@ -133,18 +134,46 @@ namespace ProjectB.Abilities
 
         private void ApplyDamageTick()
         {
-            float radius = OrbitalData.baseArea / 2f;
+            float hitRadius = currentArea / 2f;
+            float currentTime = Time.time;
+
             foreach (var inst in instances)
             {
-                int count = Physics.OverlapSphereNonAlloc(inst.position, radius, hitBuffer, ActiveData.targetLayer);
+                int count = Physics.OverlapSphereNonAlloc(inst.position, hitRadius, hitBuffer, ActiveData.targetLayer);
                 for (int i = 0; i < count; i++)
                 {
-                    var enemy = hitBuffer[i].GetComponent<EnemyBase>();
-                    if (enemy != null && !enemy.IsDead)
+                    var col = hitBuffer[i];
+                    var enemy = col.GetComponent<EnemyBase>();
+                    if (enemy == null || enemy.IsDead) continue;
+
+                    EntityId enemyId = col.gameObject.GetEntityId();
+
+                    if (!enemyDamageCooldowns.TryGetValue(enemyId, out float nextDamageTime) || currentTime >= nextDamageTime)
                     {
                         enemy.TakeDamage((int)currentDamage);
+                        enemyDamageCooldowns[enemyId] = currentTime + tickRate;
                     }
                 }
+            }
+        }
+
+        private void CleanupCooldowns()
+        {
+            if (Time.time < nextCleanupTime) return;
+            nextCleanupTime = Time.time + 5f;
+
+            keysToRemove.Clear();
+            float currentTime = Time.time;
+            foreach (var kvp in enemyDamageCooldowns)
+            {
+                if (currentTime >= kvp.Value + 1f)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+            foreach (var key in keysToRemove)
+            {
+                enemyDamageCooldowns.Remove(key);
             }
         }
     }
