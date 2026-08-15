@@ -18,17 +18,17 @@ namespace ProjectB.UI
         public void Construct(SaveManager saveManager)
         {
             this.saveManager = saveManager;
+            
+            if (this.saveManager != null)
+            {
+                this.saveManager.OnDataChanged += UpdateCoinsDisplay;
+                UpdateCoinsDisplay();
+            }
         }
 
         private void Start()
         {
-            UpdateCoinsDisplay();
             UpdateBadges();
-            
-            if (saveManager != null)
-            {
-                saveManager.OnDataChanged += UpdateCoinsDisplay;
-            }
         }
 
         private void OnDestroy()
