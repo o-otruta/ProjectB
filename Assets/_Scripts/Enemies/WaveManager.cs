@@ -14,6 +14,8 @@ namespace ProjectB.Enemies
         
         private Transform heroTarget;
         private ProjectB.LevelUp.XpManager xpManager;
+        private ProjectB.LevelUp.CoinManager coinManager;
+        private ProjectB.Core.RunStatistics runStatistics;
 
         private System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
         private int currentWave = 1;
@@ -22,13 +24,15 @@ namespace ProjectB.Enemies
         private bool isSpawning = false;
 
         [Inject]
-        public void Construct(HeroHealth heroHealth, ProjectB.LevelUp.XpManager xpManager)
+        public void Construct(HeroHealth heroHealth, ProjectB.LevelUp.XpManager xpManager, ProjectB.LevelUp.CoinManager coinManager, ProjectB.Core.RunStatistics runStatistics)
         {
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
             }
             this.xpManager = xpManager;
+            this.coinManager = coinManager;
+            this.runStatistics = runStatistics;
         }
 
         private void Start()
@@ -125,7 +129,7 @@ namespace ProjectB.Enemies
             
             // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier, xpManager);
+            enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier, xpManager, coinManager, runStatistics);
             
             enemy.OnDied -= HandleEnemyDied; // Ensure no duplicate subscription
             enemy.OnDied += HandleEnemyDied;

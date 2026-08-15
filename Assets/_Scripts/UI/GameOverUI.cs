@@ -8,6 +8,7 @@ namespace ProjectB.UI
     {
         [SerializeField] private GameObject panel;
         [SerializeField] private TMPro.TextMeshProUGUI waveText;
+        [SerializeField] private TMPro.TextMeshProUGUI coinsText;
         private IObjectResolver resolver;
 
         [Inject]
@@ -24,7 +25,7 @@ namespace ProjectB.UI
             }
         }
 
-        public void Show(int currentWave)
+        public void Show(int currentWave, int coinsEarned)
         {
             if (panel != null)
             {
@@ -34,6 +35,11 @@ namespace ProjectB.UI
             if (waveText != null)
             {
                 waveText.text = $"Wave Reached: {currentWave}";
+            }
+            
+            if (coinsText != null)
+            {
+                coinsText.text = $"Coins Earned: {coinsEarned}";
             }
         }
 

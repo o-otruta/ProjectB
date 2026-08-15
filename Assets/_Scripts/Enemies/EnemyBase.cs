@@ -11,6 +11,8 @@ namespace ProjectB.Enemies
         private IObjectPool<EnemyBase> pool;
         private Transform target;
         private ProjectB.LevelUp.XpManager xpManager;
+        private ProjectB.LevelUp.CoinManager coinManager;
+        private ProjectB.Core.RunStatistics runStatistics;
         
         private int currentHp;
         private int currentDamage;
@@ -27,13 +29,15 @@ namespace ProjectB.Enemies
         /// <summary>Радиус контактного урона (сумма радиусов героя и врага).</summary>
         private const float ContactRadius = 1.0f;
 
-        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null)
+        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null, ProjectB.LevelUp.CoinManager coinManager = null, ProjectB.Core.RunStatistics runStatistics = null)
         {
             OnDied = null;
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
             this.xpManager = xpManager;
+            this.coinManager = coinManager;
+            this.runStatistics = runStatistics;
             
             if (enemyData != null)
             {
@@ -144,13 +148,28 @@ namespace ProjectB.Enemies
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;
             
+            Vector3 GetRandomOffset() 
+            {
+                Vector2 rand = Random.insideUnitCircle * 0.5f;
+                return new Vector3(rand.x, 0f, rand.y);
+            }
+            
             // Spawn XP-crystal
             if (xpManager != null && enemyData != null)
             {
-                xpManager.SpawnXp(transform.position, enemyData.xpDrop);
+                xpManager.SpawnXp(transform.position + GetRandomOffset(), enemyData.xpDrop);
             }
             
-            // TODO: Спавн монет
+            // Спавн монет (например, 20% шанс)
+            if (coinManager != null && Random.value < 0.2f)
+            {
+                coinManager.SpawnCoin(transform.position + GetRandomOffset(), 1);
+            }
+
+            if (runStatistics != null)
+            {
+                runStatistics.AddKill();
+            }
             
             OnDied?.Invoke(this);
             ReturnToPool();

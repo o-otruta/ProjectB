@@ -4,6 +4,7 @@ using ProjectB.Player;
 using ProjectB.Enemies;
 using ProjectB.UI;
 using ProjectB.LevelUp;
+using ProjectB.Meta;
 using VContainer;
 
 namespace ProjectB.Core
@@ -21,13 +22,17 @@ namespace ProjectB.Core
         private HeroHealth heroHealth;
         private WaveManager waveManager;
         private GameOverUI gameOverUI;
+        private SaveManager saveManager;
+        private RunStatistics runStatistics;
         
         [Inject]
-        public void Construct(HeroHealth heroHealth, WaveManager waveManager, GameOverUI gameOverUI)
+        public void Construct(HeroHealth heroHealth, WaveManager waveManager, GameOverUI gameOverUI, SaveManager saveManager, RunStatistics runStatistics)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
             this.gameOverUI = gameOverUI;
+            this.saveManager = saveManager;
+            this.runStatistics = runStatistics;
         }
 
         private GameState currentState;
@@ -52,6 +57,14 @@ namespace ProjectB.Core
             }
         }
 
+        private void Update()
+        {
+            if (currentState == GameState.Playing && runStatistics != null)
+            {
+                runStatistics.UpdatePlayTime(Time.deltaTime);
+            }
+        }
+
         private void OnDestroy()
         {
             if (heroHealth != null)
@@ -68,10 +81,27 @@ namespace ProjectB.Core
             currentState = GameState.GameOver;
             Time.timeScale = 0f;
 
+            int wave = waveManager != null ? waveManager.CurrentWave : 1;
+            int coins = 0;
+
+            if (runStatistics != null && saveManager != null)
+            {
+                coins = runStatistics.CoinsEarned;
+                RunResult result = new RunResult
+                {
+                    waveReached = wave,
+                    enemiesKilled = runStatistics.EnemiesKilled,
+                    coinsEarned = coins,
+                    playTime = runStatistics.PlayTime,
+                    // Additional stats can be filled here later
+                };
+                
+                saveManager.RecordRunResult(result);
+            }
+
             if (gameOverUI != null)
             {
-                int wave = waveManager != null ? waveManager.CurrentWave : 1;
-                gameOverUI.Show(wave);
+                gameOverUI.Show(wave, coins);
             }
             else
             {

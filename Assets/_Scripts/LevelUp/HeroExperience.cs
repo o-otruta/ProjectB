@@ -46,6 +46,10 @@ namespace ProjectB.LevelUp
                 {
                     crystal.Magnetize(magnetSpeed);
                 }
+                else if (magnetResults[i].TryGetComponent<CoinPickup>(out var coin))
+                {
+                    coin.Magnetize(magnetSpeed);
+                }
             }
         }
 
