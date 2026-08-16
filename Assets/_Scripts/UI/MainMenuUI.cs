@@ -11,6 +11,7 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI coinsText;
         [SerializeField] private GameObject achievementsBadge;
         [SerializeField] private GameObject bonusBadge;
+        [SerializeField] private MetaUpgradeUI metaUpgradeUI;
 
         private SaveManager saveManager;
 
@@ -61,7 +62,15 @@ namespace ProjectB.UI
 
         public void OnUpgradesClicked()
         {
-            Debug.Log("[MainMenuUI] Upgrades clicked (Placeholder)");
+            Debug.Log("[MainMenuUI] Upgrades clicked");
+            if (metaUpgradeUI != null)
+            {
+                metaUpgradeUI.Show();
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuUI] MetaUpgradeUI reference is missing!");
+            }
         }
 
         public void OnAbilitiesClicked()

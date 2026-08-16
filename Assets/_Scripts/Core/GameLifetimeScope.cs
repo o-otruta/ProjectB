@@ -18,6 +18,7 @@ namespace ProjectB.Core
         {
             // Register Core Systems
             builder.Register<SaveManager>(Lifetime.Singleton);
+            builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
             builder.Register<RunStatistics>(Lifetime.Scoped);
 
             // Register Managers

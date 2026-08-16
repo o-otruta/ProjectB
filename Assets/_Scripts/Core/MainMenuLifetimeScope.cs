@@ -12,7 +12,9 @@ namespace ProjectB.Core
         {
             Debug.Log("[MainMenuLifetimeScope] Configure started");
             builder.Register<SaveManager>(Lifetime.Singleton);
+            builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
             builder.RegisterComponentInHierarchy<MainMenuUI>();
+            builder.RegisterComponentInHierarchy<MetaUpgradeUI>();
 
             builder.RegisterBuildCallback(resolver =>
             {
@@ -26,6 +28,13 @@ namespace ProjectB.Core
                 else
                 {
                     Debug.LogWarning("[MainMenuLifetimeScope] MainMenuUI NOT found in scene!");
+                }
+
+                var metaUi = FindAnyObjectByType<MetaUpgradeUI>();
+                if (metaUi != null)
+                {
+                    Debug.Log("[MainMenuLifetimeScope] Found MetaUpgradeUI, injecting!");
+                    resolver.Inject(metaUi);
                 }
             });
         }

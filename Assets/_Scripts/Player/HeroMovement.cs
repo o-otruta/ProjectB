@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectB.Data;
 using ProjectB.UI;
 using VContainer;
+using ProjectB.Meta;
 
 namespace ProjectB.Player
 {
@@ -15,22 +16,28 @@ namespace ProjectB.Player
         
         private HeroHealth hp;
         private Rigidbody rb;
+        private MetaUpgradeManager metaUpgradeManager;
+        private float moveSpeed;
 
         [Inject]
-        public void Construct(VirtualJoystick joystick)
+        public void Construct(VirtualJoystick joystick, MetaUpgradeManager metaManager)
         {
             this.joystick = joystick;
+            this.metaUpgradeManager = metaManager;
         }
 
         void Start()
         {
             hp = GetComponent<HeroHealth>();
             rb = GetComponent<Rigidbody>();
+            
+            float speedBonus = metaUpgradeManager != null ? metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.HeroSpeed) : 0f;
+            moveSpeed = (heroData != null ? heroData.moveSpeed : 5f) + speedBonus;
         }
 
         void FixedUpdate()
         {
-            if (heroData == null || joystick == null || rb == null) return;
+            if (joystick == null || rb == null) return;
             if (hp != null && hp.IsDead) 
             {
                 rb.linearVelocity = Vector3.zero;
@@ -43,7 +50,7 @@ namespace ProjectB.Player
             // Устанавливаем скорость напрямую. 
             // Это жестко контролирует движение и сбрасывает любые силы (импульсы),
             // которые враги пытаются передать герою при столкновении.
-            rb.linearVelocity = moveDir * heroData.moveSpeed;
+            rb.linearVelocity = moveDir * moveSpeed;
         }
 
         void Update()

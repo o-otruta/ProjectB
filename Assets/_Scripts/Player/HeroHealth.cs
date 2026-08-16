@@ -1,6 +1,8 @@
 using UnityEngine;
 using ProjectB.Combat;
 using ProjectB.Data;
+using VContainer;
+using ProjectB.Meta;
 
 namespace ProjectB.Player
 {
@@ -14,21 +16,30 @@ namespace ProjectB.Player
         private int currentHp;
         private int currentMaxHp;
         private bool isDead;
+        private MetaUpgradeManager metaUpgradeManager;
 
         public bool IsDead => isDead;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
 
+        [Inject]
+        public void Construct(MetaUpgradeManager metaManager)
+        {
+            this.metaUpgradeManager = metaManager;
+        }
+
         private void Start()
         {
+            float hpBonus = metaUpgradeManager != null ? metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.HeroHP) : 0f;
+            
             if (heroData != null)
             {
-                currentMaxHp = heroData.maxHp;
+                currentMaxHp = heroData.maxHp + Mathf.RoundToInt(hpBonus);
             }
             else
             {
                 Debug.LogWarning("HeroData is not assigned to HeroHealth!");
-                currentMaxHp = 100;
+                currentMaxHp = 100 + Mathf.RoundToInt(hpBonus);
             }
             currentHp = currentMaxHp;
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
