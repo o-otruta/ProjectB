@@ -34,12 +34,12 @@ namespace ProjectB.Player
             
             if (heroData != null)
             {
-                currentMaxHp = heroData.maxHp + Mathf.RoundToInt(hpBonus);
+                currentMaxHp = Mathf.RoundToInt(heroData.maxHp * (1f + hpBonus / 100f));
             }
             else
             {
                 Debug.LogWarning("HeroData is not assigned to HeroHealth!");
-                currentMaxHp = 100 + Mathf.RoundToInt(hpBonus);
+                currentMaxHp = Mathf.RoundToInt(100 * (1f + hpBonus / 100f));
             }
             currentHp = currentMaxHp;
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);

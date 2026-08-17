@@ -15,13 +15,15 @@ namespace ProjectB.Combat
         private IObjectPool<Projectile> projectilePool;
         private float nextFireTime;
         private Collider[] overlapResults = new Collider[200]; // Буфер для поиска врагов
+        private float damageMultiplier;
 
-        public WeaponController(WeaponData data, LayerMask enemyLayer, Transform ownerTransform, Transform firePoint, Transform rootContainer)
+        public WeaponController(WeaponData data, LayerMask enemyLayer, Transform ownerTransform, Transform firePoint, Transform rootContainer, float damageMultiplier = 1f)
         {
             this.weaponData = data;
             this.enemyLayer = enemyLayer;
             this.ownerTransform = ownerTransform;
             this.firePoint = firePoint;
+            this.damageMultiplier = damageMultiplier;
 
             projectileContainer = new GameObject($"ProjectileContainer_{data.name}").transform;
             projectileContainer.SetParent(rootContainer);
@@ -95,7 +97,7 @@ namespace ProjectB.Combat
             if (p == null) return;
             
             p.transform.position = firePoint != null ? firePoint.position : (ownerTransform != null ? ownerTransform.position : Vector3.zero);
-            p.Initialize(weaponData, target, projectilePool);
+            p.Initialize(weaponData, target, projectilePool, damageMultiplier);
         }
 
         public void DrawGizmos()

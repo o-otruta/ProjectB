@@ -59,16 +59,18 @@ namespace ProjectB.Meta
 
         public bool CanAfford(string id)
         {
-            return saveManager.Data.coins >= GetUpgradeCost(id);
+            int cost = GetUpgradeCost(id);
+            if (cost < 0) return false;
+            return saveManager.Data.coins >= cost;
         }
 
         public int GetUpgradeCost(string id)
         {
             var data = GetUpgradeData(id);
-            if (data == null) return 0;
+            if (data == null) return -1;
 
             int currentLevel = GetCurrentLevel(id);
-            if (currentLevel >= data.maxLevel) return 0; // Макс уровень
+            if (currentLevel >= data.maxLevel) return -1; // Макс уровень
 
             // cost = baseCost * (multiplier ^ currentLevel)
             float rawCost = data.baseCost * Mathf.Pow(data.costMultiplier, currentLevel);

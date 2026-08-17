@@ -82,5 +82,12 @@ namespace ProjectB.UI
                 Debug.Log($"[UpgradeItemUI] Purchase failed for {upgradeData.id}. Not enough coins or max level.");
             }
         }
+        private void OnDestroy()
+        {
+            if (buyButton != null)
+            {
+                buyButton.onClick.RemoveListener(OnBuyClicked);
+            }
+        }
     }
 }

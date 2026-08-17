@@ -11,8 +11,6 @@ namespace ProjectB.Core
         protected override void Configure(IContainerBuilder builder)
         {
             Debug.Log("[MainMenuLifetimeScope] Configure started");
-            builder.Register<SaveManager>(Lifetime.Singleton);
-            builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
             builder.RegisterComponentInHierarchy<MainMenuUI>();
             builder.RegisterComponentInHierarchy<MetaUpgradeUI>();
 

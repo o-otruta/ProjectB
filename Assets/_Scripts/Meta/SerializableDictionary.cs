@@ -9,19 +9,37 @@ namespace ProjectB.Meta
     /// Обертка для сериализации словаря в JSON средствами Unity (JsonUtility).
     /// </summary>
     [Serializable]
-    public class SerializableDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public class SerializableDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, ISerializationCallbackReceiver
     {
         [SerializeField] private List<TKey> keys = new List<TKey>();
         [SerializeField] private List<TValue> values = new List<TValue>();
 
+        private Dictionary<TKey, int> indexCache = new Dictionary<TKey, int>();
+
         public int Count => keys.Count;
+
+        public void OnBeforeSerialize()
+        {
+            // Do nothing, lists are already synced during runtime operations
+        }
+
+        public void OnAfterDeserialize()
+        {
+            indexCache.Clear();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                if (!indexCache.ContainsKey(keys[i]))
+                {
+                    indexCache.Add(keys[i], i);
+                }
+            }
+        }
 
         public TValue this[TKey key]
         {
             get
             {
-                int index = keys.IndexOf(key);
-                if (index >= 0)
+                if (indexCache.TryGetValue(key, out int index))
                 {
                     return values[index];
                 }
@@ -29,8 +47,7 @@ namespace ProjectB.Meta
             }
             set
             {
-                int index = keys.IndexOf(key);
-                if (index >= 0)
+                if (indexCache.TryGetValue(key, out int index))
                 {
                     values[index] = value;
                 }
@@ -43,23 +60,23 @@ namespace ProjectB.Meta
 
         public void Add(TKey key, TValue value)
         {
-            if (ContainsKey(key))
+            if (indexCache.ContainsKey(key))
             {
                 throw new ArgumentException($"An element with the same key '{key}' already exists.");
             }
             keys.Add(key);
             values.Add(value);
+            indexCache.Add(key, keys.Count - 1);
         }
 
         public bool ContainsKey(TKey key)
         {
-            return keys.Contains(key);
+            return indexCache.ContainsKey(key);
         }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            int index = keys.IndexOf(key);
-            if (index >= 0)
+            if (indexCache.TryGetValue(key, out int index))
             {
                 value = values[index];
                 return true;
@@ -70,11 +87,12 @@ namespace ProjectB.Meta
 
         public bool Remove(TKey key)
         {
-            int index = keys.IndexOf(key);
-            if (index >= 0)
+            if (indexCache.TryGetValue(key, out int index))
             {
                 keys.RemoveAt(index);
                 values.RemoveAt(index);
+                // Rebuild cache because indices have shifted
+                OnAfterDeserialize();
                 return true;
             }
             return false;
@@ -84,6 +102,7 @@ namespace ProjectB.Meta
         {
             keys.Clear();
             values.Clear();
+            indexCache.Clear();
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

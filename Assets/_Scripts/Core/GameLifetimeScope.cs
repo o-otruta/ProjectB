@@ -17,8 +17,6 @@ namespace ProjectB.Core
         protected override void Configure(IContainerBuilder builder)
         {
             // Register Core Systems
-            builder.Register<SaveManager>(Lifetime.Singleton);
-            builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
             builder.Register<RunStatistics>(Lifetime.Scoped);
 
             // Register Managers

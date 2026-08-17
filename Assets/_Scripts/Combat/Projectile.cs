@@ -10,13 +10,15 @@ namespace ProjectB.Combat
         private Transform target;
         private WeaponData data;
         private bool isReturned;
+        private float damageMultiplier = 1f;
 
-        public void Initialize(WeaponData weaponData, Transform targetTransform, IObjectPool<Projectile> projectilePool)
+        public void Initialize(WeaponData weaponData, Transform targetTransform, IObjectPool<Projectile> projectilePool, float damageMultiplier = 1f)
         {
             data = weaponData;
             target = targetTransform;
             pool = projectilePool;
             isReturned = false;
+            this.damageMultiplier = damageMultiplier;
         }
 
         private void Update()
@@ -47,7 +49,8 @@ namespace ProjectB.Combat
             {
                 if (!damageable.IsDead)
                 {
-                    damageable.TakeDamage(data.damage);
+                    int finalDamage = Mathf.RoundToInt(data.damage * damageMultiplier);
+                    damageable.TakeDamage(finalDamage);
                 }
             }
             ReturnToPool();

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using VContainer;
+using ProjectB.Meta;
 
 namespace ProjectB.Abilities
 {
@@ -11,8 +13,25 @@ namespace ProjectB.Abilities
         private List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
         private List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
 
+        private MetaUpgradeManager metaUpgradeManager;
+        private float abilityDamageBonus = 0f;
+
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
+
+        [Inject]
+        public void Construct(MetaUpgradeManager metaManager)
+        {
+            metaUpgradeManager = metaManager;
+        }
+
+        private void Start()
+        {
+            if (metaUpgradeManager != null)
+            {
+                abilityDamageBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.AbilityDamage);
+            }
+        }
 
         public void AddAbility(AbilityData data)
         {
@@ -24,6 +43,13 @@ namespace ProjectB.Abilities
                     if (ability != null)
                     {
                         ability.Initialize(data);
+                        
+                        if (abilityDamageBonus > 0f && data is ActiveAbilityData activeData)
+                        {
+                            float bonusFlat = activeData.baseDamage * (abilityDamageBonus / 100f);
+                            ability.ApplyModifier(ModifierType.Damage, bonusFlat);
+                        }
+                        
                         activeAbilities.Add(ability);
                     }
                 }

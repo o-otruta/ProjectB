@@ -32,7 +32,8 @@ namespace ProjectB.Player
             rb = GetComponent<Rigidbody>();
             
             float speedBonus = metaUpgradeManager != null ? metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.HeroSpeed) : 0f;
-            moveSpeed = (heroData != null ? heroData.moveSpeed : 5f) + speedBonus;
+            float baseSpeed = heroData != null ? heroData.moveSpeed : 5f;
+            moveSpeed = baseSpeed * (1f + speedBonus / 100f);
         }
 
         void FixedUpdate()

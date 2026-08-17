@@ -1,10 +1,20 @@
 using System;
 using UnityEngine;
+using VContainer;
+using ProjectB.Meta;
 
 namespace ProjectB.LevelUp
 {
     public class HeroExperience : MonoBehaviour
     {
+        private MetaUpgradeManager metaUpgradeManager;
+        private float xpMultiplier = 1f;
+
+        [Inject]
+        public void Construct(MetaUpgradeManager metaManager)
+        {
+            this.metaUpgradeManager = metaManager;
+        }
         [Header("Settings")]
         [Tooltip("Базовое значение XP для 1 уровня")]
         [SerializeField] private int baseXP = 10;
@@ -31,6 +41,18 @@ namespace ProjectB.LevelUp
 
         private void Start()
         {
+            if (metaUpgradeManager != null)
+            {
+                float magnetBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.MagnetRadius);
+                MagnetRadius += magnetBonus;
+
+                float startLevelBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.StartLevel);
+                CurrentLevel = 1 + Mathf.RoundToInt(startLevelBonus);
+
+                float xpBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.XPBonus);
+                xpMultiplier = 1f + xpBonusPct / 100f;
+            }
+
             CalculateXPToNextLevel();
             OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
         }
@@ -55,7 +77,7 @@ namespace ProjectB.LevelUp
 
         public void AddExperience(int amount)
         {
-            CurrentXP += amount;
+            CurrentXP += Mathf.RoundToInt(amount * xpMultiplier);
             
             while (CurrentXP >= XPToNextLevel)
             {

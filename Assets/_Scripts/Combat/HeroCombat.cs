@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Data.Combat;
 using VContainer;
+using ProjectB.Meta;
 
 namespace ProjectB.Combat
 {
@@ -14,16 +15,25 @@ namespace ProjectB.Combat
         private System.Collections.Generic.List<WeaponController> activeWeapons = new System.Collections.Generic.List<WeaponController>();
         private ProjectB.Player.HeroHealth hp;
         private Transform projectilesRoot;
+        private MetaUpgradeManager metaUpgradeManager;
+        private float heroDamageMultiplier = 1f;
 
         [Inject]
-        public void Construct(ProjectB.Player.HeroHealth heroHealth)
+        public void Construct(ProjectB.Player.HeroHealth heroHealth, MetaUpgradeManager metaManager)
         {
             hp = heroHealth;
+            metaUpgradeManager = metaManager;
         }
 
         private void Start()
         {
             projectilesRoot = new GameObject("ProjectilesRoot").transform;
+            
+            if (metaUpgradeManager != null)
+            {
+                float damageBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.HeroDamage);
+                heroDamageMultiplier = 1f + damageBonusPct / 100f;
+            }
             
             // Инициализация стартового оружия
             foreach (var weapon in startingWeapons)
@@ -35,7 +45,7 @@ namespace ProjectB.Combat
         public void AddWeapon(WeaponData data)
         {
             if (data == null) return;
-            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot);
+            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, heroDamageMultiplier);
             activeWeapons.Add(controller);
         }
 
