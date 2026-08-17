@@ -21,16 +21,24 @@ namespace ProjectB.UI
         {
             this.achievementManager = achievementManager;
             this.saveManager = saveManager;
+            RefreshUI();
         }
 
         private void OnEnable()
         {
-            RefreshUI();
+            if (contentContainer != null)
+            {
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(contentContainer.GetComponent<RectTransform>());
+            }
         }
 
         public void RefreshUI()
         {
-            if (achievementManager == null || saveManager == null || itemPrefab == null || contentContainer == null) return;
+            if (achievementManager == null || saveManager == null || itemPrefab == null || contentContainer == null)
+            {
+                Debug.LogWarning($"[AchievementScreenUI] Cannot refresh. achievementManager: {achievementManager != null}, saveManager: {saveManager != null}, itemPrefab: {itemPrefab != null}, contentContainer: {contentContainer != null}");
+                return;
+            }
 
             foreach (var item in spawnedItems)
             {

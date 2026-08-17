@@ -12,6 +12,7 @@ namespace ProjectB.UI
         [SerializeField] private GameObject achievementsBadge;
         [SerializeField] private GameObject bonusBadge;
         [SerializeField] private MetaUpgradeUI metaUpgradeUI;
+        [SerializeField] private AchievementScreenUI achievementScreenUI;
 
         private SaveManager saveManager;
 
@@ -80,7 +81,11 @@ namespace ProjectB.UI
 
         public void OnAchievementsClicked()
         {
-            Debug.Log("[MainMenuUI] Achievements clicked (Placeholder)");
+            Debug.Log("[MainMenuUI] Achievements clicked");
+            if (achievementScreenUI != null)
+            {
+                achievementScreenUI.gameObject.SetActive(true);
+            }
         }
 
         public void OnBonusClicked()
