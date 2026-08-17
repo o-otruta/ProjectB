@@ -9,26 +9,45 @@
 - [x] Настроить ориентацию: Portrait only (Player Settings → Resolution → Default Orientation)
 - [x] Настроить целевую платформу: Android, API 34+
 - [x] Настроить Quality Settings под мобилку (отключить лишнее, 60 FPS target)
+- [x] Установить New Input System
+- [x] Установить и настроить VContainer (DI Framework)
 - [x] Создать структуру папок:
   ```
   Assets/
   ├── _Scripts/
-  │   ├── Core/          (GameManager, GameState)
-  │   ├── Player/        (движение, атака, здоровье)
-  │   ├── Abilities/       (активные/пассивные способности, модификаторы)
-  │   ├── Enemies/       (враги, спавнер, AI)
-  │   ├── Arena/         (генерация арены)
-  │   ├── LevelUp/       (карточки, UI выбора)
-  │   ├── Meta/          (мета-апгрейды, ачивки, сохранения)
-  │   ├── UI/            (HUD, меню, экраны)
+  │   ├── Abilities/     (активные/пассивные способности)
+  │   │   ├── Active/
+  │   │   └── Data/
   │   ├── Ads/           (AdMob, rewarded)
-  │   └── Data/          (ScriptableObjects, конфиги)
+  │   ├── Arena/         (генерация арены)
+  │   ├── Combat/        (боевая система)
+  │   ├── Core/          (GameManager, DI Scope)
+  │   ├── Data/          (общие конфиги)
+  │   │   ├── Combat/
+  │   │   └── Enemies/
+  │   ├── Editor/        (инструменты разработчика)
+  │   │   ├── Debug/
+  │   │   ├── Generators/
+  │   │   └── SetupTools/
+  │   ├── Enemies/       (враги, AI)
+  │   ├── LevelUp/       (система прокачки в бою)
+  │   │   └── Cards/
+  │   ├── Meta/          (мета-прогрессия, сохранения)
+  │   ├── Player/        (движение, инпут)
+  │   └── UI/            (HUD, окна)
   ├── _Prefabs/
+  │   ├── Core/
+  │   └── UI/
   ├── _ScriptableObjects/
   ├── _Scenes/
   ├── _Materials/
   ├── _VoxelModels/
-  └── _UI/
+  │   └── HeroTest/
+  ├── _UI/
+  ├── Resources/         (VContainer конфиг и ресурсы)
+  │   ├── Achievements/
+  │   └── MetaUpgrades/
+  └── Settings/          (URP, Input System)
   ```
 - [x] Создать основные сцены: `MainMenu`, `Gameplay`, `MetaScreen`
 - [x] Настроить Git (`.gitignore` для Unity)
@@ -194,20 +213,20 @@
 - [x] UI экран прокачки: список апгрейдов с текущим уровнем, стоимостью, кнопкой «Купить»
 
 ### 3.3 Система ачивок (разблокировка контента)
-- [ ] Создать ScriptableObject `AchievementData` (имя, описание, иконка, тип условия, целевое значение, награда)
-- [ ] Создать `AchievementManager` — отслеживает прогресс, проверяет условия, выдаёт награды
-- [ ] Типы условий (enum `AchievementConditionType`):
-  - [ ] `ReachWave` — дойти до волны N
-  - [ ] `TotalKills` — убить N врагов (кумулятивно)
-  - [ ] `DefeatBoss` — победить конкретного босса
-  - [ ] `MaxAbilityLevel` — прокачать любую способность до макса
-  - [ ] `CollectAbilitiesInRun` — собрать N разных способностей за 1 забег
-  - [ ] `NoDamageWaves` — пройти N волн без урона
-- [ ] Типы наград (enum `AchievementRewardType`):
-  - [ ] `UnlockAbility` — добавить способность в пул карточек
-  - [ ] `UnlockHero` — разблокировать героя
-  - [ ] `GiveCoins` — бонусные монеты
-- [ ] Персистентное хранение прогресса ачивок в `SaveData`
+- [x] Создать ScriptableObject `AchievementData` (имя, описание, иконка, тип условия, целевое значение, награда)
+- [x] Создать `AchievementManager` — отслеживает прогресс, проверяет условия, выдаёт награды
+- [x] Типы условий (enum `AchievementConditionType`):
+  - [x] `ReachWave` — дойти до волны N
+  - [x] `TotalKills` — убить N врагов (кумулятивно)
+  - [x] `DefeatBoss` — победить конкретного босса
+  - [x] `MaxAbilityLevel` — прокачать любую способность до макса
+  - [x] `CollectAbilitiesInRun` — собрать N разных способностей за 1 забег
+  - [x] `NoDamageWaves` — пройти N волн без урона
+- [x] Типы наград (enum `AchievementRewardType`):
+  - [x] `UnlockAbility` — добавить способность в пул карточек
+  - [x] `UnlockHero` — разблокировать героя
+  - [x] `GiveCoins` — бонусные монеты
+- [x] Персистентное хранение прогресса ачивок в `SaveData`
 - [ ] Нотификация при выполнении ачивки (popup на экране результатов или в забеге)
 - [ ] Реализовать 10–15 ачивок для MVP
 

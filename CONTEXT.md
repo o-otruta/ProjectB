@@ -18,7 +18,9 @@
 | Движок | Unity 6.5 |
 | Рендер | URP (Universal Render Pipeline) |
 | Язык | C# |
-| UI | Unity UI Toolkit или TextMeshPro + Canvas |
+| Архитектура | DI Framework (VContainer) |
+| UI | TextMeshPro + Canvas (uGUI) |
+| Управление | Unity New Input System |
 | Ассеты | MagicaVoxel → .vox → Unity (импортер) |
 | Сохранения | PlayerPrefs (MVP) → JSON/Binary (прод) |
 | Аналитика | GameAnalytics (бесплатно) |

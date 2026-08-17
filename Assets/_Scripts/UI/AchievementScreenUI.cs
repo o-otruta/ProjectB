@@ -10,6 +10,7 @@ namespace ProjectB.UI
     {
         [SerializeField] private Transform contentContainer;
         [SerializeField] private AchievementItemUI itemPrefab;
+        [SerializeField] private AchievementRewardPopupUI rewardPopup;
         
         private AchievementManager achievementManager;
         private SaveManager saveManager;
@@ -42,7 +43,11 @@ namespace ProjectB.UI
 
             foreach (var item in spawnedItems)
             {
-                if (item != null) Destroy(item.gameObject);
+                if (item != null)
+                {
+                    item.OnItemClicked -= HandleItemClicked;
+                    Destroy(item.gameObject);
+                }
             }
             spawnedItems.Clear();
 
@@ -57,7 +62,16 @@ namespace ProjectB.UI
                 saveManager.Data.achievementProgress.TryGetValue(data.id, out progress);
                 
                 item.Setup(data, progress, isCompleted);
+                item.OnItemClicked += HandleItemClicked;
                 spawnedItems.Add(item);
+            }
+        }
+
+        private void HandleItemClicked(AchievementData data)
+        {
+            if (rewardPopup != null && saveManager != null)
+            {
+                rewardPopup.ShowReward(data);
             }
         }
     }
