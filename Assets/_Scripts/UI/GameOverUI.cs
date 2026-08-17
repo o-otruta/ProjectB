@@ -11,10 +11,13 @@ namespace ProjectB.UI
         [SerializeField] private TMPro.TextMeshProUGUI coinsText;
         private IObjectResolver resolver;
 
+        private ProjectB.Meta.AchievementManager achievementManager;
+
         [Inject]
-        public void Construct(IObjectResolver resolver)
+        public void Construct(IObjectResolver resolver, ProjectB.Meta.AchievementManager achievementManager)
         {
             this.resolver = resolver;
+            this.achievementManager = achievementManager;
         }
 
         private void Awake()
@@ -40,6 +43,12 @@ namespace ProjectB.UI
             if (coinsText != null)
             {
                 coinsText.text = $"Coins Earned: {coinsEarned}";
+            }
+            
+            if (achievementManager != null && achievementManager.unlockedThisRun.Count > 0)
+            {
+                Debug.Log($"[GameOverUI] Unlocked {achievementManager.unlockedThisRun.Count} achievements this run!");
+                // TODO: Instantiate AchievementItemUI for each unlocked achievement to display them
             }
         }
 

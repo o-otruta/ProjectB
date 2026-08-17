@@ -16,6 +16,7 @@ namespace ProjectB.Enemies
         private ProjectB.LevelUp.XpManager xpManager;
         private ProjectB.LevelUp.CoinManager coinManager;
         private ProjectB.Core.RunStatistics runStatistics;
+        private ProjectB.Meta.AchievementManager achievementManager;
 
         private System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
         private int currentWave = 1;
@@ -24,7 +25,7 @@ namespace ProjectB.Enemies
         private bool isSpawning = false;
 
         [Inject]
-        public void Construct(HeroHealth heroHealth, ProjectB.LevelUp.XpManager xpManager, ProjectB.LevelUp.CoinManager coinManager, ProjectB.Core.RunStatistics runStatistics)
+        public void Construct(HeroHealth heroHealth, ProjectB.LevelUp.XpManager xpManager, ProjectB.LevelUp.CoinManager coinManager, ProjectB.Core.RunStatistics runStatistics, ProjectB.Meta.AchievementManager achievementManager)
         {
             if (heroHealth != null)
             {
@@ -33,6 +34,7 @@ namespace ProjectB.Enemies
             this.xpManager = xpManager;
             this.coinManager = coinManager;
             this.runStatistics = runStatistics;
+            this.achievementManager = achievementManager;
         }
 
         private void Start()
@@ -150,6 +152,7 @@ namespace ProjectB.Enemies
             {
                 currentWave++;
                 Debug.Log($"[WaveManager] Wave {currentWave - 1} completed!");
+                achievementManager?.OnWaveReached(currentWave);
                 StartCoroutine(StartWaveDelay());
             }
         }

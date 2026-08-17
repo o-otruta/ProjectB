@@ -17,6 +17,7 @@ namespace ProjectB.Core
         {
             builder.Register<SaveManager>(Lifetime.Singleton);
             builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
+            builder.Register<AchievementManager>(Lifetime.Singleton);
         }
     }
 }

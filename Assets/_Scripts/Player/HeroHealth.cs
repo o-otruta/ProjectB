@@ -69,6 +69,17 @@ namespace ProjectB.Player
             OnDied?.Invoke();
         }
 
+        [ContextMenu("Debug Kill")]
+        public void DebugKill()
+        {
+            if (!isDead)
+            {
+                currentHp = 0;
+                OnHealthChanged?.Invoke(currentHp, currentMaxHp);
+                Die();
+            }
+        }
+
         public void Heal(int amount)
         {
             if (isDead) return;

@@ -24,15 +24,17 @@ namespace ProjectB.Core
         private GameOverUI gameOverUI;
         private SaveManager saveManager;
         private RunStatistics runStatistics;
+        private AchievementManager achievementManager;
         
         [Inject]
-        public void Construct(HeroHealth heroHealth, WaveManager waveManager, GameOverUI gameOverUI, SaveManager saveManager, RunStatistics runStatistics)
+        public void Construct(HeroHealth heroHealth, WaveManager waveManager, GameOverUI gameOverUI, SaveManager saveManager, RunStatistics runStatistics, AchievementManager achievementManager)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
             this.gameOverUI = gameOverUI;
             this.saveManager = saveManager;
             this.runStatistics = runStatistics;
+            this.achievementManager = achievementManager;
         }
 
         private GameState currentState;
@@ -50,6 +52,8 @@ namespace ProjectB.Core
         {
             currentState = GameState.Playing;
             Time.timeScale = 1f;
+
+            achievementManager?.ClearRunUnlocks();
 
             if (heroHealth != null)
             {
