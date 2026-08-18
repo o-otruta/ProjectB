@@ -108,3 +108,4 @@ InitTestScene*.unity*
 
 # Backups
 *_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
