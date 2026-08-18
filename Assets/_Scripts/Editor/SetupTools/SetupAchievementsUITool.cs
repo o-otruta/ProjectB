@@ -24,15 +24,23 @@ namespace ProjectB.EditorScripts
             if (existingPanel != null)
             {
                 panelGo = existingPanel.gameObject;
+                panelGo.transform.SetAsFirstSibling();
+                var panelRect = panelGo.GetComponent<RectTransform>();
+                panelRect.anchorMin = Vector2.zero;
+                panelRect.anchorMax = Vector2.one;
+                panelRect.offsetMin = new Vector2(0, 200);
+                panelRect.offsetMax = new Vector2(0, -150);
             }
             else
             {
                 panelGo = new GameObject("AchievementsPanel");
                 panelGo.transform.SetParent(canvas.transform, false);
+                panelGo.transform.SetAsFirstSibling();
                 var panelRect = panelGo.AddComponent<RectTransform>();
                 panelRect.anchorMin = Vector2.zero;
                 panelRect.anchorMax = Vector2.one;
-                panelRect.sizeDelta = Vector2.zero;
+                panelRect.offsetMin = new Vector2(0, 200);
+                panelRect.offsetMax = new Vector2(0, -150);
                 
                 var panelImg = panelGo.AddComponent<Image>();
                 panelImg.color = new Color(0, 0, 0, 0.95f);

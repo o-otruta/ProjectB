@@ -13,6 +13,8 @@ namespace ProjectB.UI
         [SerializeField] private GameObject bonusBadge;
         [SerializeField] private MetaUpgradeUI metaUpgradeUI;
         [SerializeField] private AchievementScreenUI achievementScreenUI;
+        [SerializeField] private BottomTabUI[] tabs;
+        [SerializeField] private GameObject playScreenPanel;
 
         private SaveManager saveManager;
 
@@ -31,6 +33,9 @@ namespace ProjectB.UI
         private void Start()
         {
             UpdateBadges();
+            
+            // Set default tab on startup
+            OnPlayClicked();
         }
 
         private void OnDestroy()
@@ -56,14 +61,44 @@ namespace ProjectB.UI
             if (bonusBadge != null) bonusBadge.SetActive(false);
         }
 
+        private void CloseAllPanels()
+        {
+            if (achievementScreenUI != null) achievementScreenUI.gameObject.SetActive(false);
+            if (metaUpgradeUI != null) metaUpgradeUI.Hide();
+            if (playScreenPanel != null) playScreenPanel.SetActive(false);
+        }
+
+        private void SelectTab(int index)
+        {
+            if (tabs == null) return;
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                if (tabs[i] != null) tabs[i].SetActiveState(i == index);
+            }
+        }
+
+        public void StartGame()
+        {
+            Debug.Log("[MainMenuUI] Start Game clicked!");
+            SceneManager.LoadScene("Gameplay");
+        }
+
         public void OnPlayClicked()
         {
-            SceneManager.LoadScene("Gameplay");
+            Debug.Log("[MainMenuUI] Play tab clicked");
+            CloseAllPanels();
+            SelectTab(2);
+            if (playScreenPanel != null)
+            {
+                playScreenPanel.SetActive(true);
+            }
         }
 
         public void OnUpgradesClicked()
         {
             Debug.Log("[MainMenuUI] Upgrades clicked");
+            CloseAllPanels();
+            SelectTab(0);
             if (metaUpgradeUI != null)
             {
                 metaUpgradeUI.Show();
@@ -77,11 +112,15 @@ namespace ProjectB.UI
         public void OnAbilitiesClicked()
         {
             Debug.Log("[MainMenuUI] Abilities clicked (Placeholder)");
+            CloseAllPanels();
+            SelectTab(1);
         }
 
         public void OnAchievementsClicked()
         {
             Debug.Log("[MainMenuUI] Achievements clicked");
+            CloseAllPanels();
+            SelectTab(3);
             if (achievementScreenUI != null)
             {
                 achievementScreenUI.gameObject.SetActive(true);
@@ -91,6 +130,8 @@ namespace ProjectB.UI
         public void OnBonusClicked()
         {
             Debug.Log("[MainMenuUI] Bonus clicked (Placeholder)");
+            CloseAllPanels();
+            SelectTab(4);
         }
 
         public void OnSettingsClicked()
