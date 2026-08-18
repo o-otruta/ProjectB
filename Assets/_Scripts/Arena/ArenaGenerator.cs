@@ -61,7 +61,13 @@ namespace ProjectB.Arena
             else
             {
                 var renderer = floor.GetComponent<MeshRenderer>();
-                if (renderer != null) renderer.material.color = new Color(0.2f, 0.5f, 0.2f);
+                if (renderer != null) 
+                {
+                    // Явно создаем URP материал, так как стандартный (от CreatePrimitive) будет фиолетовым
+                    Material urpMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                    urpMaterial.color = new Color(0.2f, 0.5f, 0.2f);
+                    renderer.material = urpMaterial;
+                }
             }
         }
 
@@ -97,10 +103,23 @@ namespace ProjectB.Arena
                     renderer.enabled = false;
                 }
             }
-            else if (_wallMaterial != null)
+            else
             {
                 var renderer = wall.GetComponent<MeshRenderer>();
-                if (renderer != null) renderer.material = _wallMaterial;
+                if (renderer != null)
+                {
+                    if (_wallMaterial != null)
+                    {
+                        renderer.material = _wallMaterial;
+                    }
+                    else
+                    {
+                        // Фолбэк для стен, чтобы они не были фиолетовыми в URP
+                        Material urpMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                        urpMaterial.color = Color.gray;
+                        renderer.material = urpMaterial;
+                    }
+                }
             }
         }
 
