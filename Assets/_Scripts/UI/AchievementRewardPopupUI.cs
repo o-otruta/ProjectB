@@ -19,7 +19,6 @@ namespace ProjectB.UI
             {
                 closeButton.onClick.AddListener(Hide);
             }
-            Hide();
         }
 
         private void OnDestroy()

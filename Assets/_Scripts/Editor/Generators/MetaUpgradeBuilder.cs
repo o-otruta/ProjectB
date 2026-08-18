@@ -62,7 +62,6 @@ namespace ProjectB.Editor
 
         private static void CreateUI()
         {
-            // Убедимся, что открыта правильная сцена
             var scene = EditorSceneManager.GetActiveScene();
             if (scene.name != "MainMenu")
             {
@@ -71,124 +70,146 @@ namespace ProjectB.Editor
             }
 
             var canvas = Object.FindAnyObjectByType<Canvas>();
-            if (canvas == null)
-            {
-                Debug.LogError("No Canvas found in the scene.");
-                return;
-            }
+            if (canvas == null) return;
 
-            // Ищем MainMenuUI
             MainMenuUI mainMenuUI = Object.FindAnyObjectByType<MainMenuUI>();
-            if (mainMenuUI == null)
-            {
-                Debug.LogError("No MainMenuUI found in the scene.");
-                return;
-            }
+            if (mainMenuUI == null) return;
 
-            // 1. Создаем панель MetaUpgradeUI
-            GameObject panelObj = new GameObject("MetaUpgradeUI", typeof(RectTransform));
+            // 1. Создаем панель UpgradesPanel
+            GameObject panelObj = new GameObject("UpgradesPanel", typeof(RectTransform));
             panelObj.transform.SetParent(canvas.transform, false);
             
             RectTransform panelRect = panelObj.GetComponent<RectTransform>();
             panelRect.anchorMin = Vector2.zero;
             panelRect.anchorMax = Vector2.one;
-            panelRect.offsetMin = Vector2.zero;
-            panelRect.offsetMax = Vector2.zero;
+            panelRect.offsetMin = new Vector2(0, 200);
+            panelRect.offsetMax = new Vector2(0, -150);
 
-            // Добавляем фон
-            Image bg = panelObj.AddComponent<Image>();
-            bg.color = new Color(0, 0, 0, 0.9f);
-
-            // Добавляем заголовок
-            GameObject titleObj = new GameObject("Title", typeof(RectTransform));
+            // Заголовок
+            GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
             titleObj.transform.SetParent(panelObj.transform, false);
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
             titleRect.anchorMin = new Vector2(0, 1);
             titleRect.anchorMax = new Vector2(1, 1);
-            titleRect.offsetMin = new Vector2(0, -100);
+            titleRect.offsetMin = new Vector2(0, -150);
             titleRect.offsetMax = new Vector2(0, 0);
             
             TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
             titleText.text = "UPGRADES";
-            titleText.fontSize = 60;
+            titleText.fontSize = 72;
+            titleText.fontStyle = FontStyles.Bold;
             titleText.alignment = TextAlignmentOptions.Center;
 
-            // Кнопка закрытия
-            GameObject closeBtnObj = new GameObject("CloseButton", typeof(RectTransform));
-            closeBtnObj.transform.SetParent(panelObj.transform, false);
-            RectTransform closeRect = closeBtnObj.GetComponent<RectTransform>();
-            closeRect.anchorMin = new Vector2(1, 1);
-            closeRect.anchorMax = new Vector2(1, 1);
-            closeRect.sizeDelta = new Vector2(80, 80);
-            closeRect.anchoredPosition = new Vector2(-50, -50);
-            Image closeBg = closeBtnObj.AddComponent<Image>();
-            closeBg.color = Color.red;
-            Button closeBtn = closeBtnObj.AddComponent<Button>();
+            // Scroll View
+            GameObject scrollViewObj = new GameObject("Scroll View", typeof(RectTransform));
+            scrollViewObj.transform.SetParent(panelObj.transform, false);
+            RectTransform scrollRect = scrollViewObj.GetComponent<RectTransform>();
+            scrollRect.anchorMin = Vector2.zero;
+            scrollRect.anchorMax = Vector2.one;
+            scrollRect.offsetMin = new Vector2(50, 50);
+            scrollRect.offsetMax = new Vector2(-50, -150);
 
-            // Контейнер для списка
-            GameObject listContainerObj = new GameObject("ListContainer", typeof(RectTransform));
-            listContainerObj.transform.SetParent(panelObj.transform, false);
+            GameObject viewportObj = new GameObject("Viewport", typeof(RectTransform));
+            viewportObj.transform.SetParent(scrollViewObj.transform, false);
+            RectTransform viewportRect = viewportObj.GetComponent<RectTransform>();
+            viewportRect.anchorMin = Vector2.zero; viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = viewportRect.offsetMax = Vector2.zero;
+            viewportObj.AddComponent<Image>().color = new Color(1, 1, 1, 0.1f);
+            viewportObj.AddComponent<Mask>().showMaskGraphic = false;
+
+            // Контейнер Content
+            GameObject listContainerObj = new GameObject("Content", typeof(RectTransform));
+            listContainerObj.transform.SetParent(viewportObj.transform, false);
             RectTransform listRect = listContainerObj.GetComponent<RectTransform>();
-            listRect.anchorMin = new Vector2(0, 0);
+            listRect.anchorMin = new Vector2(0, 1);
             listRect.anchorMax = new Vector2(1, 1);
-            listRect.offsetMin = new Vector2(50, 50);
-            listRect.offsetMax = new Vector2(-50, -100);
+            listRect.pivot = new Vector2(0.5f, 1);
+            listRect.sizeDelta = new Vector2(0, 0);
 
             VerticalLayoutGroup vlg = listContainerObj.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 10;
+            vlg.padding = new RectOffset(20, 20, 20, 20);
+            vlg.spacing = 20;
             vlg.childControlHeight = true;
             vlg.childControlWidth = true;
             vlg.childForceExpandHeight = false;
-            listContainerObj.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            vlg.childForceExpandWidth = true;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            
+            var csf = listContainerObj.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            ScrollRect sr = scrollViewObj.AddComponent<ScrollRect>();
+            sr.content = listRect;
+            sr.viewport = viewportRect;
+            sr.horizontal = false;
+            sr.vertical = true;
+            sr.movementType = ScrollRect.MovementType.Elastic;
 
             // 2. Создаем префаб карточки
-            string prefabPath = "Assets/_Prefabs/UI/UpgradeItemUI.prefab";
+            string prefabPath = "Assets/_Prefabs/UI/UpgradeItem.prefab";
             if (!AssetDatabase.IsValidFolder("Assets/_Prefabs")) AssetDatabase.CreateFolder("Assets", "_Prefabs");
             if (!AssetDatabase.IsValidFolder("Assets/_Prefabs/UI")) AssetDatabase.CreateFolder("Assets/_Prefabs", "UI");
 
             GameObject itemObj = new GameObject("UpgradeItem", typeof(RectTransform));
             RectTransform itemRect = itemObj.GetComponent<RectTransform>();
-            itemRect.sizeDelta = new Vector2(0, 100);
-            Image itemBg = itemObj.AddComponent<Image>();
-            itemBg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
-
-            HorizontalLayoutGroup hlg = itemObj.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 20;
-            hlg.padding = new RectOffset(20, 20, 10, 10);
-            hlg.childControlWidth = false;
-            hlg.childForceExpandWidth = false;
+            itemRect.sizeDelta = new Vector2(0, 150);
+            
+            LayoutElement itemLe = itemObj.AddComponent<LayoutElement>();
+            itemLe.preferredHeight = 150;
+            itemLe.preferredWidth = 800;
+            itemLe.flexibleWidth = 1;
 
             // Иконка
             GameObject iconObj = new GameObject("Icon", typeof(RectTransform));
             iconObj.transform.SetParent(itemObj.transform, false);
             RectTransform iconRect = iconObj.GetComponent<RectTransform>();
-            iconRect.sizeDelta = new Vector2(80, 80);
+            iconRect.anchorMin = new Vector2(0, 0.5f);
+            iconRect.anchorMax = new Vector2(0, 0.5f);
+            iconRect.pivot = new Vector2(0, 0.5f);
+            iconRect.sizeDelta = new Vector2(100, 100);
+            iconRect.anchoredPosition = new Vector2(30, 0);
             Image iconImage = iconObj.AddComponent<Image>();
 
-            // Тексты
-            GameObject textContainer = new GameObject("TextContainer", typeof(RectTransform));
-            textContainer.transform.SetParent(itemObj.transform, false);
-            LayoutElement textLe = textContainer.AddComponent<LayoutElement>();
-            textLe.flexibleWidth = 1;
-            VerticalLayoutGroup tvlg = textContainer.AddComponent<VerticalLayoutGroup>();
-
-            GameObject nameObj = new GameObject("NameText", typeof(RectTransform));
-            nameObj.transform.SetParent(textContainer.transform, false);
+            // Title
+            GameObject nameObj = new GameObject("TitleText", typeof(RectTransform));
+            nameObj.transform.SetParent(itemObj.transform, false);
+            RectTransform nameRect = nameObj.GetComponent<RectTransform>();
+            nameRect.anchorMin = new Vector2(0, 1);
+            nameRect.anchorMax = new Vector2(1, 1);
+            nameRect.pivot = new Vector2(0, 1);
+            nameRect.offsetMin = new Vector2(160, -70);
+            nameRect.offsetMax = new Vector2(-250, -20);
             TextMeshProUGUI nameT = nameObj.AddComponent<TextMeshProUGUI>();
             nameT.text = "Name";
-            nameT.fontSize = 32;
+            nameT.fontSize = 36;
+            nameT.alignment = TextAlignmentOptions.TopLeft;
+            nameT.enableAutoSizing = false;
 
-            GameObject descObj = new GameObject("LevelText", typeof(RectTransform));
-            descObj.transform.SetParent(textContainer.transform, false);
+            // Description
+            GameObject descObj = new GameObject("DescriptionText", typeof(RectTransform));
+            descObj.transform.SetParent(itemObj.transform, false);
+            RectTransform descRect = descObj.GetComponent<RectTransform>();
+            descRect.anchorMin = new Vector2(0, 0);
+            descRect.anchorMax = new Vector2(1, 0);
+            descRect.pivot = new Vector2(0, 0);
+            descRect.offsetMin = new Vector2(160, 20);
+            descRect.offsetMax = new Vector2(-250, 70);
             TextMeshProUGUI levelT = descObj.AddComponent<TextMeshProUGUI>();
             levelT.text = "Lv.0/10";
-            levelT.fontSize = 24;
+            levelT.fontSize = 36;
+            levelT.alignment = TextAlignmentOptions.BottomLeft;
+            levelT.enableAutoSizing = false;
 
             // Кнопка
             GameObject buyBtnObj = new GameObject("BuyButton", typeof(RectTransform));
             buyBtnObj.transform.SetParent(itemObj.transform, false);
             RectTransform buyRect = buyBtnObj.GetComponent<RectTransform>();
-            buyRect.sizeDelta = new Vector2(150, 80);
+            buyRect.anchorMin = new Vector2(1, 0.5f);
+            buyRect.anchorMax = new Vector2(1, 0.5f);
+            buyRect.pivot = new Vector2(1, 0.5f);
+            buyRect.sizeDelta = new Vector2(200, 80);
+            buyRect.anchoredPosition = new Vector2(-30, 0);
             Image buyBg = buyBtnObj.AddComponent<Image>();
             buyBg.color = Color.green;
             Button buyButton = buyBtnObj.AddComponent<Button>();
@@ -224,10 +245,6 @@ namespace ProjectB.Editor
             soUI.FindProperty("itemsContainer").objectReferenceValue = listContainerObj.transform;
             soUI.FindProperty("itemPrefab").objectReferenceValue = prefab.GetComponent<UpgradeItemUI>();
             soUI.ApplyModifiedProperties();
-
-            // Закрытие по кнопке
-            UnityEngine.Events.UnityAction action = new UnityEngine.Events.UnityAction(uiComponent.Hide);
-            UnityEditor.Events.UnityEventTools.AddPersistentListener(closeBtn.onClick, action);
 
             // 4. Подключаем к MainMenuUI
             SerializedObject soMainMenu = new SerializedObject(mainMenuUI);
