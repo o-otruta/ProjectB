@@ -28,5 +28,15 @@ namespace ProjectB.Data.Enemies
 
         [Tooltip("Множитель увеличения здоровья и урона врагов с каждой волной (0.2 = +20% за волну)")]
         public float difficultyPerWave = 0.01f;
+
+        [Header("Elite Enemies")]
+        [Tooltip("С какой волны начинают появляться элитные враги")]
+        public int minWaveForElites = 10;
+
+        [Tooltip("Шанс появления элиты за каждую волну после minWaveForElites (0.02 = 2%)")]
+        public float eliteChancePerWave = 0.02f;
+
+        [Tooltip("Максимальный шанс появления элиты")]
+        public float maxEliteChance = 0.25f;
     }
 }

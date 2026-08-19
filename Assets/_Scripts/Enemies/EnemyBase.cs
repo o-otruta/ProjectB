@@ -22,6 +22,11 @@ namespace ProjectB.Enemies
         private float slowFactor = 1f;
         private float slowTimer = 0f;
 
+        private Renderer enemyRenderer;
+        private Color originalColor;
+        private bool hasOriginalColor;
+        private bool isElite;
+
         public bool IsDead => !isAlive;
 
         public event System.Action<EnemyBase> OnDied;
@@ -49,6 +54,36 @@ namespace ProjectB.Enemies
             slowFactor = 1f;
             slowTimer = 0f;
             targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
+
+            if (enemyRenderer == null)
+            {
+                enemyRenderer = GetComponentInChildren<Renderer>();
+                if (enemyRenderer != null && enemyRenderer.material != null)
+                {
+                    originalColor = enemyRenderer.material.color;
+                    hasOriginalColor = true;
+                }
+            }
+
+            isElite = false;
+            if (hasOriginalColor && enemyRenderer != null && enemyRenderer.material != null)
+            {
+                enemyRenderer.material.color = originalColor;
+            }
+        }
+
+        public void MakeElite()
+        {
+            if (isElite || !isAlive) return;
+            isElite = true;
+
+            currentHp *= 3;
+            currentDamage *= 2;
+
+            if (enemyRenderer != null && enemyRenderer.material != null)
+            {
+                enemyRenderer.material.color = new Color(0.6f, 0f, 0.8f); // Фиолетовый цвет для элиты
+            }
         }
 
         private Vector3 currentMoveDir;

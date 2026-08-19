@@ -132,6 +132,15 @@ namespace ProjectB.Enemies
             // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
             enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier, xpManager, coinManager, runStatistics);
+
+            if (currentWave >= waveConfig.minWaveForElites)
+            {
+                float chance = Mathf.Min(waveConfig.maxEliteChance, (currentWave - waveConfig.minWaveForElites + 1) * waveConfig.eliteChancePerWave);
+                if (Random.value < chance)
+                {
+                    enemy.MakeElite();
+                }
+            }
             
             enemy.OnDied -= HandleEnemyDied; // Ensure no duplicate subscription
             enemy.OnDied += HandleEnemyDied;
