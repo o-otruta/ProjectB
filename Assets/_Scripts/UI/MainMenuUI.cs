@@ -13,20 +13,28 @@ namespace ProjectB.UI
         [SerializeField] private GameObject bonusBadge;
         [SerializeField] private MetaUpgradeUI metaUpgradeUI;
         [SerializeField] private AchievementScreenUI achievementScreenUI;
+        [SerializeField] private DailyBonusScreenUI dailyBonusScreenUI;
         [SerializeField] private BottomTabUI[] tabs;
         [SerializeField] private GameObject playScreenPanel;
 
         private SaveManager saveManager;
+        private DailyBonusManager bonusManager;
 
         [Inject]
-        public void Construct(SaveManager saveManager)
+        public void Construct(SaveManager saveManager, DailyBonusManager bonusManager)
         {
             this.saveManager = saveManager;
+            this.bonusManager = bonusManager;
             
             if (this.saveManager != null)
             {
                 this.saveManager.OnDataChanged += UpdateCoinsDisplay;
                 UpdateCoinsDisplay();
+            }
+
+            if (this.bonusManager != null)
+            {
+                this.bonusManager.OnBonusStateChanged += UpdateBadges;
             }
         }
 
@@ -44,6 +52,10 @@ namespace ProjectB.UI
             {
                 saveManager.OnDataChanged -= UpdateCoinsDisplay;
             }
+            if (bonusManager != null)
+            {
+                bonusManager.OnBonusStateChanged -= UpdateBadges;
+            }
         }
 
         private void UpdateCoinsDisplay()
@@ -58,13 +70,22 @@ namespace ProjectB.UI
         {
             // Placeholder logic for badges
             if (achievementsBadge != null) achievementsBadge.SetActive(false);
-            if (bonusBadge != null) bonusBadge.SetActive(false);
+            
+            if (bonusBadge != null && bonusManager != null)
+            {
+                bonusBadge.SetActive(bonusManager.IsRewardAvailable());
+            }
+            else if (bonusBadge != null)
+            {
+                bonusBadge.SetActive(false);
+            }
         }
 
         private void CloseAllPanels()
         {
             if (achievementScreenUI != null) achievementScreenUI.gameObject.SetActive(false);
             if (metaUpgradeUI != null) metaUpgradeUI.Hide();
+            if (dailyBonusScreenUI != null) dailyBonusScreenUI.gameObject.SetActive(false);
             if (playScreenPanel != null) playScreenPanel.SetActive(false);
         }
 
@@ -129,9 +150,13 @@ namespace ProjectB.UI
 
         public void OnBonusClicked()
         {
-            Debug.Log("[MainMenuUI] Bonus clicked (Placeholder)");
+            Debug.Log("[MainMenuUI] Bonus clicked");
             CloseAllPanels();
             SelectTab(4);
+            if (dailyBonusScreenUI != null)
+            {
+                dailyBonusScreenUI.gameObject.SetActive(true);
+            }
         }
 
         public void OnSettingsClicked()

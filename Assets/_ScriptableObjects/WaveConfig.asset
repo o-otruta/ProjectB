@@ -18,3 +18,8 @@ MonoBehaviour:
   waveDelay: 2
   spawnRadiusMin: 10
   spawnRadiusMax: 15
+  maxEnemiesPerWave: 50
+  difficultyPerWave: 0.01
+  minWaveForElites: 1
+  eliteChancePerWave: 0.05
+  maxEliteChance: 0.25

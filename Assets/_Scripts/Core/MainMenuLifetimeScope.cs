@@ -14,6 +14,8 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<MainMenuUI>();
             builder.RegisterComponentInHierarchy<MetaUpgradeUI>();
             builder.RegisterComponentInHierarchy<AchievementScreenUI>();
+            builder.RegisterComponentInHierarchy<DailyBonusScreenUI>();
+            builder.Register<DailyBonusManager>(Lifetime.Scoped);
 
             builder.RegisterBuildCallback(resolver =>
             {
@@ -41,6 +43,13 @@ namespace ProjectB.Core
                 {
                     Debug.Log("[MainMenuLifetimeScope] Found AchievementScreenUI, injecting!");
                     resolver.Inject(achievementUi);
+                }
+
+                var bonusUi = FindAnyObjectByType<DailyBonusScreenUI>(FindObjectsInactive.Include);
+                if (bonusUi != null)
+                {
+                    Debug.Log("[MainMenuLifetimeScope] Found DailyBonusScreenUI, injecting!");
+                    resolver.Inject(bonusUi);
                 }
             });
         }
