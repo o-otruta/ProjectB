@@ -287,7 +287,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Enemies.WaveManager
   waveConfig: {fileID: 11400000, guid: 53fc3e9edb0905f468b0c71baab59c15, type: 2}
   enemyTypes:
-  - {fileID: 11400000, guid: 71ec689c4571a4d4fb205bbc62eb08fc, type: 2}
+  - {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
 --- !u!4 &34485523
 Transform:
   m_ObjectHideFlags: 0

@@ -24,5 +24,15 @@ namespace ProjectB.Data
 
         [Tooltip("Radius around the center (0,0) where no obstacles will spawn")]
         public float SafeZoneRadius = 5f;
+
+        [Header("Decorations")]
+        [Tooltip("List of prefabs to spawn as decorations (e.g. grass)")]
+        public GameObject[] DecorationPrefabs;
+
+        [Tooltip("Minimum number of decorations to spawn")]
+        public int MinDecorations = 50;
+
+        [Tooltip("Maximum number of decorations to spawn")]
+        public int MaxDecorations = 100;
     }
 }

@@ -40,6 +40,7 @@ namespace ProjectB.Arena
             GenerateFloor();
             GenerateBoundaries();
             GenerateObstacles();
+            GenerateDecorations();
         }
 
         private void GenerateFloor()
@@ -172,6 +173,44 @@ namespace ProjectB.Arena
                 }
                 
                 spawned++;
+            }
+        }
+        private void GenerateDecorations()
+        {
+            if (_config.DecorationPrefabs == null || _config.DecorationPrefabs.Length == 0)
+            {
+                return;
+            }
+
+            int count = Random.Range(_config.MinDecorations, _config.MaxDecorations + 1);
+            float halfSize = _config.ArenaSize / 2f;
+            float safeRadiusSq = _config.SafeZoneRadius * _config.SafeZoneRadius;
+
+            GameObject decorationsContainer = new GameObject("Decorations");
+            decorationsContainer.transform.SetParent(transform);
+
+            for (int i = 0; i < count; i++)
+            {
+                float x = Random.Range(-halfSize, halfSize);
+                float z = Random.Range(-halfSize, halfSize);
+                
+                // Allow decorations inside the safe zone or not? 
+                // Grass looks good anywhere, so we don't avoid the safe zone strictly,
+                // but if we want to, we can uncomment the next lines:
+                // if (x * x + z * z < safeRadiusSq) continue;
+
+                Vector3 position = new Vector3(x, 0f, z);
+                GameObject prefab = _config.DecorationPrefabs[Random.Range(0, _config.DecorationPrefabs.Length)];
+                
+                // Random scale and rotation for variety
+                Quaternion rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+                GameObject decoration = Instantiate(prefab, position, rotation, decorationsContainer.transform);
+                
+                // Optionally random scale
+                float randomScale = Random.Range(0.8f, 1.2f);
+                decoration.transform.localScale = new Vector3(randomScale, randomScale, randomScale);
+
+                // Note: We deliberately do NOT set the "Obstacles" layer here.
             }
         }
     }

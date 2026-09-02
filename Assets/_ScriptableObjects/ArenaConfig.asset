@@ -19,3 +19,9 @@ MonoBehaviour:
   MinObstacles: 180
   MaxObstacles: 190
   SafeZoneRadius: 5
+  DecorationPrefabs:
+  - {fileID: 919132149155446097, guid: 462483952238ce544a35dc84bee3c054, type: 3}
+  - {fileID: 919132149155446097, guid: 75c91536f428a0a4f8356c03f427add6, type: 3}
+  - {fileID: 919132149155446097, guid: 31cb9ca8b7016f548a0b89031f0ce036, type: 3}
+  MinDecorations: 50000
+  MaxDecorations: 50000
