@@ -7,19 +7,19 @@ namespace ProjectB.Enemies
 {
     public class EnemyBase : MonoBehaviour, IDamageable, ISlowable
     {
-        [SerializeField] private EnemyData enemyData;
+        [SerializeField] protected EnemyData enemyData;
         private IObjectPool<EnemyBase> pool;
-        private Transform target;
+        protected Transform target;
         private ProjectB.LevelUp.XpManager xpManager;
         private ProjectB.LevelUp.CoinManager coinManager;
         private ProjectB.Core.RunStatistics runStatistics;
         
-        private int currentHp;
-        private int currentDamage;
+        protected int currentHp;
+        protected int currentDamage;
         private float lastDamageTime;
-        private bool isAlive;
-        private IDamageable targetDamageable;
-        private float slowFactor = 1f;
+        protected bool isAlive;
+        protected IDamageable targetDamageable;
+        protected float slowFactor = 1f;
         private float slowTimer = 0f;
 
         private Renderer enemyRenderer;
@@ -34,7 +34,7 @@ namespace ProjectB.Enemies
         /// <summary>Радиус контактного урона (сумма радиусов героя и врага).</summary>
         private const float ContactRadius = 1.0f;
 
-        public void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null, ProjectB.LevelUp.CoinManager coinManager = null, ProjectB.Core.RunStatistics runStatistics = null)
+        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null, ProjectB.LevelUp.CoinManager coinManager = null, ProjectB.Core.RunStatistics runStatistics = null)
         {
             OnDied = null;
             enemyData = data;
@@ -72,7 +72,7 @@ namespace ProjectB.Enemies
             }
         }
 
-        public void MakeElite()
+        public virtual void MakeElite()
         {
             if (isElite || !isAlive) return;
             isElite = true;
@@ -89,10 +89,17 @@ namespace ProjectB.Enemies
         private Vector3 currentMoveDir;
         private float nextCheckTime;
 
-        private void Update()
+        protected virtual void Update()
         {
             if (!isAlive || target == null || enemyData == null) return;
-            
+            UpdateSlowTimer();
+            if (IsTargetDead()) return;
+            UpdateMovement();
+            UpdateAttack();
+        }
+
+        private void UpdateSlowTimer()
+        {
             if (slowTimer > 0)
             {
                 slowTimer -= Time.deltaTime;
@@ -101,14 +108,15 @@ namespace ProjectB.Enemies
                     slowFactor = 1f;
                 }
             }
+        }
 
-            // Проверяем, не мертв ли герой
-            if (targetDamageable != null && targetDamageable.IsDead)
-            {
-                // Герой мертв, можно остановить врагов или переключить в Idle
-                return;
-            }
+        private bool IsTargetDead()
+        {
+            return (targetDamageable != null && targetDamageable.IsDead);
+        }
 
+        protected virtual void UpdateMovement()
+        {
             // Простой steering к герою в плоскости XZ
             Vector3 direction = (target.position - transform.position);
             direction.y = 0;
@@ -154,6 +162,13 @@ namespace ProjectB.Enemies
                     transform.rotation = Quaternion.LookRotation(currentMoveDir);
                 }
             }
+        }
+
+        protected virtual void UpdateAttack()
+        {
+            Vector3 direction = (target.position - transform.position);
+            direction.y = 0;
+            float distSqr = direction.sqrMagnitude;
 
             if (distSqr <= ContactRadius * ContactRadius 
                 && Time.time >= lastDamageTime + enemyData.damageCooldown)
@@ -178,7 +193,7 @@ namespace ProjectB.Enemies
             }
         }
 
-        private void Die()
+        protected virtual void Die()
         {
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;

@@ -64,7 +64,11 @@ namespace ProjectB.Enemies
                         }
                         
                         EnemyBase enemy = go.GetComponent<EnemyBase>();
-                        if (enemy == null) enemy = go.AddComponent<EnemyBase>();
+                        if (enemy == null)
+                        {
+                            Debug.LogError($"Enemy prefab '{enemyData.name}' is missing EnemyBase component! Adding default EnemyBase.", go);
+                            enemy = go.AddComponent<EnemyBase>();
+                        }
                         return enemy;
                     },
                     actionOnGet: e => e.gameObject.SetActive(true),
