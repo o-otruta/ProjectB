@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cdab362492ba4ec4ea63028f65795849, type: 3}
-  m_Name: GoblinShooterData
+  m_Name: BatData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Enemies.ShootingEnemyData
   hp: 75
   speed: 2.5
   contactDamage: 5
   damageCooldown: 1
   xpDrop: 2
-  modelPrefab: {fileID: 1386261852905966500, guid: b0bfa03e048f3ef429ee2adc80e4721a, type: 3}
+  modelPrefab: {fileID: 3304336603953750799, guid: 958e2f1b65930894abd41e0b858f88e3, type: 3}
   weaponData: {fileID: 11400000, guid: 9ac71db78e0b769459b6c47c7d670711, type: 2}
   stopDistance: 5

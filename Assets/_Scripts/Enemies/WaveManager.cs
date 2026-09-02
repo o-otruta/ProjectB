@@ -129,8 +129,8 @@ namespace ProjectB.Enemies
             
             Vector3 spawnPos = heroTarget.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
             
-            // Adjust height if necessary based on your arena, assuming Y=1 is good for a capsule
-            spawnPos.y = 1f; 
+            // Adjust height if necessary based on your arena
+            spawnPos.y = 0f;
             enemy.transform.position = spawnPos;
             
             // Re-initialize logic in EnemyBase
