@@ -178,7 +178,10 @@ public class SetupSceneWizard : EditorWindow
             GameObject canvasGo = new GameObject("Canvas");
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasGo.AddComponent<UnityEngine.UI.CanvasScaler>();
+            var scaler = canvasGo.AddComponent<UnityEngine.UI.CanvasScaler>();
+            scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080, 1920);
+            scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             
             GameObject esGo = new GameObject("EventSystem");
@@ -205,7 +208,9 @@ public class SetupSceneWizard : EditorWindow
             SerializedObject soVJ = new SerializedObject(vj);
             soVJ.FindProperty("background").objectReferenceValue = bgRect;
             soVJ.FindProperty("handle").objectReferenceValue = handleRect;
+            soVJ.FindProperty("autoHandleLimit").boolValue = true;
             soVJ.FindProperty("handleLimit").floatValue = 100f;
+            soVJ.FindProperty("handleRange").floatValue = 1.0f;
             soVJ.ApplyModifiedProperties();
         }
 
