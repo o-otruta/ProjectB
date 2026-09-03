@@ -23,3 +23,5 @@ MonoBehaviour:
   minWaveForElites: 1
   eliteChancePerWave: 0.05
   maxEliteChance: 0.25
+  eliteHpMultiplier: 3
+  eliteDamageMultiplier: 2

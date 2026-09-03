@@ -142,7 +142,7 @@ namespace ProjectB.Enemies
                 float chance = Mathf.Min(waveConfig.maxEliteChance, (currentWave - waveConfig.minWaveForElites + 1) * waveConfig.eliteChancePerWave);
                 if (Random.value < chance)
                 {
-                    enemy.MakeElite();
+                    enemy.MakeElite(waveConfig.eliteHpMultiplier, waveConfig.eliteDamageMultiplier);
                 }
             }
             

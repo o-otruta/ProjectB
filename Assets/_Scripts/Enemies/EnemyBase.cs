@@ -31,9 +31,6 @@ namespace ProjectB.Enemies
 
         public event System.Action<EnemyBase> OnDied;
 
-        /// <summary>Радиус контактного урона (сумма радиусов героя и врага).</summary>
-        private const float ContactRadius = 1.0f;
-
         public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null, ProjectB.LevelUp.CoinManager coinManager = null, ProjectB.Core.RunStatistics runStatistics = null)
         {
             OnDied = null;
@@ -72,13 +69,13 @@ namespace ProjectB.Enemies
             }
         }
 
-        public virtual void MakeElite()
+        public virtual void MakeElite(float hpMultiplier = 3f, float damageMultiplier = 2f)
         {
             if (isElite || !isAlive) return;
             isElite = true;
 
-            currentHp *= 3;
-            currentDamage *= 2;
+            currentHp = Mathf.RoundToInt(currentHp * hpMultiplier);
+            currentDamage = Mathf.RoundToInt(currentDamage * damageMultiplier);
 
             if (enemyRenderer != null && enemyRenderer.material != null)
             {
@@ -170,8 +167,11 @@ namespace ProjectB.Enemies
             direction.y = 0;
             float distSqr = direction.sqrMagnitude;
 
-            if (distSqr <= ContactRadius * ContactRadius 
-                && Time.time >= lastDamageTime + enemyData.damageCooldown)
+            float radius = enemyData != null ? enemyData.contactRadius : 1.0f;
+            float cooldown = enemyData != null ? enemyData.damageCooldown : 1.0f;
+
+            if (distSqr <= radius * radius 
+                && Time.time >= lastDamageTime + cooldown)
             {
                 if (targetDamageable != null)
                 {
@@ -210,10 +210,12 @@ namespace ProjectB.Enemies
                 xpManager.SpawnXp(transform.position + GetRandomOffset(), enemyData.xpDrop);
             }
             
-            // Спавн монет (например, 20% шанс)
-            if (coinManager != null && Random.value < 0.2f)
+            // Спавн монет
+            float coinChance = enemyData != null ? enemyData.coinDropChance : 0.2f;
+            int coinCount = enemyData != null ? enemyData.coinDrop : 1;
+            if (coinManager != null && coinCount > 0 && Random.value < coinChance)
             {
-                coinManager.SpawnCoin(transform.position + GetRandomOffset(), 1);
+                coinManager.SpawnCoin(transform.position + GetRandomOffset(), coinCount);
             }
 
             if (runStatistics != null)

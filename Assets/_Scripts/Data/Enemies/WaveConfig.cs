@@ -38,5 +38,11 @@ namespace ProjectB.Data.Enemies
 
         [Tooltip("Максимальный шанс появления элиты")]
         public float maxEliteChance = 0.25f;
+
+        [Tooltip("Множитель здоровья для элитных врагов")]
+        public float eliteHpMultiplier = 3f;
+
+        [Tooltip("Множитель урона для элитных врагов")]
+        public float eliteDamageMultiplier = 2f;
     }
 }
