@@ -57,6 +57,12 @@ namespace ProjectB.Enemies
                         go.transform.localScale = Vector3.one * 0.25f;
                         Debug.Log($"[ShootingEnemy] Created fallback sphere for projectile.");
                         
+                        var renderer = go.GetComponent<MeshRenderer>();
+                        if (renderer != null)
+                        {
+                            renderer.material.color = new Color(1f, 0.2f, 0.2f);
+                        }
+
                         // Disable and destroy collider immediately to prevent physics explosions!
                         Collider col = go.GetComponent<Collider>();
                         if (col != null)
@@ -140,10 +146,21 @@ namespace ProjectB.Enemies
                 return;
             }
 
-            // Спавним чуть впереди и выше, чтобы не задеть самого моба (на всякий случай)
-            Vector3 spawnDirection = (target.position - transform.position).normalized;
-            spawnDirection.y = 0;
-            proj.transform.position = transform.position + Vector3.up * 0.5f + spawnDirection * 0.5f;
+            // Направление выстрела в сторону текущей позиции героя в плоскости XZ
+            Vector3 shootDirection = target.position - transform.position;
+            shootDirection.y = 0;
+            if (shootDirection.sqrMagnitude > 0.001f)
+            {
+                shootDirection.Normalize();
+            }
+            else
+            {
+                shootDirection = transform.forward;
+            }
+
+            // Спавним на высоте цели (Y игрока), чуть впереди моба
+            float shootHeight = target.position.y;
+            proj.transform.position = new Vector3(transform.position.x, shootHeight, transform.position.z) + shootDirection * 0.5f;
             
             int finalDamage = Mathf.RoundToInt(
                 shootingData.weaponData.damage * 
@@ -151,7 +168,7 @@ namespace ProjectB.Enemies
             
             Debug.Log($"[ShootingEnemy] Projectile initialized. Damage: {finalDamage}, Speed: {shootingData.weaponData.projectileSpeed}");
             proj.Initialize(finalDamage, shootingData.weaponData.projectileSpeed, 
-                target, projectilePool);
+                shootDirection, projectilePool);
         }
     }
 }
