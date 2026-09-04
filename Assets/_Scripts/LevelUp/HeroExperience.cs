@@ -96,6 +96,7 @@ namespace ProjectB.LevelUp
             Debug.Log($"[HeroExperience] Level Up! Now level {CurrentLevel}");
             
             OnLevelUp?.Invoke(CurrentLevel);
+            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.HeroLeveledUpEvent(CurrentLevel));
         }
 
         private void CalculateXPToNextLevel()

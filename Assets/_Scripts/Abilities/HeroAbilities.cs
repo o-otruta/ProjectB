@@ -69,6 +69,7 @@ namespace ProjectB.Abilities
             
             // Notify if necessary
             OnAbilitiesChanged();
+            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.AbilityUnlockedEvent(data.id, data.type));
         }
 
         public void UpgradeAbility(string id, ModifierType type, float value)

@@ -19,7 +19,7 @@ namespace ProjectB.Player
             if (runStatistics != null)
             {
                 runStatistics.AddCoin(amount);
-                // Можно добавить событие, чтобы UI монет в забеге обновлялся
+                ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.CoinCollectedEvent(amount));
             }
         }
     }

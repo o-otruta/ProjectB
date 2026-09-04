@@ -67,6 +67,7 @@ namespace ProjectB.Player
             isDead = true;
             Debug.Log("[HeroHealth] Hero has died. Game Over!");
             OnDied?.Invoke();
+            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.HeroDiedEvent());
         }
 
         [ContextMenu("Debug Kill")]
