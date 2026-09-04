@@ -10,9 +10,6 @@ namespace ProjectB.Enemies
         [SerializeField] protected EnemyData enemyData;
         private IObjectPool<EnemyBase> pool;
         protected Transform target;
-        private ProjectB.LevelUp.XpManager xpManager;
-        private ProjectB.LevelUp.CoinManager coinManager;
-        private ProjectB.Core.RunStatistics runStatistics;
         
         protected int currentHp;
         protected int currentDamage;
@@ -28,18 +25,17 @@ namespace ProjectB.Enemies
         private bool isElite;
 
         public bool IsDead => !isAlive;
+        public EnemyData EnemyData => enemyData;
+        public bool IsElite => isElite;
 
         public event System.Action<EnemyBase> OnDied;
 
-        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f, ProjectB.LevelUp.XpManager xpManager = null, ProjectB.LevelUp.CoinManager coinManager = null, ProjectB.Core.RunStatistics runStatistics = null)
+        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f)
         {
             OnDied = null;
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
-            this.xpManager = xpManager;
-            this.coinManager = coinManager;
-            this.runStatistics = runStatistics;
             
             if (enemyData != null)
             {
@@ -197,32 +193,9 @@ namespace ProjectB.Enemies
         {
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;
-            
-            Vector3 GetRandomOffset() 
-            {
-                Vector2 rand = Random.insideUnitCircle * 0.5f;
-                return new Vector3(rand.x, 0f, rand.y);
-            }
-            
-            // Spawn XP-crystal
-            if (xpManager != null && enemyData != null)
-            {
-                xpManager.SpawnXp(transform.position + GetRandomOffset(), enemyData.xpDrop);
-            }
-            
-            // Спавн монет
-            float coinChance = enemyData != null ? enemyData.coinDropChance : 0.2f;
-            int coinCount = enemyData != null ? enemyData.coinDrop : 1;
-            if (coinManager != null && coinCount > 0 && Random.value < coinChance)
-            {
-                coinManager.SpawnCoin(transform.position + GetRandomOffset(), coinCount);
-            }
 
-            if (runStatistics != null)
-            {
-                runStatistics.AddKill();
-            }
-            
+            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.EnemyDiedEvent(transform.position, enemyData, isElite));
+
             OnDied?.Invoke(this);
             ReturnToPool();
         }

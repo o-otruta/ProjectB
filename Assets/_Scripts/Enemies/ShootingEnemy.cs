@@ -14,13 +14,9 @@ namespace ProjectB.Enemies
         private float nextFireTime;
 
         public override void Initialize(EnemyData data, Transform heroTarget,
-            IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f,
-            ProjectB.LevelUp.XpManager xpManager = null,
-            ProjectB.LevelUp.CoinManager coinManager = null,
-            ProjectB.Core.RunStatistics runStatistics = null)
+            IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f)
         {
-            base.Initialize(data, heroTarget, enemyPool, difficultyMultiplier, 
-                xpManager, coinManager, runStatistics);
+            base.Initialize(data, heroTarget, enemyPool, difficultyMultiplier);
             
             shootingData = data as ShootingEnemyData;
             nextFireTime = Time.time + Random.Range(0f, 1f); // Рассинхронизация

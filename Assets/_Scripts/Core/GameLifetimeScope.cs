@@ -10,6 +10,8 @@ using ProjectB.Abilities;
 
 using ProjectB.Meta;
 
+using ProjectB.Core.Events;
+
 namespace ProjectB.Core
 {
     public class GameLifetimeScope : LifetimeScope
@@ -18,6 +20,8 @@ namespace ProjectB.Core
         {
             // Register Core Systems
             builder.Register<RunStatistics>(Lifetime.Scoped);
+            builder.Register<GameEventBus>(Lifetime.Scoped);
+            builder.RegisterEntryPoint<EnemyDeathHandler>();
 
             // Register Managers
             builder.RegisterComponentInHierarchy<GameManager>();

@@ -13,10 +13,8 @@ namespace ProjectB.Enemies
         [SerializeField] private System.Collections.Generic.List<EnemyData> enemyTypes;
         
         private Transform heroTarget;
-        private ProjectB.LevelUp.XpManager xpManager;
-        private ProjectB.LevelUp.CoinManager coinManager;
-        private ProjectB.Core.RunStatistics runStatistics;
         private ProjectB.Meta.AchievementManager achievementManager;
+        private ProjectB.Core.Events.GameEventBus eventBus;
 
         private System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
         private int currentWave = 1;
@@ -25,16 +23,14 @@ namespace ProjectB.Enemies
         private bool isSpawning = false;
 
         [Inject]
-        public void Construct(HeroHealth heroHealth, ProjectB.LevelUp.XpManager xpManager, ProjectB.LevelUp.CoinManager coinManager, ProjectB.Core.RunStatistics runStatistics, ProjectB.Meta.AchievementManager achievementManager)
+        public void Construct(HeroHealth heroHealth, ProjectB.Meta.AchievementManager achievementManager, ProjectB.Core.Events.GameEventBus eventBus)
         {
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
             }
-            this.xpManager = xpManager;
-            this.coinManager = coinManager;
-            this.runStatistics = runStatistics;
             this.achievementManager = achievementManager;
+            this.eventBus = eventBus;
         }
 
         private void Start()
@@ -135,7 +131,7 @@ namespace ProjectB.Enemies
             
             // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier, xpManager, coinManager, runStatistics);
+            enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier);
 
             if (currentWave >= waveConfig.minWaveForElites)
             {
@@ -163,9 +159,11 @@ namespace ProjectB.Enemies
         {
             if (!isSpawning && enemiesAlive <= 0)
             {
+                int completedWave = currentWave;
                 currentWave++;
-                Debug.Log($"[WaveManager] Wave {currentWave - 1} completed!");
+                Debug.Log($"[WaveManager] Wave {completedWave} completed!");
                 achievementManager?.OnWaveReached(currentWave);
+                eventBus?.Publish(new ProjectB.Core.Events.WaveCompletedEvent(completedWave, currentWave));
                 StartCoroutine(StartWaveDelay());
             }
         }
