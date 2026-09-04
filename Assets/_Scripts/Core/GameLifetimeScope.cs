@@ -9,8 +9,9 @@ using ProjectB.UI;
 using ProjectB.Abilities;
 
 using ProjectB.Meta;
-
 using ProjectB.Core.Events;
+using ProjectB.Combat;
+using ProjectB.Arena;
 
 namespace ProjectB.Core
 {
@@ -23,12 +24,14 @@ namespace ProjectB.Core
             builder.Register<GameEventBus>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
 
-            // Register Managers
+            // Register Managers & Environment
             builder.RegisterComponentInHierarchy<GameManager>();
             builder.RegisterComponentInHierarchy<WaveManager>();
             builder.RegisterComponentInHierarchy<XpManager>();
             builder.RegisterComponentInHierarchy<CoinManager>();
             builder.RegisterComponentInHierarchy<UpgradeManager>();
+            builder.RegisterComponentInHierarchy<ArenaGenerator>();
+            builder.RegisterComponentInHierarchy<CameraController>();
             
             // Register UI
             builder.RegisterComponentInHierarchy<VirtualJoystick>();
@@ -43,6 +46,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HeroEconomy>();
             builder.RegisterComponentInHierarchy<HeroMovement>();
             builder.RegisterComponentInHierarchy<HeroAbilities>();
+            builder.RegisterComponentInHierarchy<HeroCombat>();
 
             // Explicitly inject into all scene components
             // (Removed explicit RegisterBuildCallback to prevent double injection)

@@ -1,4 +1,6 @@
 using UnityEngine;
+using VContainer;
+using ProjectB.Player;
 
 namespace ProjectB.Core
 {
@@ -8,6 +10,15 @@ namespace ProjectB.Core
         [Header("Target Tracking")]
         [Tooltip("The character the camera should follow")]
         public Transform target;
+        
+        [Inject]
+        public void Construct(HeroMovement hero)
+        {
+            if (target == null && hero != null)
+            {
+                target = hero.transform;
+            }
+        }
         
         [Tooltip("Offset relative to the target (e.g. 0, 20, -10 for a steeper top-down view)")]
         public Vector3 offset = new Vector3(0, 20f, -10f);
