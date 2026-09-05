@@ -15,6 +15,9 @@ namespace ProjectB.Arena
         [SerializeField] private bool _generateOnStart = true;
         [SerializeField] private bool _visibleWalls = false;
 
+        private System.Random _rng;
+        public int CurrentSeed { get; private set; }
+
         private void Start()
         {
             if (_generateOnStart)
@@ -23,7 +26,7 @@ namespace ProjectB.Arena
             }
         }
 
-        public void GenerateArena()
+        public void GenerateArena(int? overrideSeed = null)
         {
             if (_config == null)
             {
@@ -31,16 +34,55 @@ namespace ProjectB.Arena
                 return;
             }
 
-            // Initialize Random
-            if (_config.Seed != 0)
+            int seedToUse = 0;
+            if (overrideSeed.HasValue && overrideSeed.Value != 0)
             {
-                Random.InitState(_config.Seed);
+                seedToUse = overrideSeed.Value;
             }
+            else if (_config.Seed != 0)
+            {
+                seedToUse = _config.Seed;
+            }
+            else
+            {
+                seedToUse = new System.Random().Next(1, int.MaxValue);
+            }
+
+            CurrentSeed = seedToUse;
+            _rng = new System.Random(CurrentSeed);
+
+            ClearArena();
 
             GenerateFloor();
             GenerateBoundaries();
             GenerateObstacles();
             GenerateDecorations();
+        }
+
+        public void ClearArena()
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var child = transform.GetChild(i);
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+
+        private int Range(int minInclusive, int maxExclusive)
+        {
+            return _rng.Next(minInclusive, maxExclusive);
+        }
+
+        private float Range(float minInclusive, float maxInclusive)
+        {
+            return minInclusive + (float)_rng.NextDouble() * (maxInclusive - minInclusive);
         }
 
         private void GenerateFloor()
@@ -131,7 +173,7 @@ namespace ProjectB.Arena
                 return;
             }
 
-            int count = Random.Range(_config.MinObstacles, _config.MaxObstacles + 1);
+            int count = Range(_config.MinObstacles, _config.MaxObstacles + 1);
             float halfSize = _config.ArenaSize / 2f;
             float safeRadiusSq = _config.SafeZoneRadius * _config.SafeZoneRadius;
             
@@ -147,8 +189,8 @@ namespace ProjectB.Arena
             {
                 attempts++;
                 
-                float x = Random.Range(-halfSize, halfSize);
-                float z = Random.Range(-halfSize, halfSize);
+                float x = Range(-halfSize, halfSize);
+                float z = Range(-halfSize, halfSize);
                 
                 // Avoid safe zone
                 if (x * x + z * z < safeRadiusSq)
@@ -159,8 +201,8 @@ namespace ProjectB.Arena
                 // Optional: Check if we are overlapping existing obstacles using physics (Physics.CheckSphere).
                 // Skipping for MVP to keep it simple, or we can add it if requested.
 
-                GameObject prefab = _config.ObstaclePrefabs[Random.Range(0, _config.ObstaclePrefabs.Length)];
-                GameObject obstacle = Instantiate(prefab, position, Quaternion.Euler(0, Random.Range(0f, 360f), 0), obstaclesContainer.transform);
+                GameObject prefab = _config.ObstaclePrefabs[Range(0, _config.ObstaclePrefabs.Length)];
+                GameObject obstacle = Instantiate(prefab, position, Quaternion.Euler(0, Range(0f, 360f), 0), obstaclesContainer.transform);
                 
                 int obstacleLayer = LayerMask.NameToLayer("Obstacles");
                 if (obstacleLayer != -1)
@@ -182,7 +224,7 @@ namespace ProjectB.Arena
                 return;
             }
 
-            int count = Random.Range(_config.MinDecorations, _config.MaxDecorations + 1);
+            int count = Range(_config.MinDecorations, _config.MaxDecorations + 1);
             float halfSize = _config.ArenaSize / 2f;
             float safeRadiusSq = _config.SafeZoneRadius * _config.SafeZoneRadius;
 
@@ -191,8 +233,8 @@ namespace ProjectB.Arena
 
             for (int i = 0; i < count; i++)
             {
-                float x = Random.Range(-halfSize, halfSize);
-                float z = Random.Range(-halfSize, halfSize);
+                float x = Range(-halfSize, halfSize);
+                float z = Range(-halfSize, halfSize);
                 
                 // Allow decorations inside the safe zone or not? 
                 // Grass looks good anywhere, so we don't avoid the safe zone strictly,
@@ -200,14 +242,14 @@ namespace ProjectB.Arena
                 // if (x * x + z * z < safeRadiusSq) continue;
 
                 Vector3 position = new Vector3(x, 0f, z);
-                GameObject prefab = _config.DecorationPrefabs[Random.Range(0, _config.DecorationPrefabs.Length)];
+                GameObject prefab = _config.DecorationPrefabs[Range(0, _config.DecorationPrefabs.Length)];
                 
                 // Random scale and rotation for variety
-                Quaternion rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+                Quaternion rotation = Quaternion.Euler(0, Range(0f, 360f), 0);
                 GameObject decoration = Instantiate(prefab, position, rotation, decorationsContainer.transform);
                 
                 // Optionally random scale
-                float randomScale = Random.Range(0.8f, 1.2f);
+                float randomScale = Range(0.8f, 1.2f);
                 decoration.transform.localScale = new Vector3(randomScale, randomScale, randomScale);
 
                 // Note: We deliberately do NOT set the "Obstacles" layer here.

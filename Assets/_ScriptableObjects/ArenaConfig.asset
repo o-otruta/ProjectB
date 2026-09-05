@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ArenaConfig
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.ArenaConfig
   ArenaSize: 500
-  Seed: 12345
+  Seed: 0
   ObstaclePrefabs:
   - {fileID: 1232485868324036310, guid: 82d18631c9de3ac4298030113d6f92db, type: 3}
   MinObstacles: 180

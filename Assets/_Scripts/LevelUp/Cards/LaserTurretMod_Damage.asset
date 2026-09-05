@@ -21,4 +21,4 @@ MonoBehaviour:
   isConsumable: 0
   targetAbilityId: LaserTurret
   modifierType: 1
-  value: 5
+  value: 1
