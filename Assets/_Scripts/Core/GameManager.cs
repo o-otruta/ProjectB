@@ -131,9 +131,8 @@ namespace ProjectB.Core
 
         public void GoToMenu()
         {
-            Debug.Log("[GameManager] TODO: Load Main Menu scene");
-            // Time.timeScale = 1f;
-            // SceneManager.LoadScene("MainMenu");
+            Time.timeScale = 1f;
+            SceneManager.LoadScene("MainMenu");
         }
 
         public void ReviveHero()
