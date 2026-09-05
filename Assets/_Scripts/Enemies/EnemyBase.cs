@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
 using ProjectB.Data.Enemies;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Enemies
 {
@@ -10,6 +11,7 @@ namespace ProjectB.Enemies
         [SerializeField] protected EnemyData enemyData;
         private IObjectPool<EnemyBase> pool;
         protected Transform target;
+        protected GameEventBus eventBus;
         
         protected int currentHp;
         protected int currentDamage;
@@ -30,12 +32,13 @@ namespace ProjectB.Enemies
 
         public event System.Action<EnemyBase> OnDied;
 
-        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f)
+        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f)
         {
             OnDied = null;
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
+            eventBus = bus;
             
             if (enemyData != null)
             {
@@ -194,7 +197,7 @@ namespace ProjectB.Enemies
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;
 
-            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.EnemyDiedEvent(transform.position, enemyData, isElite));
+            eventBus?.Publish(new EnemyDiedEvent(transform.position, enemyData, isElite));
 
             OnDied?.Invoke(this);
             ReturnToPool();

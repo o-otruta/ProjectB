@@ -18,44 +18,18 @@ namespace ProjectB.UI
             this.gameManager = gameManager;
             this.achievementManager = achievementManager;
 
-            SubscribeToEvents();
+            this.gameManager.OnGameOver += Show;
         }
 
         private void Awake()
         {
-            if (gameManager == null)
-            {
-                gameManager = FindAnyObjectByType<GameManager>();
-            }
-
-            SubscribeToEvents();
-
             if (panel != null)
             {
                 panel.SetActive(false);
             }
         }
 
-        private void Start()
-        {
-            SubscribeToEvents();
-        }
-
         private void OnDestroy()
-        {
-            UnsubscribeFromEvents();
-        }
-
-        private void SubscribeToEvents()
-        {
-            if (gameManager != null)
-            {
-                gameManager.OnGameOver -= Show;
-                gameManager.OnGameOver += Show;
-            }
-        }
-
-        private void UnsubscribeFromEvents()
         {
             if (gameManager != null)
             {

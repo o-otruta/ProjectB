@@ -3,6 +3,7 @@ using UnityEngine.Pool;
 using ProjectB.Combat;
 using ProjectB.Data.Enemies;
 using ProjectB.Data.Combat;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Enemies
 {
@@ -14,9 +15,9 @@ namespace ProjectB.Enemies
         private float nextFireTime;
 
         public override void Initialize(EnemyData data, Transform heroTarget,
-            IObjectPool<EnemyBase> enemyPool, float difficultyMultiplier = 1f)
+            IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f)
         {
-            base.Initialize(data, heroTarget, enemyPool, difficultyMultiplier);
+            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier);
             
             shootingData = data as ShootingEnemyData;
             nextFireTime = Time.time + Random.Range(0f, 1f); // Рассинхронизация

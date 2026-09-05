@@ -131,7 +131,7 @@ namespace ProjectB.Enemies
             
             // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(selectedType, heroTarget, pool, difficultyMultiplier);
+            enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
 
             if (currentWave >= waveConfig.minWaveForElites)
             {

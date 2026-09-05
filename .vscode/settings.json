@@ -1,4 +1,4 @@
-﻿{
+{
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
@@ -11,7 +11,9 @@
         "**/Builds/**": true,
         "**/Logs/**": true,
         "**/UserSettings/**": true,
-        "**/.vs/**": true
+        "**/.vs/**": true,
+        "**/Assets/TextMesh Pro/**": true,
+        "**/TextMesh Pro/**": true
     },
     "files.exclude": {
         "**/.DS_Store": true,

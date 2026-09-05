@@ -5,13 +5,10 @@ namespace ProjectB.Core.Events
 {
     public class GameEventBus : IDisposable
     {
-        public static GameEventBus Current { get; private set; }
-
         private readonly Dictionary<Type, Delegate> _subscribers = new Dictionary<Type, Delegate>();
 
         public GameEventBus()
         {
-            Current = this;
         }
 
         public void Subscribe<T>(Action<T> handler) where T : struct
@@ -58,10 +55,6 @@ namespace ProjectB.Core.Events
         public void Clear()
         {
             _subscribers.Clear();
-            if (Current == this)
-            {
-                Current = null;
-            }
         }
 
         public void Dispose()

@@ -2,18 +2,21 @@ using System;
 using UnityEngine;
 using VContainer;
 using ProjectB.Meta;
+using ProjectB.Core.Events;
 
 namespace ProjectB.LevelUp
 {
     public class HeroExperience : MonoBehaviour
     {
         private MetaUpgradeManager metaUpgradeManager;
+        private GameEventBus eventBus;
         private float xpMultiplier = 1f;
 
         [Inject]
-        public void Construct(MetaUpgradeManager metaManager)
+        public void Construct(MetaUpgradeManager metaManager, GameEventBus eventBus)
         {
             this.metaUpgradeManager = metaManager;
+            this.eventBus = eventBus;
         }
         [Header("Settings")]
         [Tooltip("Базовое значение XP для 1 уровня")]
@@ -96,7 +99,7 @@ namespace ProjectB.LevelUp
             Debug.Log($"[HeroExperience] Level Up! Now level {CurrentLevel}");
             
             OnLevelUp?.Invoke(CurrentLevel);
-            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.HeroLeveledUpEvent(CurrentLevel));
+            eventBus?.Publish(new HeroLeveledUpEvent(CurrentLevel));
         }
 
         private void CalculateXPToNextLevel()

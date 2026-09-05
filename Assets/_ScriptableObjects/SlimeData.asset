@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c2754e271f3e7945b33da44921444cc, type: 3}
   m_Name: SlimeData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Enemies.EnemyData
-  hp: 20
+  hp: 18
   speed: 3
   contactDamage: 10
   damageCooldown: 1

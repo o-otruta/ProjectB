@@ -3,6 +3,7 @@ using ProjectB.Combat;
 using ProjectB.Data;
 using VContainer;
 using ProjectB.Meta;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Player
 {
@@ -17,15 +18,17 @@ namespace ProjectB.Player
         private int currentMaxHp;
         private bool isDead;
         private MetaUpgradeManager metaUpgradeManager;
+        private GameEventBus eventBus;
 
         public bool IsDead => isDead;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
 
         [Inject]
-        public void Construct(MetaUpgradeManager metaManager)
+        public void Construct(MetaUpgradeManager metaManager, GameEventBus eventBus)
         {
             this.metaUpgradeManager = metaManager;
+            this.eventBus = eventBus;
         }
 
         private void Start()
@@ -67,7 +70,7 @@ namespace ProjectB.Player
             isDead = true;
             Debug.Log("[HeroHealth] Hero has died. Game Over!");
             OnDied?.Invoke();
-            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.HeroDiedEvent());
+            eventBus?.Publish(new HeroDiedEvent());
         }
 
         [ContextMenu("Debug Kill")]

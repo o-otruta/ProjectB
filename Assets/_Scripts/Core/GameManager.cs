@@ -6,6 +6,7 @@ using ProjectB.UI;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
 using VContainer;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Core
 {
@@ -26,15 +27,23 @@ namespace ProjectB.Core
         private SaveManager saveManager;
         private RunStatistics runStatistics;
         private AchievementManager achievementManager;
+        private GameEventBus eventBus;
         
         [Inject]
-        public void Construct(HeroHealth heroHealth, WaveManager waveManager, SaveManager saveManager, RunStatistics runStatistics, AchievementManager achievementManager)
+        public void Construct(
+            HeroHealth heroHealth, 
+            WaveManager waveManager, 
+            SaveManager saveManager, 
+            RunStatistics runStatistics, 
+            AchievementManager achievementManager, 
+            GameEventBus eventBus)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
             this.saveManager = saveManager;
             this.runStatistics = runStatistics;
             this.achievementManager = achievementManager;
+            this.eventBus = eventBus;
         }
 
         private GameState currentState;
@@ -104,7 +113,7 @@ namespace ProjectB.Core
             }
 
             OnGameOver?.Invoke(wave, coins);
-            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.GameOverEvent(wave, coins));
+            eventBus?.Publish(new GameOverEvent(wave, coins));
         }
 
         public void PauseForLevelUp()

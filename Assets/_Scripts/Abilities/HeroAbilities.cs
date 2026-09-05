@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
 using ProjectB.Meta;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Abilities
 {
@@ -14,15 +15,17 @@ namespace ProjectB.Abilities
         private List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
 
         private MetaUpgradeManager metaUpgradeManager;
+        private GameEventBus eventBus;
         private float abilityDamageBonus = 0f;
 
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
 
         [Inject]
-        public void Construct(MetaUpgradeManager metaManager)
+        public void Construct(MetaUpgradeManager metaManager, GameEventBus eventBus)
         {
             metaUpgradeManager = metaManager;
+            this.eventBus = eventBus;
         }
 
         private void Start()
@@ -69,7 +72,7 @@ namespace ProjectB.Abilities
             
             // Notify if necessary
             OnAbilitiesChanged();
-            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.AbilityUnlockedEvent(data.id, data.type));
+            eventBus?.Publish(new AbilityUnlockedEvent(data.id, data.type));
         }
 
         public void UpgradeAbility(string id, ModifierType type, float value)
