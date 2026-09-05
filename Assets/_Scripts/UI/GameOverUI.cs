@@ -9,14 +9,13 @@ namespace ProjectB.UI
         [SerializeField] private GameObject panel;
         [SerializeField] private TMPro.TextMeshProUGUI waveText;
         [SerializeField] private TMPro.TextMeshProUGUI coinsText;
-        private IObjectResolver resolver;
-
+        private GameManager gameManager;
         private ProjectB.Meta.AchievementManager achievementManager;
 
         [Inject]
-        public void Construct(IObjectResolver resolver, ProjectB.Meta.AchievementManager achievementManager)
+        public void Construct(GameManager gameManager, ProjectB.Meta.AchievementManager achievementManager)
         {
-            this.resolver = resolver;
+            this.gameManager = gameManager;
             this.achievementManager = achievementManager;
         }
 
@@ -25,6 +24,22 @@ namespace ProjectB.UI
             if (panel != null)
             {
                 panel.SetActive(false);
+            }
+        }
+
+        private void Start()
+        {
+            if (gameManager != null)
+            {
+                gameManager.OnGameOver += Show;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (gameManager != null)
+            {
+                gameManager.OnGameOver -= Show;
             }
         }
 
@@ -62,25 +77,25 @@ namespace ProjectB.UI
 
         public void OnRestartClicked()
         {
-            if (resolver != null)
+            if (gameManager != null)
             {
-                resolver.Resolve<GameManager>().RestartGame();
+                gameManager.RestartGame();
             }
         }
 
         public void OnMenuClicked()
         {
-            if (resolver != null)
+            if (gameManager != null)
             {
-                resolver.Resolve<GameManager>().GoToMenu();
+                gameManager.GoToMenu();
             }
         }
 
         public void OnReviveClicked()
         {
-            if (resolver != null)
+            if (gameManager != null)
             {
-                resolver.Resolve<GameManager>().ReviveHero();
+                gameManager.ReviveHero();
             }
         }
     }

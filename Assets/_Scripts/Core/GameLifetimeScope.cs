@@ -22,6 +22,7 @@ namespace ProjectB.Core
             // Register Core Systems
             builder.Register<RunStatistics>(Lifetime.Scoped);
             builder.Register<GameEventBus>(Lifetime.Scoped);
+            builder.Register<UpgradeApplier>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
 
             // Register Managers & Environment

@@ -130,21 +130,12 @@ public class UISetup
         var goUISer = new SerializedObject(gameOverUI);
         goUISer.FindProperty("panel").objectReferenceValue = gameOverObj;
         goUISer.FindProperty("waveText").objectReferenceValue = goWaveText;
-        goUISer.FindProperty("gameManager").objectReferenceValue = gameManager;
         goUISer.ApplyModifiedProperties();
 
         // Add listeners to buttons
         UnityEditor.Events.UnityEventTools.AddPersistentListener(restartBtnObj.GetComponent<Button>().onClick, gameOverUI.OnRestartClicked);
         UnityEditor.Events.UnityEventTools.AddPersistentListener(menuBtnObj.GetComponent<Button>().onClick, gameOverUI.OnMenuClicked);
         UnityEditor.Events.UnityEventTools.AddPersistentListener(reviveBtnObj.GetComponent<Button>().onClick, gameOverUI.OnReviveClicked);
-
-        // Bind GameManager fields
-        var waveManager = Object.FindAnyObjectByType<WaveManager>();
-        var gmSer = new SerializedObject(gameManager);
-        gmSer.FindProperty("heroHealth").objectReferenceValue = heroHealth;
-        gmSer.FindProperty("waveManager").objectReferenceValue = waveManager;
-        gmSer.FindProperty("gameOverUI").objectReferenceValue = gameOverUI;
-        gmSer.ApplyModifiedProperties();
 
         Debug.Log("UI Setup Complete!");
     }

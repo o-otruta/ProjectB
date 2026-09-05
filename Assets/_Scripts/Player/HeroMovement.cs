@@ -68,5 +68,13 @@ namespace ProjectB.Player
                 visualModel.rotation = Quaternion.Slerp(visualModel.rotation, targetRotation, heroData.rotationSpeed * Time.deltaTime);
             }
         }
+
+        public float MoveSpeed => moveSpeed;
+
+        public void IncreaseMoveSpeed(float amount)
+        {
+            moveSpeed += amount;
+            Debug.Log($"[HeroMovement] MoveSpeed increased by {amount}. New MoveSpeed: {moveSpeed}");
+        }
     }
 }

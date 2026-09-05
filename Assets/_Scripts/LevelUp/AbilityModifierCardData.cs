@@ -1,5 +1,4 @@
 using UnityEngine;
-using VContainer;
 using ProjectB.Abilities;
 
 namespace ProjectB.LevelUp
@@ -10,17 +9,5 @@ namespace ProjectB.LevelUp
         public string targetAbilityId;
         public ModifierType modifierType;
         public float value;
-
-        public override void ApplyEffect(IObjectResolver resolver)
-        {
-            if (resolver.TryResolve<HeroAbilities>(out var abilities))
-            {
-                abilities.UpgradeAbility(targetAbilityId, modifierType, value);
-            }
-            else
-            {
-                Debug.LogWarning("[AbilityModifierCardData] HeroAbilities not found in DI container.");
-            }
-        }
     }
 }

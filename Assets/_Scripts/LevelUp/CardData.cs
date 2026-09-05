@@ -1,5 +1,4 @@
 using UnityEngine;
-using VContainer;
 
 namespace ProjectB.LevelUp
 {
@@ -13,11 +12,5 @@ namespace ProjectB.LevelUp
         
         [Tooltip("Удалять ли карту из пула после получения (одноразовая)")]
         public bool isConsumable = false;
-        
-        /// <summary>
-        /// Применяет эффект карты к игре.
-        /// Разрешение зависимостей (например, HeroHealth) выполняется через переданный resolver.
-        /// </summary>
-        public abstract void ApplyEffect(IObjectResolver resolver);
     }
 }

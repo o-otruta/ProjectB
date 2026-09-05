@@ -17,6 +17,12 @@ namespace ProjectB.Combat
         private Collider[] overlapResults = new Collider[200]; // Буфер для поиска врагов
         private float damageMultiplier;
 
+        public float DamageMultiplier
+        {
+            get => damageMultiplier;
+            set => damageMultiplier = value;
+        }
+
         public WeaponController(WeaponData data, LayerMask enemyLayer, Transform ownerTransform, Transform firePoint, Transform rootContainer, float damageMultiplier = 1f)
         {
             this.weaponData = data;

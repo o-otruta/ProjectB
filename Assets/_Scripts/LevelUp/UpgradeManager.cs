@@ -20,17 +20,19 @@ namespace ProjectB.LevelUp
         private CardSelectionUI cardUI;
         private HeroExperience heroExp;
         private GameManager gameManager;
-        private IObjectResolver objectResolver;
+        private HeroAbilities heroAbilities;
+        private UpgradeApplier upgradeApplier;
         
         private int pendingLevelUps = 0;
 
         [Inject]
-        public void Construct(IObjectResolver resolver, GameManager gameManager, CardSelectionUI cardUI, HeroExperience heroExp)
+        public void Construct(GameManager gameManager, CardSelectionUI cardUI, HeroExperience heroExp, HeroAbilities heroAbilities, UpgradeApplier upgradeApplier)
         {
-            this.objectResolver = resolver;
             this.gameManager = gameManager;
             this.cardUI = cardUI;
             this.heroExp = heroExp;
+            this.heroAbilities = heroAbilities;
+            this.upgradeApplier = upgradeApplier;
         }
 
         private void Start()
@@ -103,16 +105,8 @@ namespace ProjectB.LevelUp
             if (dynamicPool == null || dynamicPool.Count == 0) return new List<CardData>();
             
             List<CardData> validPool = new List<CardData>();
-            bool canAddActive = true;
-            bool canAddPassive = true;
-
-            HeroAbilities heroAbilities = null;
-            if (objectResolver.TryResolve<HeroAbilities>(out var abilities))
-            {
-                canAddActive = abilities.CanAddActive();
-                canAddPassive = abilities.CanAddPassive();
-                heroAbilities = abilities;
-            }
+            bool canAddActive = heroAbilities == null || heroAbilities.CanAddActive();
+            bool canAddPassive = heroAbilities == null || heroAbilities.CanAddPassive();
 
             // Filter out abilities if slots are full or already acquired
             foreach (var card in dynamicPool)
@@ -200,7 +194,10 @@ namespace ProjectB.LevelUp
         private void ApplyCardEffect(CardData card)
         {
             Debug.Log($"[UpgradeManager] Applying card: {card.cardName}");
-            card.ApplyEffect(objectResolver);
+            if (upgradeApplier != null)
+            {
+                upgradeApplier.ApplyCard(card, this);
+            }
         }
 
         private void ResumeGame()

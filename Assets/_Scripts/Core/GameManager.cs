@@ -19,19 +19,19 @@ namespace ProjectB.Core
 
     public class GameManager : MonoBehaviour
     {
+        public event System.Action<int, int> OnGameOver;
+
         private HeroHealth heroHealth;
         private WaveManager waveManager;
-        private GameOverUI gameOverUI;
         private SaveManager saveManager;
         private RunStatistics runStatistics;
         private AchievementManager achievementManager;
         
         [Inject]
-        public void Construct(HeroHealth heroHealth, WaveManager waveManager, GameOverUI gameOverUI, SaveManager saveManager, RunStatistics runStatistics, AchievementManager achievementManager)
+        public void Construct(HeroHealth heroHealth, WaveManager waveManager, SaveManager saveManager, RunStatistics runStatistics, AchievementManager achievementManager)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
-            this.gameOverUI = gameOverUI;
             this.saveManager = saveManager;
             this.runStatistics = runStatistics;
             this.achievementManager = achievementManager;
@@ -103,14 +103,8 @@ namespace ProjectB.Core
                 saveManager.RecordRunResult(result);
             }
 
-            if (gameOverUI != null)
-            {
-                gameOverUI.Show(wave, coins);
-            }
-            else
-            {
-                Debug.LogWarning("[GameManager] GameOverUI not found! Cannot show Game Over screen.");
-            }
+            OnGameOver?.Invoke(wave, coins);
+            ProjectB.Core.Events.GameEventBus.Current?.Publish(new ProjectB.Core.Events.GameOverEvent(wave, coins));
         }
 
         public void PauseForLevelUp()

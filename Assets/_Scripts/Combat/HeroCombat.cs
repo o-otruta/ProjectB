@@ -49,6 +49,18 @@ namespace ProjectB.Combat
             activeWeapons.Add(controller);
         }
 
+        public float HeroDamageMultiplier => heroDamageMultiplier;
+
+        public void IncreaseDamageMultiplier(float bonus)
+        {
+            heroDamageMultiplier += bonus;
+            foreach (var weapon in activeWeapons)
+            {
+                weapon.DamageMultiplier = heroDamageMultiplier;
+            }
+            Debug.Log($"[HeroCombat] Damage multiplier increased by {bonus}. New Multiplier: {heroDamageMultiplier}");
+        }
+
         private void Update()
         {
             if (hp != null && hp.IsDead) return;

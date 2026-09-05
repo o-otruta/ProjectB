@@ -83,5 +83,20 @@ namespace ProjectB.Core.Events
             Amount = amount;
         }
     }
+
+    /// <summary>
+    /// Завершение игры (победа или поражение). Публикуется из GameManager.HandleHeroDeath()
+    /// </summary>
+    public struct GameOverEvent
+    {
+        public int WaveReached;
+        public int CoinsEarned;
+
+        public GameOverEvent(int waveReached, int coinsEarned)
+        {
+            WaveReached = waveReached;
+            CoinsEarned = coinsEarned;
+        }
+    }
 }
 
