@@ -90,7 +90,20 @@ namespace ProjectB.Abilities
             var t = turretPool.Get();
             if (t == null) return;
 
-            t.transform.position = transform.position; 
+            Vector3 spawnPos = transform.position;
+            int mask = LayerMask.GetMask("Default", "Obstacles");
+            if (mask == 0) mask = ~LayerMask.GetMask("Hero");
+
+            if (Physics.Raycast(transform.position, Vector3.down, out var hit, 10f, mask, QueryTriggerInteraction.Ignore))
+            {
+                spawnPos.y = hit.point.y;
+            }
+            else
+            {
+                spawnPos.y = 0f;
+            }
+
+            t.transform.position = spawnPos; 
             t.transform.rotation = Quaternion.identity;
             t.Initialize(currentSearchRadius, currentDps, currentLifetime, TurretData.targetLayer, turretPool);
         }
