@@ -91,6 +91,7 @@ namespace ProjectB.Abilities
             if (t == null) return;
 
             t.transform.position = transform.position; 
+            t.transform.rotation = Quaternion.identity;
             t.Initialize(currentSearchRadius, currentDps, currentLifetime, TurretData.targetLayer, turretPool);
         }
 

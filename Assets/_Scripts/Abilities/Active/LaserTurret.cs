@@ -1,11 +1,20 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Visuals;
 using UnityEngine.Pool;
 
 namespace ProjectB.Abilities
 {
     public class LaserTurret : MonoBehaviour
     {
+        [Header("References")]
+        [SerializeField] private LineRenderer lineRenderer;
+        [SerializeField] private Transform firePoint;
+        [SerializeField] private VoxelMeshAnimator meshAnimator;
+
+        [Header("Aiming Settings")]
+        [SerializeField] private float rotationSpeed = 720f;
+
         private float searchRadius;
         private float dps;
         private float lifetime;
@@ -15,7 +24,6 @@ namespace ProjectB.Abilities
         private float spawnTime;
         private Transform currentTarget;
         private Collider[] hitBuffer = new Collider[50];
-        private LineRenderer lineRenderer;
 
         public void Initialize(float searchRadius, float dps, float lifetime, LayerMask enemyLayer, IObjectPool<LaserTurret> pool)
         {
@@ -36,7 +44,7 @@ namespace ProjectB.Abilities
                     lineRenderer = gameObject.AddComponent<LineRenderer>();
                     lineRenderer.startWidth = 0.1f;
                     lineRenderer.endWidth = 0.1f;
-                    // TODO(Post-MVP): Убрать Shader.Find после добавления префабов
+                    // Fallback procedural material if not assigned via prefab
                     var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                     mat.color = Color.cyan;
                     mat.SetFloat("_Surface", 1); 
@@ -49,6 +57,12 @@ namespace ProjectB.Abilities
                 }
             }
             lineRenderer.enabled = false;
+
+            if (meshAnimator == null)
+            {
+                meshAnimator = GetComponentInChildren<VoxelMeshAnimator>();
+            }
+            meshAnimator?.Stop();
         }
 
         private void OnDisable()
@@ -56,6 +70,7 @@ namespace ProjectB.Abilities
             currentTarget = null;
             accumulatedDamage = 0f;
             if (lineRenderer != null) lineRenderer.enabled = false;
+            meshAnimator?.Stop();
         }
 
         private void Update()
@@ -70,9 +85,21 @@ namespace ProjectB.Abilities
 
             if (currentTarget != null)
             {
+                Vector3 targetPos = currentTarget.position;
+                Vector3 targetDir = targetPos - transform.position;
+                targetDir.y = 0;
+                if (targetDir.sqrMagnitude > 0.001f)
+                {
+                    Quaternion targetRot = Quaternion.LookRotation(targetDir);
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+                }
+
                 lineRenderer.enabled = true;
-                lineRenderer.SetPosition(0, transform.position + Vector3.up * 0.5f);
-                lineRenderer.SetPosition(1, currentTarget.position + Vector3.up * 0.5f);
+                Vector3 origin = firePoint != null ? firePoint.position : (transform.position + Vector3.up * 0.5f);
+                lineRenderer.SetPosition(0, origin);
+                lineRenderer.SetPosition(1, targetPos + Vector3.up * 0.5f);
+
+                meshAnimator?.Play();
 
                 if (currentTarget.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
@@ -93,6 +120,7 @@ namespace ProjectB.Abilities
             {
                 lineRenderer.enabled = false;
                 accumulatedDamage = 0f;
+                meshAnimator?.Stop();
             }
         }
 

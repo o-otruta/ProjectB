@@ -24,7 +24,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  turretPrefab: {fileID: 0}
+  turretPrefab: {fileID: 1808474423410271208, guid: 93a49a8633a5e6b46b010ed5b1a5e166, type: 3}
   turretLifetime: 8
   searchRadius: 8
   dps: 15

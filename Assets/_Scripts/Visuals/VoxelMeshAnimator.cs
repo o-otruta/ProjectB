@@ -11,9 +11,12 @@ namespace ProjectB.Visuals
     {
         [Header("Mesh Settings")]
         [SerializeField] private MeshFilter targetMeshFilter;
+        [Tooltip("Default mesh displayed when idle / stopped")]
+        [SerializeField] private Mesh idleMesh;
         [SerializeField] private Mesh[] frames;
 
         [Header("Playback Settings")]
+        [SerializeField] private bool playOnEnable = true;
         [Tooltip("Animation speed in frames per second (8-12 is typical for voxel stop-motion)")]
         [SerializeField] private float framesPerSecond = 10f;
         [SerializeField] private bool loop = true;
@@ -38,6 +41,19 @@ namespace ProjectB.Visuals
             set => targetMeshFilter = value;
         }
 
+        public Mesh IdleMesh
+        {
+            get => idleMesh;
+            set
+            {
+                idleMesh = value;
+                if (!isPlaying && targetMeshFilter != null && idleMesh != null)
+                {
+                    targetMeshFilter.sharedMesh = idleMesh;
+                }
+            }
+        }
+
         public Mesh[] Frames
         {
             get => frames;
@@ -48,6 +64,14 @@ namespace ProjectB.Visuals
                 UpdateFrame();
             }
         }
+
+        public bool PlayOnEnable
+        {
+            get => playOnEnable;
+            set => playOnEnable = value;
+        }
+
+        public bool IsPlaying => isPlaying;
 
         public float FramesPerSecond
         {
@@ -99,6 +123,14 @@ namespace ProjectB.Visuals
             {
                 baseLocalPosition = bobbingTransform.localPosition;
             }
+
+            if (!playOnEnable)
+            {
+                Stop();
+                return;
+            }
+
+            isPlaying = true;
 
             if (randomizeStartOffset)
             {
@@ -165,8 +197,29 @@ namespace ProjectB.Visuals
             }
         }
 
-        public void Play() => isPlaying = true;
+        public void Play()
+        {
+            if (!isPlaying)
+            {
+                isPlaying = true;
+                timer = 0f;
+                currentFrameIndex = -1;
+                UpdateFrame();
+            }
+        }
+
         public void Pause() => isPlaying = false;
+
+        public void Stop()
+        {
+            isPlaying = false;
+            currentFrameIndex = -1;
+            timer = 0f;
+            if (idleMesh != null && targetMeshFilter != null)
+            {
+                targetMeshFilter.sharedMesh = idleMesh;
+            }
+        }
     }
 }
 
