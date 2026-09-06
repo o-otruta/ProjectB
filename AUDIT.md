@@ -50,6 +50,8 @@ Random.state = prev;
 
 ### 4. `LaserTurret`: двойной `Release` в пул
 [Assets/_Scripts/Abilities/Active/LaserTurret.cs](Assets/_Scripts/Abilities/Active/LaserTurret.cs#L60-L65)
+### 4. ~~`LaserTurret`: двойной `Release` в пул~~ — ✅ *Исправлено*
+[Assets/_Scripts/Abilities/Active/LaserTurret.cs](Assets/_Scripts/Abilities/Active/LaserTurret.cs)
 
 ```csharp
 if (Time.time >= spawnTime + lifetime)
@@ -58,6 +60,11 @@ if (Time.time >= spawnTime + lifetime)
     return;
 }
 ```
+> **Решение:**
+> 1. Добавлен флаг `isReturned` и централизованный метод `ReturnToPool()`. Сброс флага выполняется в `Initialize()`.
+> 2. Добавлена проверка `if (isReturned) return;` в начале `Update()`, исключающая выполнение логики или повторный вызов деспавна после возврата в пул.
+> 3. В `ReturnToPool()` реализована очистка состояния (сброс цели `currentTarget`, накопленного урона `accumulatedDamage`, отключение `lineRenderer` и остановка `meshAnimator`) с безопасным вызовом `pool.Release(this)`.
+> 4. Добавлен публичный метод `Despawn()`, делегирующий вызов в защищенный `ReturnToPool()`.
 
 Нет флага `isReturned`. При `collectionCheck: true` (а он включён в [LaserTurretAbility.cs](Assets/_Scripts/Abilities/Active/LaserTurretAbility.cs#L59)) повторный `Release` кинет `InvalidOperationException`. `OnDisable` не гарантирует, что `Update` не выполнится ещё раз в этом же кадре при некоторых порядках.
 

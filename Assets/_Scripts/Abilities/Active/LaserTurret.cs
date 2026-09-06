@@ -20,6 +20,7 @@ namespace ProjectB.Abilities
         private float lifetime;
         private LayerMask enemyLayer;
         private IObjectPool<LaserTurret> pool;
+        private bool isReturned;
 
         private float spawnTime;
         private Transform currentTarget;
@@ -32,9 +33,11 @@ namespace ProjectB.Abilities
             this.lifetime = lifetime;
             this.enemyLayer = enemyLayer;
             this.pool = pool;
+            this.isReturned = false;
 
             spawnTime = Time.time;
             currentTarget = null;
+            accumulatedDamage = 0f;
 
             if (lineRenderer == null)
             {
@@ -75,9 +78,12 @@ namespace ProjectB.Abilities
 
         private void Update()
         {
+            if (isReturned) return;
+
             if (Time.time >= spawnTime + lifetime)
             {
                 pool.Release(this);
+                ReturnToPool();
                 return;
             }
 
@@ -155,6 +161,31 @@ namespace ProjectB.Abilities
                     minSqrDist = sqrDist;
                     currentTarget = target;
                 }
+            }
+        }
+
+        public void Despawn()
+        {
+            ReturnToPool();
+        }
+
+        public void ReturnToPool()
+        {
+            if (isReturned) return;
+            isReturned = true;
+
+            currentTarget = null;
+            accumulatedDamage = 0f;
+            if (lineRenderer != null) lineRenderer.enabled = false;
+            meshAnimator?.Stop();
+
+            if (pool != null)
+            {
+                pool.Release(this);
+            }
+            else
+            {
+                gameObject.SetActive(false);
             }
         }
     }
