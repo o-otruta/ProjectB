@@ -59,6 +59,12 @@ namespace ProjectB.UI
                 if (dayItems[i] == null) continue;
 
                 int dayIndex = i + 1;
+                if (data.rewards == null || i >= data.rewards.Length)
+                {
+                    dayItems[i].gameObject.SetActive(false);
+                    continue;
+                }
+
                 DailyBonusReward reward = data.rewards[i];
                 int coinsAmount = bonusManager.GetCoinsRewardAmount(reward);
 

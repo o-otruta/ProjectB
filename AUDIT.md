@@ -81,12 +81,14 @@ Random.state = prev;
 > 4. Добавлена проверка `smoothTime > 0f`: если `smoothTime == 0f`, выполняется мгновенное присвоение позиции цели без вызова оверхеда `Vector3.SmoothDamp`.
 > 5. Добавлены публичные сеттеры `SetDefaultOrthoSize` и `SetDefaultFOV` с автоматическим обновлением aspect ratio.
 
-### 8. `DailyBonusManager` — нет защиты и нет проверки границ
-[Assets/_Scripts/Meta/DailyBonusManager.cs](Assets/_Scripts/Meta/DailyBonusManager.cs#L64-L80)
+### 8. ~~`DailyBonusManager` — нет защиты и нет проверки границ~~ — ✅ *Исправлено*
+[Assets/_Scripts/Meta/DailyBonusManager.cs](Assets/_Scripts/Meta/DailyBonusManager.cs), [Assets/_Scripts/UI/DailyBonusScreenUI.cs](Assets/_Scripts/UI/DailyBonusScreenUI.cs)
 
-- `rewardData.rewards[currentDay - 1]` без проверки `rewards.Length >= 7` → `IndexOutOfRangeException`.
-- Нет защиты от перевода часов назад/вперёд: игрок меняет дату → фармит бонус бесконечно.
-- Нет сброса стрика при пропуске дня (сравнивается только «сегодня != последний claim»). Пропустил неделю — продолжил с 5-го дня.
+> **Решение:**
+> 1. Реализована проверка границ массива наград: `rewardIndex` безопасно клампится в пределах `0 .. rewards.Length - 1`, добавлены проверки на `null` и пустой массив. Лимит дней динамически рассчитывается через `GetMaxDays()`.
+> 2. В `DailyBonusScreenUI.cs` добавлены проверки на длину массива `data.rewards` и `null`, исключающие вылет интерфейса.
+> 3. Добавлен метод `ValidateStreak()`: если с момента последнего клейма прошло 2 или более дней (`(today - lastClaimDate).TotalDays >= 2`), стрик сбрасывается на день 1 (`dailyBonusDay = 1`), сохраняется и триггерит обновление UI.
+> 4. Добавлена защита от читерства с переводом системного времени назад: если дата `today` меньше `lastClaimDate`, `IsRewardAvailable()` возвращает `false` и выдача блокируется.
 
 ---
 
