@@ -114,6 +114,8 @@ namespace ProjectB.Enemies
             isSpawning = false;
             waveDurationCoroutine = null;
 
+            // Unsubscribe from enemy death events to prevent late wave transitions,
+            // but keep enemies alive on screen until scene restart/menu
             enemyIterationBuffer.Clear();
             enemyIterationBuffer.AddRange(activeEnemies);
             for (int i = 0; i < enemyIterationBuffer.Count; i++)
@@ -122,11 +124,9 @@ namespace ProjectB.Enemies
                 if (enemy != null)
                 {
                     enemy.OnDied -= HandleEnemyDied;
-                    enemy.Despawn();
                 }
             }
             enemyIterationBuffer.Clear();
-            activeEnemies.Clear();
         }
 
         private IEnumerator StartWaveDelay()
@@ -288,6 +288,8 @@ namespace ProjectB.Enemies
 
         private void CheckWaveEnd()
         {
+            if (heroHealth != null && heroHealth.IsDead) return;
+
             activeEnemies.RemoveWhere(e => e == null || !e.gameObject.activeInHierarchy || e.IsDead);
 
             if (!isSpawning && activeEnemies.Count <= 0)
