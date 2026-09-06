@@ -15,19 +15,19 @@ namespace ProjectB.EditorScripts
             var countMod = ScriptableObject.CreateInstance<AbilityModifierCardData>();
             countMod.cardName = "Orbital Sword: +1 Sphere";
             countMod.description = "Adds one extra orbiting sphere.";
-            countMod.targetAbilityId = "orbital_sword";
+            countMod.targetAbilityId = "orbital_small_sword";
             countMod.modifierType = ModifierType.Count;
             countMod.value = 1;
-            AssetDatabase.CreateAsset(countMod, "Assets/_Scripts/Abilities/Data/OrbitalSword_Plus1Sphere.asset");
+            AssetDatabase.CreateAsset(countMod, "Assets/_Scripts/LevelUp/Cards/OrbitalSword_Plus1Sphere.asset");
 
             // 2. Create +10 Damage Modifier
             var dmgMod = ScriptableObject.CreateInstance<AbilityModifierCardData>();
             dmgMod.cardName = "Orbital Sword: +10 Damage";
             dmgMod.description = "Increases damage by 10.";
-            dmgMod.targetAbilityId = "orbital_sword";
+            dmgMod.targetAbilityId = "orbital_small_sword";
             dmgMod.modifierType = ModifierType.Damage;
             dmgMod.value = 10;
-            AssetDatabase.CreateAsset(dmgMod, "Assets/_Scripts/Abilities/Data/OrbitalSword_Plus10Damage.asset");
+            AssetDatabase.CreateAsset(dmgMod, "Assets/_Scripts/LevelUp/Cards/OrbitalSword_Plus10Damage.asset");
 
             // 3. Create Stat Upgrade Card (+20 Max HP)
             var hpMod = ScriptableObject.CreateInstance<StatUpgradeCardData>();
