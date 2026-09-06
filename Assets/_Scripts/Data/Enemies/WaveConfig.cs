@@ -44,5 +44,18 @@ namespace ProjectB.Data.Enemies
 
         [Tooltip("Множитель урона для элитных врагов")]
         public float eliteDamageMultiplier = 2f;
+
+        [Header("Safety & Wave Flow")]
+        [Tooltip("Максимальная длительность волны в секундах (таймаут). По истечении волна принудительно завершается (0 = без таймаута)")]
+        public float maxWaveDuration = 60f;
+
+        [Tooltip("Максимальное расстояние от героя до врага. Дальше этого враг считается отставшим/застрявшим и телепортируется к герою")]
+        public float leashDistance = 35f;
+
+        [Tooltip("Интервал проверки отставших врагов в секундах")]
+        public float leashCheckInterval = 2f;
+
+        [Tooltip("Безопасный отступ от внешних стен арены при спавне")]
+        public float arenaPadding = 3f;
     }
 }

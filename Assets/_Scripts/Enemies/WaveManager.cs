@@ -1,36 +1,51 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
 using ProjectB.Data.Enemies;
 using ProjectB.Player;
+using ProjectB.Arena;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Enemies
 {
     public class WaveManager : MonoBehaviour
     {
         [SerializeField] private WaveConfig waveConfig;
-        [SerializeField] private System.Collections.Generic.List<EnemyData> enemyTypes;
+        [SerializeField] private List<EnemyData> enemyTypes;
         
+        private HeroHealth heroHealth;
         private Transform heroTarget;
         private ProjectB.Meta.AchievementManager achievementManager;
-        private ProjectB.Core.Events.GameEventBus eventBus;
+        private GameEventBus eventBus;
+        private ArenaGenerator arenaGenerator;
 
-        private System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
+        private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
+        private readonly HashSet<EnemyBase> activeEnemies = new HashSet<EnemyBase>();
+        private readonly List<EnemyBase> enemyIterationBuffer = new List<EnemyBase>();
+
         private int currentWave = 1;
         public int CurrentWave => currentWave;
-        private int enemiesAlive = 0;
+        public int EnemiesAlive => activeEnemies.Count;
         private bool isSpawning = false;
+        private Coroutine waveTimeoutCoroutine;
 
         [Inject]
-        public void Construct(HeroHealth heroHealth, ProjectB.Meta.AchievementManager achievementManager, ProjectB.Core.Events.GameEventBus eventBus)
+        public void Construct(
+            HeroHealth heroHealth, 
+            ProjectB.Meta.AchievementManager achievementManager, 
+            GameEventBus eventBus,
+            ArenaGenerator arenaGenerator = null)
         {
+            this.heroHealth = heroHealth;
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
             }
             this.achievementManager = achievementManager;
             this.eventBus = eventBus;
+            this.arenaGenerator = arenaGenerator;
         }
 
         private void Start()
@@ -79,7 +94,39 @@ namespace ProjectB.Enemies
                 enemyPools.Add(enemyData, pool);
             }
 
+            eventBus?.Subscribe<GameOverEvent>(OnGameOver);
+            StartCoroutine(LeashCheckCoroutine());
             StartCoroutine(StartWaveDelay());
+        }
+
+        private void OnDestroy()
+        {
+            if (eventBus != null)
+            {
+                eventBus.Unsubscribe<GameOverEvent>(OnGameOver);
+            }
+            StopAllCoroutines();
+        }
+
+        private void OnGameOver(GameOverEvent evt)
+        {
+            StopAllCoroutines();
+            isSpawning = false;
+            waveTimeoutCoroutine = null;
+
+            enemyIterationBuffer.Clear();
+            enemyIterationBuffer.AddRange(activeEnemies);
+            for (int i = 0; i < enemyIterationBuffer.Count; i++)
+            {
+                var enemy = enemyIterationBuffer[i];
+                if (enemy != null)
+                {
+                    enemy.OnDied -= HandleEnemyDied;
+                    enemy.Despawn();
+                }
+            }
+            enemyIterationBuffer.Clear();
+            activeEnemies.Clear();
         }
 
         private IEnumerator StartWaveDelay()
@@ -91,14 +138,21 @@ namespace ProjectB.Enemies
         private IEnumerator SpawnWaveCoroutine()
         {
             isSpawning = true;
+            int waveNumber = currentWave;
             int enemiesToSpawn = Mathf.RoundToInt(waveConfig.baseEnemyCount * Mathf.Pow(waveConfig.enemiesPerWaveMultiplier, currentWave - 1));
             enemiesToSpawn = Mathf.Min(enemiesToSpawn, waveConfig.maxEnemiesPerWave);
             
             Debug.Log($"[WaveManager] Spawning Wave {currentWave} with {enemiesToSpawn} enemies.");
 
+            if (waveConfig.maxWaveDuration > 0f)
+            {
+                if (waveTimeoutCoroutine != null) StopCoroutine(waveTimeoutCoroutine);
+                waveTimeoutCoroutine = StartCoroutine(WaveTimeoutCoroutine(waveNumber));
+            }
+
             for (int i = 0; i < enemiesToSpawn; i++)
             {
-                if (heroTarget == null || (heroTarget.TryGetComponent<ProjectB.Player.HeroHealth>(out var hp) && hp.IsDead))
+                if (heroTarget == null || (heroHealth != null && heroHealth.IsDead))
                 {
                     isSpawning = false;
                     yield break;
@@ -109,27 +163,118 @@ namespace ProjectB.Enemies
             }
             
             isSpawning = false;
+            CheckWaveEnd();
+        }
+
+        private IEnumerator WaveTimeoutCoroutine(int waveNumber)
+        {
+            yield return new WaitForSeconds(waveConfig.maxWaveDuration);
+
+            if (currentWave != waveNumber || (heroHealth != null && heroHealth.IsDead))
+            {
+                yield break;
+            }
+
+            Debug.LogWarning($"[WaveManager] Wave {waveNumber} timed out after {waveConfig.maxWaveDuration}s! Force finishing wave.");
+
+            enemyIterationBuffer.Clear();
+            enemyIterationBuffer.AddRange(activeEnemies);
+            for (int i = 0; i < enemyIterationBuffer.Count; i++)
+            {
+                var enemy = enemyIterationBuffer[i];
+                if (enemy != null && !enemy.IsDead)
+                {
+                    enemy.ForceKill();
+                }
+            }
+            enemyIterationBuffer.Clear();
+
+            isSpawning = false;
+            CheckWaveEnd();
+        }
+
+        private IEnumerator LeashCheckCoroutine()
+        {
+            float interval = waveConfig != null && waveConfig.leashCheckInterval > 0.1f 
+                ? waveConfig.leashCheckInterval 
+                : 2f;
+            var wait = new WaitForSeconds(interval);
+
+            while (true)
+            {
+                yield return wait;
+
+                if (heroTarget == null || (heroHealth != null && heroHealth.IsDead)) continue;
+                if (activeEnemies.Count == 0) continue;
+
+                float leashDist = waveConfig != null ? waveConfig.leashDistance : 35f;
+                float leashDistSq = leashDist * leashDist;
+                Vector3 heroPos = heroTarget.position;
+
+                enemyIterationBuffer.Clear();
+                enemyIterationBuffer.AddRange(activeEnemies);
+
+                for (int i = 0; i < enemyIterationBuffer.Count; i++)
+                {
+                    var enemy = enemyIterationBuffer[i];
+                    if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy) continue;
+
+                    Vector3 diff = enemy.transform.position - heroPos;
+                    diff.y = 0f;
+                    if (diff.sqrMagnitude > leashDistSq)
+                    {
+                        Vector3 newPos = GetValidSpawnPosition();
+                        enemy.Teleport(newPos);
+                    }
+                }
+                enemyIterationBuffer.Clear();
+            }
+        }
+
+        private Vector3 GetValidSpawnPosition()
+        {
+            float halfArena = arenaGenerator != null ? arenaGenerator.ArenaSize / 2f : 250f;
+            float padding = waveConfig != null ? waveConfig.arenaPadding : 3f;
+            float maxCoord = Mathf.Max(5f, halfArena - padding);
+
+            Vector3 center = heroTarget != null ? heroTarget.position : Vector3.zero;
+            float minRad = waveConfig != null ? waveConfig.spawnRadiusMin : 10f;
+            float maxRad = waveConfig != null ? waveConfig.spawnRadiusMax : 15f;
+
+            int obstacleMask = LayerMask.GetMask("Obstacles");
+
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                float angle = Random.Range(0f, Mathf.PI * 2f);
+                float radius = Random.Range(minRad, maxRad);
+                Vector3 candidate = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                candidate.y = 0f;
+
+                candidate.x = Mathf.Clamp(candidate.x, -maxCoord, maxCoord);
+                candidate.z = Mathf.Clamp(candidate.z, -maxCoord, maxCoord);
+
+                if (obstacleMask == 0 || !Physics.CheckSphere(candidate + Vector3.up * 0.5f, 0.5f, obstacleMask))
+                {
+                    return candidate;
+                }
+            }
+
+            Vector3 fallback = center + (Random.insideUnitSphere * minRad);
+            fallback.y = 0f;
+            fallback.x = Mathf.Clamp(fallback.x, -maxCoord, maxCoord);
+            fallback.z = Mathf.Clamp(fallback.z, -maxCoord, maxCoord);
+            return fallback;
         }
 
         private void SpawnEnemy()
         {
-            // Randomly select an enemy type
             EnemyData selectedType = enemyTypes[Random.Range(0, enemyTypes.Count)];
             IObjectPool<EnemyBase> pool = enemyPools[selectedType];
             
             EnemyBase enemy = pool.Get();
-            
-            // Random point on circle around hero
-            float angle = Random.Range(0f, Mathf.PI * 2);
-            float radius = Random.Range(waveConfig.spawnRadiusMin, waveConfig.spawnRadiusMax);
-            
-            Vector3 spawnPos = heroTarget.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-            
-            // Adjust height if necessary based on your arena
-            spawnPos.y = 0f;
+            Vector3 spawnPos = GetValidSpawnPosition();
             enemy.transform.position = spawnPos;
             
-            // Re-initialize logic in EnemyBase
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
             enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
 
@@ -142,30 +287,39 @@ namespace ProjectB.Enemies
                 }
             }
             
-            enemy.OnDied -= HandleEnemyDied; // Ensure no duplicate subscription
+            enemy.OnDied -= HandleEnemyDied;
             enemy.OnDied += HandleEnemyDied;
             
-            enemiesAlive++;
+            activeEnemies.Add(enemy);
         }
 
         private void HandleEnemyDied(EnemyBase enemy)
         {
             enemy.OnDied -= HandleEnemyDied;
-            enemiesAlive--;
+            activeEnemies.Remove(enemy);
             CheckWaveEnd();
         }
 
         private void CheckWaveEnd()
         {
-            if (!isSpawning && enemiesAlive <= 0)
+            activeEnemies.RemoveWhere(e => e == null || !e.gameObject.activeInHierarchy || e.IsDead);
+
+            if (!isSpawning && activeEnemies.Count <= 0)
             {
+                if (waveTimeoutCoroutine != null)
+                {
+                    StopCoroutine(waveTimeoutCoroutine);
+                    waveTimeoutCoroutine = null;
+                }
+
                 int completedWave = currentWave;
                 currentWave++;
                 Debug.Log($"[WaveManager] Wave {completedWave} completed!");
                 achievementManager?.OnWaveReached(currentWave);
-                eventBus?.Publish(new ProjectB.Core.Events.WaveCompletedEvent(completedWave, currentWave));
+                eventBus?.Publish(new WaveCompletedEvent(completedWave, currentWave));
                 StartCoroutine(StartWaveDelay());
             }
         }
     }
 }
+

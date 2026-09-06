@@ -203,6 +203,27 @@ namespace ProjectB.Enemies
             ReturnToPool();
         }
 
+        public virtual void ForceKill()
+        {
+            if (!isAlive) return;
+            Die();
+        }
+
+        public virtual void Despawn()
+        {
+            if (!isAlive) return;
+            isAlive = false;
+            ReturnToPool();
+        }
+
+        public virtual void Teleport(Vector3 newPosition)
+        {
+            if (!isAlive) return;
+            transform.position = newPosition;
+            currentMoveDir = Vector3.zero;
+            nextCheckTime = 0f;
+        }
+
         private void ReturnToPool()
         {
             if (pool != null)

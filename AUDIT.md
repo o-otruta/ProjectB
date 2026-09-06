@@ -29,12 +29,16 @@ Random.InitState(_config.Seed);
 Random.state = prev;
 ```
 
-### 2. Волна может никогда не закончиться
-[Assets/_Scripts/Enemies/WaveManager.cs](Assets/_Scripts/Enemies/WaveManager.cs#L154-L166)
+### 2. ~~Волна может никогда не закончиться~~ — ✅ *Исправлено*
+[Assets/_Scripts/Enemies/WaveManager.cs](Assets/_Scripts/Enemies/WaveManager.cs)
 
-`CheckWaveEnd()` срабатывает только по `OnDied`. Если враг застрял за стеной, вылетел за арену или потерял таргет — волна висит бесконечно. Нет таймаута волны, нет принудительной телепортации/деспавна «потерянных» врагов.
-
-Плюс: после смерти героя враги продолжают жить и обновляться в `Update()` (спавн останавливается, но пул не чистится).
+> **Решение:**
+> 1. Устранён Race Condition в `SpawnWaveCoroutine`: вызов `CheckWaveEnd()` гарантированно происходит сразу после завершения спавна.
+> 2. Учет врагов переведен на `HashSet<EnemyBase> activeEnemies` с автоматической чисткой мертвых/уничтоженных ссылок (`RemoveWhere`).
+> 3. Добавлена валидация позиции спавна: жесткое ограничение границами арены (`ArenaSize / 2 - arenaPadding`) и проверка на коллизии с препятствиями (`Physics.CheckSphere`).
+> 4. Реализована механика Leash: отставшие дальше `leashDistance` (35м) враги автоматически телепортируются ближе к герою.
+> 5. Добавлен настраиваемый таймаут волны `maxWaveDuration` (по умолчанию 60с в `WaveConfig.asset`) с принудительной зачисткой зависших мобов.
+> 6. Добавлена подписка на `GameOverEvent` с остановкой корутин и деспавном всех активных врагов обратно в пулы.
 
 ### 3. `Projectile` без максимального времени жизни
 [Assets/_Scripts/Combat/Projectile.cs](Assets/_Scripts/Combat/Projectile.cs#L24-L42)

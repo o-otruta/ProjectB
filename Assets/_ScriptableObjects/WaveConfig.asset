@@ -25,3 +25,7 @@ MonoBehaviour:
   maxEliteChance: 0.25
   eliteHpMultiplier: 3
   eliteDamageMultiplier: 2
+  maxWaveDuration: 60
+  leashDistance: 35
+  leashCheckInterval: 2
+  arenaPadding: 3

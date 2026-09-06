@@ -17,6 +17,8 @@ namespace ProjectB.Arena
 
         private System.Random _rng;
         public int CurrentSeed { get; private set; }
+        public ArenaConfig Config => _config;
+        public float ArenaSize => _config != null ? _config.ArenaSize : 100f;
 
         private void Start()
         {
