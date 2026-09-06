@@ -40,10 +40,13 @@ Random.state = prev;
 > 5. От авто-зачистки волны по таймеру отказались сознательно: игрок обязан уничтожать врагов своими силами (исключает эксплойт «прокачать скорость и просто убегать»).
 > 6. Добавлена подписка на `GameOverEvent` с остановкой корутин спавна и таймеров волны (при этом враги остаются на арене до перезапуска/выхода в меню).
 
-### 3. `Projectile` без максимального времени жизни
-[Assets/_Scripts/Combat/Projectile.cs](Assets/_Scripts/Combat/Projectile.cs#L24-L42)
+### 3. ~~`Projectile` без максимального времени жизни~~ — ✅ *Исправлено*
+[Assets/_Scripts/Combat/Projectile.cs](Assets/_Scripts/Combat/Projectile.cs)
 
-`EnemyProjectile` и `AbilityProjectile` имеют `MAX_LIFETIME` (6с / 8с), а основной снаряд героя — нет. Если цель телепортируется/выключается нештатно (без `activeInHierarchy == false`), снаряд летит вечно и не возвращается в пул → пул исчерпывается.
+> **Решение:**
+> 1. Добавлена константа `MAX_LIFETIME = 5f` и фиксация `spawnTime` при `Initialize()`. По истечении времени снаряд гарантированно возвращается в пул (`ReturnToPool()`).
+> 2. Добавлен guard на ранний возврат снаряда в пул, если цель уже мертва (`damageable.IsDead`) или данные оружия некорректны.
+> 3. Добавлен guard от повторной обработки при `isReturned == true`, а также оптимизировано получение `IDamageable` для исключения дублирующих вызовов `GetComponent` при попадании.
 
 ### 4. `LaserTurret`: двойной `Release` в пул
 [Assets/_Scripts/Abilities/Active/LaserTurret.cs](Assets/_Scripts/Abilities/Active/LaserTurret.cs#L60-L65)
