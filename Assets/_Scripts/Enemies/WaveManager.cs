@@ -29,7 +29,7 @@ namespace ProjectB.Enemies
         public int CurrentWave => currentWave;
         public int EnemiesAlive => activeEnemies.Count;
         private bool isSpawning = false;
-        private Coroutine waveTimeoutCoroutine;
+        private Coroutine waveDurationCoroutine;
 
         [Inject]
         public void Construct(
@@ -112,7 +112,7 @@ namespace ProjectB.Enemies
         {
             StopAllCoroutines();
             isSpawning = false;
-            waveTimeoutCoroutine = null;
+            waveDurationCoroutine = null;
 
             enemyIterationBuffer.Clear();
             enemyIterationBuffer.AddRange(activeEnemies);
@@ -146,8 +146,8 @@ namespace ProjectB.Enemies
 
             if (waveConfig.maxWaveDuration > 0f)
             {
-                if (waveTimeoutCoroutine != null) StopCoroutine(waveTimeoutCoroutine);
-                waveTimeoutCoroutine = StartCoroutine(WaveTimeoutCoroutine(waveNumber));
+                if (waveDurationCoroutine != null) StopCoroutine(waveDurationCoroutine);
+                waveDurationCoroutine = StartCoroutine(WaveDurationCoroutine(waveNumber));
             }
 
             for (int i = 0; i < enemiesToSpawn; i++)
@@ -166,7 +166,7 @@ namespace ProjectB.Enemies
             CheckWaveEnd();
         }
 
-        private IEnumerator WaveTimeoutCoroutine(int waveNumber)
+        private IEnumerator WaveDurationCoroutine(int waveNumber)
         {
             yield return new WaitForSeconds(waveConfig.maxWaveDuration);
 
@@ -175,22 +175,8 @@ namespace ProjectB.Enemies
                 yield break;
             }
 
-            Debug.LogWarning($"[WaveManager] Wave {waveNumber} timed out after {waveConfig.maxWaveDuration}s! Force finishing wave.");
-
-            enemyIterationBuffer.Clear();
-            enemyIterationBuffer.AddRange(activeEnemies);
-            for (int i = 0; i < enemyIterationBuffer.Count; i++)
-            {
-                var enemy = enemyIterationBuffer[i];
-                if (enemy != null && !enemy.IsDead)
-                {
-                    enemy.ForceKill();
-                }
-            }
-            enemyIterationBuffer.Clear();
-
-            isSpawning = false;
-            CheckWaveEnd();
+            Debug.Log($"[WaveManager] Wave {waveNumber} reached max duration ({waveConfig.maxWaveDuration}s). Advancing to next wave (enemies remain alive).");
+            AdvanceWave();
         }
 
         private IEnumerator LeashCheckCoroutine()
@@ -306,19 +292,24 @@ namespace ProjectB.Enemies
 
             if (!isSpawning && activeEnemies.Count <= 0)
             {
-                if (waveTimeoutCoroutine != null)
-                {
-                    StopCoroutine(waveTimeoutCoroutine);
-                    waveTimeoutCoroutine = null;
-                }
-
-                int completedWave = currentWave;
-                currentWave++;
-                Debug.Log($"[WaveManager] Wave {completedWave} completed!");
-                achievementManager?.OnWaveReached(currentWave);
-                eventBus?.Publish(new WaveCompletedEvent(completedWave, currentWave));
-                StartCoroutine(StartWaveDelay());
+                AdvanceWave();
             }
+        }
+
+        private void AdvanceWave()
+        {
+            if (waveDurationCoroutine != null)
+            {
+                StopCoroutine(waveDurationCoroutine);
+                waveDurationCoroutine = null;
+            }
+
+            int completedWave = currentWave;
+            currentWave++;
+            Debug.Log($"[WaveManager] Wave {completedWave} completed!");
+            achievementManager?.OnWaveReached(currentWave);
+            eventBus?.Publish(new WaveCompletedEvent(completedWave, currentWave));
+            StartCoroutine(StartWaveDelay());
         }
     }
 }

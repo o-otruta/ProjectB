@@ -46,8 +46,8 @@ namespace ProjectB.Data.Enemies
         public float eliteDamageMultiplier = 2f;
 
         [Header("Safety & Wave Flow")]
-        [Tooltip("Максимальная длительность волны в секундах (таймаут). По истечении волна принудительно завершается (0 = без таймаута)")]
-        public float maxWaveDuration = 60f;
+        [Tooltip("Максимальная длительность волны в секундах. По истечении времени начинается следующая волна; оставшиеся враги не удаляются, а продолжают бой")]
+        public float maxWaveDuration = 30f;
 
         [Tooltip("Максимальное расстояние от героя до врага. Дальше этого враг считается отставшим/застрявшим и телепортируется к герою")]
         public float leashDistance = 35f;

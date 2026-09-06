@@ -203,12 +203,6 @@ namespace ProjectB.Enemies
             ReturnToPool();
         }
 
-        public virtual void ForceKill()
-        {
-            if (!isAlive) return;
-            Die();
-        }
-
         public virtual void Despawn()
         {
             if (!isAlive) return;
