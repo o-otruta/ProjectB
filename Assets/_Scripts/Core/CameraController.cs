@@ -36,12 +36,30 @@ namespace ProjectB.Core
         private Camera cam;
         private Vector3 velocity = Vector3.zero;
         private float defaultFOV;
+        private float defaultOrthoSize;
         private float lastAspect;
+
+        public float DefaultOrthoSize => defaultOrthoSize;
+        public float DefaultFOV => defaultFOV;
+
+        private void Awake()
+        {
+            cam = GetComponent<Camera>();
+            if (cam != null)
+            {
+                defaultFOV = cam.fieldOfView;
+                defaultOrthoSize = cam.orthographicSize;
+            }
+        }
 
         void Start()
         {
-            cam = GetComponent<Camera>();
-            defaultFOV = cam.fieldOfView;
+            if (cam == null)
+            {
+                cam = GetComponent<Camera>();
+                defaultFOV = cam.fieldOfView;
+                defaultOrthoSize = cam.orthographicSize;
+            }
             
             // Автоматически поворачиваем камеру так, чтобы она смотрела на цель (исходя из offset)
             if (offset != Vector3.zero)
@@ -49,29 +67,54 @@ namespace ProjectB.Core
                 transform.rotation = Quaternion.LookRotation(-offset);
             }
             
-            lastAspect = (float)Screen.width / Screen.height;
-            AdjustAspect();
+            if (Screen.height > 0)
+            {
+                lastAspect = (float)Screen.width / Screen.height;
+                AdjustAspect();
+            }
         }
 
         void LateUpdate()
         {
             if (target == null) return;
             
-            float currentAspect = (float)Screen.width / Screen.height;
-            if (Mathf.Abs(currentAspect - lastAspect) > 0.01f)
+            if (Screen.height > 0)
             {
-                lastAspect = currentAspect;
-                AdjustAspect();
+                float currentAspect = (float)Screen.width / Screen.height;
+                if (Mathf.Abs(currentAspect - lastAspect) > 0.01f)
+                {
+                    lastAspect = currentAspect;
+                    AdjustAspect();
+                }
             }
 
-            // Плавное следование за целью через SmoothDamp
+            // Следование за целью (SmoothDamp при smoothTime > 0, либо мгновенный снап)
             Vector3 targetPosition = target.position + offset;
-            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, smoothTime);
+            if (smoothTime > 0f)
+            {
+                transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, smoothTime);
+            }
+            else
+            {
+                transform.position = targetPosition;
+            }
+        }
+
+        public void SetDefaultOrthoSize(float newOrthoSize)
+        {
+            defaultOrthoSize = newOrthoSize;
+            AdjustAspect();
+        }
+
+        public void SetDefaultFOV(float newFOV)
+        {
+            defaultFOV = newFOV;
+            AdjustAspect();
         }
 
         private void AdjustAspect()
         {
-            if (!maintainHorizontalView) return;
+            if (!maintainHorizontalView || cam == null || Screen.height <= 0) return;
 
             float currentAspect = (float)Screen.width / Screen.height;
 
@@ -80,8 +123,7 @@ namespace ProjectB.Core
             {
                 if (cam.orthographic)
                 {
-                    // Для ортографической камеры увеличиваем размер
-                    float defaultOrthoSize = cam.orthographicSize;
+                    // Для ортографической камеры увеличиваем размер относительно закешированного базового размера
                     cam.orthographicSize = defaultOrthoSize * (targetAspect / currentAspect);
                 }
                 else
@@ -89,6 +131,18 @@ namespace ProjectB.Core
                     // Для перспективной камеры используем встроенные методы Unity для пересчета FOV
                     float horizontalFOV = Camera.VerticalToHorizontalFieldOfView(defaultFOV, targetAspect);
                     cam.fieldOfView = Camera.HorizontalToVerticalFieldOfView(horizontalFOV, currentAspect);
+                }
+            }
+            else
+            {
+                // Если экран шире или равен целевому соотношению, восстанавливаем базовые параметры
+                if (cam.orthographic)
+                {
+                    cam.orthographicSize = defaultOrthoSize;
+                }
+                else
+                {
+                    cam.fieldOfView = defaultFOV;
                 }
             }
         }

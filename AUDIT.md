@@ -48,25 +48,14 @@ Random.state = prev;
 > 2. Добавлен guard на ранний возврат снаряда в пул, если цель уже мертва (`damageable.IsDead`) или данные оружия некорректны.
 > 3. Добавлен guard от повторной обработки при `isReturned == true`, а также оптимизировано получение `IDamageable` для исключения дублирующих вызовов `GetComponent` при попадании.
 
-### 4. `LaserTurret`: двойной `Release` в пул
-[Assets/_Scripts/Abilities/Active/LaserTurret.cs](Assets/_Scripts/Abilities/Active/LaserTurret.cs#L60-L65)
 ### 4. ~~`LaserTurret`: двойной `Release` в пул~~ — ✅ *Исправлено*
 [Assets/_Scripts/Abilities/Active/LaserTurret.cs](Assets/_Scripts/Abilities/Active/LaserTurret.cs)
 
-```csharp
-if (Time.time >= spawnTime + lifetime)
-{
-    pool.Release(this);
-    return;
-}
-```
 > **Решение:**
 > 1. Добавлен флаг `isReturned` и централизованный метод `ReturnToPool()`. Сброс флага выполняется в `Initialize()`.
 > 2. Добавлена проверка `if (isReturned) return;` в начале `Update()`, исключающая выполнение логики или повторный вызов деспавна после возврата в пул.
 > 3. В `ReturnToPool()` реализована очистка состояния (сброс цели `currentTarget`, накопленного урона `accumulatedDamage`, отключение `lineRenderer` и остановка `meshAnimator`) с безопасным вызовом `pool.Release(this)`.
 > 4. Добавлен публичный метод `Despawn()`, делегирующий вызов в защищенный `ReturnToPool()`.
-
-Нет флага `isReturned`. При `collectionCheck: true` (а он включён в [LaserTurretAbility.cs](Assets/_Scripts/Abilities/Active/LaserTurretAbility.cs#L59)) повторный `Release` кинет `InvalidOperationException`. `OnDisable` не гарантирует, что `Update` не выполнится ещё раз в этом же кадре при некоторых порядках.
 
 ### 5. Утечка материалов на врагах
 [Assets/_Scripts/Enemies/EnemyBase.cs](Assets/_Scripts/Enemies/EnemyBase.cs#L58-L70)
@@ -82,17 +71,15 @@ if (Time.time >= spawnTime + lifetime)
 
 **Фикс:** один общий пул на тип снаряда, владеет `WaveManager` или отдельный `ProjectileService`.
 
-### 7. `CameraController.AdjustAspect()` — накопительный баг для ортокамеры
-[Assets/_Scripts/Core/CameraController.cs](Assets/_Scripts/Core/CameraController.cs#L69-L74)
+### 7. ~~`CameraController.AdjustAspect()` — накопительный баг для ортокамеры~~ — ✅ *Исправлено*
+[Assets/_Scripts/Core/CameraController.cs](Assets/_Scripts/Core/CameraController.cs)
 
-```csharp
-float defaultOrthoSize = cam.orthographicSize;   // это НЕ дефолт, это текущее значение
-cam.orthographicSize = defaultOrthoSize * (targetAspect / currentAspect);
-```
-
-При каждом повторном вызове (поворот экрана, сплит-скрин, изменение окна) размер умножается заново. Перспективная ветка сделана правильно через кэшированный `defaultFOV` — ортографическую забыли.
-
-Там же: `smoothTime = 0f` — `SmoothDamp` вырождается в мгновенный снап, комментарий «плавное следование» врёт.
+> **Решение:**
+> 1. В `Awake()`/`Start()` закеширован исходный базовый размер ортографической камеры `defaultOrthoSize` (по аналогии с `defaultFOV`).
+> 2. В `AdjustAspect()` размер ортокамеры теперь всегда рассчитывается строго от исходного `defaultOrthoSize`, устраняя накопительное отдаление камеры в бесконечность при изменении окна/повороте.
+> 3. Добавлена ветка `else`: при возврате к базовому или более широкому соотношению сторон (планшеты, 4:3, десктоп) размер ортокамеры и FOV гарантированно восстанавливаются в исходные значения.
+> 4. Добавлена проверка `smoothTime > 0f`: если `smoothTime == 0f`, выполняется мгновенное присвоение позиции цели без вызова оверхеда `Vector3.SmoothDamp`.
+> 5. Добавлены публичные сеттеры `SetDefaultOrthoSize` и `SetDefaultFOV` с автоматическим обновлением aspect ratio.
 
 ### 8. `DailyBonusManager` — нет защиты и нет проверки границ
 [Assets/_Scripts/Meta/DailyBonusManager.cs](Assets/_Scripts/Meta/DailyBonusManager.cs#L64-L80)

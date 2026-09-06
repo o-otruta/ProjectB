@@ -82,7 +82,6 @@ namespace ProjectB.Abilities
 
             if (Time.time >= spawnTime + lifetime)
             {
-                pool.Release(this);
                 ReturnToPool();
                 return;
             }
