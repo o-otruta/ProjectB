@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 1
   rarity: 1
-  unlockedByDefault: 1
+  unlockedByDefault: 0
   damageMultiplierBonus: 0
   cooldownReductionBonus: 0
   moveSpeedBonus: 0

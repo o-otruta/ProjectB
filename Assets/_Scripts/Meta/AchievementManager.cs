@@ -20,6 +20,17 @@ namespace ProjectB.Meta
         {
             _saveManager = saveManager;
             _allAchievements = new List<AchievementData>(Resources.LoadAll<AchievementData>("Achievements"));
+            _allAchievements.Sort((a, b) =>
+            {
+                if (a == null && b == null) return 0;
+                if (a == null) return 1;
+                if (b == null) return -1;
+                int typeCmp = a.conditionType.CompareTo(b.conditionType);
+                if (typeCmp != 0) return typeCmp;
+                int targetCmp = a.targetValue.CompareTo(b.targetValue);
+                if (targetCmp != 0) return targetCmp;
+                return string.CompareOrdinal(a.id, b.id);
+            });
             _achievementsById = new Dictionary<string, AchievementData>(_allAchievements.Count);
             _achievementsByCondition = new Dictionary<AchievementConditionType, List<AchievementData>>();
             unlockedThisRun = new List<AchievementData>();
