@@ -12,7 +12,7 @@ namespace ProjectB.LevelUp
 
         public bool IsActive => selectionPanel != null && selectionPanel.activeSelf;
 
-        private void Start()
+        private void Awake()
         {
             Hide();
         }

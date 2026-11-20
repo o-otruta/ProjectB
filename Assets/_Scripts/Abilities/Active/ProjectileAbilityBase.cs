@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
+using ProjectB.Combat;
 
 namespace ProjectB.Abilities
 {
@@ -74,7 +76,7 @@ namespace ProjectB.Abilities
 
         protected virtual void Update()
         {
-            if (Data == null || projectilePool == null) return;
+            if (Data == null || projectilePool == null || Time.deltaTime <= 0f) return;
 
             if (Time.time >= nextFireTime)
             {
@@ -96,7 +98,11 @@ namespace ProjectB.Abilities
 
             for (int i = 0; i < targetsFound; i++)
             {
-                var target = hitBuffer[i].transform;
+                Collider col = hitBuffer[i];
+                if (col == null) continue;
+                if (col.TryGetComponent<IDamageable>(out var dmg) && dmg.IsDead) continue;
+
+                var target = col.transform;
                 float sqrDist = (target.position - transform.position).sqrMagnitude;
                 if (sqrDist < minSqrDist)
                 {
@@ -106,6 +112,46 @@ namespace ProjectB.Abilities
             }
 
             return closestTarget;
+        }
+
+        protected int FindClosestTargets(float searchRadius, LayerMask targetLayer, int maxTargets, List<Transform> results)
+        {
+            results.Clear();
+            if (maxTargets <= 0) return 0;
+
+            int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, searchRadius, hitBuffer, targetLayer);
+            if (targetsFound == 0) return 0;
+
+            Vector3 origin = transform.position;
+            int needed = Mathf.Min(maxTargets, targetsFound);
+
+            for (int pick = 0; pick < needed; pick++)
+            {
+                Transform best = null;
+                float bestSqrDist = float.MaxValue;
+
+                for (int i = 0; i < targetsFound; i++)
+                {
+                    Collider col = hitBuffer[i];
+                    if (col == null) continue;
+                    if (col.TryGetComponent<IDamageable>(out var dmg) && dmg.IsDead) continue;
+
+                    Transform candidate = col.transform;
+                    if (results.Contains(candidate)) continue;
+
+                    float sqrDist = (candidate.position - origin).sqrMagnitude;
+                    if (sqrDist < bestSqrDist)
+                    {
+                        bestSqrDist = sqrDist;
+                        best = candidate;
+                    }
+                }
+
+                if (best == null) break;
+                results.Add(best);
+            }
+
+            return results.Count;
         }
 
         protected virtual void OnDestroy()

@@ -28,6 +28,7 @@ namespace ProjectB.Core
         private RunStatistics runStatistics;
         private AchievementManager achievementManager;
         private GameEventBus eventBus;
+        private VirtualJoystick virtualJoystick;
         
         [Inject]
         public void Construct(
@@ -36,7 +37,8 @@ namespace ProjectB.Core
             SaveManager saveManager, 
             RunStatistics runStatistics, 
             AchievementManager achievementManager, 
-            GameEventBus eventBus)
+            GameEventBus eventBus,
+            VirtualJoystick virtualJoystick = null)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
@@ -44,11 +46,13 @@ namespace ProjectB.Core
             this.runStatistics = runStatistics;
             this.achievementManager = achievementManager;
             this.eventBus = eventBus;
+            this.virtualJoystick = virtualJoystick;
         }
 
         private GameState currentState;
 
         public GameState CurrentState => currentState;
+        public bool IsGameOver => currentState == GameState.GameOver;
 
         private void Awake()
         {
@@ -93,6 +97,7 @@ namespace ProjectB.Core
 
             currentState = GameState.GameOver;
             Time.timeScale = 0f;
+            virtualJoystick?.ResetJoystick();
 
             int wave = waveManager != null ? waveManager.CurrentWave : 1;
             int coins = 0;
@@ -116,12 +121,14 @@ namespace ProjectB.Core
             eventBus?.Publish(new GameOverEvent(wave, coins));
         }
 
-        public void PauseForLevelUp()
+        public bool PauseForLevelUp()
         {
-            if (currentState == GameState.GameOver) return; // Prevent level up over death
+            if (currentState == GameState.GameOver) return false; // Prevent level up over death
             
             currentState = GameState.LevelUp;
             Time.timeScale = 0f;
+            virtualJoystick?.ResetJoystick();
+            return true;
         }
 
         public void ResumeFromLevelUp()

@@ -37,10 +37,7 @@ namespace ProjectB.UI
 
         public Vector2 Direction { get; private set; }
 
-        /// <summary>
-        /// Текущий эффективный лимит хода ручки с учетом радиуса фона, коэффициента диапазона и DPI.
-        /// </summary>
-        public float CurrentHandleLimit
+        private float VisualHandleLimit
         {
             get
             {
@@ -59,7 +56,18 @@ namespace ProjectB.UI
                     }
                 }
 
-                limit *= handleRange;
+                return Mathf.Max(limit * handleRange, 1f);
+            }
+        }
+
+        /// <summary>
+        /// Текущий эффективный лимит хода ручки с учетом радиуса фона, коэффициента диапазона и DPI.
+        /// </summary>
+        public float CurrentHandleLimit
+        {
+            get
+            {
+                float limit = VisualHandleLimit;
 
                 if (normalizeWithDpi && Screen.dpi > 0f)
                 {
@@ -150,12 +158,23 @@ namespace ProjectB.UI
                 Direction = Vector2.zero;
             }
 
-            // Двигаем ручку джойстика в пределах допустимого радиуса
-            Vector2 handlePos = magnitude > 1f ? rawInput.normalized * limit : position;
+            // Двигаем ручку джойстика строго в пределах визуального радиуса подложки
+            float visualLimit = VisualHandleLimit;
+            Vector2 handlePos = Direction * visualLimit;
             handle.anchoredPosition = handlePos;
         }
 
         public void OnPointerUp(PointerEventData eventData)
+        {
+            ResetJoystick();
+        }
+
+        private void OnDisable()
+        {
+            ResetJoystick();
+        }
+
+        public void ResetJoystick()
         {
             Direction = Vector2.zero;
             

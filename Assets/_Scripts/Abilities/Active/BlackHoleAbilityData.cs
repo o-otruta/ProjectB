@@ -7,6 +7,7 @@ namespace ProjectB.Abilities
     {
         [Header("Black Hole Specs")]
         public float pullRadius = 5f;
+        public float minPullDistance = 2.5f;
         public float pullForce = 3f;
         public float tickRate = 0.3f;
         public Material auraMaterial;

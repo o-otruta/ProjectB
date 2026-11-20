@@ -96,9 +96,7 @@ namespace ProjectB.Enemies
             float shootHeight = target.position.y;
             Vector3 spawnPos = new Vector3(transform.position.x, shootHeight, transform.position.z) + shootDirection * 0.5f;
 
-            int finalDamage = Mathf.RoundToInt(
-                shootingData.weaponData.damage *
-                (1f + (currentDamage - shootingData.contactDamage) * 0.1f));
+            int finalDamage = Mathf.Max(1, Mathf.RoundToInt(shootingData.weaponData.damage * currentDamageMultiplier));
 
             sharedProjectilePool.Spawn(
                 shootingData.weaponData,

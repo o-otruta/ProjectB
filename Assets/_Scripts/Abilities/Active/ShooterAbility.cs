@@ -32,21 +32,24 @@ namespace ProjectB.Abilities
             return p;
         }
 
+        private readonly System.Collections.Generic.List<Transform> targetBuffer = new System.Collections.Generic.List<Transform>(8);
+
         protected override void Fire()
         {
-            Transform closestTarget = FindClosestTarget(currentRange, ProjectileData.targetLayer);
-            if (closestTarget == null) return;
+            int foundCount = FindClosestTargets(currentRange, ProjectileData.targetLayer, currentCount, targetBuffer);
+            if (foundCount == 0) return;
 
             for (int i = 0; i < currentCount; i++)
             {
                 var p = projectilePool.Get();
                 if (p == null) continue;
 
+                Transform chosenTarget = targetBuffer[i % foundCount];
                 Vector3 offset = Random.insideUnitSphere * 0.2f;
                 offset.y = 0;
                 p.transform.position = transform.position + offset;
                 
-                p.Initialize(currentDamage, currentSpeed, closestTarget, ProjectileData.targetLayer, projectilePool);
+                p.Initialize(currentDamage, currentSpeed, chosenTarget, ProjectileData.targetLayer, projectilePool);
             }
         }
     }

@@ -37,6 +37,8 @@ namespace ProjectB.Enemies
         public int EnemiesAlive => activeEnemies.Count;
         private bool isSpawning = false;
         private Coroutine waveDurationCoroutine;
+        private Coroutine spawnWaveCoroutine;
+        private Coroutine startWaveDelayCoroutine;
 
         [Inject]
         public void Construct(
@@ -75,6 +77,8 @@ namespace ProjectB.Enemies
 
             foreach (var enemyData in enemyTypes)
             {
+                if (enemyData == null || enemyPools.ContainsKey(enemyData)) continue;
+
                 var pool = new ObjectPool<EnemyBase>(
                     createFunc: () => {
                         GameObject go;
@@ -113,7 +117,7 @@ namespace ProjectB.Enemies
 
             eventBus?.Subscribe<GameOverEvent>(OnGameOver);
             StartCoroutine(LeashCheckCoroutine());
-            StartCoroutine(StartWaveDelay());
+            startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
         }
 
         private void OnDestroy()
@@ -139,6 +143,8 @@ namespace ProjectB.Enemies
             StopAllCoroutines();
             isSpawning = false;
             waveDurationCoroutine = null;
+            spawnWaveCoroutine = null;
+            startWaveDelayCoroutine = null;
 
             // Unsubscribe from enemy death events to prevent late wave transitions,
             // but keep enemies alive on screen until scene restart/menu
@@ -157,7 +163,9 @@ namespace ProjectB.Enemies
         private IEnumerator StartWaveDelay()
         {
             yield return waveDelayWait;
-            StartCoroutine(SpawnWaveCoroutine());
+            startWaveDelayCoroutine = null;
+            if (spawnWaveCoroutine != null) StopCoroutine(spawnWaveCoroutine);
+            spawnWaveCoroutine = StartCoroutine(SpawnWaveCoroutine());
         }
 
         private IEnumerator SpawnWaveCoroutine()
@@ -177,9 +185,9 @@ namespace ProjectB.Enemies
 
             for (int i = 0; i < enemiesToSpawn; i++)
             {
-                if (heroTarget == null || (heroHealth != null && heroHealth.IsDead))
+                if (heroTarget == null || (heroHealth != null && heroHealth.IsDead) || currentWave != waveNumber)
                 {
-                    isSpawning = false;
+                    if (currentWave == waveNumber) isSpawning = false;
                     yield break;
                 }
                 
@@ -187,8 +195,12 @@ namespace ProjectB.Enemies
                 yield return spawnDelayWait;
             }
             
-            isSpawning = false;
-            CheckWaveEnd();
+            if (currentWave == waveNumber)
+            {
+                isSpawning = false;
+                spawnWaveCoroutine = null;
+                CheckWaveEnd();
+            }
         }
 
         private IEnumerator WaveDurationCoroutine(int waveNumber)
@@ -344,13 +356,24 @@ namespace ProjectB.Enemies
                 StopCoroutine(waveDurationCoroutine);
                 waveDurationCoroutine = null;
             }
+            if (spawnWaveCoroutine != null)
+            {
+                StopCoroutine(spawnWaveCoroutine);
+                spawnWaveCoroutine = null;
+                isSpawning = false;
+            }
+            if (startWaveDelayCoroutine != null)
+            {
+                StopCoroutine(startWaveDelayCoroutine);
+                startWaveDelayCoroutine = null;
+            }
 
             int completedWave = currentWave;
             currentWave++;
             Debug.Log($"[WaveManager] Wave {completedWave} completed!");
             achievementManager?.OnWaveReached(currentWave);
             eventBus?.Publish(new WaveCompletedEvent(completedWave, currentWave));
-            StartCoroutine(StartWaveDelay());
+            startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
         }
     }
 }

@@ -41,11 +41,37 @@ namespace ProjectB.LevelUp
             {
                 heroExp.OnLevelUp += HandleLevelUp;
             }
+            if (gameManager != null)
+            {
+                gameManager.OnGameOver += HandleGameOver;
+            }
             
             // Initialize dynamic pool with base pool
             if (cardPool != null)
             {
                 dynamicPool.AddRange(cardPool);
+            }
+
+            // Выдаём стартовые выборы карточек за купленный мета-апгрейд StartLevel
+            if (heroExp != null)
+            {
+                int startingLevelUps = heroExp.ConsumeStartingLevelUps();
+                if (startingLevelUps > 0)
+                {
+                    StartCoroutine(GrantStartingLevelUpsNextFrame(startingLevelUps));
+                }
+            }
+        }
+
+        private System.Collections.IEnumerator GrantStartingLevelUpsNextFrame(int count)
+        {
+            yield return null;
+            if (gameManager != null && gameManager.IsGameOver) yield break;
+
+            pendingLevelUps += count;
+            if (cardUI != null && !cardUI.IsActive)
+            {
+                ProcessNextLevelUp();
             }
         }
 
@@ -55,10 +81,25 @@ namespace ProjectB.LevelUp
             {
                 heroExp.OnLevelUp -= HandleLevelUp;
             }
+            if (gameManager != null)
+            {
+                gameManager.OnGameOver -= HandleGameOver;
+            }
+        }
+
+        private void HandleGameOver(int wave, int coins)
+        {
+            pendingLevelUps = 0;
+            if (cardUI != null && cardUI.IsActive)
+            {
+                cardUI.Hide();
+            }
         }
 
         private void HandleLevelUp(int newLevel)
         {
+            if (gameManager != null && gameManager.IsGameOver) return;
+
             pendingLevelUps++;
             
             if (cardUI != null && !cardUI.IsActive)
@@ -69,10 +110,22 @@ namespace ProjectB.LevelUp
 
         private void ProcessNextLevelUp()
         {
+            if (gameManager != null && gameManager.IsGameOver)
+            {
+                pendingLevelUps = 0;
+                if (cardUI != null) cardUI.Hide();
+                return;
+            }
+
             if (pendingLevelUps > 0)
             {
                 pendingLevelUps--;
-                if (gameManager != null) gameManager.PauseForLevelUp();
+                if (gameManager != null && !gameManager.PauseForLevelUp())
+                {
+                    pendingLevelUps = 0;
+                    if (cardUI != null) cardUI.Hide();
+                    return;
+                }
                 
                 // Determine how many slots the UI has. By default 3 in our project.
                 List<CardData> cardsToOffer = GetRandomCards(maxCardsToOffer);

@@ -38,26 +38,47 @@ namespace ProjectB.LevelUp
         public int CurrentLevel { get; private set; } = 1;
         public int CurrentXP { get; private set; } = 0;
         public int XPToNextLevel { get; private set; }
+        public int PendingStartingLevelUps { get; private set; }
 
         public event Action<int, int> OnXPChanged; // currentXP, xpToNextLevel
         public event Action<int> OnLevelUp; // newLevel
 
+        private bool statsInitialized;
+
         private void Start()
         {
+            EnsureStatsInitialized();
+            OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
+        }
+
+        public void EnsureStatsInitialized()
+        {
+            if (statsInitialized) return;
+            statsInitialized = true;
+
             if (metaUpgradeManager != null)
             {
-                float magnetBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.MagnetRadius);
-                MagnetRadius += magnetBonus;
+                float magnetBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.MagnetRadius);
+                MagnetRadius *= (1f + magnetBonusPct / 100f);
 
                 float startLevelBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.StartLevel);
-                CurrentLevel = 1 + Mathf.RoundToInt(startLevelBonus);
+                int bonusLevels = Mathf.Max(0, Mathf.RoundToInt(startLevelBonus));
+                CurrentLevel = 1 + bonusLevels;
+                PendingStartingLevelUps = bonusLevels;
 
                 float xpBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.XPBonus);
                 xpMultiplier = 1f + xpBonusPct / 100f;
             }
 
             CalculateXPToNextLevel();
-            OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
+        }
+
+        public int ConsumeStartingLevelUps()
+        {
+            EnsureStatsInitialized();
+            int count = PendingStartingLevelUps;
+            PendingStartingLevelUps = 0;
+            return count;
         }
 
         private const float MAGNET_SCAN_INTERVAL = 0.08f;

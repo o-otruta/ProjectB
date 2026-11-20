@@ -10,6 +10,8 @@ namespace ProjectB.Abilities
 
         private const float SCAN_INTERVAL = 0.1f;
 
+        private static int cachedObstacleMask = -1;
+
         private float currentDamage;
         private float currentRadius;
         private float currentPullForce;
@@ -19,6 +21,18 @@ namespace ProjectB.Abilities
         private Collider[] hitBuffer = new Collider[100];
         private readonly System.Collections.Generic.List<EnemyBase> capturedEnemies = new System.Collections.Generic.List<EnemyBase>(64);
         private GameObject visualHole;
+
+        private static int ObstacleMask
+        {
+            get
+            {
+                if (cachedObstacleMask == -1)
+                {
+                    cachedObstacleMask = LayerMask.GetMask("Obstacles");
+                }
+                return cachedObstacleMask;
+            }
+        }
 
         public override void Initialize(AbilityData data)
         {
@@ -113,18 +127,30 @@ namespace ProjectB.Abilities
             float dt = Time.deltaTime;
             int dmg = Mathf.RoundToInt(currentDamage);
             Vector3 center = transform.position;
+            float minDist = HoleData != null ? Mathf.Max(0.5f, HoleData.minPullDistance) : 2.5f;
+            int obstacleMask = ObstacleMask;
 
             for (int i = 0; i < capturedEnemies.Count; i++)
             {
                 EnemyBase enemy = capturedEnemies[i];
                 if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy) continue;
 
-                Vector3 toCenter = center - enemy.transform.position;
+                Vector3 enemyPos = enemy.transform.position;
+                Vector3 toCenter = center - enemyPos;
                 toCenter.y = 0f;
-                if (toCenter.sqrMagnitude > 0.001f)
+                float dist = toCenter.magnitude;
+
+                if (dist > minDist)
                 {
-                    Vector3 pullDelta = toCenter.normalized * (currentPullForce * dt);
-                    enemy.ApplyPull(pullDelta);
+                    Vector3 pullDir = toCenter / dist;
+                    float pullStep = Mathf.Min(currentPullForce * dt, dist - minDist);
+
+                    // Не протаскиваем врагов сквозь стены и препятствия
+                    if (pullStep > 0.0001f &&
+                        (obstacleMask == 0 || !Physics.SphereCast(enemyPos + Vector3.up * 0.5f, 0.35f, pullDir, out _, pullStep + 0.2f, obstacleMask, QueryTriggerInteraction.Ignore)))
+                    {
+                        enemy.ApplyPull(pullDir * pullStep);
+                    }
                 }
 
                 if (applyDamage)

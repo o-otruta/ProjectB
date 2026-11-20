@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 using VContainer;
 using ProjectB.Data.Meta;
@@ -8,6 +9,7 @@ namespace ProjectB.Meta
     public class DailyBonusManager
     {
         public const int DEFAULT_MAX_DAYS = 7;
+        private const string DATE_FORMAT = "yyyy-MM-dd";
 
         private readonly SaveManager saveManager;
         private DailyBonusRewardData rewardData;
@@ -20,6 +22,15 @@ namespace ProjectB.Meta
             this.saveManager = saveManager;
             LoadRewardData();
             ValidateStreak();
+        }
+
+        private static bool TryParseClaimDate(string dateStr, out DateTime parsedDate)
+        {
+            if (DateTime.TryParseExact(dateStr, DATE_FORMAT, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate))
+            {
+                return true;
+            }
+            return DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate);
         }
 
         private void LoadRewardData()
@@ -52,7 +63,7 @@ namespace ProjectB.Meta
             string lastClaimStr = saveManager.Data.lastDailyClaimDate;
             if (string.IsNullOrEmpty(lastClaimStr)) return true;
 
-            if (DateTime.TryParse(lastClaimStr, out DateTime lastClaimDate))
+            if (TryParseClaimDate(lastClaimStr, out DateTime lastClaimDate))
             {
                 DateTime today = DateTime.UtcNow.Date;
                 lastClaimDate = lastClaimDate.Date;
@@ -77,34 +88,29 @@ namespace ProjectB.Meta
             return true;
         }
 
+        public bool HasClaimedToday()
+        {
+            if (saveManager?.Data == null) return false;
+
+            string lastClaimStr = saveManager.Data.lastDailyClaimDate;
+            if (string.IsNullOrEmpty(lastClaimStr)) return false;
+
+            if (TryParseClaimDate(lastClaimStr, out DateTime lastClaimDate))
+            {
+                return DateTime.UtcNow.Date == lastClaimDate.Date;
+            }
+            return false;
+        }
+
         public void ValidateStreak()
         {
             if (saveManager?.Data == null) return;
 
             int maxDays = GetMaxDays();
+            // По GDD (CONTEXT.md): пропуск дня НЕ сбрасывает прогресс цикла, но день не засчитывается.
+            // Валидируем только границы дня и цикла.
             saveManager.Data.dailyBonusDay = Mathf.Clamp(saveManager.Data.dailyBonusDay, 1, maxDays);
             saveManager.Data.dailyBonusCycle = Mathf.Max(0, saveManager.Data.dailyBonusCycle);
-
-            string lastClaimStr = saveManager.Data.lastDailyClaimDate;
-            if (string.IsNullOrEmpty(lastClaimStr)) return;
-
-            if (DateTime.TryParse(lastClaimStr, out DateTime lastClaimDate))
-            {
-                DateTime today = DateTime.UtcNow.Date;
-                lastClaimDate = lastClaimDate.Date;
-
-                // Пропуск дня: прошло 2 или более дней с момента последнего получения награды
-                if ((today - lastClaimDate).TotalDays >= 2)
-                {
-                    if (saveManager.Data.dailyBonusDay != 1)
-                    {
-                        Debug.Log($"[DailyBonusManager] Daily streak broken! Last claim: {lastClaimDate:yyyy-MM-dd}, Today: {today:yyyy-MM-dd}. Resetting to Day 1.");
-                        saveManager.Data.dailyBonusDay = 1;
-                        saveManager.Save();
-                        OnBonusStateChanged?.Invoke();
-                    }
-                }
-            }
         }
 
         public int GetCurrentDay()
@@ -171,7 +177,7 @@ namespace ProjectB.Meta
             }
 
             // Обновляем состояние
-            saveManager.Data.lastDailyClaimDate = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
+            saveManager.Data.lastDailyClaimDate = DateTime.UtcNow.Date.ToString(DATE_FORMAT, CultureInfo.InvariantCulture);
 
             // Продвигаем день
             int maxDays = GetMaxDays();

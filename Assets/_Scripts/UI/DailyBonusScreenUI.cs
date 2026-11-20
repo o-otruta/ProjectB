@@ -53,6 +53,7 @@ namespace ProjectB.UI
 
             int currentDay = bonusManager.GetCurrentDay();
             bool isRewardAvailable = bonusManager.IsRewardAvailable();
+            bool justCompletedCycle = !isRewardAvailable && bonusManager.HasClaimedToday() && currentDay == 1;
 
             for (int i = 0; i < dayItems.Length; i++)
             {
@@ -68,8 +69,8 @@ namespace ProjectB.UI
                 DailyBonusReward reward = data.rewards[i];
                 int coinsAmount = bonusManager.GetCoinsRewardAmount(reward);
 
-                bool isClaimed = dayIndex < currentDay || (dayIndex == currentDay && !isRewardAvailable);
-                bool isCurrentDay = dayIndex == currentDay;
+                bool isClaimed = justCompletedCycle || dayIndex < currentDay;
+                bool isCurrentDay = isRewardAvailable && dayIndex == currentDay;
 
                 dayItems[i].Setup(dayIndex, reward, coinsAmount, isClaimed, isCurrentDay);
             }

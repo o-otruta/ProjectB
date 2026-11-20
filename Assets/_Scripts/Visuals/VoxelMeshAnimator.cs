@@ -33,6 +33,7 @@ namespace ProjectB.Visuals
         private float timer;
         private int currentFrameIndex = -1;
         private Vector3 baseLocalPosition;
+        private bool hasCachedBasePosition;
         private bool isPlaying = true;
 
         public MeshFilter TargetMeshFilter
@@ -114,15 +115,30 @@ namespace ProjectB.Visuals
                 bobbingTransform = transform;
             }
 
-            baseLocalPosition = bobbingTransform.localPosition;
+            CacheBasePosition();
+        }
+
+        private void CacheBasePosition()
+        {
+            if (bobbingTransform != null && !hasCachedBasePosition)
+            {
+                baseLocalPosition = bobbingTransform.localPosition;
+                hasCachedBasePosition = true;
+            }
+        }
+
+        private void RestoreBasePosition()
+        {
+            if (bobbingTransform != null && hasCachedBasePosition)
+            {
+                bobbingTransform.localPosition = baseLocalPosition;
+            }
         }
 
         private void OnEnable()
         {
-            if (bobbingTransform != null)
-            {
-                baseLocalPosition = bobbingTransform.localPosition;
-            }
+            CacheBasePosition();
+            RestoreBasePosition();
 
             if (!playOnEnable)
             {
@@ -145,13 +161,23 @@ namespace ProjectB.Visuals
             UpdateFrame();
         }
 
+        private void OnDisable()
+        {
+            RestoreBasePosition();
+        }
+
         private void Update()
         {
-            if (!isPlaying) return;
+            if (!isPlaying || Time.deltaTime <= 0f) return;
 
-            if (frames != null && frames.Length > 1)
+            bool hasFrames = frames != null && frames.Length > 1;
+            if (hasFrames || enableBobbing)
             {
                 timer += Time.deltaTime;
+            }
+
+            if (hasFrames)
+            {
                 UpdateFrame();
             }
 
@@ -215,6 +241,7 @@ namespace ProjectB.Visuals
             isPlaying = false;
             currentFrameIndex = -1;
             timer = 0f;
+            RestoreBasePosition();
             if (idleMesh != null && targetMeshFilter != null)
             {
                 targetMeshFilter.sharedMesh = idleMesh;

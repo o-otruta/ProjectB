@@ -28,6 +28,7 @@ namespace ProjectB.Abilities
             this.enemyLayer = enemyLayer;
             this.pool = pool;
             this.isReturned = false;
+            this.spawnTime = Time.time;
 
             startPosition = transform.position;
             targetPosition = startPosition + direction.normalized * throwRange;
@@ -40,7 +41,13 @@ namespace ProjectB.Abilities
 
         protected override void Update()
         {
-            if (isReturned) return;
+            if (isReturned || Time.deltaTime <= 0f) return;
+
+            if (Time.time >= spawnTime + MAX_LIFETIME)
+            {
+                ReturnToPool();
+                return;
+            }
 
             transform.Rotate(Vector3.up * 720f * Time.deltaTime);
 
@@ -53,10 +60,12 @@ namespace ProjectB.Abilities
                 if (returning)
                 {
                     ReturnToPool();
+                    return;
                 }
                 else
                 {
                     returning = true;
+                    currentPierces = 0;
                     damagedEnemies.Clear(); 
                 }
             }

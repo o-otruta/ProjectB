@@ -15,6 +15,7 @@ namespace ProjectB.Enemies
         
         protected int currentHp;
         protected int currentDamage;
+        protected float currentDamageMultiplier = 1f;
         private float lastDamageTime;
         protected bool isAlive;
         protected IDamageable targetDamageable;
@@ -42,6 +43,7 @@ namespace ProjectB.Enemies
             pool = enemyPool;
             eventBus = bus;
             
+            currentDamageMultiplier = difficultyMultiplier;
             if (enemyData != null)
             {
                 currentHp = Mathf.RoundToInt(enemyData.hp * difficultyMultiplier);
@@ -69,6 +71,7 @@ namespace ProjectB.Enemies
             if (isElite || !isAlive) return;
             isElite = true;
 
+            currentDamageMultiplier *= damageMultiplier;
             currentHp = Mathf.RoundToInt(currentHp * hpMultiplier);
             currentDamage = Mathf.RoundToInt(currentDamage * damageMultiplier);
 

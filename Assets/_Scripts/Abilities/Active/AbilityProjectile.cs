@@ -8,6 +8,7 @@ namespace ProjectB.Abilities
     {
         protected IObjectPool<AbilityProjectile> pool;
         protected Transform target;
+        protected IDamageable targetDamageable;
         protected float damage;
         protected float speed;
         protected LayerMask enemyLayer;
@@ -20,6 +21,7 @@ namespace ProjectB.Abilities
             this.damage = damage;
             this.speed = speed;
             this.target = target;
+            this.targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
             this.enemyLayer = enemyLayer;
             this.pool = pool;
             this.isReturned = false;
@@ -28,7 +30,7 @@ namespace ProjectB.Abilities
 
         protected virtual void Update()
         {
-            if (isReturned) return;
+            if (isReturned || Time.deltaTime <= 0f) return;
 
             if (Time.time > spawnTime + MAX_LIFETIME)
             {
@@ -36,7 +38,7 @@ namespace ProjectB.Abilities
                 return;
             }
 
-            if (target == null || !target.gameObject.activeInHierarchy)
+            if (target == null || !target.gameObject.activeInHierarchy || (targetDamageable != null && targetDamageable.IsDead))
             {
                 ReturnToPool();
                 return;
@@ -51,18 +53,16 @@ namespace ProjectB.Abilities
                 return;
             }
 
-            transform.position += toTarget.normalized * distanceThisFrame;
-            transform.rotation = Quaternion.LookRotation(toTarget.normalized);
+            Vector3 moveDir = toTarget.normalized;
+            transform.position += moveDir * distanceThisFrame;
+            transform.rotation = Quaternion.LookRotation(moveDir);
         }
 
         protected virtual void HitTarget()
         {
-            if (target != null && target.TryGetComponent<IDamageable>(out var damageable))
+            if (targetDamageable != null && !targetDamageable.IsDead)
             {
-                if (!damageable.IsDead)
-                {
-                    damageable.TakeDamage((int)damage);
-                }
+                targetDamageable.TakeDamage(Mathf.RoundToInt(damage));
             }
             ReturnToPool();
         }
