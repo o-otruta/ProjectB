@@ -29,4 +29,4 @@ MonoBehaviour:
   projectileCount: 1
   projectileSpeed: 8
   searchRadius: 12
-  explosionRadius: 10
+  explosionRadius: 3

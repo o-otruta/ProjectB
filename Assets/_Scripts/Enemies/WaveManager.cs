@@ -71,7 +71,11 @@ namespace ProjectB.Enemies
                             go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                             go.transform.SetParent(enemyContainer);
                             go.GetComponent<Renderer>().material.color = Color.red;
-                            go.GetComponent<Collider>().isTrigger = true; // Enemy needs trigger
+                            go.GetComponent<Collider>().isTrigger = false;
+                            var rb = go.AddComponent<Rigidbody>();
+                            rb.isKinematic = true;
+                            rb.useGravity = false;
+                            rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
                         }
                         
                         EnemyBase enemy = go.GetComponent<EnemyBase>();
