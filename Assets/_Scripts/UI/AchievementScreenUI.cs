@@ -22,11 +22,18 @@ namespace ProjectB.UI
         {
             this.achievementManager = achievementManager;
             this.saveManager = saveManager;
-            RefreshUI();
+            if (isActiveAndEnabled)
+            {
+                RefreshUI();
+            }
         }
 
         private void OnEnable()
         {
+            if (achievementManager != null && saveManager != null)
+            {
+                RefreshUI();
+            }
             if (contentContainer != null)
             {
                 UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(contentContainer.GetComponent<RectTransform>());
@@ -69,10 +76,12 @@ namespace ProjectB.UI
 
         private void HandleItemClicked(AchievementData data)
         {
-            if (rewardPopup != null && saveManager != null)
-            {
-                rewardPopup.ShowReward(data);
-            }
+            if (data == null || rewardPopup == null || saveManager?.Data == null) return;
+
+            bool isCompleted = saveManager.Data.completedAchievements.Contains(data.id);
+            if (!isCompleted) return;
+
+            rewardPopup.ShowReward(data);
         }
     }
 }

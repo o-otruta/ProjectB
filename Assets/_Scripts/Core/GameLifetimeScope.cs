@@ -42,6 +42,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<GameOverUI>();
             builder.RegisterComponentInHierarchy<HpBarUI>();
             builder.RegisterComponentInHierarchy<XpBarUI>();
+            builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             
             // Register Player
             builder.RegisterComponentInHierarchy<HeroHealth>();

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
 using ProjectB.Core.Events;
+using ProjectB.Meta;
 using ProjectB.Player;
 
 namespace ProjectB.Abilities
@@ -16,15 +17,18 @@ namespace ProjectB.Abilities
 
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
+        private AchievementManager achievementManager;
 
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
+        public int TotalAbilitiesCount => activeAbilities.Count + passiveAbilities.Count;
 
         [Inject]
-        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus)
+        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus, AchievementManager achievementManager = null)
         {
             this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
+            this.achievementManager = achievementManager;
         }
 
         public bool AddAbility(AbilityData data)
@@ -64,6 +68,7 @@ namespace ProjectB.Abilities
             if (added)
             {
                 OnAbilitiesChanged();
+                achievementManager?.OnAbilitiesCollectedInRun(TotalAbilitiesCount);
                 eventBus?.Publish(new AbilityUnlockedEvent(data.id, data.type));
             }
 
@@ -75,10 +80,14 @@ namespace ProjectB.Abilities
             if (HasActive(id, out ActiveAbility active))
             {
                 active.ApplyModifier(type, value);
+                active.IncrementLevel();
+                achievementManager?.OnAbilityUpgraded(id, active.Level);
             }
             else if (HasPassive(id, out PassiveAbility passive))
             {
                 passive.ApplyModifier(type, value);
+                passive.IncrementLevel();
+                achievementManager?.OnAbilityUpgraded(id, passive.Level);
             }
             else
             {

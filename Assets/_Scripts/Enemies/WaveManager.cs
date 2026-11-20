@@ -36,6 +36,8 @@ namespace ProjectB.Enemies
         public int CurrentWave => currentWave;
         public int EnemiesAlive => activeEnemies.Count;
         private bool isSpawning = false;
+        private bool tookDamageInCurrentWave = false;
+        private int consecutiveNoDamageWaves = 0;
         private Coroutine waveDurationCoroutine;
         private Coroutine spawnWaveCoroutine;
         private Coroutine startWaveDelayCoroutine;
@@ -116,6 +118,10 @@ namespace ProjectB.Enemies
             }
 
             eventBus?.Subscribe<GameOverEvent>(OnGameOver);
+            if (heroHealth != null)
+            {
+                heroHealth.OnDamageTaken += HandleHeroDamageTaken;
+            }
             StartCoroutine(LeashCheckCoroutine());
             startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
         }
@@ -126,7 +132,18 @@ namespace ProjectB.Enemies
             {
                 eventBus.Unsubscribe<GameOverEvent>(OnGameOver);
             }
+            if (heroHealth != null)
+            {
+                heroHealth.OnDamageTaken -= HandleHeroDamageTaken;
+            }
             StopAllCoroutines();
+        }
+
+        private void HandleHeroDamageTaken(int amount)
+        {
+            if (amount <= 0) return;
+            tookDamageInCurrentWave = true;
+            consecutiveNoDamageWaves = 0;
         }
 
         private void CopyActiveEnemiesToBuffer()
@@ -369,6 +386,13 @@ namespace ProjectB.Enemies
             }
 
             int completedWave = currentWave;
+            if (!tookDamageInCurrentWave)
+            {
+                consecutiveNoDamageWaves++;
+                achievementManager?.OnNoDamageWaves(consecutiveNoDamageWaves);
+            }
+            tookDamageInCurrentWave = false;
+
             currentWave++;
             Debug.Log($"[WaveManager] Wave {completedWave} completed!");
             achievementManager?.OnWaveReached(currentWave);

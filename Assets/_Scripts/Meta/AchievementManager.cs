@@ -163,5 +163,15 @@ namespace ProjectB.Meta
         {
             SetProgressByType(AchievementConditionType.MaxAbilityLevel, level, abilityId);
         }
+
+        public void OnAbilitiesCollectedInRun(int uniqueAbilitiesCount)
+        {
+            SetProgressByType(AchievementConditionType.CollectAbilitiesInRun, uniqueAbilitiesCount);
+        }
+
+        public void OnNoDamageWaves(int consecutiveWaves)
+        {
+            SetProgressByType(AchievementConditionType.NoDamageWaves, consecutiveWaves);
+        }
     }
 }

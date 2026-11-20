@@ -75,13 +75,15 @@ namespace ProjectB.UI
                 if (progressBarFill != null) 
                 {
                     progressBarFill.gameObject.SetActive(true);
-                    progressBarFill.fillAmount = Mathf.Clamp01((float)currentProgress / data.targetValue);
+                    progressBarFill.fillAmount = data.targetValue > 0
+                        ? Mathf.Clamp01((float)currentProgress / data.targetValue)
+                        : 0f;
                 }
 
                 if (completedMark != null) completedMark.SetActive(false);
 
                 if (iconImage != null) iconImage.color = currentProgress > 0 ? inProgressColor : lockedColor;
-                if (itemButton != null) itemButton.interactable = true;
+                if (itemButton != null) itemButton.interactable = false;
             }
         }
     }

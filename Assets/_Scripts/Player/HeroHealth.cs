@@ -11,6 +11,7 @@ namespace ProjectB.Player
         [SerializeField] private HeroData heroData;
         
         public event System.Action<int, int> OnHealthChanged;
+        public event System.Action<int> OnDamageTaken;
         public event System.Action OnDied;
 
         private int currentHp;
@@ -57,7 +58,8 @@ namespace ProjectB.Player
 
             currentHp -= finalDamage;
             if (currentHp < 0) currentHp = 0;
-            
+
+            OnDamageTaken?.Invoke(finalDamage);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
             
             if (currentHp <= 0)

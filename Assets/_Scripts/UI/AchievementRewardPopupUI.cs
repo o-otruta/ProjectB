@@ -43,11 +43,14 @@ namespace ProjectB.UI
                         descriptionText.text = $"+{achievement.rewardValue} Coins";
                         break;
                     case AchievementRewardType.UnlockAbility:
-                        // In future, you might want to show the ability name instead of a hardcoded string
-                        descriptionText.text = "New Ability Unlocked!";
+                        descriptionText.text = !string.IsNullOrEmpty(achievement.rewardId)
+                            ? $"Ability Unlocked: {achievement.rewardId}"
+                            : "New Ability Unlocked!";
                         break;
                     case AchievementRewardType.UnlockHero:
-                        descriptionText.text = "New Hero Unlocked!";
+                        descriptionText.text = !string.IsNullOrEmpty(achievement.rewardId)
+                            ? $"Hero Unlocked: {achievement.rewardId}"
+                            : "New Hero Unlocked!";
                         break;
                     default:
                         descriptionText.text = "Reward Unlocked!";

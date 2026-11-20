@@ -19,12 +19,14 @@ namespace ProjectB.UI
 
         private SaveManager saveManager;
         private DailyBonusManager bonusManager;
+        private AchievementManager achievementManager;
 
         [Inject]
-        public void Construct(SaveManager saveManager, DailyBonusManager bonusManager)
+        public void Construct(SaveManager saveManager, DailyBonusManager bonusManager, AchievementManager achievementManager = null)
         {
             this.saveManager = saveManager;
             this.bonusManager = bonusManager;
+            this.achievementManager = achievementManager;
             
             if (this.saveManager != null)
             {
@@ -35,6 +37,11 @@ namespace ProjectB.UI
             if (this.bonusManager != null)
             {
                 this.bonusManager.OnBonusStateChanged += UpdateBadges;
+            }
+
+            if (this.achievementManager != null)
+            {
+                this.achievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
             }
         }
 
@@ -56,6 +63,15 @@ namespace ProjectB.UI
             {
                 bonusManager.OnBonusStateChanged -= UpdateBadges;
             }
+            if (achievementManager != null)
+            {
+                achievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
+            }
+        }
+
+        private void HandleAchievementUnlocked(ProjectB.Data.AchievementData _)
+        {
+            UpdateBadges();
         }
 
         private void UpdateCoinsDisplay()
@@ -68,8 +84,11 @@ namespace ProjectB.UI
 
         private void UpdateBadges()
         {
-            // Placeholder logic for badges
-            if (achievementsBadge != null) achievementsBadge.SetActive(false);
+            if (achievementsBadge != null)
+            {
+                bool hasNewAchievements = achievementManager != null && achievementManager.unlockedThisRun.Count > 0;
+                achievementsBadge.SetActive(hasNewAchievements);
+            }
             
             if (bonusBadge != null && bonusManager != null)
             {
@@ -142,6 +161,8 @@ namespace ProjectB.UI
             Debug.Log("[MainMenuUI] Achievements clicked");
             CloseAllPanels();
             SelectTab(3);
+            achievementManager?.ClearRunUnlocks();
+            UpdateBadges();
             if (achievementScreenUI != null)
             {
                 achievementScreenUI.gameObject.SetActive(true);

@@ -13,8 +13,8 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<MainMenuUI>();
             builder.RegisterComponentInHierarchy<MetaUpgradeUI>();
             builder.RegisterComponentInHierarchy<AchievementScreenUI>();
+            builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             builder.RegisterComponentInHierarchy<DailyBonusScreenUI>();
-            builder.Register<DailyBonusManager>(Lifetime.Scoped);
         }
     }
 }
