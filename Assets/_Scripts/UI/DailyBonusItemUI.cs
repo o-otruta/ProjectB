@@ -15,7 +15,7 @@ namespace ProjectB.UI
 
         public void Setup(int dayIndex, DailyBonusReward reward, int coinsAmount, bool isClaimed, bool isCurrentDay)
         {
-            if (dayText != null) dayText.text = $"День {dayIndex}";
+            if (dayText != null) dayText.text = $"Day {dayIndex}";
             
             if (iconImage != null && reward.icon != null)
             {

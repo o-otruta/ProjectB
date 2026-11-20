@@ -8,19 +8,25 @@ public class AbilitiesGenerator
     [MenuItem("Tools/Generate Abilities Data")]
     public static void GenerateAll()
     {
-        CreateAbilityData<ShooterAbilityData>("Shooter", "Стрелок", "Периодически выстреливает снаряды", AbilityType.Active);
-        CreateAbilityData<FireballAbilityData>("Fireball", "Огонек", "Периодически выпускает взрывающийся фаербол", AbilityType.Active);
-        CreateAbilityData<IceAuraAbilityData>("IceAura", "Ледяная Аура", "Замедляет врагов вокруг и наносит урон", AbilityType.Active);
-        CreateAbilityData<BoomerangAbilityData>("Boomerang", "Бумеранг", "Бросает бумеранг, который пронзает врагов", AbilityType.Active);
-        CreateAbilityData<LaserTurretAbilityData>("LaserTurret", "Лазерная Турель", "Устанавливает турель с лазером", AbilityType.Active);
-        CreateAbilityData<BlackHoleAbilityData>("BlackHole", "Черная Дыра", "Затягивает и уничтожает врагов", AbilityType.Active);
+        CreateAbilityData<ShooterAbilityData>("Shooter", "Shooter", "Periodically fires homing projectiles at nearby enemies.", AbilityType.Active, CardRarity.Common, CardRarity.Common);
+        CreateAbilityData<FireballAbilityData>("Fireball", "Fireball", "Launches explosive fireballs that deal area damage.", AbilityType.Active, CardRarity.Rare, CardRarity.Rare);
+        CreateAbilityData<IceAuraAbilityData>("IceAura", "Ice Aura", "Slows and damages nearby enemies around you.", AbilityType.Active, CardRarity.Rare, CardRarity.Rare);
+        CreateAbilityData<BoomerangAbilityData>("Boomerang", "Boomerang", "Throws piercing boomerangs that return to you.", AbilityType.Active, CardRarity.Rare, CardRarity.Rare);
+        CreateAbilityData<LaserTurretAbilityData>("LaserTurret", "Laser Turret", "Deploys a stationary turret that fires a continuous laser beam.", AbilityType.Active, CardRarity.Epic, CardRarity.Epic);
+        CreateAbilityData<BlackHoleAbilityData>("BlackHole", "Black Hole", "Pulls enemies inward and deals periodic damage.", AbilityType.Active, CardRarity.Legendary, CardRarity.Epic);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("Ability assets generated!");
     }
 
-    private static void CreateAbilityData<T>(string id, string abilityName, string desc, AbilityType type) where T : AbilityData
+    private static void CreateAbilityData<T>(
+        string id,
+        string abilityName,
+        string desc,
+        AbilityType type,
+        CardRarity cardRarity,
+        CardRarity modRarity) where T : AbilityData
     {
         string dataPath = $"Assets/_Scripts/Abilities/Data/{id}Data.asset";
         T data = AssetDatabase.LoadAssetAtPath<T>(dataPath);
@@ -46,9 +52,10 @@ public class AbilitiesGenerator
             AssetDatabase.CreateAsset(card, cardPath);
         }
 
-        card.cardName = "Получить: " + abilityName;
+        card.cardName = abilityName;
         card.description = desc;
         card.abilityData = data;
+        card.rarity = cardRarity;
         card.isConsumable = true;
         
         EditorUtility.SetDirty(card);
@@ -62,8 +69,9 @@ public class AbilitiesGenerator
             AssetDatabase.CreateAsset(mod, modPath);
         }
 
-        mod.cardName = abilityName + ": +Урон";
-        mod.description = "Увеличивает урон";
+        mod.cardName = $"{abilityName}: +5 Damage";
+        mod.description = $"Increases {abilityName} damage by 5.";
+        mod.rarity = modRarity;
         mod.targetAbilityId = id;
         mod.modifierType = ModifierType.Damage;
         mod.value = 5f;

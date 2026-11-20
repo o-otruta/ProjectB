@@ -12,13 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ce90689d01ad9d4181e1fa729b182a4, type: 3}
   m_Name: LaserTurretMod_Duration
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
-  cardName: "\u041B\u0430\u0437\u0435\u0440\u043D\u0430\u044F \u0422\u0443\u0440\u0435\u043B\u044C:
-    +\u0412\u0440\u0435\u043C\u044F \u0436\u0438\u0437\u043D\u0438"
-  description: "\u0423\u0432\u0435\u043B\u0438\u0447\u0438\u0432\u0430\u0435\u0442
-    \u0432\u0440\u0435\u043C\u044F \u0440\u0430\u0431\u043E\u0442\u044B \u0442\u0443\u0440\u0435\u043B\u0438
-    (+1 \u0441\u0435\u043A)"
+  cardName: 'Laser Turret: +1s Duration'
+  description: Increases turret active lifetime by 1s.
   icon: {fileID: 0}
-  rarity: 0
+  rarity: 2
   isConsumable: 0
   targetAbilityId: LaserTurret
   modifierType: 6

@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Stat_GlobalDamage
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatUpgradeCardData
   cardName: Damage Up
-  description: Increases global damage by 10
+  description: Increases all damage by 10%.
   icon: {fileID: 0}
-  rarity: 0
+  rarity: 1
+  isConsumable: 0
   statType: 2
   value: 10

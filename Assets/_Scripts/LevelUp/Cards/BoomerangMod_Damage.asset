@@ -12,11 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ce90689d01ad9d4181e1fa729b182a4, type: 3}
   m_Name: BoomerangMod_Damage
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
-  cardName: "\u0411\u0443\u043C\u0435\u0440\u0430\u043D\u0433: +\u0423\u0440\u043E\u043D"
-  description: "\u0423\u0432\u0435\u043B\u0438\u0447\u0438\u0432\u0430\u0435\u0442
-    \u0443\u0440\u043E\u043D"
+  cardName: 'Boomerang: +5 Damage'
+  description: Increases Boomerang damage by 5.
   icon: {fileID: 0}
-  rarity: 0
+  rarity: 1
   isConsumable: 0
   targetAbilityId: Boomerang
   modifierType: 1

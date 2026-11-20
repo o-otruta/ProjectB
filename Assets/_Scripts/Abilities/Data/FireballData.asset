@@ -13,10 +13,8 @@ MonoBehaviour:
   m_Name: FireballData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.FireballAbilityData
   id: Fireball
-  abilityName: "\u041E\u0433\u043E\u043D\u0435\u043A"
-  description: "\u041F\u0435\u0440\u0438\u043E\u0434\u0438\u0447\u0435\u0441\u043A\u0438
-    \u0432\u044B\u043F\u0443\u0441\u043A\u0430\u0435\u0442 \u0432\u0437\u0440\u044B\u0432\u0430\u044E\u0449\u0438\u0439\u0441\u044F
-    \u0444\u0430\u0435\u0440\u0431\u043E\u043B"
+  abilityName: Fireball
+  description: Launches explosive fireballs that deal area damage.
   icon: {fileID: 0}
   type: 0
   unlockedByDefault: 1

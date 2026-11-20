@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: OrbitalSmallSwordData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.OrbitalCompanionAbilityData
   id: orbital_small_sword
-  abilityName: Small Sword Orbit
-  description: A small sword that orbits around you.
+  abilityName: Orbital Sword
+  description: Summons swords that orbit around you and slice enemies.
   icon: {fileID: 0}
   type: 0
   unlockedByDefault: 1

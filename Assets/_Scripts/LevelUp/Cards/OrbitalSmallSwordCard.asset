@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: OrbitalSmallSwordCard
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Orbital Sword
-  description: Summons a small sword to protect you.
+  description: Summons swords that orbit around you.
   icon: {fileID: 0}
   rarity: 0
+  isConsumable: 1
   abilityData: {fileID: 11400000, guid: 64990f3739a2d5f4ca63493315be9a36, type: 2}
   unlockedModifiers:
   - {fileID: 11400000, guid: 99a4d76086e8d254ca6cbbc47d690edc, type: 2}

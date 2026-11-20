@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ce90689d01ad9d4181e1fa729b182a4, type: 3}
   m_Name: OrbitalSword_Plus1Sphere
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
-  cardName: 'Orbital Sword: +1 Sphere'
-  description: Adds one extra orbiting sphere.
+  cardName: 'Orbital Sword: +1 Sword'
+  description: Adds one extra orbiting sword.
   icon: {fileID: 0}
-  rarity: 0
+  rarity: 1
   isConsumable: 0
   targetAbilityId: orbital_small_sword
   modifierType: 0

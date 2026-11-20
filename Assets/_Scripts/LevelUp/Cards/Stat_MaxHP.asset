@@ -16,5 +16,6 @@ MonoBehaviour:
   description: Increases maximum health by 20.
   icon: {fileID: 0}
   rarity: 0
+  isConsumable: 0
   statType: 0
   value: 20

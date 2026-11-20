@@ -148,6 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.HeroExperience
   baseXP: 10
+  xpExponent: 1.05
   _magnetRadius: 3
   magnetSpeed: 15
   pickupLayer:

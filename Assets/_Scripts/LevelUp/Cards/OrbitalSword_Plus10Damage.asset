@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: OrbitalSword_Plus10Damage
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Orbital Sword: +10 Damage'
-  description: Increases damage by 10.
+  description: Increases Orbital Sword damage by 10.
   icon: {fileID: 0}
   rarity: 0
   isConsumable: 0

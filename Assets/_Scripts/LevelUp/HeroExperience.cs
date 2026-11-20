@@ -22,6 +22,9 @@ namespace ProjectB.LevelUp
         [Header("Settings")]
         [Tooltip("Базовое значение XP для 1 уровня")]
         [SerializeField] private int baseXP = 10;
+
+        [Tooltip("Показатель степени кривой XP: baseXP * (level ^ xpExponent)")]
+        [SerializeField] private float xpExponent = 1.05f;
         
         [Tooltip("Радиус магнита для сбора кристаллов")]
         [SerializeField] private float _magnetRadius = 3f;
@@ -157,7 +160,8 @@ namespace ProjectB.LevelUp
         private void CalculateXPToNextLevel()
         {
             // Formula: baseXP * (level ^ 1.05)
-            XPToNextLevel = Mathf.RoundToInt(baseXP * Mathf.Pow(CurrentLevel, 1.05f));
+            float exp = xpExponent > 0f ? xpExponent : 1.05f;
+            XPToNextLevel = Mathf.Max(1, Mathf.RoundToInt(baseXP * Mathf.Pow(CurrentLevel, exp)));
         }
 
         private void OnDrawGizmosSelected()
