@@ -28,7 +28,7 @@ public class AbilitiesGenerator
         CardRarity cardRarity,
         CardRarity modRarity) where T : AbilityData
     {
-        string dataPath = $"Assets/_Scripts/Abilities/Data/{id}Data.asset";
+        string dataPath = $"Assets/_ScriptableObjects/Abilities/{id}Data.asset";
         T data = AssetDatabase.LoadAssetAtPath<T>(dataPath);
         if (data == null)
         {
@@ -44,7 +44,7 @@ public class AbilitiesGenerator
         EditorUtility.SetDirty(data);
 
         // Card
-        string cardPath = $"Assets/_Scripts/LevelUp/Cards/{id}Card.asset";
+        string cardPath = $"Assets/_ScriptableObjects/Cards/{id}Card.asset";
         AbilityCardData card = AssetDatabase.LoadAssetAtPath<AbilityCardData>(cardPath);
         if (card == null)
         {
@@ -61,7 +61,7 @@ public class AbilitiesGenerator
         EditorUtility.SetDirty(card);
 
         // Modifiers (1 for now)
-        string modPath = $"Assets/_Scripts/LevelUp/Cards/{id}Mod_Damage.asset";
+        string modPath = $"Assets/_ScriptableObjects/Cards/{id}Mod_Damage.asset";
         AbilityModifierCardData mod = AssetDatabase.LoadAssetAtPath<AbilityModifierCardData>(modPath);
         if (mod == null)
         {

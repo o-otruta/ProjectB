@@ -1,0 +1,17 @@
+{
+    "name": "ProjectB.Meta",
+    "rootNamespace": "ProjectB.Meta",
+    "references": [
+        "ProjectB.Data",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

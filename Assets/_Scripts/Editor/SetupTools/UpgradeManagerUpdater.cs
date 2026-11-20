@@ -20,7 +20,7 @@ public class UpgradeManagerUpdater
                 manager.cardPool = new List<CardData>();
             }
 
-            string[] guids = AssetDatabase.FindAssets("t:AbilityCardData", new[] { "Assets/_Scripts/LevelUp/Cards" });
+            string[] guids = AssetDatabase.FindAssets("t:AbilityCardData", new[] { "Assets/_ScriptableObjects/Cards" });
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);

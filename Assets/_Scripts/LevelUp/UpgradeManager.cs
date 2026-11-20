@@ -70,7 +70,7 @@ namespace ProjectB.LevelUp
             }
         }
 
-        private void InitializeRunPool()
+        public void InitializeRunPool()
         {
             dynamicPool.Clear();
             if (cardPool == null) return;
@@ -204,7 +204,7 @@ namespace ProjectB.LevelUp
             }
         }
 
-        private List<CardData> GetRandomCards(int count)
+        public List<CardData> GetRandomCards(int count)
         {
             if (dynamicPool == null || dynamicPool.Count == 0) return new List<CardData>();
             

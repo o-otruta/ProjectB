@@ -1,0 +1,26 @@
+{
+    "name": "ProjectB.Tests.EditMode",
+    "rootNamespace": "ProjectB.Tests.EditMode",
+    "references": [
+        "ProjectB.Data",
+        "ProjectB.Meta",
+        "ProjectB.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
