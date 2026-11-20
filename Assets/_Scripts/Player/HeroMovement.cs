@@ -56,16 +56,17 @@ namespace ProjectB.Player
 
         void Update()
         {
-            if (heroData == null || joystick == null) return;
+            if (heroData == null || joystick == null || Time.deltaTime <= 0f) return;
             if (hp != null && hp.IsDead) return;
 
             Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
             
-            // Плавный поворот визуальной модели в сторону движения
+            // Плавный поворот визуальной модели в сторону движения (framerate-independent)
             if (moveDir.sqrMagnitude > 0.01f && visualModel != null)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-                visualModel.rotation = Quaternion.Slerp(visualModel.rotation, targetRotation, heroData.rotationSpeed * Time.deltaTime);
+                float t = 1f - Mathf.Exp(-heroData.rotationSpeed * Time.deltaTime);
+                visualModel.rotation = Quaternion.Slerp(visualModel.rotation, targetRotation, t);
             }
         }
 

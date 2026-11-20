@@ -103,7 +103,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Player.HeroMovement
   heroData: {fileID: 11400000, guid: 16d952ca2481f154ab1f0c676e8a63b7, type: 2}
-  visualModel: {fileID: 422264164039342723}
+  visualModel: {fileID: 5344686654763013113}
 --- !u!114 &2444728233847287419
 MonoBehaviour:
   m_ObjectHideFlags: 0
