@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: VitalityRegenCard
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
+  cardName: Vitality Regen
+  description: Continuously restores 3 HP every second.
+  icon: {fileID: 0}
+  rarity: 1
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: 527f85fd93dc28f4188ed3c7a396b3c2, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: e04798e288f28294ead8d955d6481b6c, type: 2}

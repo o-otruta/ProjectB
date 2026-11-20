@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7192f0125d76f943b4734bdfe764133, type: 3}
+  m_Name: SynergyCard_OverchargedGrid
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
+  cardName: 'Synergy: Overcharged Grid'
+  description: 'Laser Turret + Shooter: +15 Laser DPS, +3s Turret duration, +2 Shooter
+    projectiles & +20% Global Damage.'
+  icon: {fileID: 0}
+  rarity: 3
+  isConsumable: 1
+  synergyId: overcharged_grid
+  abilityBonuses:
+  - targetAbilityId: LaserTurret
+    modifierType: 1
+    value: 15
+  - targetAbilityId: LaserTurret
+    modifierType: 6
+    value: 3
+  - targetAbilityId: Shooter
+    modifierType: 0
+    value: 2
+  globalDamageBonusPercent: 20
+  armorBonus: 0

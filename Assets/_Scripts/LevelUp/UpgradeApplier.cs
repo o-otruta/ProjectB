@@ -35,6 +35,9 @@ namespace ProjectB.LevelUp
                 case AbilityModifierCardData modifierCard:
                     ApplyModifierCard(modifierCard);
                     break;
+                case SynergyCardData synergyCard:
+                    ApplySynergyCard(synergyCard);
+                    break;
                 default:
                     Debug.LogWarning($"[UpgradeApplier] Unsupported card type: {card.GetType().Name}");
                     break;
@@ -90,6 +93,33 @@ namespace ProjectB.LevelUp
             if (heroAbilities != null)
             {
                 heroAbilities.UpgradeAbility(card.targetAbilityId, card.modifierType, card.value);
+            }
+        }
+
+        private void ApplySynergyCard(SynergyCardData card)
+        {
+            if (card == null) return;
+
+            if (heroAbilities != null && card.abilityBonuses != null)
+            {
+                for (int i = 0; i < card.abilityBonuses.Count; i++)
+                {
+                    var bonus = card.abilityBonuses[i];
+                    if (!string.IsNullOrEmpty(bonus.targetAbilityId) && heroAbilities.HasAbility(bonus.targetAbilityId))
+                    {
+                        heroAbilities.UpgradeAbility(bonus.targetAbilityId, bonus.modifierType, bonus.value);
+                    }
+                }
+            }
+
+            if (card.globalDamageBonusPercent > 0f)
+            {
+                runtimeStats?.AddGlobalDamagePercent(card.globalDamageBonusPercent);
+            }
+
+            if (card.armorBonus > 0f)
+            {
+                runtimeStats?.AddArmor(card.armorBonus);
             }
         }
     }

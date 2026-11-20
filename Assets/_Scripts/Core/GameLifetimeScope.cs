@@ -34,6 +34,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<CoinManager>();
             builder.RegisterComponentInHierarchy<UpgradeManager>();
             builder.RegisterComponentInHierarchy<ArenaGenerator>();
+            builder.RegisterComponentInHierarchy<SecretItemSpawner>();
             builder.RegisterComponentInHierarchy<CameraController>();
             
             // Register UI

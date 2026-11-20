@@ -173,5 +173,10 @@ namespace ProjectB.Meta
         {
             SetProgressByType(AchievementConditionType.NoDamageWaves, consecutiveWaves);
         }
+
+        public void OnSecretItemFound(string secretItemId)
+        {
+            AddProgressByType(AchievementConditionType.FindSecretItem, 1, secretItemId);
+        }
     }
 }

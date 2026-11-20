@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7192f0125d76f943b4734bdfe764133, type: 3}
+  m_Name: SynergyCard_SteamBlast
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
+  cardName: 'Synergy: Steam Blast'
+  description: 'Fireball + Ice Aura: Fireball gains +2 projectiles & +15 damage;
+    Ice Aura gains +2.0 radius & +10 damage.'
+  icon: {fileID: 0}
+  rarity: 3
+  isConsumable: 1
+  synergyId: steam_blast
+  abilityBonuses:
+  - targetAbilityId: Fireball
+    modifierType: 0
+    value: 2
+  - targetAbilityId: Fireball
+    modifierType: 1
+    value: 15
+  - targetAbilityId: IceAura
+    modifierType: 3
+    value: 2
+  - targetAbilityId: IceAura
+    modifierType: 1
+    value: 10
+  globalDamageBonusPercent: 0
+  armorBonus: 0

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
 using VContainer;
+using ProjectB.Arena;
 using ProjectB.Core;
 using ProjectB.Enemies;
 using ProjectB.LevelUp;
@@ -23,6 +24,7 @@ namespace ProjectB.UI
         private HeroEconomy heroEconomy;
         private HeroUltimate heroUltimate;
         private GameManager gameManager;
+        private SecretItemSpawner secretItemSpawner;
 
         [Inject]
         public void Construct(
@@ -31,7 +33,8 @@ namespace ProjectB.UI
             HeroExperience heroExperience,
             HeroEconomy heroEconomy,
             HeroUltimate heroUltimate,
-            GameManager gameManager)
+            GameManager gameManager,
+            SecretItemSpawner secretItemSpawner = null)
         {
             this.waveManager = waveManager;
             this.heroHealth = heroHealth;
@@ -39,6 +42,7 @@ namespace ProjectB.UI
             this.heroEconomy = heroEconomy;
             this.heroUltimate = heroUltimate;
             this.gameManager = gameManager;
+            this.secretItemSpawner = secretItemSpawner;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -118,7 +122,7 @@ namespace ProjectB.UI
             panelRt.anchorMax = new Vector2(0.5f, 0.5f);
             panelRt.pivot = new Vector2(0.5f, 0.5f);
             panelRt.anchoredPosition = new Vector2(0f, 80f);
-            panelRt.sizeDelta = new Vector2(760f, 760f);
+            panelRt.sizeDelta = new Vector2(760f, 840f);
 
             var panelImg = menuPanel.GetComponent<Image>();
             panelImg.color = new Color(0.05f, 0.06f, 0.09f, 0.93f);
@@ -226,6 +230,13 @@ namespace ProjectB.UI
                 heroHealth?.SetGodMode(false);
                 heroHealth?.SetInvulnerable(false);
                 heroHealth?.DebugKill();
+            });
+
+            var secretRow = CreateRow(menuPanel.transform, 72f, 14f);
+            AddFlexButton(secretRow.transform, "Spawn All 3 Secrets", new Color(0.45f, 0.25f, 0.72f, 1f), () =>
+            {
+                secretItemSpawner?.SpawnAllSecretsNearHero(5.0f);
+                menuPanel.SetActive(false);
             });
 
             menuPanel.SetActive(false);

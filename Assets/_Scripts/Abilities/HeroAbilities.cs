@@ -16,6 +16,7 @@ namespace ProjectB.Abilities
         private List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
 
         private HeroRuntimeStats runtimeStats;
+        private HeroHealth heroHealth;
         private GameEventBus eventBus;
         private AchievementManager achievementManager;
 
@@ -26,11 +27,16 @@ namespace ProjectB.Abilities
         public event System.Action OnAbilitiesUpdated;
 
         [Inject]
-        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus, AchievementManager achievementManager = null)
+        public void Construct(
+            HeroRuntimeStats runtimeStats,
+            GameEventBus eventBus,
+            AchievementManager achievementManager = null,
+            HeroHealth heroHealth = null)
         {
             this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
             this.achievementManager = achievementManager;
+            this.heroHealth = heroHealth != null ? heroHealth : GetComponent<HeroHealth>();
         }
 
         public bool AddAbility(AbilityData data)
@@ -60,6 +66,8 @@ namespace ProjectB.Abilities
                     var ability = data.CreateAbility(transform) as PassiveAbility;
                     if (ability != null)
                     {
+                        var health = heroHealth != null ? heroHealth : GetComponent<HeroHealth>();
+                        ability.SetContext(runtimeStats, health);
                         ability.Initialize(data);
                         passiveAbilities.Add(ability);
                         added = true;

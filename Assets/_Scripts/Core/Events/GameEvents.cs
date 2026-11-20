@@ -163,5 +163,22 @@ namespace ProjectB.Core.Events
             CoinsEarned = coinsEarned;
         }
     }
+
+    /// <summary>
+    /// Секретный предмет на арене подобран героем.
+    /// </summary>
+    public struct SecretItemCollectedEvent
+    {
+        public string ItemId;
+        public string DisplayName;
+        public string RewardSummary;
+
+        public SecretItemCollectedEvent(string itemId, string displayName, string rewardSummary)
+        {
+            ItemId = itemId;
+            DisplayName = displayName;
+            RewardSummary = rewardSummary;
+        }
+    }
 }
 

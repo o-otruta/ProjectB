@@ -7,6 +7,7 @@ namespace ProjectB.Data
         DefeatBoss,
         MaxAbilityLevel,
         CollectAbilitiesInRun,
-        NoDamageWaves
+        NoDamageWaves,
+        FindSecretItem
     }
 }

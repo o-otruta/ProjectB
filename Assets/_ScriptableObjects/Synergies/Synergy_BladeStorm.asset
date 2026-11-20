@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9baf696089ea7348aa9b4fa3924f291, type: 3}
+  m_Name: Synergy_BladeStorm
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyData
+  id: blade_storm
+  synergyName: Blade Storm
+  requiredAbilityIds:
+  - orbital_small_sword
+  - Boomerang
+  rewardCard: {fileID: 11400000, guid: d0eca806368530e4ca583d400ed3c803, type: 2}

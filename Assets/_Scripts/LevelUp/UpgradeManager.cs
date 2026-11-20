@@ -16,7 +16,9 @@ namespace ProjectB.LevelUp
         public int maxCardsToOffer = 3;
         
         public List<CardData> cardPool; // Пул доступных карточек
+        public List<SynergyData> synergies = new List<SynergyData>(); // Синергии способностей
         private List<CardData> dynamicPool = new List<CardData>(); // Пул добавленных модификаторов
+        private readonly HashSet<string> claimedSynergyIds = new HashSet<string>();
         
         private CardSelectionUI cardUI;
         private HeroExperience heroExp;
@@ -73,6 +75,7 @@ namespace ProjectB.LevelUp
         public void InitializeRunPool()
         {
             dynamicPool.Clear();
+            claimedSynergyIds.Clear();
             if (cardPool == null) return;
 
             for (int i = 0; i < cardPool.Count; i++)
@@ -206,41 +209,55 @@ namespace ProjectB.LevelUp
 
         public List<CardData> GetRandomCards(int count)
         {
-            if (dynamicPool == null || dynamicPool.Count == 0) return new List<CardData>();
-            
             List<CardData> validPool = new List<CardData>();
             bool canAddActive = heroAbilities == null || heroAbilities.CanAddActive();
             bool canAddPassive = heroAbilities == null || heroAbilities.CanAddPassive();
 
             // Filter out invalid, locked, already acquired, or slot-capped abilities and orphan modifiers
-            foreach (var card in dynamicPool)
+            if (dynamicPool != null)
             {
-                if (card == null) continue;
-
-                if (card is AbilityCardData abilityCard)
+                foreach (var card in dynamicPool)
                 {
-                    if (abilityCard.abilityData == null)
-                        continue;
+                    if (card == null) continue;
 
-                    // Skip if we already have this ability
-                    if (heroAbilities != null && heroAbilities.HasAbility(abilityCard.abilityData.id))
-                        continue;
-                        
-                    if (abilityCard.abilityData.type == AbilityType.Active && !canAddActive)
-                        continue;
-                    if (abilityCard.abilityData.type == AbilityType.Passive && !canAddPassive)
-                        continue;
+                    if (card is AbilityCardData abilityCard)
+                    {
+                        if (abilityCard.abilityData == null)
+                            continue;
+
+                        // Skip if we already have this ability
+                        if (heroAbilities != null && heroAbilities.HasAbility(abilityCard.abilityData.id))
+                            continue;
+                            
+                        if (abilityCard.abilityData.type == AbilityType.Active && !canAddActive)
+                            continue;
+                        if (abilityCard.abilityData.type == AbilityType.Passive && !canAddPassive)
+                            continue;
+                    }
+                    else if (card is AbilityModifierCardData modifierCard)
+                    {
+                        if (string.IsNullOrEmpty(modifierCard.targetAbilityId))
+                            continue;
+
+                        if (heroAbilities != null && !heroAbilities.HasAbility(modifierCard.targetAbilityId))
+                            continue;
+                    }
+                    
+                    validPool.Add(card);
                 }
-                else if (card is AbilityModifierCardData modifierCard)
+            }
+
+            // Evaluate ability synergies and inject unlocked synergy cards into validPool
+            if (synergies != null && heroAbilities != null)
+            {
+                for (int i = 0; i < synergies.Count; i++)
                 {
-                    if (string.IsNullOrEmpty(modifierCard.targetAbilityId))
-                        continue;
-
-                    if (heroAbilities != null && !heroAbilities.HasAbility(modifierCard.targetAbilityId))
-                        continue;
+                    var synergy = synergies[i];
+                    if (IsSynergyReady(synergy) && !validPool.Contains(synergy.rewardCard))
+                    {
+                        validPool.Add(synergy.rewardCard);
+                    }
                 }
-                
-                validPool.Add(card);
             }
 
             if (validPool.Count == 0) return new List<CardData>();
@@ -296,8 +313,80 @@ namespace ProjectB.LevelUp
             }
         }
 
+        private bool IsSynergyReady(SynergyData synergy)
+        {
+            if (synergy == null || synergy.rewardCard == null || heroAbilities == null) return false;
+            if (synergy.requiredAbilityIds == null || synergy.requiredAbilityIds.Count == 0) return false;
+
+            string key = !string.IsNullOrEmpty(synergy.id) ? synergy.id : synergy.rewardCard.synergyId;
+            if (!string.IsNullOrEmpty(key) && claimedSynergyIds.Contains(key)) return false;
+
+            for (int i = 0; i < synergy.requiredAbilityIds.Count; i++)
+            {
+                string reqId = synergy.requiredAbilityIds[i];
+                if (string.IsNullOrEmpty(reqId) || !heroAbilities.HasAbility(reqId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Grants a random unlocked Rare+ ability directly (used by Mystery Crystal secret item).
+        /// Falls back to any unowned unlocked ability if no Rare+ abilities remain.
+        /// </summary>
+        public AbilityData GrantRandomRareAbility()
+        {
+            if (heroAbilities == null || dynamicPool == null) return null;
+
+            List<AbilityCardData> rareCandidates = new List<AbilityCardData>();
+            List<AbilityCardData> fallbackCandidates = new List<AbilityCardData>();
+
+            bool canAddActive = heroAbilities.CanAddActive();
+            bool canAddPassive = heroAbilities.CanAddPassive();
+
+            for (int i = 0; i < dynamicPool.Count; i++)
+            {
+                if (dynamicPool[i] is AbilityCardData abilityCard && abilityCard.abilityData != null)
+                {
+                    var ab = abilityCard.abilityData;
+                    if (heroAbilities.HasAbility(ab.id)) continue;
+                    if (ab.type == AbilityType.Active && !canAddActive) continue;
+                    if (ab.type == AbilityType.Passive && !canAddPassive) continue;
+
+                    if (ab.rarity >= CardRarity.Rare || abilityCard.rarity >= CardRarity.Rare)
+                    {
+                        rareCandidates.Add(abilityCard);
+                    }
+                    else
+                    {
+                        fallbackCandidates.Add(abilityCard);
+                    }
+                }
+            }
+
+            var source = rareCandidates.Count > 0 ? rareCandidates : fallbackCandidates;
+            if (source.Count == 0) return null;
+
+            AbilityCardData chosen = source[UnityEngine.Random.Range(0, source.Count)];
+            if (chosen.isConsumable)
+            {
+                dynamicPool.Remove(chosen);
+            }
+
+            ApplyCardEffect(chosen);
+            return chosen.abilityData;
+        }
+
         private void OnCardSelected(CardData selectedCard)
         {
+            if (selectedCard is SynergyCardData synergyCard)
+            {
+                string key = !string.IsNullOrEmpty(synergyCard.synergyId) ? synergyCard.synergyId : synergyCard.name;
+                claimedSynergyIds.Add(key);
+            }
+
             if (selectedCard.isConsumable)
             {
                 dynamicPool.Remove(selectedCard);
