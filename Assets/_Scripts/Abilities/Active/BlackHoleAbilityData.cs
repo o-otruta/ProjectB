@@ -9,6 +9,7 @@ namespace ProjectB.Abilities
         public float pullRadius = 5f;
         public float pullForce = 3f;
         public float tickRate = 0.3f;
+        public Material auraMaterial;
 
         public override AbilityBase CreateAbility(Transform parent)
         {

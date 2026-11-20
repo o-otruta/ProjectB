@@ -25,7 +25,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 2553048924816847174, guid: e8cd318ac06c4a84389e420d003edc68, type: 3}
   projectileCount: 1
   projectileSpeed: 8
   searchRadius: 12

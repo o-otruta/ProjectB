@@ -23,7 +23,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  prefab: {fileID: 0}
+  prefab: {fileID: 3458585533621426292, guid: 314f3ea83f16ce94cbf360af58e442cd, type: 3}
   count: 2
   orbitSpeed: 120
   orbitDistance: 2.5

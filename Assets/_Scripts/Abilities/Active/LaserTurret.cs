@@ -47,16 +47,8 @@ namespace ProjectB.Abilities
                     lineRenderer = gameObject.AddComponent<LineRenderer>();
                     lineRenderer.startWidth = 0.1f;
                     lineRenderer.endWidth = 0.1f;
-                    // Fallback procedural material if not assigned via prefab
-                    var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                    mat.color = Color.cyan;
-                    mat.SetFloat("_Surface", 1); 
-                    mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                    mat.SetInt("_ZWrite", 0);
-                    mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-                    mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-                    lineRenderer.material = mat;
+                    lineRenderer.startColor = Color.cyan;
+                    lineRenderer.endColor = Color.cyan;
                 }
             }
             lineRenderer.enabled = false;

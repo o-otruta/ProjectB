@@ -36,10 +36,6 @@ namespace ProjectB.Abilities
                 obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 obj.transform.SetParent(projectileContainer);
                 obj.transform.localScale = Vector3.one * 0.5f;
-                // TODO(Post-MVP): Убрать Shader.Find после добавления префабов
-                var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                mat.color = Color.red;
-                obj.GetComponent<Renderer>().material = mat;
                 Destroy(obj.GetComponent<SphereCollider>());
             }
             var p = obj.GetComponent<FireballProjectile>();

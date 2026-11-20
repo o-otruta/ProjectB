@@ -10,6 +10,7 @@ namespace ProjectB.LevelUp
         private Transform heroTarget;
 
         private IObjectPool<XpCrystal> xpPool;
+        private Material fallbackMaterial;
 
         [Inject]
         public void Construct(ProjectB.Player.HeroHealth heroHealth)
@@ -25,10 +26,11 @@ namespace ProjectB.LevelUp
 
             Transform poolContainer = new GameObject("XpCrystalContainer").transform;
             
-            // Safely get the default material by creating a temporary primitive, to avoid Shader.Find("Standard") crashing in URP/mobile
+            // Safely get the default material by creating a temporary primitive, to avoid Shader.Find crashing in URP/mobile
             GameObject tempPrimitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Material fallbackMaterial = new Material(tempPrimitive.GetComponent<Renderer>().sharedMaterial);
+            fallbackMaterial = new Material(tempPrimitive.GetComponent<Renderer>().sharedMaterial);
             fallbackMaterial.color = Color.green;
+            fallbackMaterial.enableInstancing = true;
             Destroy(tempPrimitive);
 
             xpPool = new ObjectPool<XpCrystal>(
@@ -78,6 +80,15 @@ namespace ProjectB.LevelUp
             crystal.transform.position = position;
             
             crystal.Initialize(heroTarget, amount, xpPool);
+        }
+
+        private void OnDestroy()
+        {
+            if (fallbackMaterial != null)
+            {
+                Destroy(fallbackMaterial);
+                fallbackMaterial = null;
+            }
         }
     }
 }

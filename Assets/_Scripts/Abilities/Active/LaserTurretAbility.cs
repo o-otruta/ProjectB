@@ -45,9 +45,6 @@ namespace ProjectB.Abilities
                         obj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                         obj.transform.SetParent(turretContainer);
                         obj.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-                        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                        mat.color = Color.cyan;
-                        obj.GetComponent<Renderer>().material = mat;
                         Destroy(obj.GetComponent<CapsuleCollider>());
                     }
                     var t = obj.GetComponent<LaserTurret>();

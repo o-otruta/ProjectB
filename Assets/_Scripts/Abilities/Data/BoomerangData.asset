@@ -25,7 +25,8 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  boomerangPrefab: {fileID: 0}
+  boomerangPrefab: {fileID: 2301028835070969599, guid: 542046ee796c7204f8fbbd00b12477cd, type: 3}
+  projectileCount: 1
   throwRange: 8
   travelSpeed: 10
   pierceCount: 5

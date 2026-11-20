@@ -10,6 +10,7 @@ namespace ProjectB.LevelUp
         private Transform heroTarget;
 
         private IObjectPool<CoinPickup> coinPool;
+        private Material fallbackMaterial;
 
         [Inject]
         public void Construct(ProjectB.Player.HeroHealth heroHealth)
@@ -25,8 +26,9 @@ namespace ProjectB.LevelUp
             Transform poolContainer = new GameObject("CoinContainer").transform;
             
             GameObject tempPrimitive = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            Material fallbackMaterial = new Material(tempPrimitive.GetComponent<Renderer>().sharedMaterial);
+            fallbackMaterial = new Material(tempPrimitive.GetComponent<Renderer>().sharedMaterial);
             fallbackMaterial.color = Color.yellow;
+            fallbackMaterial.enableInstancing = true;
             Destroy(tempPrimitive);
 
             coinPool = new ObjectPool<CoinPickup>(
@@ -71,6 +73,15 @@ namespace ProjectB.LevelUp
             pickup.transform.position = position;
             
             pickup.Initialize(heroTarget, amount, coinPool);
+        }
+
+        private void OnDestroy()
+        {
+            if (fallbackMaterial != null)
+            {
+                Destroy(fallbackMaterial);
+                fallbackMaterial = null;
+            }
         }
     }
 }

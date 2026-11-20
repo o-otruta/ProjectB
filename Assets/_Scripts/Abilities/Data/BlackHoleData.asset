@@ -27,3 +27,4 @@ MonoBehaviour:
   pullRadius: 5
   pullForce: 3
   tickRate: 0.3
+  auraMaterial: {fileID: 2100000, guid: 85a74f48d4168e842b8b9681cfbe538c, type: 2}

@@ -21,9 +21,11 @@ namespace ProjectB.Enemies
         protected float slowFactor = 1f;
         private float slowTimer = 0f;
 
-        private Renderer enemyRenderer;
-        private Color originalColor;
-        private bool hasOriginalColor;
+        private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+        private static readonly Color EliteTintColor = new Color(0.6f, 0f, 0.8f);
+
+        private Renderer[] enemyRenderers;
+        private MaterialPropertyBlock propBlock;
         private bool isElite;
 
         public bool IsDead => !isAlive;
@@ -49,23 +51,17 @@ namespace ProjectB.Enemies
             lastDamageTime = 0f;
             slowFactor = 1f;
             slowTimer = 0f;
+            currentMoveDir = Vector3.zero;
+            nextCheckTime = 0f;
             targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
 
-            if (enemyRenderer == null)
+            if (enemyRenderers == null)
             {
-                enemyRenderer = GetComponentInChildren<Renderer>();
-                if (enemyRenderer != null && enemyRenderer.material != null)
-                {
-                    originalColor = enemyRenderer.material.color;
-                    hasOriginalColor = true;
-                }
+                enemyRenderers = GetComponentsInChildren<Renderer>(true);
             }
 
             isElite = false;
-            if (hasOriginalColor && enemyRenderer != null && enemyRenderer.material != null)
-            {
-                enemyRenderer.material.color = originalColor;
-            }
+            ClearTint();
         }
 
         public virtual void MakeElite(float hpMultiplier = 3f, float damageMultiplier = 2f)
@@ -76,9 +72,34 @@ namespace ProjectB.Enemies
             currentHp = Mathf.RoundToInt(currentHp * hpMultiplier);
             currentDamage = Mathf.RoundToInt(currentDamage * damageMultiplier);
 
-            if (enemyRenderer != null && enemyRenderer.material != null)
+            ApplyTint(EliteTintColor);
+        }
+
+        private void ApplyTint(Color color)
+        {
+            if (enemyRenderers == null || enemyRenderers.Length == 0) return;
+            if (propBlock == null) propBlock = new MaterialPropertyBlock();
+
+            propBlock.SetColor(BaseColorPropertyId, color);
+            for (int i = 0; i < enemyRenderers.Length; i++)
             {
-                enemyRenderer.material.color = new Color(0.6f, 0f, 0.8f); // Фиолетовый цвет для элиты
+                if (enemyRenderers[i] != null)
+                {
+                    enemyRenderers[i].SetPropertyBlock(propBlock);
+                }
+            }
+        }
+
+        private void ClearTint()
+        {
+            if (enemyRenderers == null || enemyRenderers.Length == 0) return;
+
+            for (int i = 0; i < enemyRenderers.Length; i++)
+            {
+                if (enemyRenderers[i] != null)
+                {
+                    enemyRenderers[i].SetPropertyBlock(null);
+                }
             }
         }
 

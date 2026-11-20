@@ -38,18 +38,12 @@ namespace ProjectB.Abilities
             UpdateVisualSize();
 
             Destroy(visualAura.GetComponent<CapsuleCollider>());
-            
-            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            mat.color = new Color(0f, 0.5f, 1f, 0.3f);
-            
-            mat.SetFloat("_Surface", 1);
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            mat.SetInt("_ZWrite", 0);
-            mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-            
-            visualAura.GetComponent<Renderer>().material = mat;
+
+            var renderer = visualAura.GetComponent<Renderer>();
+            if (renderer != null && IceData.auraMaterial != null)
+            {
+                renderer.sharedMaterial = IceData.auraMaterial;
+            }
         }
 
         private void UpdateVisualSize()

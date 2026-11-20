@@ -70,7 +70,6 @@ namespace ProjectB.Enemies
                             // Fallback, if no prefab assigned, create a default capsule
                             go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                             go.transform.SetParent(enemyContainer);
-                            go.GetComponent<Renderer>().material.color = Color.red;
                             go.GetComponent<Collider>().isTrigger = false;
                             var rb = go.AddComponent<Rigidbody>();
                             rb.isKinematic = true;

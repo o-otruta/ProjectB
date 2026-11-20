@@ -130,15 +130,15 @@ namespace ProjectB.Arena
                 }
                 else
                 {
-                    if (_fallbackFloorMaterial == null)
+                    if (_fallbackFloorMaterial == null && renderer.sharedMaterial != null)
                     {
-                        Material baseMat = renderer.sharedMaterial;
-                        _fallbackFloorMaterial = baseMat != null
-                            ? new Material(baseMat)
-                            : new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                        _fallbackFloorMaterial = new Material(renderer.sharedMaterial);
                         _fallbackFloorMaterial.color = new Color(0.2f, 0.5f, 0.2f);
                     }
-                    renderer.sharedMaterial = _fallbackFloorMaterial;
+                    if (_fallbackFloorMaterial != null)
+                    {
+                        renderer.sharedMaterial = _fallbackFloorMaterial;
+                    }
                 }
             }
         }
@@ -186,15 +186,15 @@ namespace ProjectB.Arena
                     }
                     else
                     {
-                        if (_fallbackWallMaterial == null)
+                        if (_fallbackWallMaterial == null && renderer.sharedMaterial != null)
                         {
-                            Material baseMat = renderer.sharedMaterial;
-                            _fallbackWallMaterial = baseMat != null
-                                ? new Material(baseMat)
-                                : new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                            _fallbackWallMaterial = new Material(renderer.sharedMaterial);
                             _fallbackWallMaterial.color = Color.gray;
                         }
-                        renderer.sharedMaterial = _fallbackWallMaterial;
+                        if (_fallbackWallMaterial != null)
+                        {
+                            renderer.sharedMaterial = _fallbackWallMaterial;
+                        }
                     }
                 }
             }

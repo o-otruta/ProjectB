@@ -52,13 +52,6 @@ namespace ProjectB.Enemies
                         go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                         go.transform.SetParent(projectileContainer);
                         go.transform.localScale = Vector3.one * 0.25f;
-                        Debug.Log($"[ShootingEnemy] Created fallback sphere for projectile.");
-                        
-                        var renderer = go.GetComponent<MeshRenderer>();
-                        if (renderer != null)
-                        {
-                            renderer.material.color = new Color(1f, 0.2f, 0.2f);
-                        }
 
                         // Disable and destroy collider immediately to prevent physics explosions!
                         Collider col = go.GetComponent<Collider>();

@@ -28,10 +28,6 @@ namespace ProjectB.Abilities
             {
                 obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 obj.transform.SetParent(projectileContainer);
-                // TODO(Post-MVP): Убрать Shader.Find после добавления префабов
-                var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                mat.color = Color.green;
-                obj.GetComponent<Renderer>().material = mat;
                 Destroy(obj.GetComponent<BoxCollider>());
             }
             var p = obj.GetComponent<BoomerangProjectile>();

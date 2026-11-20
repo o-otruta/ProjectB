@@ -10,6 +10,7 @@ namespace ProjectB.Abilities
         public float slowFactor = 0.5f;
         public float slowDuration = 1f;
         public float tickRate = 0.5f;
+        public Material auraMaterial;
 
         public override AbilityBase CreateAbility(Transform parent)
         {
