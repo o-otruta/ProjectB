@@ -125,7 +125,7 @@ namespace ProjectB.Abilities
         private void ApplyPullAndDamage(bool applyDamage)
         {
             float dt = Time.deltaTime;
-            int dmg = Mathf.RoundToInt(currentDamage);
+            int dmg = Mathf.Max(1, Mathf.RoundToInt(GetScaledDamage(currentDamage)));
             Vector3 center = transform.position;
             float minDist = HoleData != null ? Mathf.Max(0.5f, HoleData.minPullDistance) : 2.5f;
             int obstacleMask = ObstacleMask;

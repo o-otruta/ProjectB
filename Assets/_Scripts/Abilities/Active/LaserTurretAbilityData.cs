@@ -9,6 +9,7 @@ namespace ProjectB.Abilities
         public GameObject turretPrefab;
         public float turretLifetime = 8f;
         public float searchRadius = 8f;
+        [Tooltip("Базовый урон в секунду (DPS); масштабируется AbilityDamageMultiplier из HeroRuntimeStats")]
         public float dps = 15f;
 
         public override AbilityBase CreateAbility(Transform parent)

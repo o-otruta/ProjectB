@@ -146,6 +146,7 @@ namespace ProjectB.Abilities
         {
             float hitRadius = currentArea / 2f;
             float currentTime = Time.time;
+            int scaledDamage = Mathf.Max(1, Mathf.RoundToInt(GetScaledDamage(currentDamage)));
 
             foreach (var inst in instances)
             {
@@ -160,7 +161,7 @@ namespace ProjectB.Abilities
 
                     if (!enemyDamageCooldowns.TryGetValue(enemyId, out float nextDamageTime) || currentTime >= nextDamageTime)
                     {
-                        enemy.TakeDamage((int)currentDamage);
+                        enemy.TakeDamage(scaledDamage);
                         enemyDamageCooldowns[enemyId] = currentTime + tickRate;
                     }
                 }

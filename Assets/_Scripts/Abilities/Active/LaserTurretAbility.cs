@@ -116,7 +116,7 @@ namespace ProjectB.Abilities
 
             t.transform.position = spawnPos; 
             t.transform.rotation = Quaternion.identity;
-            t.Initialize(currentSearchRadius, currentDps, currentLifetime, TurretData.targetLayer, turretPool);
+            t.Initialize(currentSearchRadius, currentDps, currentLifetime, TurretData.targetLayer, turretPool, runtimeStats);
         }
 
         private void OnDestroy()

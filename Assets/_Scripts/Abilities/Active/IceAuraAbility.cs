@@ -72,7 +72,7 @@ namespace ProjectB.Abilities
 
         private void Update()
         {
-            if (Data == null) return;
+            if (Data == null || Time.deltaTime <= 0f) return;
 
             if (Time.time >= nextTickTime)
             {
@@ -84,13 +84,14 @@ namespace ProjectB.Abilities
         private void ApplyAuraTick()
         {
             int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, currentRadius, hitBuffer, IceData.targetLayer);
+            int scaledDamage = Mathf.Max(1, Mathf.RoundToInt(GetScaledDamage(currentDamage)));
             
             for (int i = 0; i < targetsFound; i++)
             {
                 var col = hitBuffer[i];
                 if (col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
-                    damageable.TakeDamage((int)currentDamage);
+                    damageable.TakeDamage(scaledDamage);
                 }
                 
                 if (col.TryGetComponent<ISlowable>(out var slowable))

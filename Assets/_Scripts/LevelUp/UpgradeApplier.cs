@@ -1,6 +1,5 @@
 using UnityEngine;
 using ProjectB.Player;
-using ProjectB.Combat;
 using ProjectB.Abilities;
 
 namespace ProjectB.LevelUp
@@ -8,22 +7,16 @@ namespace ProjectB.LevelUp
     public class UpgradeApplier
     {
         private readonly HeroHealth heroHealth;
-        private readonly HeroMovement heroMovement;
-        private readonly HeroExperience heroExp;
-        private readonly HeroCombat heroCombat;
+        private readonly HeroRuntimeStats runtimeStats;
         private readonly HeroAbilities heroAbilities;
 
         public UpgradeApplier(
             HeroHealth heroHealth,
-            HeroMovement heroMovement,
-            HeroExperience heroExp,
-            HeroCombat heroCombat,
+            HeroRuntimeStats runtimeStats,
             HeroAbilities heroAbilities)
         {
             this.heroHealth = heroHealth;
-            this.heroMovement = heroMovement;
-            this.heroExp = heroExp;
-            this.heroCombat = heroCombat;
+            this.runtimeStats = runtimeStats;
             this.heroAbilities = heroAbilities;
         }
 
@@ -53,53 +46,40 @@ namespace ProjectB.LevelUp
             switch (card.statType)
             {
                 case StatType.MaxHP:
-                    if (heroHealth != null)
-                    {
-                        heroHealth.IncreaseMaxHealth((int)card.value);
-                    }
+                    heroHealth?.IncreaseMaxHealth(Mathf.RoundToInt(card.value));
                     break;
 
                 case StatType.MoveSpeed:
-                    if (heroMovement != null)
-                    {
-                        heroMovement.IncreaseMoveSpeed(card.value);
-                    }
+                    runtimeStats?.AddMoveSpeed(card.value);
                     break;
 
                 case StatType.MagnetRadius:
-                    if (heroExp != null)
-                    {
-                        heroExp.MagnetRadius += card.value;
-                        Debug.Log($"[UpgradeApplier] Applied +{card.value} MagnetRadius. New Radius: {heroExp.MagnetRadius}");
-                    }
+                    runtimeStats?.AddMagnetRadius(card.value);
                     break;
 
                 case StatType.GlobalDamage:
-                    if (heroCombat != null)
-                    {
-                        heroCombat.IncreaseDamageMultiplier(card.value / 100f);
-                    }
+                    runtimeStats?.AddGlobalDamagePercent(card.value);
                     break;
 
                 case StatType.Armor:
-                    // Armor support placeholder for future expansion
-                    Debug.Log($"[UpgradeApplier] Applied +{card.value} Armor.");
+                    runtimeStats?.AddArmor(card.value);
                     break;
 
                 default:
-                    Debug.Log($"[UpgradeApplier] Unknown StatType: {card.statType} with value {card.value}");
+                    Debug.LogWarning($"[UpgradeApplier] Unknown StatType: {card.statType} with value {card.value}");
                     break;
             }
         }
 
         private void ApplyAbilityCard(AbilityCardData card, UpgradeManager upgradeManager)
         {
+            bool added = false;
             if (card.abilityData != null && heroAbilities != null)
             {
-                heroAbilities.AddAbility(card.abilityData);
+                added = heroAbilities.AddAbility(card.abilityData);
             }
 
-            if (card.unlockedModifiers != null && card.unlockedModifiers.Count > 0 && upgradeManager != null)
+            if (added && card.unlockedModifiers != null && card.unlockedModifiers.Count > 0 && upgradeManager != null)
             {
                 upgradeManager.AddCardsToPool(card.unlockedModifiers);
             }

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
-using ProjectB.Meta;
 using ProjectB.Core.Events;
+using ProjectB.Player;
 
 namespace ProjectB.Abilities
 {
@@ -14,30 +14,25 @@ namespace ProjectB.Abilities
         private List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
         private List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
 
-        private MetaUpgradeManager metaUpgradeManager;
+        private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
-        private float abilityDamageBonus = 0f;
 
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
 
         [Inject]
-        public void Construct(MetaUpgradeManager metaManager, GameEventBus eventBus)
+        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus)
         {
-            metaUpgradeManager = metaManager;
+            this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
         }
 
-        private void Start()
+        public bool AddAbility(AbilityData data)
         {
-            if (metaUpgradeManager != null)
-            {
-                abilityDamageBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.AbilityDamage);
-            }
-        }
+            if (data == null) return false;
 
-        public void AddAbility(AbilityData data)
-        {
+            bool added = false;
+
             if (data.type == AbilityType.Active)
             {
                 if (!HasActive(data.id, out _) && activeAbilities.Count < MAX_ACTIVE_SLOTS)
@@ -45,15 +40,10 @@ namespace ProjectB.Abilities
                     var ability = data.CreateAbility(transform) as ActiveAbility;
                     if (ability != null)
                     {
+                        ability.SetRuntimeStats(runtimeStats);
                         ability.Initialize(data);
-                        
-                        if (abilityDamageBonus > 0f && data is ActiveAbilityData activeData)
-                        {
-                            float bonusFlat = activeData.baseDamage * (abilityDamageBonus / 100f);
-                            ability.ApplyModifier(ModifierType.Damage, bonusFlat);
-                        }
-                        
                         activeAbilities.Add(ability);
+                        added = true;
                     }
                 }
             }
@@ -66,13 +56,18 @@ namespace ProjectB.Abilities
                     {
                         ability.Initialize(data);
                         passiveAbilities.Add(ability);
+                        added = true;
                     }
                 }
             }
-            
-            // Notify if necessary
-            OnAbilitiesChanged();
-            eventBus?.Publish(new AbilityUnlockedEvent(data.id, data.type));
+
+            if (added)
+            {
+                OnAbilitiesChanged();
+                eventBus?.Publish(new AbilityUnlockedEvent(data.id, data.type));
+            }
+
+            return added;
         }
 
         public void UpgradeAbility(string id, ModifierType type, float value)

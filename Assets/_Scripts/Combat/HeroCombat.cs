@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.Pool;
 using ProjectB.Data.Combat;
+using ProjectB.Player;
 using VContainer;
-using ProjectB.Meta;
 
 namespace ProjectB.Combat
 {
@@ -13,28 +12,26 @@ namespace ProjectB.Combat
         [SerializeField] private Transform firePoint;
 
         private System.Collections.Generic.List<WeaponController> activeWeapons = new System.Collections.Generic.List<WeaponController>();
-        private ProjectB.Player.HeroHealth hp;
+        private HeroHealth hp;
         private Transform projectilesRoot;
-        private MetaUpgradeManager metaUpgradeManager;
-        private float heroDamageMultiplier = 1f;
+        private HeroRuntimeStats runtimeStats;
 
         [Inject]
-        public void Construct(ProjectB.Player.HeroHealth heroHealth, MetaUpgradeManager metaManager)
+        public void Construct(HeroHealth heroHealth, HeroRuntimeStats runtimeStats)
         {
             hp = heroHealth;
-            metaUpgradeManager = metaManager;
+            this.runtimeStats = runtimeStats;
         }
 
         private void Start()
         {
             projectilesRoot = new GameObject("ProjectilesRoot").transform;
-            
-            if (metaUpgradeManager != null)
+
+            if (runtimeStats != null)
             {
-                float damageBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.HeroDamage);
-                heroDamageMultiplier = 1f + damageBonusPct / 100f;
+                runtimeStats.OnStatsChanged += RefreshWeaponMultipliers;
             }
-            
+
             // Инициализация стартового оружия
             foreach (var weapon in startingWeapons)
             {
@@ -42,23 +39,35 @@ namespace ProjectB.Combat
             }
         }
 
+        private void OnDestroy()
+        {
+            if (runtimeStats != null)
+            {
+                runtimeStats.OnStatsChanged -= RefreshWeaponMultipliers;
+            }
+        }
+
         public void AddWeapon(WeaponData data)
         {
             if (data == null) return;
-            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, heroDamageMultiplier);
+            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier);
             activeWeapons.Add(controller);
         }
 
-        public float HeroDamageMultiplier => heroDamageMultiplier;
+        public float HeroDamageMultiplier => runtimeStats != null ? runtimeStats.WeaponDamageMultiplier : 1f;
 
         public void IncreaseDamageMultiplier(float bonus)
         {
-            heroDamageMultiplier += bonus;
-            foreach (var weapon in activeWeapons)
+            runtimeStats?.AddGlobalDamagePercent(bonus * 100f);
+        }
+
+        private void RefreshWeaponMultipliers()
+        {
+            float mult = HeroDamageMultiplier;
+            for (int i = 0; i < activeWeapons.Count; i++)
             {
-                weapon.DamageMultiplier = heroDamageMultiplier;
+                activeWeapons[i].DamageMultiplier = mult;
             }
-            Debug.Log($"[HeroCombat] Damage multiplier increased by {bonus}. New Multiplier: {heroDamageMultiplier}");
         }
 
         private void Update()

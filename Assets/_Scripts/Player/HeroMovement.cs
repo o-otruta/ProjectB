@@ -2,7 +2,6 @@ using UnityEngine;
 using ProjectB.Data;
 using ProjectB.UI;
 using VContainer;
-using ProjectB.Meta;
 
 namespace ProjectB.Player
 {
@@ -16,24 +15,41 @@ namespace ProjectB.Player
         
         private HeroHealth hp;
         private Rigidbody rb;
-        private MetaUpgradeManager metaUpgradeManager;
+        private HeroRuntimeStats runtimeStats;
+        private float baseSpeed = 5f;
         private float moveSpeed;
 
         [Inject]
-        public void Construct(VirtualJoystick joystick, MetaUpgradeManager metaManager)
+        public void Construct(VirtualJoystick joystick, HeroRuntimeStats runtimeStats)
         {
             this.joystick = joystick;
-            this.metaUpgradeManager = metaManager;
+            this.runtimeStats = runtimeStats;
         }
 
         void Start()
         {
             hp = GetComponent<HeroHealth>();
             rb = GetComponent<Rigidbody>();
-            
-            float speedBonus = metaUpgradeManager != null ? metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.HeroSpeed) : 0f;
-            float baseSpeed = heroData != null ? heroData.moveSpeed : 5f;
-            moveSpeed = baseSpeed * (1f + speedBonus / 100f);
+            baseSpeed = heroData != null ? heroData.moveSpeed : 5f;
+
+            if (runtimeStats != null)
+            {
+                runtimeStats.OnStatsChanged += RefreshMoveSpeed;
+            }
+            RefreshMoveSpeed();
+        }
+
+        private void OnDestroy()
+        {
+            if (runtimeStats != null)
+            {
+                runtimeStats.OnStatsChanged -= RefreshMoveSpeed;
+            }
+        }
+
+        private void RefreshMoveSpeed()
+        {
+            moveSpeed = runtimeStats != null ? runtimeStats.GetMoveSpeed(baseSpeed) : baseSpeed;
         }
 
         void FixedUpdate()
@@ -74,8 +90,14 @@ namespace ProjectB.Player
 
         public void IncreaseMoveSpeed(float amount)
         {
-            moveSpeed += amount;
-            Debug.Log($"[HeroMovement] MoveSpeed increased by {amount}. New MoveSpeed: {moveSpeed}");
+            if (runtimeStats != null)
+            {
+                runtimeStats.AddMoveSpeed(amount);
+            }
+            else
+            {
+                moveSpeed += amount;
+            }
         }
     }
 }

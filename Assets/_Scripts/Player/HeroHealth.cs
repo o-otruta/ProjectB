@@ -2,7 +2,6 @@ using UnityEngine;
 using ProjectB.Combat;
 using ProjectB.Data;
 using VContainer;
-using ProjectB.Meta;
 using ProjectB.Core.Events;
 
 namespace ProjectB.Player
@@ -17,42 +16,46 @@ namespace ProjectB.Player
         private int currentHp;
         private int currentMaxHp;
         private bool isDead;
-        private MetaUpgradeManager metaUpgradeManager;
+        private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
 
         public bool IsDead => isDead;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
+        public float Armor => runtimeStats != null ? runtimeStats.Armor : 0f;
 
         [Inject]
-        public void Construct(MetaUpgradeManager metaManager, GameEventBus eventBus)
+        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus)
         {
-            this.metaUpgradeManager = metaManager;
+            this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
         }
 
         private void Start()
         {
-            float hpBonus = metaUpgradeManager != null ? metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.HeroHP) : 0f;
-            
+            int baseMaxHp = 100;
             if (heroData != null)
             {
-                currentMaxHp = Mathf.RoundToInt(heroData.maxHp * (1f + hpBonus / 100f));
+                baseMaxHp = heroData.maxHp;
             }
             else
             {
                 Debug.LogWarning("HeroData is not assigned to HeroHealth!");
-                currentMaxHp = Mathf.RoundToInt(100 * (1f + hpBonus / 100f));
             }
+
+            currentMaxHp = runtimeStats != null ? runtimeStats.GetMaxHp(baseMaxHp) : baseMaxHp;
             currentHp = currentMaxHp;
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
 
         public void TakeDamage(int amount)
         {
-            if (isDead) return;
+            if (isDead || amount <= 0) return;
 
-            currentHp -= amount;
+            int finalDamage = runtimeStats != null ? runtimeStats.CalculateMitigatedDamage(amount) : amount;
+            if (finalDamage <= 0) return;
+
+            currentHp -= finalDamage;
             if (currentHp < 0) currentHp = 0;
             
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
@@ -92,10 +95,10 @@ namespace ProjectB.Player
 
         public void IncreaseMaxHealth(int amount)
         {
-            if (isDead) return;
+            if (isDead || amount <= 0) return;
+            runtimeStats?.AddMaxHp(amount);
             currentMaxHp += amount;
             currentHp += amount;
-            Debug.Log($"[HeroHealth] Max HP increased by {amount}. New Max HP: {currentMaxHp}");
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
     }

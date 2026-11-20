@@ -19,7 +19,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 0
   unlockedByDefault: 0
-  baseDamage: 10
+  baseDamage: 15
   baseCooldown: 5
   baseArea: 1
   targetLayer:

@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Player;
 using ProjectB.Visuals;
 using UnityEngine.Pool;
 
@@ -20,6 +21,7 @@ namespace ProjectB.Abilities
         private float lifetime;
         private LayerMask enemyLayer;
         private IObjectPool<LaserTurret> pool;
+        private HeroRuntimeStats runtimeStats;
         private bool isReturned;
 
         private const float TARGET_SCAN_INTERVAL = 0.2f;
@@ -30,13 +32,20 @@ namespace ProjectB.Abilities
         private IDamageable currentTargetDamageable;
         private Collider[] hitBuffer = new Collider[50];
 
-        public void Initialize(float searchRadius, float dps, float lifetime, LayerMask enemyLayer, IObjectPool<LaserTurret> pool)
+        public void Initialize(
+            float searchRadius,
+            float dps,
+            float lifetime,
+            LayerMask enemyLayer,
+            IObjectPool<LaserTurret> pool,
+            HeroRuntimeStats runtimeStats = null)
         {
             this.searchRadius = searchRadius;
             this.dps = dps;
             this.lifetime = lifetime;
             this.enemyLayer = enemyLayer;
             this.pool = pool;
+            this.runtimeStats = runtimeStats;
             this.isReturned = false;
 
             spawnTime = Time.time;
@@ -107,7 +116,8 @@ namespace ProjectB.Abilities
 
                 if (currentTargetDamageable != null && !currentTargetDamageable.IsDead)
                 {
-                    accumulatedDamage += dps * Time.deltaTime;
+                    float effectiveDps = runtimeStats != null ? dps * runtimeStats.AbilityDamageMultiplier : dps;
+                    accumulatedDamage += effectiveDps * Time.deltaTime;
                     if (accumulatedDamage >= 1f)
                     {
                         int dmg = Mathf.FloorToInt(accumulatedDamage);

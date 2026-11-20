@@ -1,21 +1,22 @@
 using System;
 using UnityEngine;
 using VContainer;
-using ProjectB.Meta;
 using ProjectB.Core.Events;
+using ProjectB.Player;
 
 namespace ProjectB.LevelUp
 {
     public class HeroExperience : MonoBehaviour
     {
-        private MetaUpgradeManager metaUpgradeManager;
+        private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
+        private float baseMagnetRadius;
         private float xpMultiplier = 1f;
 
         [Inject]
-        public void Construct(MetaUpgradeManager metaManager, GameEventBus eventBus)
+        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus)
         {
-            this.metaUpgradeManager = metaManager;
+            this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
         }
         [Header("Settings")]
@@ -51,26 +52,41 @@ namespace ProjectB.LevelUp
             OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
         }
 
+        private void OnDestroy()
+        {
+            if (runtimeStats != null)
+            {
+                runtimeStats.OnStatsChanged -= RefreshMagnetRadius;
+            }
+        }
+
         public void EnsureStatsInitialized()
         {
             if (statsInitialized) return;
             statsInitialized = true;
+            baseMagnetRadius = _magnetRadius;
 
-            if (metaUpgradeManager != null)
+            if (runtimeStats != null)
             {
-                float magnetBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.MagnetRadius);
-                MagnetRadius *= (1f + magnetBonusPct / 100f);
+                runtimeStats.OnStatsChanged += RefreshMagnetRadius;
+                RefreshMagnetRadius();
 
-                float startLevelBonus = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.StartLevel);
-                int bonusLevels = Mathf.Max(0, Mathf.RoundToInt(startLevelBonus));
+                int bonusLevels = runtimeStats.StartingBonusLevels;
                 CurrentLevel = 1 + bonusLevels;
                 PendingStartingLevelUps = bonusLevels;
 
-                float xpBonusPct = metaUpgradeManager.GetTotalBonus(ProjectB.Data.MetaUpgradeEffectType.XPBonus);
-                xpMultiplier = 1f + xpBonusPct / 100f;
+                xpMultiplier = runtimeStats.XpMultiplier;
             }
 
             CalculateXPToNextLevel();
+        }
+
+        private void RefreshMagnetRadius()
+        {
+            if (runtimeStats != null)
+            {
+                MagnetRadius = runtimeStats.GetMagnetRadius(baseMagnetRadius);
+            }
         }
 
         public int ConsumeStartingLevelUps()
