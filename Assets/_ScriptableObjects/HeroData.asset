@@ -12,6 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef2ffd51e5694c747b713dca256afa79, type: 3}
   m_Name: HeroData
   m_EditorClassIdentifier: Assembly-CSharp::HeroData
+  id: knight
+  heroName: Knight
+  description: Sturdy melee warrior protected by an impenetrable shield.
+  icon: {fileID: 0}
+  unlockedByDefault: 1
   moveSpeed: 5
   rotationSpeed: 15
   maxHp: 100
+  startingWeapon: {fileID: 11400000, guid: 4fa926e9f08c2bc41bdbfa644351c788, type: 2}
+  visualModelPrefab: {fileID: 0}
+  passiveType: 1
+  passiveValue: 100
+  passiveName: Iron Will
+  passiveDescription: +100% Max HP
+  ultimateType: 0
+  ultimateName: Aegis Shield
+  ultimateDescription: Become invulnerable for 5 seconds.
+  ultimateDuration: 5
+  ultimateCooldown: 25
+  ultimateIcon: {fileID: 0}

@@ -1,5 +1,7 @@
 using UnityEngine;
+using ProjectB.Data;
 using ProjectB.Data.Combat;
+using ProjectB.Meta;
 using ProjectB.Player;
 using VContainer;
 
@@ -15,12 +17,14 @@ namespace ProjectB.Combat
         private HeroHealth hp;
         private Transform projectilesRoot;
         private HeroRuntimeStats runtimeStats;
+        private SelectedHeroService selectedHeroService;
 
         [Inject]
-        public void Construct(HeroHealth heroHealth, HeroRuntimeStats runtimeStats)
+        public void Construct(HeroHealth heroHealth, HeroRuntimeStats runtimeStats, SelectedHeroService selectedHeroService = null)
         {
             hp = heroHealth;
             this.runtimeStats = runtimeStats;
+            this.selectedHeroService = selectedHeroService;
         }
 
         private void Start()
@@ -32,10 +36,18 @@ namespace ProjectB.Combat
                 runtimeStats.OnStatsChanged += RefreshWeaponMultipliers;
             }
 
-            // Инициализация стартового оружия
-            foreach (var weapon in startingWeapons)
+            HeroData selectedHero = selectedHeroService?.GetSelectedHero();
+            if (selectedHero != null && selectedHero.startingWeapon != null)
             {
-                AddWeapon(weapon);
+                AddWeapon(selectedHero.startingWeapon);
+            }
+            else
+            {
+                // Инициализация стартового оружия из префаба (fallback)
+                foreach (var weapon in startingWeapons)
+                {
+                    AddWeapon(weapon);
+                }
             }
         }
 

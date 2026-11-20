@@ -23,6 +23,8 @@ namespace ProjectB.Abilities
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
         public int TotalAbilitiesCount => activeAbilities.Count + passiveAbilities.Count;
 
+        public event System.Action OnAbilitiesUpdated;
+
         [Inject]
         public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus, AchievementManager achievementManager = null)
         {
@@ -82,12 +84,14 @@ namespace ProjectB.Abilities
                 active.ApplyModifier(type, value);
                 active.IncrementLevel();
                 achievementManager?.OnAbilityUpgraded(id, active.Level);
+                OnAbilitiesChanged();
             }
             else if (HasPassive(id, out PassiveAbility passive))
             {
                 passive.ApplyModifier(type, value);
                 passive.IncrementLevel();
                 achievementManager?.OnAbilityUpgraded(id, passive.Level);
+                OnAbilitiesChanged();
             }
             else
             {
@@ -133,7 +137,7 @@ namespace ProjectB.Abilities
 
         private void OnAbilitiesChanged()
         {
-            // E.g., recalculate stats from passives
+            OnAbilitiesUpdated?.Invoke();
         }
     }
 }

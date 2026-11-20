@@ -42,6 +42,10 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<GameOverUI>();
             builder.RegisterComponentInHierarchy<HpBarUI>();
             builder.RegisterComponentInHierarchy<XpBarUI>();
+            builder.RegisterComponentInHierarchy<WaveHudUI>();
+            builder.RegisterComponentInHierarchy<CoinHudUI>();
+            builder.RegisterComponentInHierarchy<AbilityHudUI>();
+            builder.RegisterComponentInHierarchy<UltimateButtonUI>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             
             // Register Player
@@ -51,6 +55,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HeroMovement>();
             builder.RegisterComponentInHierarchy<HeroAbilities>();
             builder.RegisterComponentInHierarchy<HeroCombat>();
+            builder.RegisterComponentInHierarchy<HeroUltimate>();
 
             // Explicitly inject into all scene components
             // (Removed explicit RegisterBuildCallback to prevent double injection)

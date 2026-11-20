@@ -17,6 +17,7 @@ MonoBehaviour:
   description: Deploys a stationary turret that fires a continuous laser beam.
   icon: {fileID: 0}
   type: 0
+  rarity: 2
   unlockedByDefault: 0
   baseDamage: 15
   baseCooldown: 5

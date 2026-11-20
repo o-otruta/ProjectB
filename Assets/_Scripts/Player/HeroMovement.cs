@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Data;
+using ProjectB.Meta;
 using ProjectB.UI;
 using VContainer;
 
@@ -16,21 +17,25 @@ namespace ProjectB.Player
         private HeroHealth hp;
         private Rigidbody rb;
         private HeroRuntimeStats runtimeStats;
+        private SelectedHeroService selectedHeroService;
+        private HeroData activeHeroData;
         private float baseSpeed = 5f;
         private float moveSpeed;
 
         [Inject]
-        public void Construct(VirtualJoystick joystick, HeroRuntimeStats runtimeStats)
+        public void Construct(VirtualJoystick joystick, HeroRuntimeStats runtimeStats, SelectedHeroService selectedHeroService = null)
         {
             this.joystick = joystick;
             this.runtimeStats = runtimeStats;
+            this.selectedHeroService = selectedHeroService;
         }
 
         void Start()
         {
             hp = GetComponent<HeroHealth>();
             rb = GetComponent<Rigidbody>();
-            baseSpeed = heroData != null ? heroData.moveSpeed : 5f;
+            activeHeroData = selectedHeroService?.GetSelectedHero() ?? heroData;
+            baseSpeed = activeHeroData != null ? activeHeroData.moveSpeed : 5f;
 
             if (runtimeStats != null)
             {
@@ -72,7 +77,8 @@ namespace ProjectB.Player
 
         void Update()
         {
-            if (heroData == null || joystick == null || Time.deltaTime <= 0f) return;
+            HeroData data = activeHeroData != null ? activeHeroData : heroData;
+            if (data == null || joystick == null || Time.deltaTime <= 0f) return;
             if (hp != null && hp.IsDead) return;
 
             Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
@@ -81,7 +87,7 @@ namespace ProjectB.Player
             if (moveDir.sqrMagnitude > 0.01f && visualModel != null)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-                float t = 1f - Mathf.Exp(-heroData.rotationSpeed * Time.deltaTime);
+                float t = 1f - Mathf.Exp(-data.rotationSpeed * Time.deltaTime);
                 visualModel.rotation = Quaternion.Slerp(visualModel.rotation, targetRotation, t);
             }
         }

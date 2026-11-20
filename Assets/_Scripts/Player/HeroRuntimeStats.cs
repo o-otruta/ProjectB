@@ -7,7 +7,7 @@ namespace ProjectB.Player
 {
     /// <summary>
     /// Единая модель рантайм-статов героя на время забега.
-    /// Инициализируется от MetaUpgradeManager и накапливает модификаторы карточек.
+    /// Инициализируется от MetaUpgradeManager и пассивки выбранного героя, затем накапливает модификаторы карточек.
     /// </summary>
     public class HeroRuntimeStats
     {
@@ -19,6 +19,10 @@ namespace ProjectB.Player
         public float XpMultiplier { get; }
         public int StartingBonusLevels { get; }
 
+        public float HeroPassiveHpMultiplier { get; private set; } = 1f;
+        public float HeroPassiveDamageMultiplier { get; private set; } = 1f;
+        public float HeroPassiveSpeedMultiplier { get; private set; } = 1f;
+
         public float GlobalDamageMultiplier { get; private set; } = 1f;
         public float Armor { get; private set; } = 0f;
         public float MoveSpeedFlatBonus { get; private set; } = 0f;
@@ -26,18 +30,18 @@ namespace ProjectB.Player
         public int MaxHpFlatBonus { get; private set; } = 0;
 
         /// <summary>
-        /// Итоговый множитель урона базового оружия: мета-множитель * забеговый GlobalDamage.
+        /// Итоговый множитель урона базового оружия: мета-множитель * пассивка героя * забеговый GlobalDamage.
         /// </summary>
-        public float WeaponDamageMultiplier => MetaWeaponDamageMultiplier * GlobalDamageMultiplier;
+        public float WeaponDamageMultiplier => MetaWeaponDamageMultiplier * HeroPassiveDamageMultiplier * GlobalDamageMultiplier;
 
         /// <summary>
-        /// Итоговый множитель урона всех активных способностей: мета-множитель * забеговый GlobalDamage.
+        /// Итоговый множитель урона всех активных способностей: мета-множитель * пассивка героя * забеговый GlobalDamage.
         /// </summary>
-        public float AbilityDamageMultiplier => MetaAbilityDamageMultiplier * GlobalDamageMultiplier;
+        public float AbilityDamageMultiplier => MetaAbilityDamageMultiplier * HeroPassiveDamageMultiplier * GlobalDamageMultiplier;
 
         public event Action OnStatsChanged;
 
-        public HeroRuntimeStats(MetaUpgradeManager metaUpgradeManager = null)
+        public HeroRuntimeStats(MetaUpgradeManager metaUpgradeManager = null, SelectedHeroService selectedHeroService = null)
         {
             if (metaUpgradeManager != null)
             {
@@ -58,6 +62,42 @@ namespace ProjectB.Player
                 MetaAbilityDamageMultiplier = 1f;
                 XpMultiplier = 1f;
                 StartingBonusLevels = 0;
+            }
+
+            if (selectedHeroService != null)
+            {
+                ApplyHeroPassive(selectedHeroService.GetSelectedHero(), notify: false);
+            }
+        }
+
+        public void ApplyHeroPassive(HeroData heroData, bool notify = true)
+        {
+            HeroPassiveHpMultiplier = 1f;
+            HeroPassiveDamageMultiplier = 1f;
+            HeroPassiveSpeedMultiplier = 1f;
+
+            if (heroData != null && heroData.passiveValue > 0f)
+            {
+                switch (heroData.passiveType)
+                {
+                    case HeroPassiveType.MaxHpPercent:
+                        HeroPassiveHpMultiplier = 1f + heroData.passiveValue / 100f;
+                        break;
+                    case HeroPassiveType.GlobalDamagePercent:
+                        HeroPassiveDamageMultiplier = 1f + heroData.passiveValue / 100f;
+                        break;
+                    case HeroPassiveType.MoveSpeedPercent:
+                        HeroPassiveSpeedMultiplier = 1f + heroData.passiveValue / 100f;
+                        break;
+                    case HeroPassiveType.None:
+                    default:
+                        break;
+                }
+            }
+
+            if (notify)
+            {
+                OnStatsChanged?.Invoke();
             }
         }
 
@@ -98,12 +138,12 @@ namespace ProjectB.Player
 
         public int GetMaxHp(int baseMaxHp)
         {
-            return Mathf.Max(1, Mathf.RoundToInt(baseMaxHp * MetaHpMultiplier) + MaxHpFlatBonus);
+            return Mathf.Max(1, Mathf.RoundToInt(baseMaxHp * HeroPassiveHpMultiplier * MetaHpMultiplier) + MaxHpFlatBonus);
         }
 
         public float GetMoveSpeed(float baseSpeed)
         {
-            return Mathf.Max(0.1f, baseSpeed * MetaSpeedMultiplier + MoveSpeedFlatBonus);
+            return Mathf.Max(0.1f, baseSpeed * HeroPassiveSpeedMultiplier * MetaSpeedMultiplier + MoveSpeedFlatBonus);
         }
 
         public float GetMagnetRadius(float baseRadius)

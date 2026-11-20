@@ -11,7 +11,9 @@ namespace ProjectB.Core
         protected override void Configure(IContainerBuilder builder)
         {
             builder.RegisterComponentInHierarchy<MainMenuUI>();
+            builder.RegisterComponentInHierarchy<HeroSelectionUI>();
             builder.RegisterComponentInHierarchy<MetaUpgradeUI>();
+            builder.RegisterComponentInHierarchy<AbilitiesScreenUI>();
             builder.RegisterComponentInHierarchy<AchievementScreenUI>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             builder.RegisterComponentInHierarchy<DailyBonusScreenUI>();

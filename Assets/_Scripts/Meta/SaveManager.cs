@@ -226,5 +226,23 @@ namespace ProjectB.Meta
             if (string.IsNullOrEmpty(id) || Data?.unlockedHeroIds == null) return false;
             return Data.unlockedHeroIds.Contains(id);
         }
+
+        public string GetSelectedHeroId()
+        {
+            if (Data == null || string.IsNullOrEmpty(Data.selectedHeroId))
+            {
+                return "knight";
+            }
+            return Data.selectedHeroId;
+        }
+
+        public void SetSelectedHeroId(string heroId, bool saveImmediately = true)
+        {
+            if (Data == null || string.IsNullOrEmpty(heroId)) return;
+            if (Data.selectedHeroId == heroId) return;
+
+            Data.selectedHeroId = heroId;
+            CommitChange(saveImmediately);
+        }
     }
 }

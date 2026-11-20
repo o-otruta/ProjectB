@@ -19,6 +19,7 @@ namespace ProjectB.Core
             builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
             builder.Register<AchievementManager>(Lifetime.Singleton);
             builder.Register<DailyBonusManager>(Lifetime.Singleton);
+            builder.Register<SelectedHeroService>(Lifetime.Singleton);
         }
 
         private void OnApplicationPause(bool pauseStatus)

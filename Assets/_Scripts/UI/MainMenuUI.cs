@@ -12,6 +12,7 @@ namespace ProjectB.UI
         [SerializeField] private GameObject achievementsBadge;
         [SerializeField] private GameObject bonusBadge;
         [SerializeField] private MetaUpgradeUI metaUpgradeUI;
+        [SerializeField] private AbilitiesScreenUI abilitiesScreenUI;
         [SerializeField] private AchievementScreenUI achievementScreenUI;
         [SerializeField] private DailyBonusScreenUI dailyBonusScreenUI;
         [SerializeField] private BottomTabUI[] tabs;
@@ -103,6 +104,7 @@ namespace ProjectB.UI
         private void CloseAllPanels()
         {
             if (achievementScreenUI != null) achievementScreenUI.gameObject.SetActive(false);
+            if (abilitiesScreenUI != null) abilitiesScreenUI.gameObject.SetActive(false);
             if (metaUpgradeUI != null) metaUpgradeUI.Hide();
             if (dailyBonusScreenUI != null) dailyBonusScreenUI.gameObject.SetActive(false);
             if (playScreenPanel != null) playScreenPanel.SetActive(false);
@@ -151,9 +153,16 @@ namespace ProjectB.UI
 
         public void OnAbilitiesClicked()
         {
-            Debug.Log("[MainMenuUI] Abilities clicked (Placeholder)");
             CloseAllPanels();
             SelectTab(1);
+            if (abilitiesScreenUI != null)
+            {
+                abilitiesScreenUI.gameObject.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuUI] AbilitiesScreenUI reference is missing!");
+            }
         }
 
         public void OnAchievementsClicked()

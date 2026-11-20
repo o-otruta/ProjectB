@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectB.Combat;
 using ProjectB.Data;
+using ProjectB.Meta;
 using VContainer;
 using ProjectB.Core.Events;
 
@@ -17,27 +18,37 @@ namespace ProjectB.Player
         private int currentHp;
         private int currentMaxHp;
         private bool isDead;
+        private bool isInvulnerable;
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
+        private SelectedHeroService selectedHeroService;
 
         public bool IsDead => isDead;
+        public bool IsInvulnerable => isInvulnerable;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
         public float Armor => runtimeStats != null ? runtimeStats.Armor : 0f;
+        public HeroData ActiveHeroData => selectedHeroService?.GetSelectedHero() ?? heroData;
 
         [Inject]
-        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus)
+        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus, SelectedHeroService selectedHeroService = null)
         {
             this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
+            this.selectedHeroService = selectedHeroService;
         }
 
         private void Start()
         {
+            HeroData activeHero = ActiveHeroData;
             int baseMaxHp = 100;
-            if (heroData != null)
+            if (activeHero != null)
             {
-                baseMaxHp = heroData.maxHp;
+                baseMaxHp = activeHero.maxHp;
+                if (selectedHeroService == null || selectedHeroService.GetSelectedHero() == null)
+                {
+                    runtimeStats?.ApplyHeroPassive(activeHero, notify: false);
+                }
             }
             else
             {
@@ -49,9 +60,14 @@ namespace ProjectB.Player
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
 
+        public void SetInvulnerable(bool invulnerable)
+        {
+            isInvulnerable = invulnerable;
+        }
+
         public void TakeDamage(int amount)
         {
-            if (isDead || amount <= 0) return;
+            if (isDead || isInvulnerable || amount <= 0) return;
 
             int finalDamage = runtimeStats != null ? runtimeStats.CalculateMitigatedDamage(amount) : amount;
             if (finalDamage <= 0) return;
@@ -72,6 +88,7 @@ namespace ProjectB.Player
         {
             if (isDead) return;
             isDead = true;
+            isInvulnerable = false;
             Debug.Log("[HeroHealth] Hero has died. Game Over!");
             OnDied?.Invoke();
             eventBus?.Publish(new HeroDiedEvent());

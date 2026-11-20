@@ -17,6 +17,7 @@ MonoBehaviour:
   description: Pulls enemies inward and deals periodic damage.
   icon: {fileID: 0}
   type: 0
+  rarity: 3
   unlockedByDefault: 1
   baseDamage: 10
   baseCooldown: 1

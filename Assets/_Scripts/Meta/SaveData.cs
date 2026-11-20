@@ -24,6 +24,8 @@ namespace ProjectB.Meta
         public List<string> unlockedAbilityIds = new List<string>();
         // ID разблокированных героев
         public List<string> unlockedHeroIds = new List<string>();
+        // ID выбранного героя для старта забега
+        public string selectedHeroId = "knight";
 
         // --- Кумулятивная статистика (для ачивок) ---
         public int totalKills;

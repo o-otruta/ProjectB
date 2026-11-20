@@ -1,0 +1,153 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using VContainer;
+using ProjectB.Player;
+
+namespace ProjectB.UI
+{
+    public class UltimateButtonUI : MonoBehaviour
+    {
+        [SerializeField] private Button button;
+        [SerializeField] private Image backgroundImage;
+        [SerializeField] private Image iconImage;
+        [SerializeField] private Image cooldownFillImage;
+        [SerializeField] private TextMeshProUGUI labelText;
+        [SerializeField] private TextMeshProUGUI statusText;
+
+        [Header("Colors")]
+        [SerializeField] private Color readyColor = new Color(0.18f, 0.68f, 0.95f, 0.95f);
+        [SerializeField] private Color activeColor = new Color(1f, 0.8f, 0.2f, 1f);
+        [SerializeField] private Color cooldownColor = new Color(0.25f, 0.27f, 0.32f, 0.85f);
+
+        private HeroUltimate heroUltimate;
+        private int lastDisplayedState = -1; // 0 = ready, 1 = active, 2 = cooldown
+        private int lastDisplayedValue = int.MinValue;
+
+        [Inject]
+        public void Construct(HeroUltimate heroUltimate)
+        {
+            this.heroUltimate = heroUltimate;
+        }
+
+        private void Awake()
+        {
+            if (button != null)
+            {
+                button.onClick.AddListener(HandleClick);
+            }
+        }
+
+        private void Start()
+        {
+            InitializeVisuals();
+            RefreshVisuals(force: true);
+        }
+
+        private void OnDestroy()
+        {
+            if (button != null)
+            {
+                button.onClick.RemoveListener(HandleClick);
+            }
+        }
+
+        private void InitializeVisuals()
+        {
+            if (heroUltimate == null) return;
+
+            var data = heroUltimate.ActiveHeroData;
+            if (data != null)
+            {
+                if (labelText != null && !string.IsNullOrEmpty(data.ultimateName))
+                {
+                    labelText.text = data.ultimateName.ToUpperInvariant();
+                }
+
+                if (iconImage != null)
+                {
+                    bool hasIcon = data.ultimateIcon != null;
+                    iconImage.gameObject.SetActive(hasIcon);
+                    if (hasIcon) iconImage.sprite = data.ultimateIcon;
+                }
+            }
+        }
+
+        private void Update()
+        {
+            if (heroUltimate == null) return;
+            RefreshVisuals(force: false);
+        }
+
+        private void HandleClick()
+        {
+            heroUltimate?.TryActivate();
+            RefreshVisuals(force: true);
+        }
+
+        private void RefreshVisuals(bool force)
+        {
+            if (heroUltimate == null) return;
+
+            if (heroUltimate.IsActive)
+            {
+                float ratio = Mathf.Clamp01(heroUltimate.ActiveRemaining / heroUltimate.ActiveDuration);
+                if (cooldownFillImage != null)
+                {
+                    cooldownFillImage.gameObject.SetActive(true);
+                    cooldownFillImage.fillAmount = ratio;
+                    cooldownFillImage.color = new Color(0.3f, 0.9f, 1f, 0.45f);
+                }
+
+                int tenths = Mathf.CeilToInt(heroUltimate.ActiveRemaining * 10f);
+                if (force || lastDisplayedState != 1 || lastDisplayedValue != tenths)
+                {
+                    lastDisplayedState = 1;
+                    lastDisplayedValue = tenths;
+                    if (button != null) button.interactable = false;
+                    if (backgroundImage != null) backgroundImage.color = activeColor;
+                    if (statusText != null) statusText.text = $"{(tenths / 10f):0.0}s";
+                }
+            }
+            else if (heroUltimate.CooldownRemaining > 0f)
+            {
+                float ratio = Mathf.Clamp01(heroUltimate.CooldownRemaining / heroUltimate.CooldownDuration);
+                if (cooldownFillImage != null)
+                {
+                    cooldownFillImage.gameObject.SetActive(true);
+                    cooldownFillImage.fillAmount = ratio;
+                    cooldownFillImage.color = new Color(0f, 0f, 0f, 0.65f);
+                }
+
+                int seconds = Mathf.CeilToInt(heroUltimate.CooldownRemaining);
+                if (force || lastDisplayedState != 2 || lastDisplayedValue != seconds)
+                {
+                    lastDisplayedState = 2;
+                    lastDisplayedValue = seconds;
+                    if (button != null) button.interactable = false;
+                    if (backgroundImage != null) backgroundImage.color = cooldownColor;
+                    if (statusText != null) statusText.text = $"{seconds}s";
+                }
+            }
+            else
+            {
+                if (cooldownFillImage != null)
+                {
+                    cooldownFillImage.fillAmount = 0f;
+                    cooldownFillImage.gameObject.SetActive(false);
+                }
+
+                bool ready = heroUltimate.IsReady;
+                int readyFlag = ready ? 1 : 0;
+                if (force || lastDisplayedState != 0 || lastDisplayedValue != readyFlag)
+                {
+                    lastDisplayedState = 0;
+                    lastDisplayedValue = readyFlag;
+                    if (button != null) button.interactable = ready;
+                    if (backgroundImage != null) backgroundImage.color = ready ? readyColor : cooldownColor;
+                    if (statusText != null) statusText.text = "READY";
+                }
+            }
+        }
+    }
+}

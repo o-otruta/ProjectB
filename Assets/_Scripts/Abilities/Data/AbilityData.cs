@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectB.LevelUp;
 
 namespace ProjectB.Abilities
 {
@@ -16,6 +17,7 @@ namespace ProjectB.Abilities
         [TextArea] public string description;
         public Sprite icon;
         public AbilityType type;
+        public CardRarity rarity = CardRarity.Common;
 
         [Header("Meta Unlock")]
         [Tooltip("Если false — способность закрыта по умолчанию и разблокируется через SaveData.unlockedAbilityIds")]
