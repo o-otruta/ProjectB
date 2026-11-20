@@ -88,9 +88,9 @@ namespace ProjectB.Meta
             int cost = GetUpgradeCost(id);
             if (saveManager.Data.coins >= cost)
             {
-                if (saveManager.SpendCoins(cost))
+                if (saveManager.SpendCoins(cost, saveImmediately: false))
                 {
-                    saveManager.SetMetaUpgradeLevel(id, currentLevel + 1);
+                    saveManager.SetMetaUpgradeLevel(id, currentLevel + 1, saveImmediately: true);
                     OnUpgradePurchased?.Invoke(id);
                     return true;
                 }

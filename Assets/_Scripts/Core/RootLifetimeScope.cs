@@ -19,5 +19,13 @@ namespace ProjectB.Core
             builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
             builder.Register<AchievementManager>(Lifetime.Singleton);
         }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus && Container != null)
+            {
+                Container.Resolve<SaveManager>()?.SaveIfDirty();
+            }
+        }
     }
 }

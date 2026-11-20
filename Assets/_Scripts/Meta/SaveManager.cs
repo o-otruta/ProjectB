@@ -8,12 +8,14 @@ namespace ProjectB.Meta
         public const string SAVE_KEY = "ProjectB_SaveData";
         
         public SaveData Data { get; private set; }
+        public bool IsDirty { get; private set; }
         public event Action OnDataChanged;
 
         public SaveManager()
         {
             Load();
             Application.quitting += HandleQuitting;
+            Application.focusChanged += HandleFocusChanged;
         }
 
         private void HandleQuitting()
@@ -21,9 +23,19 @@ namespace ProjectB.Meta
             Save();
         }
 
+        private void HandleFocusChanged(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                SaveIfDirty();
+            }
+        }
+
         public void Dispose()
         {
             Application.quitting -= HandleQuitting;
+            Application.focusChanged -= HandleFocusChanged;
+            SaveIfDirty();
         }
 
         public void Load()
@@ -69,12 +81,33 @@ namespace ProjectB.Meta
                 string json = JsonUtility.ToJson(Data, false);
                 PlayerPrefs.SetString(SAVE_KEY, json);
                 PlayerPrefs.Save();
-                Debug.Log("[SaveManager] Data Saved.");
+                IsDirty = false;
                 OnDataChanged?.Invoke();
             }
             catch (Exception e)
             {
                 Debug.LogError($"[SaveManager] Failed to save Data. Error: {e.Message}");
+            }
+        }
+
+        public void SaveIfDirty()
+        {
+            if (IsDirty)
+            {
+                Save();
+            }
+        }
+
+        private void CommitChange(bool saveImmediately)
+        {
+            IsDirty = true;
+            if (saveImmediately)
+            {
+                Save();
+            }
+            else
+            {
+                OnDataChanged?.Invoke();
             }
         }
 
@@ -94,26 +127,29 @@ namespace ProjectB.Meta
 
         // --- Удобные методы ---
 
-        public void AddCoins(int amount)
+        public void AddCoins(int amount, bool saveImmediately = true)
         {
             if (amount <= 0) return;
             Data.coins += amount;
-            Save();
+            CommitChange(saveImmediately);
         }
 
-        public bool SpendCoins(int amount)
+        public bool SpendCoins(int amount, bool saveImmediately = true)
         {
             if (amount <= 0 || Data.coins < amount) return false;
             
             Data.coins -= amount;
-            Save(); // Сохраняем сразу при трате валюты для безопасности
+            CommitChange(saveImmediately);
             return true;
         }
 
         public void RecordRunResult(RunResult result)
         {
             Data.totalRuns++;
-            AddCoins(result.coinsEarned);
+            if (result.coinsEarned > 0)
+            {
+                Data.coins += result.coinsEarned;
+            }
             Data.totalKills += result.enemiesKilled;
             Data.totalPlayTime += result.playTime;
             
@@ -122,15 +158,13 @@ namespace ProjectB.Meta
                 Data.bestWave = result.waveReached;
             }
             
-            // Здесь также можно будет триггерить проверку ачивок, когда AchievementManager будет готов
-            
             Save();
         }
 
-        public void SetMetaUpgradeLevel(string id, int level)
+        public void SetMetaUpgradeLevel(string id, int level, bool saveImmediately = true)
         {
             Data.metaUpgradeLevels[id] = level;
-            Save();
+            CommitChange(saveImmediately);
         }
         
         public int GetMetaUpgradeLevel(string id)
@@ -142,28 +176,40 @@ namespace ProjectB.Meta
             return 0;
         }
 
-        public void UpdateAchievementProgress(string id, int value)
+        public void UpdateAchievementProgress(string id, int value, bool saveImmediately = false)
         {
             Data.achievementProgress[id] = value;
-            Save();
-            // Проверка на завершение будет в AchievementManager
-        }
-
-        public void CompleteAchievement(string id)
-        {
-            if (!Data.completedAchievements.Contains(id))
+            IsDirty = true;
+            if (saveImmediately)
             {
-                Data.completedAchievements.Add(id);
                 Save();
             }
         }
 
-        public void UnlockAbility(string id)
+        public void CompleteAchievement(string id, bool saveImmediately = false)
+        {
+            if (!Data.completedAchievements.Contains(id))
+            {
+                Data.completedAchievements.Add(id);
+                CommitChange(saveImmediately);
+            }
+        }
+
+        public void UnlockAbility(string id, bool saveImmediately = true)
         {
             if (!Data.unlockedAbilityIds.Contains(id))
             {
                 Data.unlockedAbilityIds.Add(id);
-                Save();
+                CommitChange(saveImmediately);
+            }
+        }
+
+        public void UnlockHero(string id, bool saveImmediately = true)
+        {
+            if (!Data.unlockedHeroIds.Contains(id))
+            {
+                Data.unlockedHeroIds.Add(id);
+                CommitChange(saveImmediately);
             }
         }
     }

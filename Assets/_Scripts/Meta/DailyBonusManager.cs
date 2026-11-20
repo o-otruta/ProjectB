@@ -158,16 +158,16 @@ namespace ProjectB.Meta
 
             DailyBonusReward reward = rewardData.rewards[rewardIndex];
 
-            // Начисляем награду
+            // Начисляем награду (сохраним пакетно в конце метода)
             if (reward.rewardType == DailyBonusRewardType.Coins)
             {
                 int amount = GetCoinsRewardAmount(reward);
                 if (watchAdForDouble) amount *= 2;
-                saveManager.AddCoins(amount);
+                saveManager.AddCoins(amount, saveImmediately: false);
             }
             else if (reward.rewardType == DailyBonusRewardType.Ability)
             {
-                saveManager.UnlockAbility(reward.abilityId);
+                saveManager.UnlockAbility(reward.abilityId, saveImmediately: false);
             }
 
             // Обновляем состояние

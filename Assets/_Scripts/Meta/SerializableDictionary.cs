@@ -26,7 +26,11 @@ namespace ProjectB.Meta
         public void OnAfterDeserialize()
         {
             indexCache.Clear();
-            for (int i = 0; i < keys.Count; i++)
+            int count = Mathf.Min(keys.Count, values.Count);
+            if (keys.Count > count) keys.RemoveRange(count, keys.Count - count);
+            if (values.Count > count) values.RemoveRange(count, values.Count - count);
+
+            for (int i = 0; i < count; i++)
             {
                 if (!indexCache.ContainsKey(keys[i]))
                 {

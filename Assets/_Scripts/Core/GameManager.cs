@@ -134,12 +134,14 @@ namespace ProjectB.Core
 
         public void RestartGame()
         {
+            saveManager?.SaveIfDirty();
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public void GoToMenu()
         {
+            saveManager?.SaveIfDirty();
             Time.timeScale = 1f;
             SceneManager.LoadScene("MainMenu");
         }

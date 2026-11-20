@@ -8,7 +8,10 @@ namespace ProjectB.Meta
     public class AchievementManager
     {
         private readonly SaveManager _saveManager;
-        private List<AchievementData> _allAchievements;
+        private readonly List<AchievementData> _allAchievements;
+        private readonly Dictionary<string, AchievementData> _achievementsById;
+        private readonly Dictionary<AchievementConditionType, List<AchievementData>> _achievementsByCondition;
+
         public List<AchievementData> unlockedThisRun { get; private set; }
         
         public event Action<AchievementData> OnAchievementUnlocked;
@@ -17,7 +20,24 @@ namespace ProjectB.Meta
         {
             _saveManager = saveManager;
             _allAchievements = new List<AchievementData>(Resources.LoadAll<AchievementData>("Achievements"));
+            _achievementsById = new Dictionary<string, AchievementData>(_allAchievements.Count);
+            _achievementsByCondition = new Dictionary<AchievementConditionType, List<AchievementData>>();
             unlockedThisRun = new List<AchievementData>();
+
+            for (int i = 0; i < _allAchievements.Count; i++)
+            {
+                var achievement = _allAchievements[i];
+                if (achievement == null || string.IsNullOrEmpty(achievement.id)) continue;
+
+                _achievementsById[achievement.id] = achievement;
+
+                if (!_achievementsByCondition.TryGetValue(achievement.conditionType, out var list))
+                {
+                    list = new List<AchievementData>();
+                    _achievementsByCondition[achievement.conditionType] = list;
+                }
+                list.Add(achievement);
+            }
         }
 
         public IReadOnlyList<AchievementData> GetAllAchievements() => _allAchievements;
@@ -29,58 +49,62 @@ namespace ProjectB.Meta
 
         public void AddProgress(string id, int amount)
         {
-            var achievement = _allAchievements.Find(a => a.id == id);
-            if (achievement == null) return;
+            if (string.IsNullOrEmpty(id) || amount <= 0) return;
+            if (!_achievementsById.TryGetValue(id, out var achievement)) return;
 
             if (_saveManager.Data.completedAchievements.Contains(id)) return;
 
-            int currentProgress = 0;
-            _saveManager.Data.achievementProgress.TryGetValue(id, out currentProgress);
+            _saveManager.Data.achievementProgress.TryGetValue(id, out int currentProgress);
             
             int newProgress = currentProgress + amount;
-            if (newProgress >= achievement.targetValue)
+            bool shouldUnlock = newProgress >= achievement.targetValue;
+            if (shouldUnlock)
             {
                 newProgress = achievement.targetValue;
+            }
+
+            // Накапливаем в памяти без синхронного PlayerPrefs.Save() посреди боя;
+            // сброс на диск произойдёт при окончании забега, смене сцены или OnApplicationPause.
+            _saveManager.UpdateAchievementProgress(id, newProgress, saveImmediately: false);
+
+            if (shouldUnlock)
+            {
                 UnlockAchievement(achievement);
             }
-            
-            _saveManager.UpdateAchievementProgress(id, newProgress);
         }
 
         public void AddProgressByType(AchievementConditionType conditionType, int amount, string targetId = null)
         {
-            foreach (var achievement in _allAchievements)
+            if (!_achievementsByCondition.TryGetValue(conditionType, out var list)) return;
+
+            for (int i = 0; i < list.Count; i++)
             {
+                var achievement = list[i];
                 if (_saveManager.Data.completedAchievements.Contains(achievement.id)) continue;
 
-                if (achievement.conditionType == conditionType)
+                if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
                 {
-                    if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
-                    {
-                        AddProgress(achievement.id, amount);
-                    }
+                    AddProgress(achievement.id, amount);
                 }
             }
         }
         
         public void SetProgressByType(AchievementConditionType conditionType, int newValue, string targetId = null)
         {
-            foreach (var achievement in _allAchievements)
+            if (!_achievementsByCondition.TryGetValue(conditionType, out var list)) return;
+
+            for (int i = 0; i < list.Count; i++)
             {
+                var achievement = list[i];
                 if (_saveManager.Data.completedAchievements.Contains(achievement.id)) continue;
 
-                if (achievement.conditionType == conditionType)
+                if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
                 {
-                    if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
+                    _saveManager.Data.achievementProgress.TryGetValue(achievement.id, out int currentProgress);
+                    
+                    if (newValue > currentProgress)
                     {
-                        int currentProgress = 0;
-                        _saveManager.Data.achievementProgress.TryGetValue(achievement.id, out currentProgress);
-                        
-                        if (newValue > currentProgress)
-                        {
-                            int diff = newValue - currentProgress;
-                            AddProgress(achievement.id, diff);
-                        }
+                        AddProgress(achievement.id, newValue - currentProgress);
                     }
                 }
             }
@@ -90,29 +114,25 @@ namespace ProjectB.Meta
         {
             if (_saveManager.Data.completedAchievements.Contains(achievement.id)) return;
 
-            _saveManager.CompleteAchievement(achievement.id);
+            _saveManager.CompleteAchievement(achievement.id, saveImmediately: false);
             unlockedThisRun.Add(achievement);
 
-            // Награды
+            // Награды (без немедленного дискового I/O в бою)
             switch (achievement.rewardType)
             {
                 case AchievementRewardType.GiveCoins:
-                    _saveManager.AddCoins(achievement.rewardValue);
+                    _saveManager.AddCoins(achievement.rewardValue, saveImmediately: false);
                     break;
                 case AchievementRewardType.UnlockAbility:
                     if (!string.IsNullOrEmpty(achievement.rewardId))
                     {
-                        _saveManager.UnlockAbility(achievement.rewardId);
+                        _saveManager.UnlockAbility(achievement.rewardId, saveImmediately: false);
                     }
                     break;
                 case AchievementRewardType.UnlockHero:
                     if (!string.IsNullOrEmpty(achievement.rewardId))
                     {
-                        if (!_saveManager.Data.unlockedHeroIds.Contains(achievement.rewardId))
-                        {
-                            _saveManager.Data.unlockedHeroIds.Add(achievement.rewardId);
-                            _saveManager.Save();
-                        }
+                        _saveManager.UnlockHero(achievement.rewardId, saveImmediately: false);
                     }
                     break;
                 case AchievementRewardType.None:
