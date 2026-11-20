@@ -16,6 +16,10 @@ namespace ProjectB.Arena
         [SerializeField] private bool _visibleWalls = false;
 
         private System.Random _rng;
+        private ArenaDecorationRenderer _decorationRenderer;
+        private Material _fallbackFloorMaterial;
+        private Material _fallbackWallMaterial;
+
         public int CurrentSeed { get; private set; }
         public ArenaConfig Config => _config;
         public float ArenaSize => _config != null ? _config.ArenaSize : 100f;
@@ -63,6 +67,11 @@ namespace ProjectB.Arena
 
         public void ClearArena()
         {
+            if (_decorationRenderer != null)
+            {
+                _decorationRenderer.Clear();
+            }
+
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i);
@@ -74,6 +83,20 @@ namespace ProjectB.Arena
                 {
                     DestroyImmediate(child.gameObject);
                 }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_fallbackFloorMaterial != null)
+            {
+                Destroy(_fallbackFloorMaterial);
+                _fallbackFloorMaterial = null;
+            }
+            if (_fallbackWallMaterial != null)
+            {
+                Destroy(_fallbackWallMaterial);
+                _fallbackWallMaterial = null;
             }
         }
 
@@ -98,20 +121,24 @@ namespace ProjectB.Arena
             float scale = _config.ArenaSize / 10f;
             floor.transform.localScale = new Vector3(scale, 1f, scale);
 
-            if (_floorMaterial != null)
+            var renderer = floor.GetComponent<MeshRenderer>();
+            if (renderer != null)
             {
-                var renderer = floor.GetComponent<MeshRenderer>();
-                if (renderer != null) renderer.material = _floorMaterial;
-            }
-            else
-            {
-                var renderer = floor.GetComponent<MeshRenderer>();
-                if (renderer != null) 
+                if (_floorMaterial != null)
                 {
-                    // Явно создаем URP материал, так как стандартный (от CreatePrimitive) будет фиолетовым
-                    Material urpMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                    urpMaterial.color = new Color(0.2f, 0.5f, 0.2f);
-                    renderer.material = urpMaterial;
+                    renderer.sharedMaterial = _floorMaterial;
+                }
+                else
+                {
+                    if (_fallbackFloorMaterial == null)
+                    {
+                        Material baseMat = renderer.sharedMaterial;
+                        _fallbackFloorMaterial = baseMat != null
+                            ? new Material(baseMat)
+                            : new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                        _fallbackFloorMaterial.color = new Color(0.2f, 0.5f, 0.2f);
+                    }
+                    renderer.sharedMaterial = _fallbackFloorMaterial;
                 }
             }
         }
@@ -155,14 +182,19 @@ namespace ProjectB.Arena
                 {
                     if (_wallMaterial != null)
                     {
-                        renderer.material = _wallMaterial;
+                        renderer.sharedMaterial = _wallMaterial;
                     }
                     else
                     {
-                        // Фолбэк для стен, чтобы они не были фиолетовыми в URP
-                        Material urpMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                        urpMaterial.color = Color.gray;
-                        renderer.material = urpMaterial;
+                        if (_fallbackWallMaterial == null)
+                        {
+                            Material baseMat = renderer.sharedMaterial;
+                            _fallbackWallMaterial = baseMat != null
+                                ? new Material(baseMat)
+                                : new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                            _fallbackWallMaterial.color = Color.gray;
+                        }
+                        renderer.sharedMaterial = _fallbackWallMaterial;
                     }
                 }
             }
@@ -176,13 +208,14 @@ namespace ProjectB.Arena
             }
 
             int count = Range(_config.MinObstacles, _config.MaxObstacles + 1);
-            float halfSize = _config.ArenaSize / 2f;
+            float spawnHalfSize = Mathf.Max(0f, _config.ArenaSize / 2f - 2f);
             float safeRadiusSq = _config.SafeZoneRadius * _config.SafeZoneRadius;
             
             // To prevent infinite loops in edge cases
             int maxAttempts = count * 10; 
             int attempts = 0;
             int spawned = 0;
+            int obstacleLayer = LayerMask.NameToLayer("Obstacles");
 
             GameObject obstaclesContainer = new GameObject("Obstacles");
             obstaclesContainer.transform.SetParent(transform);
@@ -191,8 +224,8 @@ namespace ProjectB.Arena
             {
                 attempts++;
                 
-                float x = Range(-halfSize, halfSize);
-                float z = Range(-halfSize, halfSize);
+                float x = Range(-spawnHalfSize, spawnHalfSize);
+                float z = Range(-spawnHalfSize, spawnHalfSize);
                 
                 // Avoid safe zone
                 if (x * x + z * z < safeRadiusSq)
@@ -206,7 +239,6 @@ namespace ProjectB.Arena
                 GameObject prefab = _config.ObstaclePrefabs[Range(0, _config.ObstaclePrefabs.Length)];
                 GameObject obstacle = Instantiate(prefab, position, Quaternion.Euler(0, Range(0f, 360f), 0), obstaclesContainer.transform);
                 
-                int obstacleLayer = LayerMask.NameToLayer("Obstacles");
                 if (obstacleLayer != -1)
                 {
                     obstacle.layer = obstacleLayer;
@@ -227,35 +259,21 @@ namespace ProjectB.Arena
             }
 
             int count = Range(_config.MinDecorations, _config.MaxDecorations + 1);
-            float halfSize = _config.ArenaSize / 2f;
-            float safeRadiusSq = _config.SafeZoneRadius * _config.SafeZoneRadius;
-
-            GameObject decorationsContainer = new GameObject("Decorations");
-            decorationsContainer.transform.SetParent(transform);
-
-            for (int i = 0; i < count; i++)
+            if (count <= 0)
             {
-                float x = Range(-halfSize, halfSize);
-                float z = Range(-halfSize, halfSize);
-                
-                // Allow decorations inside the safe zone or not? 
-                // Grass looks good anywhere, so we don't avoid the safe zone strictly,
-                // but if we want to, we can uncomment the next lines:
-                // if (x * x + z * z < safeRadiusSq) continue;
-
-                Vector3 position = new Vector3(x, 0f, z);
-                GameObject prefab = _config.DecorationPrefabs[Range(0, _config.DecorationPrefabs.Length)];
-                
-                // Random scale and rotation for variety
-                Quaternion rotation = Quaternion.Euler(0, Range(0f, 360f), 0);
-                GameObject decoration = Instantiate(prefab, position, rotation, decorationsContainer.transform);
-                
-                // Optionally random scale
-                float randomScale = Range(0.8f, 1.2f);
-                decoration.transform.localScale = new Vector3(randomScale, randomScale, randomScale);
-
-                // Note: We deliberately do NOT set the "Obstacles" layer here.
+                return;
             }
+
+            if (_decorationRenderer == null)
+            {
+                _decorationRenderer = GetComponent<ArenaDecorationRenderer>();
+                if (_decorationRenderer == null)
+                {
+                    _decorationRenderer = gameObject.AddComponent<ArenaDecorationRenderer>();
+                }
+            }
+
+            _decorationRenderer.Build(_config.DecorationPrefabs, _config.ArenaSize, count, _rng);
         }
     }
 }
