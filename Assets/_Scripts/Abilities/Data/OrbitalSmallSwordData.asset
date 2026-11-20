@@ -17,6 +17,7 @@ MonoBehaviour:
   description: A small sword that orbits around you.
   icon: {fileID: 0}
   type: 0
+  unlockedByDefault: 1
   baseDamage: 15
   baseCooldown: 0
   baseArea: 1

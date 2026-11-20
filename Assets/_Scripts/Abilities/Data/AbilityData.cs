@@ -17,6 +17,10 @@ namespace ProjectB.Abilities
         public Sprite icon;
         public AbilityType type;
 
+        [Header("Meta Unlock")]
+        [Tooltip("Если false — способность закрыта по умолчанию и разблокируется через SaveData.unlockedAbilityIds")]
+        public bool unlockedByDefault = true;
+
         // Abstract factory method to allow data to spawn its specific ability script
         public abstract AbilityBase CreateAbility(Transform parent);
     }

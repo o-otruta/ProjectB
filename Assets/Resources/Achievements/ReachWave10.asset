@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.AchievementData
   id: reach_wave_10
   title: Survivor
-  description: Reach Wave 10
+  description: Reach Wave 10 to unlock Laser Turret
   icon: {fileID: 0}
   conditionType: 0
   targetValue: 10
   targetId: 
-  rewardType: 3
-  rewardValue: 100
-  rewardId: 
+  rewardType: 1
+  rewardValue: 0
+  rewardId: LaserTurret

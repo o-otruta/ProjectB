@@ -19,6 +19,7 @@ MonoBehaviour:
     \u0443\u0440\u043E\u043D"
   icon: {fileID: 0}
   type: 0
+  unlockedByDefault: 1
   baseDamage: 10
   baseCooldown: 1
   baseArea: 1

@@ -18,6 +18,7 @@ MonoBehaviour:
     \u0432\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u0432\u0430\u0435\u0442 \u0441\u043D\u0430\u0440\u044F\u0434\u044B"
   icon: {fileID: 0}
   type: 0
+  unlockedByDefault: 1
   baseDamage: 10
   baseCooldown: 1
   baseArea: 1

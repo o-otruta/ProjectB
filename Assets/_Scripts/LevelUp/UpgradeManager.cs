@@ -4,6 +4,7 @@ using UnityEngine;
 using ProjectB.Player;
 using ProjectB.UI;
 using ProjectB.Core;
+using ProjectB.Meta;
 using VContainer;
 using ProjectB.Abilities;
 
@@ -22,17 +23,25 @@ namespace ProjectB.LevelUp
         private GameManager gameManager;
         private HeroAbilities heroAbilities;
         private UpgradeApplier upgradeApplier;
+        private SaveManager saveManager;
         
         private int pendingLevelUps = 0;
 
         [Inject]
-        public void Construct(GameManager gameManager, CardSelectionUI cardUI, HeroExperience heroExp, HeroAbilities heroAbilities, UpgradeApplier upgradeApplier)
+        public void Construct(
+            GameManager gameManager,
+            CardSelectionUI cardUI,
+            HeroExperience heroExp,
+            HeroAbilities heroAbilities,
+            UpgradeApplier upgradeApplier,
+            SaveManager saveManager)
         {
             this.gameManager = gameManager;
             this.cardUI = cardUI;
             this.heroExp = heroExp;
             this.heroAbilities = heroAbilities;
             this.upgradeApplier = upgradeApplier;
+            this.saveManager = saveManager;
         }
 
         private void Start()
@@ -46,11 +55,9 @@ namespace ProjectB.LevelUp
                 gameManager.OnGameOver += HandleGameOver;
             }
             
-            // Initialize dynamic pool with base pool
-            if (cardPool != null)
-            {
-                dynamicPool.AddRange(cardPool);
-            }
+            // Формируем пул на текущий забег: фиксируем снапшот разблокированных способностей на старте забега,
+            // чтобы способности, открытые ачивками посреди забега, появлялись начиная со следующего забега.
+            InitializeRunPool();
 
             // Выдаём стартовые выборы карточек за купленный мета-апгрейд StartLevel
             if (heroExp != null)
@@ -61,6 +68,44 @@ namespace ProjectB.LevelUp
                     StartCoroutine(GrantStartingLevelUpsNextFrame(startingLevelUps));
                 }
             }
+        }
+
+        private void InitializeRunPool()
+        {
+            dynamicPool.Clear();
+            if (cardPool == null) return;
+
+            for (int i = 0; i < cardPool.Count; i++)
+            {
+                var card = cardPool[i];
+                if (card == null) continue;
+
+                if (card is AbilityCardData abilityCard)
+                {
+                    if (abilityCard.abilityData == null)
+                    {
+                        Debug.LogWarning($"[UpgradeManager] AbilityCardData '{abilityCard.name}' has null abilityData. Skipping.");
+                        continue;
+                    }
+
+                    if (!IsAbilityUnlockedForRun(abilityCard.abilityData))
+                    {
+                        continue;
+                    }
+                }
+
+                if (!dynamicPool.Contains(card))
+                {
+                    dynamicPool.Add(card);
+                }
+            }
+        }
+
+        private bool IsAbilityUnlockedForRun(AbilityData abilityData)
+        {
+            if (abilityData == null) return false;
+            if (abilityData.unlockedByDefault) return true;
+            return saveManager != null && saveManager.IsAbilityUnlocked(abilityData.id);
         }
 
         private System.Collections.IEnumerator GrantStartingLevelUpsNextFrame(int count)
@@ -149,8 +194,14 @@ namespace ProjectB.LevelUp
         public void AddCardsToPool(List<CardData> newCards)
         {
             if (newCards == null) return;
-            dynamicPool.AddRange(newCards);
-            Debug.Log($"[UpgradeManager] Added {newCards.Count} cards to dynamic pool. Total: {dynamicPool.Count}");
+            for (int i = 0; i < newCards.Count; i++)
+            {
+                var card = newCards[i];
+                if (card != null && !dynamicPool.Contains(card))
+                {
+                    dynamicPool.Add(card);
+                }
+            }
         }
 
         private List<CardData> GetRandomCards(int count)
@@ -161,11 +212,16 @@ namespace ProjectB.LevelUp
             bool canAddActive = heroAbilities == null || heroAbilities.CanAddActive();
             bool canAddPassive = heroAbilities == null || heroAbilities.CanAddPassive();
 
-            // Filter out abilities if slots are full or already acquired
+            // Filter out invalid, locked, already acquired, or slot-capped abilities and orphan modifiers
             foreach (var card in dynamicPool)
             {
+                if (card == null) continue;
+
                 if (card is AbilityCardData abilityCard)
                 {
+                    if (abilityCard.abilityData == null)
+                        continue;
+
                     // Skip if we already have this ability
                     if (heroAbilities != null && heroAbilities.HasAbility(abilityCard.abilityData.id))
                         continue;
@@ -173,6 +229,14 @@ namespace ProjectB.LevelUp
                     if (abilityCard.abilityData.type == AbilityType.Active && !canAddActive)
                         continue;
                     if (abilityCard.abilityData.type == AbilityType.Passive && !canAddPassive)
+                        continue;
+                }
+                else if (card is AbilityModifierCardData modifierCard)
+                {
+                    if (string.IsNullOrEmpty(modifierCard.targetAbilityId))
+                        continue;
+
+                    if (heroAbilities != null && !heroAbilities.HasAbility(modifierCard.targetAbilityId))
                         continue;
                 }
                 

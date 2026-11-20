@@ -197,6 +197,7 @@ namespace ProjectB.Meta
 
         public void UnlockAbility(string id, bool saveImmediately = true)
         {
+            if (string.IsNullOrEmpty(id) || Data == null) return;
             if (!Data.unlockedAbilityIds.Contains(id))
             {
                 Data.unlockedAbilityIds.Add(id);
@@ -204,13 +205,26 @@ namespace ProjectB.Meta
             }
         }
 
+        public bool IsAbilityUnlocked(string id)
+        {
+            if (string.IsNullOrEmpty(id) || Data?.unlockedAbilityIds == null) return false;
+            return Data.unlockedAbilityIds.Contains(id);
+        }
+
         public void UnlockHero(string id, bool saveImmediately = true)
         {
+            if (string.IsNullOrEmpty(id) || Data == null) return;
             if (!Data.unlockedHeroIds.Contains(id))
             {
                 Data.unlockedHeroIds.Add(id);
                 CommitChange(saveImmediately);
             }
+        }
+
+        public bool IsHeroUnlocked(string id)
+        {
+            if (string.IsNullOrEmpty(id) || Data?.unlockedHeroIds == null) return false;
+            return Data.unlockedHeroIds.Contains(id);
         }
     }
 }
