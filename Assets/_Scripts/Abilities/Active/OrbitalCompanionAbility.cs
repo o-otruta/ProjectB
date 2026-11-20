@@ -10,9 +10,12 @@ namespace ProjectB.Abilities
         private List<Transform> instances = new List<Transform>();
         private float currentAngle = 0f;
 
+        private const float SCAN_INTERVAL = 0.08f;
+
         private float tickRate = 0.5f; 
         private Dictionary<EntityId, float> enemyDamageCooldowns = new Dictionary<EntityId, float>();
         private float nextCleanupTime = 0f;
+        private float nextScanTime = 0f;
         private List<EntityId> keysToRemove = new List<EntityId>();
 
         // Modifiable stats
@@ -54,6 +57,7 @@ namespace ProjectB.Abilities
                     break;
                 case ModifierType.Area:
                     currentArea += value;
+                    UpdateInstanceScales();
                     break;
             }
         }
@@ -82,36 +86,42 @@ namespace ProjectB.Abilities
                 {
                     obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                     obj.transform.SetParent(transform);
-                    obj.transform.localScale = Vector3.one * OrbitalData.baseArea;
+                    var col = obj.GetComponent<Collider>();
+                    if (col != null) Destroy(col);
                 }
                 obj.name = $"Orbital_{i}";
-
-                // Note: Realistically, you want a Rigidbody/Collider on the prefab itself, 
-                // but we add a trigger if not present for the primitive.
-                var col = obj.GetComponent<Collider>();
-                if (col == null) col = obj.AddComponent<SphereCollider>();
-                col.isTrigger = true;
-                
-                var rb = obj.GetComponent<Rigidbody>();
-                if (rb == null)
-                {
-                    rb = obj.AddComponent<Rigidbody>();
-                    rb.isKinematic = true;
-                }
+                obj.transform.localScale = Vector3.one * currentArea;
 
                 instances.Add(obj.transform);
             }
             RecalculatePositions();
         }
 
+        private void UpdateInstanceScales()
+        {
+            Vector3 scale = Vector3.one * currentArea;
+            for (int i = 0; i < instances.Count; i++)
+            {
+                if (instances[i] != null)
+                {
+                    instances[i].localScale = scale;
+                }
+            }
+        }
+
         private void Update()
         {
-            if (Data == null) return;
+            if (Data == null || Time.deltaTime <= 0f) return;
+
             currentAngle += currentSpeed * Time.deltaTime;
             currentAngle %= 360f;
             RecalculatePositions();
 
-            ApplyDamageTick();
+            if (Time.time >= nextScanTime)
+            {
+                nextScanTime = Time.time + SCAN_INTERVAL;
+                ApplyDamageTick();
+            }
             CleanupCooldowns();
         }
 

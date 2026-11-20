@@ -22,8 +22,12 @@ namespace ProjectB.Abilities
         private IObjectPool<LaserTurret> pool;
         private bool isReturned;
 
+        private const float TARGET_SCAN_INTERVAL = 0.2f;
+
         private float spawnTime;
+        private float nextScanTime;
         private Transform currentTarget;
+        private IDamageable currentTargetDamageable;
         private Collider[] hitBuffer = new Collider[50];
 
         public void Initialize(float searchRadius, float dps, float lifetime, LayerMask enemyLayer, IObjectPool<LaserTurret> pool)
@@ -36,7 +40,9 @@ namespace ProjectB.Abilities
             this.isReturned = false;
 
             spawnTime = Time.time;
+            nextScanTime = 0f;
             currentTarget = null;
+            currentTargetDamageable = null;
             accumulatedDamage = 0f;
 
             if (lineRenderer == null)
@@ -63,6 +69,7 @@ namespace ProjectB.Abilities
         private void OnDisable()
         {
             currentTarget = null;
+            currentTargetDamageable = null;
             accumulatedDamage = 0f;
             if (lineRenderer != null) lineRenderer.enabled = false;
             meshAnimator?.Stop();
@@ -70,7 +77,7 @@ namespace ProjectB.Abilities
 
         private void Update()
         {
-            if (isReturned) return;
+            if (isReturned || Time.deltaTime <= 0f) return;
 
             if (Time.time >= spawnTime + lifetime)
             {
@@ -98,19 +105,20 @@ namespace ProjectB.Abilities
 
                 meshAnimator?.Play();
 
-                if (currentTarget.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
+                if (currentTargetDamageable != null && !currentTargetDamageable.IsDead)
                 {
                     accumulatedDamage += dps * Time.deltaTime;
                     if (accumulatedDamage >= 1f)
                     {
                         int dmg = Mathf.FloorToInt(accumulatedDamage);
                         accumulatedDamage -= dmg;
-                        damageable.TakeDamage(dmg);
+                        currentTargetDamageable.TakeDamage(dmg);
                     }
                 }
                 else
                 {
                     currentTarget = null;
+                    currentTargetDamageable = null;
                 }
             }
             else
@@ -127,16 +135,18 @@ namespace ProjectB.Abilities
         {
             if (currentTarget != null && currentTarget.gameObject.activeInHierarchy)
             {
-                if ((currentTarget.position - transform.position).sqrMagnitude <= searchRadius * searchRadius)
+                if ((currentTarget.position - transform.position).sqrMagnitude <= searchRadius * searchRadius &&
+                    currentTargetDamageable != null && !currentTargetDamageable.IsDead)
                 {
-                    if (currentTarget.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
-                    {
-                        return; 
-                    }
+                    return;
                 }
             }
 
             currentTarget = null;
+            currentTargetDamageable = null;
+
+            if (Time.time < nextScanTime) return;
+            nextScanTime = Time.time + TARGET_SCAN_INTERVAL;
 
             int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, searchRadius, hitBuffer, enemyLayer);
             if (targetsFound == 0) return;
@@ -145,12 +155,17 @@ namespace ProjectB.Abilities
 
             for (int i = 0; i < targetsFound; i++)
             {
-                var target = hitBuffer[i].transform;
+                Collider col = hitBuffer[i];
+                if (col == null) continue;
+                if (!col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
+
+                var target = col.transform;
                 float sqrDist = (target.position - transform.position).sqrMagnitude;
                 if (sqrDist < minSqrDist)
                 {
                     minSqrDist = sqrDist;
                     currentTarget = target;
+                    currentTargetDamageable = damageable;
                 }
             }
         }
@@ -166,6 +181,7 @@ namespace ProjectB.Abilities
             isReturned = true;
 
             currentTarget = null;
+            currentTargetDamageable = null;
             accumulatedDamage = 0f;
             if (lineRenderer != null) lineRenderer.enabled = false;
             meshAnimator?.Stop();

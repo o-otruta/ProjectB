@@ -8,21 +8,25 @@ namespace ProjectB.LevelUp
     {
         [SerializeField] private GameObject coinPrefab;
         private Transform heroTarget;
+        private ProjectB.Player.HeroEconomy heroEconomy;
 
         private IObjectPool<CoinPickup> coinPool;
         private Material fallbackMaterial;
+        private int pickupsLayer;
 
         [Inject]
-        public void Construct(ProjectB.Player.HeroHealth heroHealth)
+        public void Construct(ProjectB.Player.HeroHealth heroHealth, ProjectB.Player.HeroEconomy heroEconomy)
         {
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
             }
+            this.heroEconomy = heroEconomy;
         }
 
         private void Start()
         {
+            pickupsLayer = LayerMask.NameToLayer("Pickups");
             Transform poolContainer = new GameObject("CoinContainer").transform;
             
             GameObject tempPrimitive = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -50,7 +54,7 @@ namespace ProjectB.LevelUp
                     CoinPickup pickup = go.GetComponent<CoinPickup>();
                     if (pickup == null) pickup = go.AddComponent<CoinPickup>();
                     
-                    go.layer = LayerMask.NameToLayer("Pickups");
+                    if (pickupsLayer != -1) go.layer = pickupsLayer;
                     
                     return pickup;
                 },
@@ -72,7 +76,7 @@ namespace ProjectB.LevelUp
             position.y = 0.5f;
             pickup.transform.position = position;
             
-            pickup.Initialize(heroTarget, amount, coinPool);
+            pickup.Initialize(heroTarget, amount, coinPool, heroEconomy);
         }
 
         private void OnDestroy()

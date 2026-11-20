@@ -103,8 +103,21 @@ namespace ProjectB.Enemies
             }
         }
 
+        private static int cachedObstacleMask = -1;
         private Vector3 currentMoveDir;
         private float nextCheckTime;
+
+        private static int ObstacleMask
+        {
+            get
+            {
+                if (cachedObstacleMask == -1)
+                {
+                    cachedObstacleMask = LayerMask.GetMask("Obstacles");
+                }
+                return cachedObstacleMask;
+            }
+        }
 
         protected virtual void Update()
         {
@@ -153,7 +166,7 @@ namespace ProjectB.Enemies
                     // SphereCast чуть выше земли, чтобы не цеплять пол
                     Vector3 rayStart = transform.position + Vector3.up * 0.5f;
                     // Проверяем только слой Obstacles (там где стены), игнорируем других врагов
-                    int obstacleMask = LayerMask.GetMask("Obstacles"); 
+                    int obstacleMask = ObstacleMask; 
                     
                     if (Physics.SphereCast(rayStart, 0.4f, direction, out RaycastHit hit, 0.7f, obstacleMask))
                     {

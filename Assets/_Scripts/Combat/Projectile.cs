@@ -10,6 +10,7 @@ namespace ProjectB.Combat
 
         private IObjectPool<Projectile> pool;
         private Transform target;
+        private IDamageable targetDamageable;
         private WeaponData data;
         private bool isReturned;
         private float damageMultiplier = 1f;
@@ -19,6 +20,7 @@ namespace ProjectB.Combat
         {
             data = weaponData;
             target = targetTransform;
+            targetDamageable = targetTransform != null ? targetTransform.GetComponent<IDamageable>() : null;
             pool = projectilePool;
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
@@ -27,7 +29,7 @@ namespace ProjectB.Combat
 
         private void Update()
         {
-            if (isReturned) return;
+            if (isReturned || Time.deltaTime <= 0f) return;
 
             // Ограничение максимального времени жизни, чтобы избежать зависания и утечки пула
             if (Time.time >= spawnTime + MAX_LIFETIME)
@@ -37,14 +39,7 @@ namespace ProjectB.Combat
             }
 
             // Если цель уничтожена или выключена, возвращаем снаряд в пул
-            if (target == null || !target.gameObject.activeInHierarchy)
-            {
-                ReturnToPool();
-                return;
-            }
-
-            IDamageable damageable = null;
-            if (target.TryGetComponent(out damageable) && damageable.IsDead)
+            if (target == null || !target.gameObject.activeInHierarchy || (targetDamageable != null && targetDamageable.IsDead))
             {
                 ReturnToPool();
                 return;
@@ -62,24 +57,19 @@ namespace ProjectB.Combat
             // Если шаг за этот кадр >= оставшаяся дистанция — считаем попадание
             if (toTarget.sqrMagnitude <= distanceThisFrame * distanceThisFrame)
             {
-                HitTarget(damageable);
+                HitTarget();
                 return;
             }
 
             transform.position += toTarget.normalized * distanceThisFrame;
         }
 
-        private void HitTarget(IDamageable damageable = null)
+        private void HitTarget()
         {
-            if (damageable == null && target != null)
-            {
-                target.TryGetComponent(out damageable);
-            }
-
-            if (damageable != null && !damageable.IsDead)
+            if (targetDamageable != null && !targetDamageable.IsDead)
             {
                 int finalDamage = Mathf.RoundToInt(data.damage * damageMultiplier);
-                damageable.TakeDamage(finalDamage);
+                targetDamageable.TakeDamage(finalDamage);
             }
 
             ReturnToPool();

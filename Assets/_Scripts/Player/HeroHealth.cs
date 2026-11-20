@@ -55,7 +55,6 @@ namespace ProjectB.Player
             currentHp -= amount;
             if (currentHp < 0) currentHp = 0;
             
-            Debug.Log($"[HeroHealth] Took {amount} damage. Current HP: {currentHp}");
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
             
             if (currentHp <= 0)
@@ -88,7 +87,6 @@ namespace ProjectB.Player
         {
             if (isDead) return;
             currentHp = Mathf.Min(currentHp + amount, currentMaxHp);
-            Debug.Log($"[HeroHealth] Healed {amount}. Current HP: {currentHp}");
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
 

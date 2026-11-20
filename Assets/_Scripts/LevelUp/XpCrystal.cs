@@ -7,47 +7,50 @@ namespace ProjectB.LevelUp
     {
         private IObjectPool<XpCrystal> pool;
         private Transform heroTarget;
+        private HeroExperience heroExperience;
         private int xpAmount;
         private float magnetSpeed = 10f;
         
         private bool isMagnetized;
 
-        public void Initialize(Transform hero, int amount, IObjectPool<XpCrystal> crystalPool)
+        public void Initialize(Transform hero, int amount, IObjectPool<XpCrystal> crystalPool, HeroExperience heroExp = null)
         {
             heroTarget = hero;
+            heroExperience = heroExp != null ? heroExp : (hero != null ? hero.GetComponent<HeroExperience>() : null);
             xpAmount = amount;
             pool = crystalPool;
             isMagnetized = false;
+            enabled = false; // Отключаем Update пока кристалл лежит на земле
         }
 
         private void Update()
         {
-            if (heroTarget == null) return;
+            if (!isMagnetized || Time.deltaTime <= 0f || heroTarget == null) return;
 
-            if (isMagnetized)
+            Vector3 targetPos = heroTarget.position + Vector3.up;
+            // Fly towards hero
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, magnetSpeed * Time.deltaTime);
+            
+            // If reached hero
+            if ((transform.position - targetPos).sqrMagnitude < 0.25f)
             {
-                // Fly towards hero
-                transform.position = Vector3.MoveTowards(transform.position, heroTarget.position + Vector3.up, magnetSpeed * Time.deltaTime);
-                
-                // If reached hero
-                if (Vector3.SqrMagnitude(transform.position - (heroTarget.position + Vector3.up)) < 0.25f)
-                {
-                    Collect();
-                }
+                Collect();
             }
         }
 
         public void Magnetize(float speed)
         {
+            if (isMagnetized) return;
             isMagnetized = true;
             magnetSpeed = speed;
+            enabled = true;
         }
         
         private void Collect()
         {
-            if (heroTarget.TryGetComponent<HeroExperience>(out var heroExp))
+            if (heroExperience != null)
             {
-                heroExp.AddExperience(xpAmount);
+                heroExperience.AddExperience(xpAmount);
             }
             
             ReturnToPool();

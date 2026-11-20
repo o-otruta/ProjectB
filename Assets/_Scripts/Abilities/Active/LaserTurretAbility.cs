@@ -71,9 +71,24 @@ namespace ProjectB.Abilities
             }
         }
 
+        private static int cachedGroundMask = -1;
+
+        private static int GroundMask
+        {
+            get
+            {
+                if (cachedGroundMask == -1)
+                {
+                    cachedGroundMask = LayerMask.GetMask("Default", "Obstacles");
+                    if (cachedGroundMask == 0) cachedGroundMask = ~LayerMask.GetMask("Hero");
+                }
+                return cachedGroundMask;
+            }
+        }
+
         private void Update()
         {
-            if (Data == null || turretPool == null) return;
+            if (Data == null || turretPool == null || Time.deltaTime <= 0f) return;
 
             if (Time.time >= nextFireTime)
             {
@@ -88,10 +103,9 @@ namespace ProjectB.Abilities
             if (t == null) return;
 
             Vector3 spawnPos = transform.position;
-            int mask = LayerMask.GetMask("Default", "Obstacles");
-            if (mask == 0) mask = ~LayerMask.GetMask("Hero");
+            Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
 
-            if (Physics.Raycast(transform.position, Vector3.down, out var hit, 10f, mask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, 10f, GroundMask, QueryTriggerInteraction.Ignore))
             {
                 spawnPos.y = hit.point.y;
             }

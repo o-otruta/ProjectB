@@ -58,9 +58,11 @@ namespace ProjectB.Combat
             );
         }
 
+        private const float EMPTY_SCAN_COOLDOWN = 0.15f;
+
         public void UpdateController()
         {
-            if (weaponData == null || projectilePool == null) return;
+            if (weaponData == null || projectilePool == null || Time.deltaTime <= 0f) return;
 
             if (Time.time >= nextFireTime)
             {
@@ -69,6 +71,10 @@ namespace ProjectB.Combat
                 {
                     Fire(target);
                     nextFireTime = Time.time + weaponData.attackCooldown;
+                }
+                else
+                {
+                    nextFireTime = Time.time + EMPTY_SCAN_COOLDOWN;
                 }
             }
         }
@@ -83,7 +89,11 @@ namespace ProjectB.Combat
 
             for (int i = 0; i < hitCount; i++)
             {
-                Transform potentialTarget = overlapResults[i].transform;
+                Collider col = overlapResults[i];
+                if (col == null) continue;
+                if (col.TryGetComponent<IDamageable>(out var damageable) && damageable.IsDead) continue;
+
+                Transform potentialTarget = col.transform;
                 Vector3 directionToTarget = potentialTarget.position - center;
                 float dSqrToTarget = directionToTarget.sqrMagnitude;
 

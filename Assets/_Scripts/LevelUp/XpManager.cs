@@ -8,22 +8,25 @@ namespace ProjectB.LevelUp
     {
         [SerializeField] private GameObject xpCrystalPrefab;
         private Transform heroTarget;
+        private HeroExperience heroExperience;
 
         private IObjectPool<XpCrystal> xpPool;
         private Material fallbackMaterial;
+        private int pickupsLayer;
 
         [Inject]
-        public void Construct(ProjectB.Player.HeroHealth heroHealth)
+        public void Construct(ProjectB.Player.HeroHealth heroHealth, HeroExperience heroExperience)
         {
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
             }
+            this.heroExperience = heroExperience;
         }
 
         private void Start()
         {
-
+            pickupsLayer = LayerMask.NameToLayer("Pickups");
             Transform poolContainer = new GameObject("XpCrystalContainer").transform;
             
             // Safely get the default material by creating a temporary primitive, to avoid Shader.Find crashing in URP/mobile
@@ -56,7 +59,7 @@ namespace ProjectB.LevelUp
                     if (crystal == null) crystal = go.AddComponent<XpCrystal>();
                     
                     // Назначаем правильный слой для оптимизации матрицы коллизий
-                    go.layer = LayerMask.NameToLayer("Pickups");
+                    if (pickupsLayer != -1) go.layer = pickupsLayer;
                     
                     return crystal;
                 },
@@ -79,7 +82,7 @@ namespace ProjectB.LevelUp
             position.y = 0.5f;
             crystal.transform.position = position;
             
-            crystal.Initialize(heroTarget, amount, xpPool);
+            crystal.Initialize(heroTarget, amount, xpPool, heroExperience);
         }
 
         private void OnDestroy()

@@ -6,6 +6,7 @@ using VContainer;
 using ProjectB.Data.Enemies;
 using ProjectB.Player;
 using ProjectB.Arena;
+using ProjectB.Combat;
 using ProjectB.Core.Events;
 
 namespace ProjectB.Enemies
@@ -20,10 +21,16 @@ namespace ProjectB.Enemies
         private ProjectB.Meta.AchievementManager achievementManager;
         private GameEventBus eventBus;
         private ArenaGenerator arenaGenerator;
+        private EnemyProjectilePool enemyProjectilePool;
 
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
         private readonly HashSet<EnemyBase> activeEnemies = new HashSet<EnemyBase>();
         private readonly List<EnemyBase> enemyIterationBuffer = new List<EnemyBase>();
+
+        private WaitForSeconds waveDelayWait;
+        private WaitForSeconds spawnDelayWait;
+        private WaitForSeconds maxWaveDurationWait;
+        private int obstacleMask;
 
         private int currentWave = 1;
         public int CurrentWave => currentWave;
@@ -36,6 +43,7 @@ namespace ProjectB.Enemies
             HeroHealth heroHealth, 
             ProjectB.Meta.AchievementManager achievementManager, 
             GameEventBus eventBus,
+            EnemyProjectilePool enemyProjectilePool,
             ArenaGenerator arenaGenerator = null)
         {
             this.heroHealth = heroHealth;
@@ -45,6 +53,7 @@ namespace ProjectB.Enemies
             }
             this.achievementManager = achievementManager;
             this.eventBus = eventBus;
+            this.enemyProjectilePool = enemyProjectilePool;
             this.arenaGenerator = arenaGenerator;
         }
 
@@ -55,6 +64,11 @@ namespace ProjectB.Enemies
                 Debug.LogError("WaveManager missing references or enemy types!");
                 return;
             }
+
+            waveDelayWait = new WaitForSeconds(waveConfig.waveDelay);
+            spawnDelayWait = new WaitForSeconds(waveConfig.spawnDelay);
+            maxWaveDurationWait = waveConfig.maxWaveDuration > 0f ? new WaitForSeconds(waveConfig.maxWaveDuration) : null;
+            obstacleMask = LayerMask.GetMask("Obstacles");
 
             Transform enemyContainer = new GameObject("EnemyContainer").transform;
             enemyPools = new System.Collections.Generic.Dictionary<EnemyData, IObjectPool<EnemyBase>>();
@@ -111,6 +125,15 @@ namespace ProjectB.Enemies
             StopAllCoroutines();
         }
 
+        private void CopyActiveEnemiesToBuffer()
+        {
+            enemyIterationBuffer.Clear();
+            foreach (var enemy in activeEnemies)
+            {
+                enemyIterationBuffer.Add(enemy);
+            }
+        }
+
         private void OnGameOver(GameOverEvent evt)
         {
             StopAllCoroutines();
@@ -119,8 +142,7 @@ namespace ProjectB.Enemies
 
             // Unsubscribe from enemy death events to prevent late wave transitions,
             // but keep enemies alive on screen until scene restart/menu
-            enemyIterationBuffer.Clear();
-            enemyIterationBuffer.AddRange(activeEnemies);
+            CopyActiveEnemiesToBuffer();
             for (int i = 0; i < enemyIterationBuffer.Count; i++)
             {
                 var enemy = enemyIterationBuffer[i];
@@ -134,7 +156,7 @@ namespace ProjectB.Enemies
 
         private IEnumerator StartWaveDelay()
         {
-            yield return new WaitForSeconds(waveConfig.waveDelay);
+            yield return waveDelayWait;
             StartCoroutine(SpawnWaveCoroutine());
         }
 
@@ -147,7 +169,7 @@ namespace ProjectB.Enemies
             
             Debug.Log($"[WaveManager] Spawning Wave {currentWave} with {enemiesToSpawn} enemies.");
 
-            if (waveConfig.maxWaveDuration > 0f)
+            if (maxWaveDurationWait != null)
             {
                 if (waveDurationCoroutine != null) StopCoroutine(waveDurationCoroutine);
                 waveDurationCoroutine = StartCoroutine(WaveDurationCoroutine(waveNumber));
@@ -162,7 +184,7 @@ namespace ProjectB.Enemies
                 }
                 
                 SpawnEnemy();
-                yield return new WaitForSeconds(waveConfig.spawnDelay);
+                yield return spawnDelayWait;
             }
             
             isSpawning = false;
@@ -171,7 +193,7 @@ namespace ProjectB.Enemies
 
         private IEnumerator WaveDurationCoroutine(int waveNumber)
         {
-            yield return new WaitForSeconds(waveConfig.maxWaveDuration);
+            yield return maxWaveDurationWait;
 
             if (currentWave != waveNumber || (heroHealth != null && heroHealth.IsDead))
             {
@@ -200,8 +222,7 @@ namespace ProjectB.Enemies
                 float leashDistSq = leashDist * leashDist;
                 Vector3 heroPos = heroTarget.position;
 
-                enemyIterationBuffer.Clear();
-                enemyIterationBuffer.AddRange(activeEnemies);
+                CopyActiveEnemiesToBuffer();
 
                 for (int i = 0; i < enemyIterationBuffer.Count; i++)
                 {
@@ -229,8 +250,6 @@ namespace ProjectB.Enemies
             Vector3 center = heroTarget != null ? heroTarget.position : Vector3.zero;
             float minRad = waveConfig != null ? waveConfig.spawnRadiusMin : 10f;
             float maxRad = waveConfig != null ? waveConfig.spawnRadiusMax : 15f;
-
-            int obstacleMask = LayerMask.GetMask("Obstacles");
 
             for (int attempt = 0; attempt < 10; attempt++)
             {
@@ -263,6 +282,11 @@ namespace ProjectB.Enemies
             EnemyBase enemy = pool.Get();
             Vector3 spawnPos = GetValidSpawnPosition();
             enemy.transform.position = spawnPos;
+
+            if (enemy is ShootingEnemy shootingEnemy)
+            {
+                shootingEnemy.SetProjectilePool(enemyProjectilePool);
+            }
             
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
             enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
@@ -293,7 +317,19 @@ namespace ProjectB.Enemies
         {
             if (heroHealth != null && heroHealth.IsDead) return;
 
-            activeEnemies.RemoveWhere(e => e == null || !e.gameObject.activeInHierarchy || e.IsDead);
+            enemyIterationBuffer.Clear();
+            foreach (var enemy in activeEnemies)
+            {
+                if (enemy == null || !enemy.gameObject.activeInHierarchy || enemy.IsDead)
+                {
+                    enemyIterationBuffer.Add(enemy);
+                }
+            }
+            for (int i = 0; i < enemyIterationBuffer.Count; i++)
+            {
+                activeEnemies.Remove(enemyIterationBuffer[i]);
+            }
+            enemyIterationBuffer.Clear();
 
             if (!isSpawning && activeEnemies.Count <= 0)
             {

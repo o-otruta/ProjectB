@@ -8,12 +8,16 @@ namespace ProjectB.Abilities
     {
         private BlackHoleAbilityData HoleData => Data as BlackHoleAbilityData;
 
+        private const float SCAN_INTERVAL = 0.1f;
+
         private float currentDamage;
         private float currentRadius;
         private float currentPullForce;
         
         private float nextTickTime;
+        private float nextScanTime;
         private Collider[] hitBuffer = new Collider[100];
+        private readonly System.Collections.Generic.List<EnemyBase> capturedEnemies = new System.Collections.Generic.List<EnemyBase>(64);
         private GameObject visualHole;
 
         public override void Initialize(AbilityData data)
@@ -68,7 +72,13 @@ namespace ProjectB.Abilities
 
         private void Update()
         {
-            if (Data == null) return;
+            if (Data == null || Time.deltaTime <= 0f) return;
+
+            if (Time.time >= nextScanTime)
+            {
+                nextScanTime = Time.time + SCAN_INTERVAL;
+                RefreshCapturedEnemies();
+            }
 
             bool applyDamage = Time.time >= nextTickTime;
             ApplyPullAndDamage(applyDamage);
@@ -84,24 +94,42 @@ namespace ProjectB.Abilities
             }
         }
 
-        private void ApplyPullAndDamage(bool applyDamage)
+        private void RefreshCapturedEnemies()
         {
+            capturedEnemies.Clear();
             int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, currentRadius, hitBuffer, HoleData.targetLayer);
-            
             for (int i = 0; i < targetsFound; i++)
             {
                 var col = hitBuffer[i];
-                if (col.TryGetComponent<EnemyBase>(out var enemy))
+                if (col != null && col.TryGetComponent<EnemyBase>(out var enemy) && !enemy.IsDead)
                 {
-                    Vector3 direction = (transform.position - enemy.transform.position).normalized;
-                    direction.y = 0;
-                    Vector3 pullDelta = direction * currentPullForce * Time.deltaTime;
+                    capturedEnemies.Add(enemy);
+                }
+            }
+        }
+
+        private void ApplyPullAndDamage(bool applyDamage)
+        {
+            float dt = Time.deltaTime;
+            int dmg = Mathf.RoundToInt(currentDamage);
+            Vector3 center = transform.position;
+
+            for (int i = 0; i < capturedEnemies.Count; i++)
+            {
+                EnemyBase enemy = capturedEnemies[i];
+                if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy) continue;
+
+                Vector3 toCenter = center - enemy.transform.position;
+                toCenter.y = 0f;
+                if (toCenter.sqrMagnitude > 0.001f)
+                {
+                    Vector3 pullDelta = toCenter.normalized * (currentPullForce * dt);
                     enemy.ApplyPull(pullDelta);
                 }
-                
-                if (applyDamage && col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
+
+                if (applyDamage)
                 {
-                    damageable.TakeDamage((int)currentDamage);
+                    enemy.TakeDamage(dmg);
                 }
             }
         }

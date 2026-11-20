@@ -6,48 +6,47 @@ namespace ProjectB.Combat
 {
     public class EnemyProjectile : MonoBehaviour
     {
+        private const float MAX_LIFETIME = 6f;
+        private const float PROJECTILE_RADIUS = 0.25f;
+        private const float HERO_HIT_RADIUS = 0.75f;
+        private const float HERO_HIT_RADIUS_SQ = HERO_HIT_RADIUS * HERO_HIT_RADIUS;
+
+        private static int obstacleLayerMask = -1;
+
         private IObjectPool<EnemyProjectile> pool;
+        private Transform heroTarget;
+        private IDamageable heroDamageable;
         private Vector3 direction;
         private int damage;
         private float speed;
         private bool isReturned;
         private float spawnTime;
-        private const float MAX_LIFETIME = 6f;
-        private const float PROJECTILE_RADIUS = 0.25f;
-
-        private static readonly Collider[] overlapBuffer = new Collider[8];
-        private static int hitLayerMask = -1;
-        private static int obstacleLayerMask = -1;
 
         private static void EnsureLayerMasks()
         {
-            if (hitLayerMask == -1)
+            if (obstacleLayerMask == -1)
             {
-                int heroLayer = LayerMask.NameToLayer("Hero");
                 int obstaclesLayer = LayerMask.NameToLayer("Obstacles");
-                hitLayerMask = 0;
-                obstacleLayerMask = 0;
-                if (heroLayer != -1) hitLayerMask |= (1 << heroLayer);
-                if (obstaclesLayer != -1)
-                {
-                    hitLayerMask |= (1 << obstaclesLayer);
-                    obstacleLayerMask |= (1 << obstaclesLayer);
-                }
-                if (hitLayerMask == 0)
-                {
-                    // Fallback если слои не настроены
-                    hitLayerMask = ~0;
-                }
+                obstacleLayerMask = obstaclesLayer != -1 ? (1 << obstaclesLayer) : 0;
             }
         }
 
-        public void Initialize(int damage, float speed, Vector3 shootDirection, 
-            IObjectPool<EnemyProjectile> projectilePool)
+        public void Initialize(
+            int damage,
+            float speed,
+            Vector3 shootDirection,
+            IObjectPool<EnemyProjectile> projectilePool,
+            Transform targetHero = null,
+            IDamageable targetHeroDamageable = null)
         {
             EnsureLayerMasks();
             this.damage = damage;
             this.speed = speed;
             this.pool = projectilePool;
+            this.heroTarget = targetHero;
+            this.heroDamageable = targetHeroDamageable != null
+                ? targetHeroDamageable
+                : (targetHero != null ? targetHero.GetComponent<IDamageable>() : null);
             this.isReturned = false;
             this.spawnTime = Time.time;
 
@@ -63,29 +62,21 @@ namespace ProjectB.Combat
             transform.rotation = Quaternion.LookRotation(this.direction);
         }
 
-        public void Initialize(int damage, float speed, Transform target, 
-            IObjectPool<EnemyProjectile> projectilePool)
+        public void Initialize(int damage, float speed, Transform target, IObjectPool<EnemyProjectile> projectilePool)
         {
             Vector3 dir = transform.forward;
             if (target != null)
             {
                 dir = target.position - transform.position;
                 dir.y = 0f;
-                if (dir.sqrMagnitude < 0.001f)
-                {
-                    dir = transform.forward;
-                }
-                else
-                {
-                    dir.Normalize();
-                }
+                dir = dir.sqrMagnitude < 0.001f ? transform.forward : dir.normalized;
             }
-            Initialize(damage, speed, dir, projectilePool);
+            Initialize(damage, speed, dir, projectilePool, target, null);
         }
 
         private void Update()
         {
-            if (isReturned) return;
+            if (isReturned || Time.deltaTime <= 0f) return;
 
             if (Time.time > spawnTime + MAX_LIFETIME)
             {
@@ -93,68 +84,50 @@ namespace ProjectB.Combat
                 return;
             }
 
+            Vector3 currentPos = transform.position;
             float step = speed * Time.deltaTime;
 
-            // 1. Проверяем попадание на текущей позиции
-            int hits = Physics.OverlapSphereNonAlloc(transform.position, PROJECTILE_RADIUS, overlapBuffer, hitLayerMask, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < hits; i++)
+            // 1. Проверка попадания по герою по отрезку движения в XZ (0 вызовов PhysX)
+            if (heroTarget != null && heroDamageable != null && !heroDamageable.IsDead)
             {
-                Collider col = overlapBuffer[i];
-                if (col != null)
+                if (IntersectsHeroSegmentXZ(currentPos, direction, step, heroTarget.position))
                 {
-                    if (TryDamage(col))
-                    {
-                        ReturnToPool();
-                        return;
-                    }
-                    else if (IsObstacle(col))
-                    {
-                        ReturnToPool();
-                        return;
-                    }
+                    heroDamageable.TakeDamage(damage);
+                    ReturnToPool();
+                    return;
                 }
             }
 
-            // 2. Проверяем траекторию движения за этот кадр (SphereCast)
-            if (Physics.SphereCast(transform.position, PROJECTILE_RADIUS, direction, out RaycastHit hitInfo, step, hitLayerMask, QueryTriggerInteraction.Ignore))
+            // 2. Проверка столкновения только со стенами/препятствиями
+            if (obstacleLayerMask != 0 &&
+                Physics.SphereCast(currentPos, PROJECTILE_RADIUS, direction, out RaycastHit hitInfo, step, obstacleLayerMask, QueryTriggerInteraction.Ignore))
             {
-                transform.position += direction * hitInfo.distance;
-                if (hitInfo.collider != null)
-                {
-                    TryDamage(hitInfo.collider);
-                }
+                transform.position = currentPos + direction * hitInfo.distance;
                 ReturnToPool();
                 return;
             }
 
-            // 3. Прямолинейный полет в заданном направлении (снаряд НЕ наводится за игроком)
-            transform.position += direction * step;
+            // 3. Прямолинейный полет
+            transform.position = currentPos + direction * step;
         }
 
-        private bool TryDamage(Collider col)
+        private static bool IntersectsHeroSegmentXZ(Vector3 start, Vector3 dir, float length, Vector3 heroPos)
         {
-            // Не наносим урон другим врагам
-            if (col.GetComponentInParent<EnemyBase>() != null)
-            {
-                return false;
-            }
+            float dx = dir.x * length;
+            float dz = dir.z * length;
+            float toHeroX = heroPos.x - start.x;
+            float toHeroZ = heroPos.z - start.z;
 
-            var damageable = col.GetComponentInParent<IDamageable>();
-            if (damageable != null && !damageable.IsDead)
-            {
-                damageable.TakeDamage(damage);
-                return true;
-            }
-            return false;
-        }
+            float segLenSq = dx * dx + dz * dz;
+            float t = segLenSq > 0.00001f
+                ? Mathf.Clamp01((toHeroX * dx + toHeroZ * dz) / segLenSq)
+                : 0f;
 
-        private bool IsObstacle(Collider col)
-        {
-            if (obstacleLayerMask != 0)
-            {
-                return ((1 << col.gameObject.layer) & obstacleLayerMask) != 0;
-            }
-            return false;
+            float closestX = start.x + dx * t;
+            float closestZ = start.z + dz * t;
+            float distX = heroPos.x - closestX;
+            float distZ = heroPos.z - closestZ;
+            return (distX * distX + distZ * distZ) <= HERO_HIT_RADIUS_SQ;
         }
 
         private void ReturnToPool()

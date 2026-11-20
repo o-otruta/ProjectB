@@ -60,10 +60,25 @@ namespace ProjectB.LevelUp
             OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
         }
 
+        private const float MAGNET_SCAN_INTERVAL = 0.08f;
+
         private Collider[] magnetResults = new Collider[64];
+        private float nextMagnetScanTime;
+        private ProjectB.Player.HeroHealth heroHealth;
+
+        private void Awake()
+        {
+            heroHealth = GetComponent<ProjectB.Player.HeroHealth>();
+        }
 
         private void Update()
         {
+            if (Time.deltaTime <= 0f) return;
+            if (heroHealth != null && heroHealth.IsDead) return;
+            if (Time.time < nextMagnetScanTime) return;
+
+            nextMagnetScanTime = Time.time + MAGNET_SCAN_INTERVAL;
+
             int count = Physics.OverlapSphereNonAlloc(transform.position, MagnetRadius, magnetResults, pickupLayer);
             for (int i = 0; i < count; i++)
             {

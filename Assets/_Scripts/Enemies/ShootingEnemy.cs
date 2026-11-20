@@ -10,9 +10,13 @@ namespace ProjectB.Enemies
     public class ShootingEnemy : EnemyBase
     {
         private ShootingEnemyData shootingData;
-        private IObjectPool<EnemyProjectile> projectilePool;
-        private Transform projectileContainer;
+        private EnemyProjectilePool sharedProjectilePool;
         private float nextFireTime;
+
+        public void SetProjectilePool(EnemyProjectilePool pool)
+        {
+            sharedProjectilePool = pool;
+        }
 
         public override void Initialize(EnemyData data, Transform heroTarget,
             IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f)
@@ -21,57 +25,6 @@ namespace ProjectB.Enemies
             
             shootingData = data as ShootingEnemyData;
             nextFireTime = Time.time + Random.Range(0f, 1f); // Рассинхронизация
-            Debug.Log($"[ShootingEnemy] Initialized. Data is ShootingEnemyData: {shootingData != null}. WeaponData assigned: {shootingData?.weaponData != null}. nextFireTime: {nextFireTime}");
-
-            if (projectilePool == null && shootingData != null && shootingData.weaponData != null)
-            {
-                Debug.Log($"[ShootingEnemy] Creating projectile pool.");
-                InitializeProjectilePool();
-            }
-        }
-
-        private void InitializeProjectilePool()
-        {
-            if (projectileContainer == null)
-            {
-                projectileContainer = new GameObject($"EnemyProjectiles_{gameObject.GetEntityId()}").transform;
-            }
-
-            projectilePool = new ObjectPool<EnemyProjectile>(
-                createFunc: () =>
-                {
-                    GameObject go;
-                    if (shootingData.weaponData.projectilePrefab != null)
-                    {
-                        go = Instantiate(shootingData.weaponData.projectilePrefab, projectileContainer);
-                        Debug.Log($"[ShootingEnemy] Created projectile from prefab: {go.name}");
-                    }
-                    else
-                    {
-                        // Fallback: маленькая сфера
-                        go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                        go.transform.SetParent(projectileContainer);
-                        go.transform.localScale = Vector3.one * 0.25f;
-
-                        // Disable and destroy collider immediately to prevent physics explosions!
-                        Collider col = go.GetComponent<Collider>();
-                        if (col != null)
-                        {
-                            col.enabled = false;
-                            Destroy(col);
-                        }
-                    }
-                    var proj = go.GetComponent<EnemyProjectile>();
-                    if (proj == null) proj = go.AddComponent<EnemyProjectile>();
-                    return proj;
-                },
-                actionOnGet: p => p.gameObject.SetActive(true),
-                actionOnRelease: p => p.gameObject.SetActive(false),
-                actionOnDestroy: p => Destroy(p.gameObject),
-                collectionCheck: false,
-                defaultCapacity: 5,
-                maxSize: 20
-            );
         }
 
         protected override void UpdateMovement()
@@ -114,7 +67,6 @@ namespace ProjectB.Enemies
             {
                 if (Time.time >= nextFireTime)
                 {
-                    Debug.Log($"[ShootingEnemy] Firing! distSqr: {distSqr}, rangeSqr: {range*range}, Time: {Time.time}");
                     Fire();
                     nextFireTime = Time.time + shootingData.weaponData.attackCooldown;
                 }
@@ -123,16 +75,8 @@ namespace ProjectB.Enemies
 
         private void Fire()
         {
-            if (projectilePool == null || target == null) 
+            if (sharedProjectilePool == null || target == null || shootingData == null || shootingData.weaponData == null)
             {
-                Debug.LogError($"[ShootingEnemy] Fire failed! projectilePool null: {projectilePool == null}, target null: {target == null}");
-                return;
-            }
-
-            var proj = projectilePool.Get();
-            if (proj == null) 
-            {
-                Debug.LogError($"[ShootingEnemy] Fire failed! Projectile from pool is null.");
                 return;
             }
 
@@ -150,15 +94,19 @@ namespace ProjectB.Enemies
 
             // Спавним на высоте цели (Y игрока), чуть впереди моба
             float shootHeight = target.position.y;
-            proj.transform.position = new Vector3(transform.position.x, shootHeight, transform.position.z) + shootDirection * 0.5f;
-            
+            Vector3 spawnPos = new Vector3(transform.position.x, shootHeight, transform.position.z) + shootDirection * 0.5f;
+
             int finalDamage = Mathf.RoundToInt(
-                shootingData.weaponData.damage * 
-                (1f + (currentDamage - shootingData.contactDamage) * 0.1f)); 
-            
-            Debug.Log($"[ShootingEnemy] Projectile initialized. Damage: {finalDamage}, Speed: {shootingData.weaponData.projectileSpeed}");
-            proj.Initialize(finalDamage, shootingData.weaponData.projectileSpeed, 
-                shootDirection, projectilePool);
+                shootingData.weaponData.damage *
+                (1f + (currentDamage - shootingData.contactDamage) * 0.1f));
+
+            sharedProjectilePool.Spawn(
+                shootingData.weaponData,
+                spawnPos,
+                shootDirection,
+                finalDamage,
+                target,
+                targetDamageable);
         }
     }
 }
