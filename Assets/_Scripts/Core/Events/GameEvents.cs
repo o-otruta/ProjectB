@@ -12,12 +12,77 @@ namespace ProjectB.Core.Events
         public Vector3 Position;
         public EnemyData EnemyData;
         public bool WasElite;
+        public bool WasMiniBoss;
+        public bool WasBoss;
+        public string BossId;
 
-        public EnemyDiedEvent(Vector3 position, EnemyData enemyData, bool wasElite)
+        public EnemyDiedEvent(
+            Vector3 position,
+            EnemyData enemyData,
+            bool wasElite,
+            bool wasMiniBoss = false,
+            bool wasBoss = false,
+            string bossId = null)
         {
             Position = position;
             EnemyData = enemyData;
             WasElite = wasElite;
+            WasMiniBoss = wasMiniBoss;
+            WasBoss = wasBoss;
+            BossId = bossId;
+        }
+    }
+
+    /// <summary>
+    /// Появился босс или мини-босс.
+    /// </summary>
+    public struct BossSpawnedEvent
+    {
+        public string BossId;
+        public string DisplayName;
+        public int CurrentHp;
+        public int MaxHp;
+        public bool IsMiniBoss;
+
+        public BossSpawnedEvent(string bossId, string displayName, int currentHp, int maxHp, bool isMiniBoss)
+        {
+            BossId = bossId;
+            DisplayName = displayName;
+            CurrentHp = currentHp;
+            MaxHp = maxHp;
+            IsMiniBoss = isMiniBoss;
+        }
+    }
+
+    /// <summary>
+    /// Изменилось здоровье активного босса или мини-босса.
+    /// </summary>
+    public struct BossHealthChangedEvent
+    {
+        public string BossId;
+        public int CurrentHp;
+        public int MaxHp;
+
+        public BossHealthChangedEvent(string bossId, int currentHp, int maxHp)
+        {
+            BossId = bossId;
+            CurrentHp = currentHp;
+            MaxHp = maxHp;
+        }
+    }
+
+    /// <summary>
+    /// Босс или мини-босс побеждён.
+    /// </summary>
+    public struct BossDefeatedEvent
+    {
+        public string BossId;
+        public bool IsMiniBoss;
+
+        public BossDefeatedEvent(string bossId, bool isMiniBoss)
+        {
+            BossId = bossId;
+            IsMiniBoss = isMiniBoss;
         }
     }
 

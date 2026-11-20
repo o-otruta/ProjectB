@@ -102,6 +102,12 @@ namespace ProjectB.Player
             }
         }
 
+        public void ResetCooldown()
+        {
+            cooldownRemaining = 0f;
+            OnStateChanged?.Invoke();
+        }
+
         public bool TryActivate()
         {
             if (!IsReady) return false;

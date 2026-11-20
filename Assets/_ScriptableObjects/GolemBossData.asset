@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24fed005e429ecc4bab7093f9b59a455, type: 3}
+  m_Name: GolemBossData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.BossData
+  hp: 600
+  speed: 2
+  contactDamage: 20
+  damageCooldown: 1
+  contactRadius: 1.65
+  xpDrop: 5
+  coinDropChance: 1
+  coinDrop: 3
+  modelPrefab: {fileID: 3563887962342572629, guid: 7fd9d0f519ea6cf4f9341b65aac6b070, type: 3}
+  bossId: golem
+  bossDisplayName: Stone Golem
+  isMiniBoss: 0
+  pullResistance: 0.1
+  minionData: {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
+  summonCount: 3
+  summonCooldown: 10
+  slamCooldown: 5.5
+  slamTriggerRange: 6.5
+  slamRadius: 4.5
+  slamTelegraphDuration: 1.1
+  slamDamage: 30
+  stopDistance: 9
+  teleportCooldown: 7
+  teleportMinDistance: 7
+  teleportMaxDistance: 12
+  volleyWeaponData: {fileID: 0}
+  volleyProjectileCount: 5
+  volleySpreadAngle: 55
+  volleyCooldown: 3.2

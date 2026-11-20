@@ -25,6 +25,18 @@ MonoBehaviour:
   maxEliteChance: 0.25
   eliteHpMultiplier: 3
   eliteDamageMultiplier: 2
+  miniBossInterval: 5
+  miniBossHpMultiplier: 5
+  miniBossDamageMultiplier: 2
+  miniBossScale: 1.85
+  miniBossXpBurstCount: 5
+  miniBossCoinBurstCount: 5
+  bossInterval: 25
+  bosses:
+  - {fileID: 11400000, guid: d067f4be42e88eb498506c34a5f9f245, type: 2}
+  - {fileID: 11400000, guid: e6e81c5c32537c0498d2e2732a59b77a, type: 2}
+  bossXpBurstCount: 12
+  bossCoinBurstCount: 15
   maxWaveDuration: 30
   leashDistance: 35
   leashCheckInterval: 2

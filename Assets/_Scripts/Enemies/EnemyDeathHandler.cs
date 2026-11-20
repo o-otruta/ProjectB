@@ -16,6 +16,7 @@ namespace ProjectB.Enemies
         private readonly RunStatistics _runStatistics;
         private readonly AchievementManager _achievementManager;
         private readonly GameEventBus _eventBus;
+        private readonly WaveManager _waveManager;
 
         [Inject]
         public EnemyDeathHandler(
@@ -23,13 +24,15 @@ namespace ProjectB.Enemies
             CoinManager coinManager,
             RunStatistics runStatistics,
             AchievementManager achievementManager,
-            GameEventBus eventBus)
+            GameEventBus eventBus,
+            WaveManager waveManager = null)
         {
             _xpManager = xpManager;
             _coinManager = coinManager;
             _runStatistics = runStatistics;
             _achievementManager = achievementManager;
             _eventBus = eventBus;
+            _waveManager = waveManager;
         }
 
         public void Start()
@@ -44,19 +47,34 @@ namespace ProjectB.Enemies
 
         private void OnEnemyDied(EnemyDiedEvent evt)
         {
-            Vector2 rand = UnityEngine.Random.insideUnitCircle * 0.5f;
-            Vector3 dropPos = evt.Position + new Vector3(rand.x, 0f, rand.y);
-
             if (evt.EnemyData != null)
             {
-                if (_xpManager != null && evt.EnemyData.xpDrop > 0)
+                if (evt.WasBoss)
                 {
-                    _xpManager.SpawnXp(dropPos, evt.EnemyData.xpDrop);
+                    int xpBursts = _waveManager?.Config != null ? _waveManager.Config.bossXpBurstCount : 12;
+                    int coinBursts = _waveManager?.Config != null ? _waveManager.Config.bossCoinBurstCount : 15;
+                    SpawnBurstDrops(evt.Position, evt.EnemyData.xpDrop, xpBursts, evt.EnemyData.coinDrop, coinBursts, 2.2f);
                 }
-
-                if (_coinManager != null && evt.EnemyData.coinDrop > 0 && UnityEngine.Random.value < evt.EnemyData.coinDropChance)
+                else if (evt.WasMiniBoss)
                 {
-                    _coinManager.SpawnCoin(dropPos, evt.EnemyData.coinDrop);
+                    int xpBursts = _waveManager?.Config != null ? _waveManager.Config.miniBossXpBurstCount : 5;
+                    int coinBursts = _waveManager?.Config != null ? _waveManager.Config.miniBossCoinBurstCount : 5;
+                    SpawnBurstDrops(evt.Position, evt.EnemyData.xpDrop, xpBursts, evt.EnemyData.coinDrop, coinBursts, 1.4f);
+                }
+                else
+                {
+                    Vector2 rand = UnityEngine.Random.insideUnitCircle * 0.5f;
+                    Vector3 dropPos = evt.Position + new Vector3(rand.x, 0f, rand.y);
+
+                    if (_xpManager != null && evt.EnemyData.xpDrop > 0)
+                    {
+                        _xpManager.SpawnXp(dropPos, evt.EnemyData.xpDrop);
+                    }
+
+                    if (_coinManager != null && evt.EnemyData.coinDrop > 0 && UnityEngine.Random.value < evt.EnemyData.coinDropChance)
+                    {
+                        _coinManager.SpawnCoin(dropPos, evt.EnemyData.coinDrop);
+                    }
                 }
             }
 
@@ -68,8 +86,32 @@ namespace ProjectB.Enemies
             if (_achievementManager != null)
             {
                 _achievementManager.OnEnemyKilled();
+                if (evt.WasBoss && !string.IsNullOrEmpty(evt.BossId))
+                {
+                    _achievementManager.OnBossDefeated(evt.BossId);
+                }
+            }
+        }
+
+        private void SpawnBurstDrops(Vector3 center, int xpAmountPerCrystal, int xpCount, int coinAmountPerDrop, int coinCount, float spreadRadius)
+        {
+            if (_xpManager != null && xpAmountPerCrystal > 0)
+            {
+                for (int i = 0; i < xpCount; i++)
+                {
+                    Vector2 rand = UnityEngine.Random.insideUnitCircle * spreadRadius;
+                    _xpManager.SpawnXp(center + new Vector3(rand.x, 0f, rand.y), xpAmountPerCrystal);
+                }
+            }
+
+            if (_coinManager != null && coinAmountPerDrop > 0)
+            {
+                for (int i = 0; i < coinCount; i++)
+                {
+                    Vector2 rand = UnityEngine.Random.insideUnitCircle * spreadRadius;
+                    _coinManager.SpawnCoin(center + new Vector3(rand.x, 0f, rand.y), coinAmountPerDrop);
+                }
             }
         }
     }
 }
-

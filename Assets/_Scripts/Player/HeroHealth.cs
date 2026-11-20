@@ -19,12 +19,14 @@ namespace ProjectB.Player
         private int currentMaxHp;
         private bool isDead;
         private bool isInvulnerable;
+        private bool isGodMode;
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
         private SelectedHeroService selectedHeroService;
 
         public bool IsDead => isDead;
-        public bool IsInvulnerable => isInvulnerable;
+        public bool IsInvulnerable => isInvulnerable || isGodMode;
+        public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
         public float Armor => runtimeStats != null ? runtimeStats.Armor : 0f;
@@ -65,9 +67,14 @@ namespace ProjectB.Player
             isInvulnerable = invulnerable;
         }
 
+        public void SetGodMode(bool enabled)
+        {
+            isGodMode = enabled;
+        }
+
         public void TakeDamage(int amount)
         {
-            if (isDead || isInvulnerable || amount <= 0) return;
+            if (isDead || isInvulnerable || isGodMode || amount <= 0) return;
 
             int finalDamage = runtimeStats != null ? runtimeStats.CalculateMitigatedDamage(amount) : amount;
             if (finalDamage <= 0) return;

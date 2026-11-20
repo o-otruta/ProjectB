@@ -45,7 +45,9 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<WaveHudUI>();
             builder.RegisterComponentInHierarchy<CoinHudUI>();
             builder.RegisterComponentInHierarchy<AbilityHudUI>();
+            builder.RegisterComponentInHierarchy<BossHealthBarUI>();
             builder.RegisterComponentInHierarchy<UltimateButtonUI>();
+            builder.RegisterComponentInHierarchy<DebugCheatMenu>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             
             // Register Player

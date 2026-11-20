@@ -14,6 +14,7 @@ namespace ProjectB.Enemies
         protected GameEventBus eventBus;
         
         protected int currentHp;
+        protected int maxHp;
         protected int currentDamage;
         protected float currentDamageMultiplier = 1f;
         private float lastDamageTime;
@@ -24,19 +25,46 @@ namespace ProjectB.Enemies
 
         private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
         private static readonly Color EliteTintColor = new Color(0.6f, 0f, 0.8f);
+        private static readonly Color MiniBossTintColor = new Color(1f, 0.42f, 0.12f);
 
         private Renderer[] enemyRenderers;
         private MaterialPropertyBlock propBlock;
+        private Vector3 baseLocalScale = Vector3.one;
+        private bool baseScaleCaptured;
         private bool isElite;
+        protected bool isMiniBoss;
+        protected string activeBossId;
 
         public bool IsDead => !isAlive;
         public EnemyData EnemyData => enemyData;
         public bool IsElite => isElite;
+        public bool IsMiniBoss => isMiniBoss;
+        public virtual bool IsBoss => false;
+        public virtual string BossId => activeBossId;
+        public int CurrentHp => currentHp;
+        public int MaxHp => maxHp;
 
         public event System.Action<EnemyBase> OnDied;
 
+        protected virtual void Awake()
+        {
+            CaptureBaseScale();
+        }
+
+        private void CaptureBaseScale()
+        {
+            if (!baseScaleCaptured)
+            {
+                baseLocalScale = transform.localScale;
+                baseScaleCaptured = true;
+            }
+        }
+
         public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f)
         {
+            CaptureBaseScale();
+            transform.localScale = baseLocalScale;
+
             OnDied = null;
             enemyData = data;
             target = heroTarget;
@@ -46,8 +74,9 @@ namespace ProjectB.Enemies
             currentDamageMultiplier = difficultyMultiplier;
             if (enemyData != null)
             {
-                currentHp = Mathf.RoundToInt(enemyData.hp * difficultyMultiplier);
-                currentDamage = Mathf.RoundToInt(enemyData.contactDamage * difficultyMultiplier);
+                maxHp = Mathf.Max(1, Mathf.RoundToInt(enemyData.hp * difficultyMultiplier));
+                currentHp = maxHp;
+                currentDamage = Mathf.Max(1, Mathf.RoundToInt(enemyData.contactDamage * difficultyMultiplier));
             }
             isAlive = true;
             lastDamageTime = 0f;
@@ -63,22 +92,46 @@ namespace ProjectB.Enemies
             }
 
             isElite = false;
+            isMiniBoss = false;
+            activeBossId = null;
             ClearTint();
         }
 
         public virtual void MakeElite(float hpMultiplier = 3f, float damageMultiplier = 2f)
         {
-            if (isElite || !isAlive) return;
+            if (isElite || isMiniBoss || IsBoss || !isAlive) return;
             isElite = true;
 
             currentDamageMultiplier *= damageMultiplier;
-            currentHp = Mathf.RoundToInt(currentHp * hpMultiplier);
-            currentDamage = Mathf.RoundToInt(currentDamage * damageMultiplier);
+            maxHp = Mathf.Max(1, Mathf.RoundToInt(maxHp * hpMultiplier));
+            currentHp = maxHp;
+            currentDamage = Mathf.Max(1, Mathf.RoundToInt(currentDamage * damageMultiplier));
 
             ApplyTint(EliteTintColor);
         }
 
-        private void ApplyTint(Color color)
+        public virtual void MakeMiniBoss(float hpMultiplier = 5f, float damageMultiplier = 2f, float scaleMultiplier = 1.85f, string displayName = null)
+        {
+            if (isMiniBoss || IsBoss || !isAlive) return;
+            CaptureBaseScale();
+            isMiniBoss = true;
+
+            currentDamageMultiplier *= damageMultiplier;
+            maxHp = Mathf.Max(1, Mathf.RoundToInt(maxHp * hpMultiplier));
+            currentHp = maxHp;
+            currentDamage = Mathf.Max(1, Mathf.RoundToInt(currentDamage * damageMultiplier));
+            transform.localScale = baseLocalScale * Mathf.Max(1f, scaleMultiplier);
+
+            activeBossId = $"miniboss_{(enemyData != null ? enemyData.name.ToLowerInvariant() : "enemy")}";
+            string label = !string.IsNullOrEmpty(displayName)
+                ? displayName
+                : $"Mini-Boss: {(enemyData != null ? enemyData.name.Replace("Data", "") : "Brute")}";
+
+            ApplyTint(MiniBossTintColor);
+            eventBus?.Publish(new BossSpawnedEvent(activeBossId, label, currentHp, maxHp, isMiniBoss: true));
+        }
+
+        protected void ApplyTint(Color color)
         {
             if (enemyRenderers == null || enemyRenderers.Length == 0) return;
             if (propBlock == null) propBlock = new MaterialPropertyBlock();
@@ -93,7 +146,7 @@ namespace ProjectB.Enemies
             }
         }
 
-        private void ClearTint()
+        protected void ClearTint()
         {
             if (enemyRenderers == null || enemyRenderers.Length == 0) return;
 
@@ -107,8 +160,8 @@ namespace ProjectB.Enemies
         }
 
         private static int cachedObstacleMask = -1;
-        private Vector3 currentMoveDir;
-        private float nextCheckTime;
+        protected Vector3 currentMoveDir;
+        protected float nextCheckTime;
 
         private static int ObstacleMask
         {
@@ -143,7 +196,7 @@ namespace ProjectB.Enemies
             }
         }
 
-        private bool IsTargetDead()
+        protected bool IsTargetDead()
         {
             return (targetDamageable != null && targetDamageable.IsDead);
         }
@@ -217,11 +270,16 @@ namespace ProjectB.Enemies
             }
         }
 
-        public void TakeDamage(int amount)
+        public virtual void TakeDamage(int amount)
         {
-            if (!isAlive) return;
+            if (!isAlive || amount <= 0) return;
             
-            currentHp -= amount;
+            currentHp = Mathf.Max(0, currentHp - amount);
+
+            if (isMiniBoss || IsBoss)
+            {
+                eventBus?.Publish(new BossHealthChangedEvent(BossId, currentHp, maxHp));
+            }
             
             if (currentHp <= 0)
             {
@@ -234,7 +292,18 @@ namespace ProjectB.Enemies
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;
 
-            eventBus?.Publish(new EnemyDiedEvent(transform.position, enemyData, isElite));
+            if (isMiniBoss || IsBoss)
+            {
+                eventBus?.Publish(new BossDefeatedEvent(BossId, isMiniBoss));
+            }
+
+            eventBus?.Publish(new EnemyDiedEvent(
+                transform.position,
+                enemyData,
+                isElite,
+                wasMiniBoss: isMiniBoss,
+                wasBoss: IsBoss,
+                bossId: BossId));
 
             OnDied?.Invoke(this);
             ReturnToPool();
@@ -279,7 +348,7 @@ namespace ProjectB.Enemies
             }
         }
 
-        public void ApplyPull(Vector3 pullDelta)
+        public virtual void ApplyPull(Vector3 pullDelta)
         {
             if (!isAlive) return;
             transform.position += pullDelta;

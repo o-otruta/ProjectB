@@ -146,6 +146,12 @@ namespace ProjectB.LevelUp
             OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
         }
 
+        public void ForceLevelUp()
+        {
+            LevelUp();
+            OnXPChanged?.Invoke(CurrentXP, XPToNextLevel);
+        }
+
         private void LevelUp()
         {
             CurrentLevel++;

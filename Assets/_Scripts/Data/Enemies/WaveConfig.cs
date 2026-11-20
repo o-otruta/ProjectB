@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProjectB.Data.Enemies
@@ -44,6 +45,38 @@ namespace ProjectB.Data.Enemies
 
         [Tooltip("Множитель урона для элитных врагов")]
         public float eliteDamageMultiplier = 2f;
+
+        [Header("Mini-Bosses (Every N Waves)")]
+        [Tooltip("Интервал волн для появления мини-босса (каждые 5 волн, кроме босс-волн)")]
+        public int miniBossInterval = 5;
+
+        [Tooltip("Множитель HP мини-босса относительно обычного врага")]
+        public float miniBossHpMultiplier = 5f;
+
+        [Tooltip("Множитель урона мини-босса")]
+        public float miniBossDamageMultiplier = 2f;
+
+        [Tooltip("Масштаб модели мини-босса")]
+        public float miniBossScale = 1.85f;
+
+        [Tooltip("Количество XP-кристаллов, выпадающих с мини-босса")]
+        public int miniBossXpBurstCount = 5;
+
+        [Tooltip("Количество монет, выпадающих с мини-босса")]
+        public int miniBossCoinBurstCount = 5;
+
+        [Header("Bosses (Every N Waves)")]
+        [Tooltip("Интервал волн для появления главного босса (каждые 25 волн)")]
+        public int bossInterval = 25;
+
+        [Tooltip("Список боссов, чередующихся каждые bossInterval волн (25 = [0], 50 = [1], ...)")]
+        public List<BossData> bosses = new List<BossData>();
+
+        [Tooltip("Количество XP-кристаллов, выпадающих с босса")]
+        public int bossXpBurstCount = 12;
+
+        [Tooltip("Количество монет, выпадающих с босса")]
+        public int bossCoinBurstCount = 15;
 
         [Header("Safety & Wave Flow")]
         [Tooltip("Максимальная длительность волны в секундах. По истечении времени начинается следующая волна; оставшиеся враги не удаляются, а продолжают бой")]
