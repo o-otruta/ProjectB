@@ -36,7 +36,7 @@ namespace ProjectB.Abilities
             currentPierces = 0;
             damagedEnemies.Clear();
             
-            transform.localScale = new Vector3(1.5f, 0.2f, 1.5f);
+            transform.localScale = Vector3.one;
         }
 
         protected override void Update()

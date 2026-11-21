@@ -207,7 +207,7 @@ namespace ProjectB.UI
 
         private void UpdatePreviewModel(HeroData hero)
         {
-            if (heroPreviewVisualRoot == null || hero.visualModelPrefab == null) return;
+            if (heroPreviewVisualRoot == null || hero == null) return;
 
             if (spawnedPreviewModel != null)
             {
@@ -215,14 +215,25 @@ namespace ProjectB.UI
                 spawnedPreviewModel = null;
             }
 
-            for (int i = 0; i < heroPreviewVisualRoot.childCount; i++)
+            if (hero.visualModelPrefab != null)
             {
-                heroPreviewVisualRoot.GetChild(i).gameObject.SetActive(false);
-            }
+                for (int i = 0; i < heroPreviewVisualRoot.childCount; i++)
+                {
+                    heroPreviewVisualRoot.GetChild(i).gameObject.SetActive(false);
+                }
 
-            spawnedPreviewModel = Instantiate(hero.visualModelPrefab, heroPreviewVisualRoot);
-            spawnedPreviewModel.transform.localPosition = Vector3.zero;
-            spawnedPreviewModel.transform.localRotation = Quaternion.identity;
+                spawnedPreviewModel = Instantiate(hero.visualModelPrefab, heroPreviewVisualRoot);
+                spawnedPreviewModel.transform.localPosition = Vector3.zero;
+                spawnedPreviewModel.transform.localRotation = Quaternion.identity;
+                spawnedPreviewModel.transform.localScale = Vector3.one;
+            }
+            else
+            {
+                for (int i = 0; i < heroPreviewVisualRoot.childCount; i++)
+                {
+                    heroPreviewVisualRoot.GetChild(i).gameObject.SetActive(true);
+                }
+            }
         }
 
         private string FindHeroUnlockRequirement(string heroId)

@@ -79,7 +79,7 @@ namespace ProjectB.LevelUp
             XpCrystal crystal = xpPool.Get();
             
             // Немного приподнимаем кристалл над землей
-            position.y = 0.5f;
+            position.y = 0.25f;
             crystal.transform.position = position;
             
             crystal.Initialize(heroTarget, amount, xpPool, heroExperience);

@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroCatalog
   heroes:
   - {fileID: 11400000, guid: 16d952ca2481f154ab1f0c676e8a63b7, type: 2}
+  - {fileID: 11400000, guid: c72beb00c3034494098a78e47a389da0, type: 2}

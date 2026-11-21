@@ -21,7 +21,7 @@ MonoBehaviour:
   rotationSpeed: 15
   maxHp: 100
   startingWeapon: {fileID: 11400000, guid: 4fa926e9f08c2bc41bdbfa644351c788, type: 2}
-  visualModelPrefab: {fileID: 0}
+  visualModelPrefab: {fileID: 4150742080916917785, guid: b206ccd16729d8048aa745a20e254c37, type: 3}
   passiveType: 1
   passiveValue: 100
   passiveName: Iron Will

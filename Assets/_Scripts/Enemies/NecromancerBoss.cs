@@ -3,6 +3,7 @@ using UnityEngine.Pool;
 using ProjectB.Combat;
 using ProjectB.Core.Events;
 using ProjectB.Data.Enemies;
+using ProjectB.Visuals;
 
 namespace ProjectB.Enemies
 {
@@ -11,8 +12,16 @@ namespace ProjectB.Enemies
     /// </summary>
     public class NecromancerBoss : BossBase
     {
+        [Header("Voxel Visuals")]
+        [SerializeField] private VoxelMeshAnimator meshAnimator;
+        [SerializeField] private MeshFilter bodyMeshFilter;
+        [SerializeField] private Mesh castMesh;
+        [SerializeField] private float castPoseDuration = 0.35f;
+
         private float nextVolleyTime;
         private float nextTeleportTime;
+        private float castPoseEndTime;
+        private bool isMoving;
 
         public override void InitializeBoss(
             BossData data,
@@ -26,14 +35,44 @@ namespace ProjectB.Enemies
         {
             base.InitializeBoss(data, heroTarget, enemyPool, bus, projectilePool, onSummonMinion, safePositionProvider, difficultyMultiplier);
 
+            if (meshAnimator == null)
+            {
+                meshAnimator = GetComponentInChildren<VoxelMeshAnimator>();
+            }
+            if (bodyMeshFilter == null)
+            {
+                bodyMeshFilter = meshAnimator != null && meshAnimator.TargetMeshFilter != null
+                    ? meshAnimator.TargetMeshFilter
+                    : GetComponentInChildren<MeshFilter>();
+            }
+
+            castPoseEndTime = 0f;
+            isMoving = false;
+            meshAnimator?.Stop();
+
             nextVolleyTime = Time.time + (data != null ? data.volleyCooldown * 0.5f : 1.5f);
             nextTeleportTime = Time.time + (data != null ? data.teleportCooldown : 7f);
+        }
+
+        protected override void Update()
+        {
+            if (!isAlive || target == null || enemyData == null) return;
+            isMoving = false;
+            base.Update();
+
+            if (IsTargetDead())
+            {
+                isMoving = false;
+            }
+
+            UpdateAnimationState();
         }
 
         protected override void UpdateMovement()
         {
             if (bossData == null)
             {
+                isMoving = true;
                 base.UpdateMovement();
                 return;
             }
@@ -44,11 +83,16 @@ namespace ProjectB.Enemies
 
             if (direction.sqrMagnitude > stopDist * stopDist)
             {
+                isMoving = true;
                 base.UpdateMovement();
             }
-            else if (direction.sqrMagnitude > 0.01f)
+            else
             {
-                transform.rotation = Quaternion.LookRotation(direction.normalized);
+                isMoving = false;
+                if (direction.sqrMagnitude > 0.01f)
+                {
+                    transform.rotation = Quaternion.LookRotation(direction.normalized);
+                }
             }
         }
 
@@ -89,6 +133,7 @@ namespace ProjectB.Enemies
             }
 
             Teleport(dest);
+            TriggerCastPose();
         }
 
         private void FireVolley()
@@ -128,6 +173,66 @@ namespace ProjectB.Enemies
                     target,
                     targetDamageable);
             }
+
+            TriggerCastPose();
+        }
+
+        private void TriggerCastPose()
+        {
+            castPoseEndTime = Time.time + castPoseDuration;
+            if (meshAnimator != null && meshAnimator.IsPlaying)
+            {
+                meshAnimator.Pause();
+            }
+            if (bodyMeshFilter != null && castMesh != null)
+            {
+                bodyMeshFilter.sharedMesh = castMesh;
+            }
+        }
+
+        private void UpdateAnimationState()
+        {
+            if (meshAnimator == null) return;
+
+            if (castPoseEndTime > 0f)
+            {
+                if (Time.time < castPoseEndTime)
+                {
+                    if (meshAnimator.IsPlaying)
+                    {
+                        meshAnimator.Pause();
+                    }
+                    if (bodyMeshFilter != null && castMesh != null && bodyMeshFilter.sharedMesh != castMesh)
+                    {
+                        bodyMeshFilter.sharedMesh = castMesh;
+                    }
+                    return;
+                }
+
+                castPoseEndTime = 0f;
+                if (!isMoving)
+                {
+                    meshAnimator.Stop();
+                    return;
+                }
+            }
+
+            if (isMoving)
+            {
+                meshAnimator.Play();
+            }
+            else if (meshAnimator.IsPlaying || (meshAnimator.IdleMesh != null && bodyMeshFilter != null && bodyMeshFilter.sharedMesh != meshAnimator.IdleMesh))
+            {
+                meshAnimator.Stop();
+            }
+        }
+
+        protected override void Die()
+        {
+            castPoseEndTime = 0f;
+            isMoving = false;
+            meshAnimator?.Stop();
+            base.Die();
         }
     }
 }

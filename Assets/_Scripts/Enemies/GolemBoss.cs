@@ -13,10 +13,26 @@ namespace ProjectB.Enemies
     {
         [SerializeField] private Transform slamTelegraphVisual;
 
+        [Header("Voxel Visuals")]
+        [SerializeField] private MeshFilter bodyMeshFilter;
+        [SerializeField] private Mesh idleMesh;
+        [SerializeField] private Mesh slamWindupMesh;
+        [SerializeField] private Mesh slamImpactMesh;
+        [SerializeField] private float slamImpactDuration = 0.3f;
+
         private bool isTelegraphingSlam;
         private float slamExecuteTime;
         private float slamStartTime;
         private float nextSlamTime;
+        private float slamImpactResetTime;
+
+        private void SetBodyMesh(Mesh mesh)
+        {
+            if (bodyMeshFilter != null && mesh != null)
+            {
+                bodyMeshFilter.sharedMesh = mesh;
+            }
+        }
 
         public override void InitializeBoss(
             BossData data,
@@ -31,7 +47,9 @@ namespace ProjectB.Enemies
             base.InitializeBoss(data, heroTarget, enemyPool, bus, projectilePool, onSummonMinion, safePositionProvider, difficultyMultiplier);
 
             isTelegraphingSlam = false;
+            slamImpactResetTime = 0f;
             nextSlamTime = Time.time + (data != null ? data.slamCooldown * 0.5f : 3f);
+            SetBodyMesh(idleMesh);
 
             if (slamTelegraphVisual != null)
             {
@@ -49,6 +67,12 @@ namespace ProjectB.Enemies
         protected override void UpdateAttack()
         {
             base.UpdateAttack();
+
+            if (!isTelegraphingSlam && slamImpactResetTime > 0f && Time.time >= slamImpactResetTime)
+            {
+                slamImpactResetTime = 0f;
+                SetBodyMesh(idleMesh);
+            }
 
             if (bossData == null || target == null) return;
 
@@ -73,8 +97,10 @@ namespace ProjectB.Enemies
         private void BeginSlamTelegraph()
         {
             isTelegraphingSlam = true;
+            slamImpactResetTime = 0f;
             slamStartTime = Time.time;
             slamExecuteTime = Time.time + Mathf.Max(0.25f, bossData.slamTelegraphDuration);
+            SetBodyMesh(slamWindupMesh);
 
             if (slamTelegraphVisual != null)
             {
@@ -110,6 +136,8 @@ namespace ProjectB.Enemies
         {
             isTelegraphingSlam = false;
             nextSlamTime = Time.time + Mathf.Max(1.5f, bossData.slamCooldown);
+            SetBodyMesh(slamImpactMesh);
+            slamImpactResetTime = Time.time + slamImpactDuration;
 
             if (slamTelegraphVisual != null)
             {
@@ -132,6 +160,8 @@ namespace ProjectB.Enemies
         protected override void Die()
         {
             isTelegraphingSlam = false;
+            slamImpactResetTime = 0f;
+            SetBodyMesh(idleMesh);
             if (slamTelegraphVisual != null)
             {
                 slamTelegraphVisual.gameObject.SetActive(false);

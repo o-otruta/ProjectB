@@ -15,7 +15,13 @@ MonoBehaviour:
   ArenaSize: 500
   Seed: 0
   ObstaclePrefabs:
-  - {fileID: 1232485868324036310, guid: 82d18631c9de3ac4298030113d6f92db, type: 3}
+  - {fileID: 866483678164217022, guid: b1488fb63c32ab848b1599ecb685a1f2, type: 3}
+  - {fileID: 549104703993092672, guid: a4fb8fea6cbe8eb46a04c2ecfa53f039, type: 3}
+  - {fileID: 7942041867721286460, guid: 67814634391abe6429ee3a650122aabe, type: 3}
+  - {fileID: 6282653562000698078, guid: c218c6cfcc1e16a41b3062091db1c3fd, type: 3}
+  - {fileID: 6121849812016224462, guid: 141d28fd49b32a241943cbb687f3485a, type: 3}
+  - {fileID: 1395455251146192658, guid: 7c396e56a5a450e44aebae2e4b382f35, type: 3}
+  - {fileID: 154233769247628660, guid: 7e2a07b52bc22b849aa1473f307c8c72, type: 3}
   MinObstacles: 180
   MaxObstacles: 190
   SafeZoneRadius: 5

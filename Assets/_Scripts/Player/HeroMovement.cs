@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectB.Data;
 using ProjectB.Meta;
 using ProjectB.UI;
+using ProjectB.Visuals;
 using VContainer;
 
 namespace ProjectB.Player
@@ -12,7 +13,10 @@ namespace ProjectB.Player
         private VirtualJoystick joystick;
         
         [Tooltip("Модель персонажа (должна быть дочерним объектом), чтобы вращать только визуал, не трогая физику")]
-        [SerializeField] private Transform visualModel; 
+        [SerializeField] private Transform visualModel;
+
+        [Tooltip("Покадровый аниматор воксельной модели героя")]
+        [SerializeField] private VoxelMeshAnimator meshAnimator;
         
         private HeroHealth hp;
         private Rigidbody rb;
@@ -36,6 +40,29 @@ namespace ProjectB.Player
             rb = GetComponent<Rigidbody>();
             activeHeroData = selectedHeroService?.GetSelectedHero() ?? heroData;
             baseSpeed = activeHeroData != null ? activeHeroData.moveSpeed : 5f;
+
+            if (runtimeStats != null && activeHeroData != null && activeHeroData.visualModelPrefab != null && visualModel != null)
+            {
+                for (int i = 0; i < visualModel.childCount; i++)
+                {
+                    Transform child = visualModel.GetChild(i);
+                    if (child.name != "FirePoint")
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
+
+                GameObject modelInstance = Instantiate(activeHeroData.visualModelPrefab, visualModel);
+                modelInstance.transform.localPosition = Vector3.zero;
+                modelInstance.transform.localRotation = Quaternion.identity;
+                modelInstance.transform.localScale = Vector3.one;
+                meshAnimator = modelInstance.GetComponentInChildren<VoxelMeshAnimator>();
+            }
+
+            if (meshAnimator == null)
+            {
+                meshAnimator = GetComponentInChildren<VoxelMeshAnimator>();
+            }
 
             if (runtimeStats != null)
             {
@@ -79,16 +106,36 @@ namespace ProjectB.Player
         {
             HeroData data = activeHeroData != null ? activeHeroData : heroData;
             if (data == null || joystick == null || Time.deltaTime <= 0f) return;
-            if (hp != null && hp.IsDead) return;
+            if (hp != null && hp.IsDead)
+            {
+                if (meshAnimator != null && meshAnimator.IsPlaying)
+                {
+                    meshAnimator.Stop();
+                }
+                return;
+            }
 
             Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
+            bool isMoving = moveDir.sqrMagnitude > 0.01f;
             
             // Плавный поворот визуальной модели в сторону движения (framerate-independent)
-            if (moveDir.sqrMagnitude > 0.01f && visualModel != null)
+            if (isMoving && visualModel != null)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDir);
                 float t = 1f - Mathf.Exp(-data.rotationSpeed * Time.deltaTime);
                 visualModel.rotation = Quaternion.Slerp(visualModel.rotation, targetRotation, t);
+            }
+
+            if (meshAnimator != null)
+            {
+                if (isMoving)
+                {
+                    meshAnimator.Play();
+                }
+                else if (meshAnimator.IsPlaying)
+                {
+                    meshAnimator.Stop();
+                }
             }
         }
 

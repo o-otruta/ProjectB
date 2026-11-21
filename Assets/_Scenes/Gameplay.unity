@@ -617,7 +617,7 @@ RectTransform:
   m_GameObject: {fileID: 124835429}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 744307190}
@@ -704,7 +704,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1082,8 +1082,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2216,7 +2216,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb920a55299c5ef4ab15f82e2ba12014, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.CoinManager
-  coinPrefab: {fileID: 0}
+  coinPrefab: {fileID: 1890652934616229860, guid: 70e06d167a33860498003564519b7145, type: 3}
 --- !u!1 &622970087
 GameObject:
   m_ObjectHideFlags: 0
@@ -2848,7 +2848,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
+  m_fontSize: 32
   m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3154,7 +3154,7 @@ RectTransform:
   m_GameObject: {fileID: 877136336}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 898249467}
@@ -3241,7 +3241,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3488,8 +3488,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -3939,7 +3939,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0b25aa8c93c34243a17e238bdf5958b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.XpManager
-  xpCrystalPrefab: {fileID: 0}
+  xpCrystalPrefab: {fileID: 5822715672098073702, guid: cd3eb7faf8300f74684a612567f04873, type: 3}
 --- !u!4 &1067613431
 Transform:
   m_ObjectHideFlags: 0
@@ -6343,7 +6343,7 @@ RectTransform:
   m_GameObject: {fileID: 1885159317}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 211053919}
@@ -6430,7 +6430,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1

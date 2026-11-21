@@ -25,6 +25,15 @@ namespace ProjectB.Combat
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
             spawnTime = Time.time;
+
+            if (target != null)
+            {
+                Vector3 initDir = target.position - transform.position;
+                if (initDir.sqrMagnitude > 0.0001f)
+                {
+                    transform.rotation = Quaternion.LookRotation(initDir.normalized);
+                }
+            }
         }
 
         private void Update()
@@ -61,7 +70,12 @@ namespace ProjectB.Combat
                 return;
             }
 
-            transform.position += toTarget.normalized * distanceThisFrame;
+            Vector3 moveDir = toTarget.normalized;
+            transform.position += moveDir * distanceThisFrame;
+            if (moveDir.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation = Quaternion.LookRotation(moveDir);
+            }
         }
 
         private void HitTarget()

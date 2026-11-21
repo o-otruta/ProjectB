@@ -73,7 +73,7 @@ namespace ProjectB.LevelUp
             
             CoinPickup pickup = coinPool.Get();
             
-            position.y = 0.5f;
+            position.y = 0.25f;
             pickup.transform.position = position;
             
             pickup.Initialize(heroTarget, amount, coinPool, heroEconomy);
