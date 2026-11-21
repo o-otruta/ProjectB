@@ -21,3 +21,4 @@ MonoBehaviour:
   unlockedModifiers:
   - {fileID: 11400000, guid: 99a4d76086e8d254ca6cbbc47d690edc, type: 2}
   - {fileID: 11400000, guid: fd8b64542d1a07446ba641067e9a0571, type: 2}
+  - {fileID: 11400000, guid: 6e6d35274418abc4a80ca0c226c40d4d, type: 2}

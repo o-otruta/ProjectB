@@ -14,6 +14,9 @@ namespace ProjectB.LevelUp
     {
         [Tooltip("Количество карточек на выбор при повышении уровня")]
         public int maxCardsToOffer = 3;
+
+        [Tooltip("Количество бесплатных рероллов карточек за забег")]
+        [SerializeField] private int freeRerollsPerRun = 1;
         
         public List<CardData> cardPool; // Пул доступных карточек
         public List<SynergyData> synergies = new List<SynergyData>(); // Синергии способностей
@@ -28,6 +31,9 @@ namespace ProjectB.LevelUp
         private SaveManager saveManager;
         
         private int pendingLevelUps = 0;
+        private int freeRerollsRemaining = 0;
+
+        public int FreeRerollsRemaining => freeRerollsRemaining;
 
         [Inject]
         public void Construct(
@@ -76,6 +82,7 @@ namespace ProjectB.LevelUp
         {
             dynamicPool.Clear();
             claimedSynergyIds.Clear();
+            freeRerollsRemaining = Mathf.Max(0, freeRerollsPerRun);
             if (cardPool == null) return;
 
             for (int i = 0; i < cardPool.Count; i++)
@@ -179,7 +186,7 @@ namespace ProjectB.LevelUp
                 List<CardData> cardsToOffer = GetRandomCards(maxCardsToOffer);
                 if (cardsToOffer.Count > 0)
                 {
-                    cardUI.ShowCards(cardsToOffer, OnCardSelected);
+                    cardUI.ShowCards(cardsToOffer, OnCardSelected, HandleRerollRequested, freeRerollsRemaining);
                 }
                 else
                 {
@@ -207,13 +214,14 @@ namespace ProjectB.LevelUp
             }
         }
 
-        public List<CardData> GetRandomCards(int count)
+        private List<CardData> BuildValidPool()
         {
             List<CardData> validPool = new List<CardData>();
             bool canAddActive = heroAbilities == null || heroAbilities.CanAddActive();
             bool canAddPassive = heroAbilities == null || heroAbilities.CanAddPassive();
 
-            // Filter out invalid, locked, already acquired, or slot-capped abilities and orphan modifiers
+            // Filter out invalid, locked, already acquired, or slot-capped abilities and orphan modifiers.
+            // Abilities have no maxLevel cap, so modifiers remain eligible at any level.
             if (dynamicPool != null)
             {
                 foreach (var card in dynamicPool)
@@ -260,10 +268,16 @@ namespace ProjectB.LevelUp
                 }
             }
 
-            if (validPool.Count == 0) return new List<CardData>();
+            return validPool;
+        }
+
+        public List<CardData> GetRandomCards(int count)
+        {
+            List<CardData> validPool = BuildValidPool();
+            if (validPool.Count == 0 || count <= 0) return new List<CardData>();
 
             int countToSelect = Mathf.Min(count, validPool.Count);
-            List<CardData> selectedCards = new List<CardData>();
+            List<CardData> selectedCards = new List<CardData>(countToSelect);
 
             for (int i = 0; i < countToSelect; i++)
             {
@@ -276,6 +290,52 @@ namespace ProjectB.LevelUp
             }
             
             return selectedCards;
+        }
+
+        public List<CardData> GetRerolledCards(List<CardData> previousCards, int count)
+        {
+            List<CardData> validPool = BuildValidPool();
+            if (validPool.Count == 0 || count <= 0) return new List<CardData>();
+
+            int countToSelect = Mathf.Min(count, validPool.Count);
+            List<CardData> freshPool = new List<CardData>(validPool.Count);
+            for (int i = 0; i < validPool.Count; i++)
+            {
+                var card = validPool[i];
+                if (previousCards == null || !previousCards.Contains(card))
+                {
+                    freshPool.Add(card);
+                }
+            }
+
+            List<CardData> selectedCards = new List<CardData>(countToSelect);
+            while (selectedCards.Count < countToSelect && freshPool.Count > 0)
+            {
+                CardData selectedCard = GetWeightedRandomCard(freshPool);
+                if (selectedCard == null) break;
+                selectedCards.Add(selectedCard);
+                freshPool.Remove(selectedCard);
+                validPool.Remove(selectedCard);
+            }
+
+            while (selectedCards.Count < countToSelect && validPool.Count > 0)
+            {
+                CardData selectedCard = GetWeightedRandomCard(validPool);
+                if (selectedCard == null) break;
+                selectedCards.Add(selectedCard);
+                validPool.Remove(selectedCard);
+            }
+
+            return selectedCards;
+        }
+
+        private List<CardData> HandleRerollRequested(List<CardData> currentOffered, bool usedFreeReroll)
+        {
+            if (usedFreeReroll && freeRerollsRemaining > 0)
+            {
+                freeRerollsRemaining--;
+            }
+            return GetRerolledCards(currentOffered, maxCardsToOffer);
         }
 
         private CardData GetWeightedRandomCard(List<CardData> validPool)

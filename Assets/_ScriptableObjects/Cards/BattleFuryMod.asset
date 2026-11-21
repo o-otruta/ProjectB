@@ -20,3 +20,6 @@ MonoBehaviour:
   targetAbilityId: BattleFury
   modifierType: 1
   value: 10
+  hasSecondaryModifier: 0
+  secondaryModifierType: 0
+  secondaryValue: 0

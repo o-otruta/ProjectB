@@ -88,9 +88,24 @@ namespace ProjectB.Abilities
 
         public void UpgradeAbility(string id, ModifierType type, float value)
         {
+            UpgradeAbility(id, type, value, hasSecondary: false, default, 0f);
+        }
+
+        public void UpgradeAbility(
+            string id,
+            ModifierType type,
+            float value,
+            bool hasSecondary,
+            ModifierType secondaryType,
+            float secondaryValue)
+        {
             if (HasActive(id, out ActiveAbility active))
             {
                 active.ApplyModifier(type, value);
+                if (hasSecondary)
+                {
+                    active.ApplyModifier(secondaryType, secondaryValue);
+                }
                 active.IncrementLevel();
                 achievementManager?.OnAbilityUpgraded(id, active.Level);
                 OnAbilitiesChanged();
@@ -98,6 +113,10 @@ namespace ProjectB.Abilities
             else if (HasPassive(id, out PassiveAbility passive))
             {
                 passive.ApplyModifier(type, value);
+                if (hasSecondary)
+                {
+                    passive.ApplyModifier(secondaryType, secondaryValue);
+                }
                 passive.IncrementLevel();
                 achievementManager?.OnAbilityUpgraded(id, passive.Level);
                 OnAbilitiesChanged();
@@ -110,6 +129,14 @@ namespace ProjectB.Abilities
 
         public bool CanAddActive() => activeAbilities.Count < MAX_ACTIVE_SLOTS;
         public bool CanAddPassive() => passiveAbilities.Count < MAX_PASSIVE_SLOTS;
+
+        public int GetAbilityLevel(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return 0;
+            if (HasActive(id, out ActiveAbility active)) return active.Level;
+            if (HasPassive(id, out PassiveAbility passive)) return passive.Level;
+            return 0;
+        }
 
         public bool HasAbility(string id)
         {

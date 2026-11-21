@@ -20,3 +20,5 @@ MonoBehaviour:
   abilityData: {fileID: 11400000, guid: a1f17187f4b1949458485bb6e7249ee2, type: 2}
   unlockedModifiers:
   - {fileID: 11400000, guid: 33ce533cf8035f149a422e5332b35f74, type: 2}
+  - {fileID: 11400000, guid: 7270a7f047bc281469fd2aefcd944d80, type: 2}
+  - {fileID: 11400000, guid: 037be8b64ad9a9c44b91d26817f7b2e6, type: 2}

@@ -53,6 +53,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<SecretCompassIndicatorUI>();
             builder.RegisterComponentInHierarchy<DebugCheatMenu>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
+            builder.RegisterComponentInHierarchy<PauseMenuUI>();
             
             // Register Player
             builder.RegisterComponentInHierarchy<HeroHealth>();

@@ -20,3 +20,6 @@ MonoBehaviour:
   targetAbilityId: IronSkin
   modifierType: 5
   value: 15
+  hasSecondaryModifier: 0
+  secondaryModifierType: 0
+  secondaryValue: 0

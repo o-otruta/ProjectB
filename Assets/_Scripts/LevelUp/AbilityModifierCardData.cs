@@ -9,5 +9,10 @@ namespace ProjectB.LevelUp
         public string targetAbilityId;
         public ModifierType modifierType;
         public float value;
+
+        [Header("Optional Secondary Modifier")]
+        public bool hasSecondaryModifier;
+        public ModifierType secondaryModifierType;
+        public float secondaryValue;
     }
 }

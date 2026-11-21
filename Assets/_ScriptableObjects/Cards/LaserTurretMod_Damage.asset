@@ -20,3 +20,6 @@ MonoBehaviour:
   targetAbilityId: LaserTurret
   modifierType: 1
   value: 5
+  hasSecondaryModifier: 0
+  secondaryModifierType: 0
+  secondaryValue: 0

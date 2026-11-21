@@ -24,6 +24,7 @@ namespace ProjectB.Core
         public event System.Action<int, int> OnGameOver;
         public event System.Action OnHeroRevived;
         public event System.Action<int> OnCoinsDoubled;
+        public event System.Action<bool> OnPauseStateChanged;
 
         private HeroHealth heroHealth;
         private WaveManager waveManager;
@@ -67,6 +68,8 @@ namespace ProjectB.Core
 
         public GameState CurrentState => currentState;
         public bool IsGameOver => currentState == GameState.GameOver;
+        public bool IsPaused => currentState == GameState.Paused;
+        public bool CanPause => currentState == GameState.Playing;
         public bool HasRevivedThisRun => hasRevivedThisRun;
         public bool HasDoubledCoinsThisRun => hasDoubledCoinsThisRun;
         public bool CanRevive => currentState == GameState.GameOver
@@ -173,9 +176,30 @@ namespace ProjectB.Core
             eventBus?.Publish(new GameOverEvent(wave, coins));
         }
 
+        public bool PauseGame()
+        {
+            if (currentState != GameState.Playing) return false;
+
+            currentState = GameState.Paused;
+            Time.timeScale = 0f;
+            virtualJoystick?.ResetJoystick();
+            OnPauseStateChanged?.Invoke(true);
+            return true;
+        }
+
+        public bool ResumeGame()
+        {
+            if (currentState != GameState.Paused) return false;
+
+            currentState = GameState.Playing;
+            Time.timeScale = 1f;
+            OnPauseStateChanged?.Invoke(false);
+            return true;
+        }
+
         public bool PauseForLevelUp()
         {
-            if (currentState == GameState.GameOver) return false; // Prevent level up over death
+            if (currentState == GameState.GameOver || currentState == GameState.Paused) return false; // Prevent level up over death/pause
             
             currentState = GameState.LevelUp;
             Time.timeScale = 0f;

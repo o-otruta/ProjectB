@@ -258,13 +258,13 @@
 ---
 
 ### Спринт 2: Глубина прокачки, потолок уровней (`maxLevel = 5`), новые модификаторы и UX карточек (P1)
-- [ ] **2.1. Ввести `maxLevel` для способностей:**
+- [ ] **2.1. Ввести `maxLevel` для способностей:** *(пропущено по требованию пользователя — потолок уровней не добавлялся; реализован только `HeroAbilities.GetAbilityLevel(string id)` для отображения уровней на карточках)*
   - В [AbilityData.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/Data/AbilityData.cs) добавить `public int maxLevel = 5;`.
   - В [HeroAbilities.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/HeroAbilities.cs) добавить метод `int GetAbilityLevel(string id)` и `bool IsAbilityMaxed(string id)`.
   - В [UpgradeManager.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/LevelUp/UpgradeManager.cs) исключать `AbilityModifierCardData` из `validPool`, если `heroAbilities.IsAbilityMaxed(modifierCard.targetAbilityId)`.
-- [ ] **2.2. Создать недостающие карточки модификаторов (Раздел 4.2):**
+- [x] **2.2. Создать недостающие карточки модификаторов (Раздел 4.2):**
   - Сгенерировать через `AbilitiesGenerator` / Editor-скрипт 10 новых карточек модификаторов (`ShooterMod_Count`, `ShooterMod_Cooldown`, `FireballMod_Count`, `FireballMod_Area`, `BoomerangMod_Count`, `BoomerangMod_Pierce`, `IceAuraMod_Radius`, `IceAuraMod_Slow`, `BlackHoleMod_Radius`, `BlackHoleMod_Force`, `OrbitalSword_SpeedAndRadius`) и привязать их в `unlockedModifiers` соответствующих `AbilityCardData`.
-- [ ] **2.3. Полировка `CardSelectionUI`, кнопка Паузы и Реролл:**
+- [x] **2.3. Полировка `CardSelectionUI`, кнопка Паузы и Реролл:**
   - Добавить в [CardSelectionUI.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/LevelUp/CardSelectionUI.cs) плавную анимацию появления карточек (`scale bounce` на `Time.unscaledDeltaTime`) и отображение текущего уровня улучшаемой способности на карточке (`Lv 2 → Lv 3` или `NEW!`).
   - Добавить кнопку **Паузы (`||`)** в верхний угол боевого HUD (открывает окно паузы с ползунками звука, кнопками `Resume` и `Quit to Menu`).
 

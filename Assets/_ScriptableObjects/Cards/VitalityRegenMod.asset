@@ -20,3 +20,6 @@ MonoBehaviour:
   targetAbilityId: VitalityRegen
   modifierType: 6
   value: 2
+  hasSecondaryModifier: 0
+  secondaryModifierType: 0
+  secondaryValue: 0

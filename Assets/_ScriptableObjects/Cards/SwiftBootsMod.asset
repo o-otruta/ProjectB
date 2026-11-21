@@ -20,3 +20,6 @@ MonoBehaviour:
   targetAbilityId: SwiftBoots
   modifierType: 2
   value: 0.5
+  hasSecondaryModifier: 0
+  secondaryModifierType: 0
+  secondaryValue: 0

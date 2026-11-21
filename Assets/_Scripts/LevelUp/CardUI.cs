@@ -14,23 +14,38 @@ namespace ProjectB.LevelUp
         [SerializeField] private Image iconImage;
         [SerializeField] private GameObject adBadgeObject;
         [SerializeField] private TMP_Text adBadgeText;
+        [SerializeField] private GameObject levelBadgeObject;
+        [SerializeField] private TMP_Text levelBadgeText;
+        [SerializeField] private Image levelBadgeBg;
 
         private CardData currentData;
         private Action<CardData> onCardClicked;
         private bool isInteractable = true;
         private string currentAdBadgeLabel = string.Empty;
+        private string currentLevelBadgeLabel = string.Empty;
         private Button cachedButton;
         private bool buttonChecked;
 
         public bool IsInteractable => isInteractable;
         public string AdBadgeLabel => adBadgeText != null ? adBadgeText.text : currentAdBadgeLabel;
+        public string LevelBadgeLabel => levelBadgeText != null ? levelBadgeText.text : currentLevelBadgeLabel;
+        public bool IsLevelBadgeVisible => levelBadgeObject != null
+            ? levelBadgeObject.activeSelf
+            : !string.IsNullOrEmpty(currentLevelBadgeLabel);
 
-        public void Setup(CardData data, Action<CardData> clickCallback, bool requiresAd = false, bool canWatchAd = true)
+        public void Setup(
+            CardData data,
+            Action<CardData> clickCallback,
+            bool requiresAd = false,
+            bool canWatchAd = true,
+            string levelBadge = null,
+            Color? levelBadgeColor = null)
         {
             currentData = data;
             onCardClicked = clickCallback;
             isInteractable = !requiresAd || canWatchAd;
             currentAdBadgeLabel = requiresAd ? (canWatchAd ? "WATCH AD" : "AD UNAVAILABLE") : string.Empty;
+            currentLevelBadgeLabel = levelBadge ?? string.Empty;
 
             if (!buttonChecked)
             {
@@ -65,6 +80,20 @@ namespace ProjectB.LevelUp
             if (adBadgeText != null && requiresAd)
             {
                 adBadgeText.text = currentAdBadgeLabel;
+            }
+
+            bool hasLevelBadge = !string.IsNullOrEmpty(currentLevelBadgeLabel);
+            if (levelBadgeObject != null)
+            {
+                levelBadgeObject.SetActive(hasLevelBadge);
+            }
+            if (levelBadgeText != null && hasLevelBadge)
+            {
+                levelBadgeText.text = currentLevelBadgeLabel;
+            }
+            if (levelBadgeBg != null && hasLevelBadge && levelBadgeColor.HasValue)
+            {
+                levelBadgeBg.color = levelBadgeColor.Value;
             }
 
             // Настройка цвета в зависимости от редкости (и доступности рекламы)

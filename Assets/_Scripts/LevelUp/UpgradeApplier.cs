@@ -92,7 +92,13 @@ namespace ProjectB.LevelUp
         {
             if (heroAbilities != null)
             {
-                heroAbilities.UpgradeAbility(card.targetAbilityId, card.modifierType, card.value);
+                heroAbilities.UpgradeAbility(
+                    card.targetAbilityId,
+                    card.modifierType,
+                    card.value,
+                    card.hasSecondaryModifier,
+                    card.secondaryModifierType,
+                    card.secondaryValue);
             }
         }
 

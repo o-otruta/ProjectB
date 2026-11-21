@@ -8,7 +8,8 @@ namespace ProjectB.Data
         GameOverRevive = 1,
         DailyBonusDouble = 2,
         BetweenRunsInterstitial = 3,
-        LevelUpThirdCard = 4
+        LevelUpThirdCard = 4,
+        LevelUpReroll = 5
     }
 
     [CreateAssetMenu(fileName = "AdConfig", menuName = "ProjectB/Data/Ad Config")]

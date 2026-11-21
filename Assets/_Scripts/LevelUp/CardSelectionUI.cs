@@ -1,7 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using VContainer;
+using ProjectB.Abilities;
 using ProjectB.Ads;
+using ProjectB.Core;
 using ProjectB.Data;
 
 namespace ProjectB.LevelUp
@@ -12,38 +16,183 @@ namespace ProjectB.LevelUp
         [SerializeField] private CardUI[] cardSlots;
         [SerializeField] private int freeCardsCount = 2;
 
+        [Header("Reroll")]
+        [SerializeField] private Button rerollButton;
+        [SerializeField] private TMP_Text rerollButtonText;
+
+        [Header("Animation")]
+        [SerializeField] private float cardBounceDuration = 0.28f;
+        [SerializeField] private float cardStaggerDelay = 0.06f;
+        [SerializeField] private float cardOvershootScale = 1.08f;
+
         private System.Action<CardData> onCardSelectedCallback;
+        private System.Func<List<CardData>, bool, List<CardData>> onRerollCallback;
         private List<CardData> currentCards;
         private AdManager adManager;
+        private HeroAbilities heroAbilities;
+        private AudioManager audioManager;
+
+        private int freeRerollsAvailable;
+        private bool hasRerolledThisLevelUp;
+        private bool isAnimatingCards;
+        private float animationElapsed;
 
         public bool IsActive => selectionPanel != null && selectionPanel.activeSelf;
 
+        public bool CanRerollCurrentOffer =>
+            onRerollCallback != null
+            && !hasRerolledThisLevelUp
+            && (freeRerollsAvailable > 0 || (adManager != null && adManager.CanShowRewarded()));
+
+        public string RerollButtonLabel
+        {
+            get
+            {
+                if (onRerollCallback == null) return string.Empty;
+                if (hasRerolledThisLevelUp) return "REROLLED";
+                if (freeRerollsAvailable > 0) return $"REROLL (FREE x{freeRerollsAvailable})";
+                if (adManager != null && adManager.CanShowRewarded()) return "REROLL (WATCH AD)";
+                return "REROLL UNAVAILABLE";
+            }
+        }
+
         [Inject]
-        public void Construct(AdManager adManager = null)
+        public void Construct(AdManager adManager = null, HeroAbilities heroAbilities = null, AudioManager audioManager = null)
         {
             this.adManager = adManager;
+            this.heroAbilities = heroAbilities;
+            this.audioManager = audioManager;
         }
 
         private void Awake()
         {
+            if (rerollButton != null)
+            {
+                rerollButton.onClick.AddListener(OnRerollClicked);
+            }
             Hide();
         }
 
-        public void ShowCards(List<CardData> selectedCards, System.Action<CardData> onSelected)
+        private void OnDestroy()
+        {
+            if (rerollButton != null)
+            {
+                rerollButton.onClick.RemoveListener(OnRerollClicked);
+            }
+        }
+
+        private void Update()
+        {
+            if (!isAnimatingCards || !IsActive || cardSlots == null) return;
+
+            animationElapsed += Time.unscaledDeltaTime;
+            float duration = Mathf.Max(0.05f, cardBounceDuration);
+            bool allDone = true;
+
+            for (int i = 0; i < cardSlots.Length; i++)
+            {
+                var slot = cardSlots[i];
+                if (slot == null || !slot.gameObject.activeSelf) continue;
+
+                float startTime = i * Mathf.Max(0f, cardStaggerDelay);
+                float localTime = animationElapsed - startTime;
+                float t = Mathf.Clamp01(localTime / duration);
+
+                if (t < 1f)
+                {
+                    allDone = false;
+                }
+
+                float scale = EvaluateBounceScale(t, cardOvershootScale);
+                slot.transform.localScale = new Vector3(scale, scale, 1f);
+            }
+
+            if (allDone)
+            {
+                isAnimatingCards = false;
+                ResetSlotScales();
+            }
+        }
+
+        public void ShowCards(
+            List<CardData> selectedCards,
+            System.Action<CardData> onSelected,
+            System.Func<List<CardData>, bool, List<CardData>> onReroll = null,
+            int freeRerolls = 0)
         {
             onCardSelectedCallback = onSelected;
+            onRerollCallback = onReroll;
             currentCards = selectedCards;
+            freeRerollsAvailable = Mathf.Max(0, freeRerolls);
+            hasRerolledThisLevelUp = false;
 
             RefreshSlots();
+            RefreshRerollButton();
 
             if (selectionPanel != null)
                 selectionPanel.SetActive(true);
+
+            StartBounceAnimation();
         }
 
         public void Hide()
         {
+            isAnimatingCards = false;
+            ResetSlotScales();
+
             if (selectionPanel != null)
                 selectionPanel.SetActive(false);
+        }
+
+        public void TriggerReroll()
+        {
+            OnRerollClicked();
+        }
+
+        public static string FormatLevelBadge(CardData card, HeroAbilities heroAbilities, out Color badgeColor)
+        {
+            switch (card)
+            {
+                case AbilityCardData:
+                    badgeColor = new Color(0.18f, 0.72f, 0.32f, 1f);
+                    return "NEW!";
+
+                case AbilityModifierCardData modCard:
+                    badgeColor = new Color(0.16f, 0.56f, 0.88f, 1f);
+                    int cur = heroAbilities != null ? heroAbilities.GetAbilityLevel(modCard.targetAbilityId) : 0;
+                    return cur > 0 ? $"Lv {cur} -> Lv {cur + 1}" : "UPGRADE";
+
+                case SynergyCardData:
+                    badgeColor = new Color(0.92f, 0.68f, 0.12f, 1f);
+                    return "SYNERGY!";
+
+                case StatUpgradeCardData:
+                    badgeColor = new Color(0.45f, 0.35f, 0.72f, 1f);
+                    return "STAT BOOST";
+
+                default:
+                    badgeColor = Color.clear;
+                    return string.Empty;
+            }
+        }
+
+        public static float EvaluateBounceScale(float normalizedTime, float overshoot = 1.08f)
+        {
+            float t = Mathf.Clamp01(normalizedTime);
+            if (t <= 0f) return 0f;
+            if (t >= 1f) return 1f;
+
+            const float peakT = 0.72f;
+            if (t < peakT)
+            {
+                float u = t / peakT;
+                float inv = 1f - u;
+                return (1f - inv * inv * inv) * overshoot;
+            }
+
+            float settleU = (t - peakT) / (1f - peakT);
+            float smooth = settleU * settleU * (3f - 2f * settleU);
+            return Mathf.Lerp(overshoot, 1f, smooth);
         }
 
         private void RefreshSlots()
@@ -62,19 +211,122 @@ namespace ProjectB.LevelUp
                     int slotIndex = i;
                     bool requiresAd = slotIndex >= freeCardsCount;
                     CardData cardData = currentCards[slotIndex];
+                    string badgeLabel = FormatLevelBadge(cardData, heroAbilities, out Color badgeColor);
 
                     cardSlots[i].gameObject.SetActive(true);
                     cardSlots[i].Setup(
                         cardData,
                         clickedCard => OnCardClicked(slotIndex, clickedCard),
                         requiresAd,
-                        canWatchAd);
+                        canWatchAd,
+                        badgeLabel,
+                        badgeColor);
                 }
                 else
                 {
                     cardSlots[i].gameObject.SetActive(false);
                 }
             }
+        }
+
+        private void RefreshRerollButton()
+        {
+            bool showButton = onRerollCallback != null;
+            if (rerollButton != null)
+            {
+                rerollButton.gameObject.SetActive(showButton);
+                if (showButton)
+                {
+                    rerollButton.interactable = CanRerollCurrentOffer;
+                }
+            }
+
+            if (rerollButtonText != null && showButton)
+            {
+                rerollButtonText.text = RerollButtonLabel;
+            }
+        }
+
+        private void StartBounceAnimation()
+        {
+            if (cardSlots == null)
+            {
+                isAnimatingCards = false;
+                return;
+            }
+
+            if (!Application.isPlaying)
+            {
+                isAnimatingCards = false;
+                ResetSlotScales();
+                return;
+            }
+
+            isAnimatingCards = true;
+            animationElapsed = 0f;
+            for (int i = 0; i < cardSlots.Length; i++)
+            {
+                if (cardSlots[i] != null && cardSlots[i].gameObject.activeSelf)
+                {
+                    cardSlots[i].transform.localScale = Vector3.zero;
+                }
+            }
+        }
+
+        private void ResetSlotScales()
+        {
+            if (cardSlots == null) return;
+            for (int i = 0; i < cardSlots.Length; i++)
+            {
+                if (cardSlots[i] != null)
+                {
+                    cardSlots[i].transform.localScale = Vector3.one;
+                }
+            }
+        }
+
+        private void OnRerollClicked()
+        {
+            if (onRerollCallback == null || hasRerolledThisLevelUp) return;
+
+            if (freeRerollsAvailable > 0)
+            {
+                audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+                ExecuteReroll(usedFreeReroll: true);
+                return;
+            }
+
+            if (adManager != null && adManager.CanShowRewarded())
+            {
+                audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+                adManager.ShowRewarded(
+                    AdPlacement.LevelUpReroll,
+                    onRewardGranted: () => ExecuteReroll(usedFreeReroll: false),
+                    onFailed: RefreshRerollButton);
+                return;
+            }
+
+            RefreshRerollButton();
+        }
+
+        private void ExecuteReroll(bool usedFreeReroll)
+        {
+            if (onRerollCallback == null || hasRerolledThisLevelUp) return;
+
+            List<CardData> rerolled = onRerollCallback.Invoke(currentCards, usedFreeReroll);
+            if (usedFreeReroll && freeRerollsAvailable > 0)
+            {
+                freeRerollsAvailable--;
+            }
+
+            hasRerolledThisLevelUp = true;
+            if (rerolled != null && rerolled.Count > 0)
+            {
+                currentCards = rerolled;
+                RefreshSlots();
+                StartBounceAnimation();
+            }
+            RefreshRerollButton();
         }
 
         private void OnCardClicked(int slotIndex, CardData card)
@@ -84,6 +336,7 @@ namespace ProjectB.LevelUp
             bool requiresAd = slotIndex >= freeCardsCount;
             if (!requiresAd)
             {
+                audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
                 CompleteSelection(card);
                 return;
             }
@@ -106,7 +359,10 @@ namespace ProjectB.LevelUp
 
             var callback = onCardSelectedCallback;
             onCardSelectedCallback = null; // Защита от двойного клика (мультитач на смартфонах)
+            onRerollCallback = null;
             currentCards = null;
+            freeRerollsAvailable = 0;
+            hasRerolledThisLevelUp = false;
 
             Hide();
             callback.Invoke(card);
