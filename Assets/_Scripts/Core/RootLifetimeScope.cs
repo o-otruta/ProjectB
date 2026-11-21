@@ -1,6 +1,7 @@
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using ProjectB.Ads;
 using ProjectB.Meta;
 
 namespace ProjectB.Core
@@ -21,6 +22,7 @@ namespace ProjectB.Core
             builder.Register<DailyBonusManager>(Lifetime.Singleton);
             builder.Register<SelectedHeroService>(Lifetime.Singleton);
             builder.Register<AudioManager>(Lifetime.Singleton);
+            builder.Register<AdManager>(Lifetime.Singleton);
         }
 
         private void OnApplicationPause(bool pauseStatus)

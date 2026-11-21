@@ -1,9 +1,10 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using ProjectB.Ads;
+using ProjectB.Data;
 using ProjectB.Player;
 using ProjectB.Enemies;
 using ProjectB.UI;
-using ProjectB.LevelUp;
 using ProjectB.Meta;
 using VContainer;
 using ProjectB.Core.Events;
@@ -21,6 +22,8 @@ namespace ProjectB.Core
     public class GameManager : MonoBehaviour
     {
         public event System.Action<int, int> OnGameOver;
+        public event System.Action OnHeroRevived;
+        public event System.Action<int> OnCoinsDoubled;
 
         private HeroHealth heroHealth;
         private WaveManager waveManager;
@@ -29,7 +32,16 @@ namespace ProjectB.Core
         private AchievementManager achievementManager;
         private GameEventBus eventBus;
         private VirtualJoystick virtualJoystick;
-        
+        private AdManager adManager;
+
+        private bool hasRevivedThisRun;
+        private bool hasDoubledCoinsThisRun;
+        private bool hasCountedRunInTotals;
+        private int recordedCoinsThisRun;
+        private int recordedKillsThisRun;
+        private float recordedPlayTimeThisRun;
+        private int lastShownRunCoins;
+
         [Inject]
         public void Construct(
             HeroHealth heroHealth, 
@@ -38,7 +50,8 @@ namespace ProjectB.Core
             RunStatistics runStatistics, 
             AchievementManager achievementManager, 
             GameEventBus eventBus,
-            VirtualJoystick virtualJoystick = null)
+            VirtualJoystick virtualJoystick = null,
+            AdManager adManager = null)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
@@ -47,12 +60,22 @@ namespace ProjectB.Core
             this.achievementManager = achievementManager;
             this.eventBus = eventBus;
             this.virtualJoystick = virtualJoystick;
+            this.adManager = adManager;
         }
 
         private GameState currentState;
 
         public GameState CurrentState => currentState;
         public bool IsGameOver => currentState == GameState.GameOver;
+        public bool HasRevivedThisRun => hasRevivedThisRun;
+        public bool HasDoubledCoinsThisRun => hasDoubledCoinsThisRun;
+        public bool CanRevive => currentState == GameState.GameOver
+            && !hasRevivedThisRun
+            && (adManager == null || adManager.CanShowRewarded());
+        public bool CanDoubleCoins => currentState == GameState.GameOver
+            && !hasDoubledCoinsThisRun
+            && lastShownRunCoins > 0
+            && (adManager == null || adManager.CanShowRewarded());
 
         private void Awake()
         {
@@ -100,21 +123,50 @@ namespace ProjectB.Core
             virtualJoystick?.ResetJoystick();
 
             int wave = waveManager != null ? waveManager.CurrentWave : 1;
-            int coins = 0;
+            int coins = runStatistics != null ? runStatistics.CoinsEarned : 0;
+            lastShownRunCoins = coins;
 
-            if (runStatistics != null && saveManager != null)
+            if (!hasCountedRunInTotals)
             {
-                coins = runStatistics.CoinsEarned;
-                RunResult result = new RunResult
+                hasCountedRunInTotals = true;
+                adManager?.NotifyRunCompleted();
+
+                if (runStatistics != null && saveManager != null)
                 {
-                    waveReached = wave,
-                    enemiesKilled = runStatistics.EnemiesKilled,
-                    coinsEarned = coins,
-                    playTime = runStatistics.PlayTime,
-                    // Additional stats can be filled here later
-                };
-                
-                saveManager.RecordRunResult(result);
+                    RunResult result = new RunResult
+                    {
+                        waveReached = wave,
+                        enemiesKilled = runStatistics.EnemiesKilled,
+                        coinsEarned = coins,
+                        playTime = runStatistics.PlayTime
+                    };
+
+                    saveManager.RecordRunResult(result);
+                    recordedCoinsThisRun = coins;
+                    recordedKillsThisRun = runStatistics.EnemiesKilled;
+                    recordedPlayTimeThisRun = runStatistics.PlayTime;
+                }
+                else
+                {
+                    saveManager?.SaveIfDirty();
+                }
+            }
+            else if (runStatistics != null && saveManager != null)
+            {
+                // 2nd death after revive: record only incremental deltas since 1st death
+                int deltaCoins = Mathf.Max(0, coins - recordedCoinsThisRun);
+                int deltaKills = Mathf.Max(0, runStatistics.EnemiesKilled - recordedKillsThisRun);
+                float deltaTime = Mathf.Max(0f, runStatistics.PlayTime - recordedPlayTimeThisRun);
+
+                if (deltaCoins > 0) saveManager.AddCoins(deltaCoins, saveImmediately: false);
+                saveManager.Data.totalKills += deltaKills;
+                saveManager.Data.totalPlayTime += deltaTime;
+                if (wave > saveManager.Data.bestWave) saveManager.Data.bestWave = wave;
+                saveManager.Save();
+
+                recordedCoinsThisRun = coins;
+                recordedKillsThisRun = runStatistics.EnemiesKilled;
+                recordedPlayTimeThisRun = runStatistics.PlayTime;
             }
 
             OnGameOver?.Invoke(wave, coins);
@@ -142,21 +194,76 @@ namespace ProjectB.Core
         public void RestartGame()
         {
             saveManager?.SaveIfDirty();
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            LoadSceneAfterInterstitial(SceneManager.GetActiveScene().name);
         }
 
         public void GoToMenu()
         {
             saveManager?.SaveIfDirty();
-            Time.timeScale = 1f;
-            SceneManager.LoadScene("MainMenu");
+            LoadSceneAfterInterstitial("MainMenu");
+        }
+
+        private void LoadSceneAfterInterstitial(string sceneName)
+        {
+            if (adManager != null)
+            {
+                adManager.TryShowInterstitialBetweenRuns(() =>
+                {
+                    Time.timeScale = 1f;
+                    SceneManager.LoadScene(sceneName);
+                });
+            }
+            else
+            {
+                Time.timeScale = 1f;
+                SceneManager.LoadScene(sceneName);
+            }
         }
 
         public void ReviveHero()
         {
-            Debug.Log("[GameManager] TODO: Revive via Ad logic");
-            // E.g., heroHealth.Heal(maxHp), hide game over, Time.timeScale = 1f
+            if (!CanRevive) return;
+
+            void ExecuteRevive()
+            {
+                hasRevivedThisRun = true;
+                currentState = GameState.Playing;
+                Time.timeScale = 1f;
+                heroHealth?.Revive(adManager != null ? adManager.ReviveInvulnerabilitySeconds : 3f);
+                waveManager?.ResumeAfterRevive();
+                OnHeroRevived?.Invoke();
+            }
+
+            if (adManager != null)
+            {
+                adManager.ShowRewarded(AdPlacement.GameOverRevive, ExecuteRevive);
+            }
+            else
+            {
+                ExecuteRevive();
+            }
+        }
+
+        public void TryDoubleCoins()
+        {
+            if (!CanDoubleCoins) return;
+
+            void ExecuteDoubleCoins()
+            {
+                hasDoubledCoinsThisRun = true;
+                int bonus = lastShownRunCoins;
+                saveManager?.AddCoins(bonus, saveImmediately: true);
+                OnCoinsDoubled?.Invoke(lastShownRunCoins + bonus);
+            }
+
+            if (adManager != null)
+            {
+                adManager.ShowRewarded(AdPlacement.GameOverDoubleCoins, ExecuteDoubleCoins);
+            }
+            else
+            {
+                ExecuteDoubleCoins();
+            }
         }
     }
 }

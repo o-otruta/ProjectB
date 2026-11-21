@@ -20,12 +20,13 @@ namespace ProjectB.Player
         private bool isDead;
         private bool isInvulnerable;
         private bool isGodMode;
+        private float reviveInvulnerabilityTimer;
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
         private SelectedHeroService selectedHeroService;
 
         public bool IsDead => isDead;
-        public bool IsInvulnerable => isInvulnerable || isGodMode;
+        public bool IsInvulnerable => isInvulnerable || isGodMode || reviveInvulnerabilityTimer > 0f;
         public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
@@ -72,9 +73,25 @@ namespace ProjectB.Player
             isGodMode = enabled;
         }
 
+        private void Update()
+        {
+            if (reviveInvulnerabilityTimer > 0f && Time.deltaTime > 0f)
+            {
+                reviveInvulnerabilityTimer = Mathf.Max(0f, reviveInvulnerabilityTimer - Time.deltaTime);
+            }
+        }
+
+        public void Revive(float invulnerabilityDuration = 3f)
+        {
+            isDead = false;
+            currentHp = currentMaxHp;
+            reviveInvulnerabilityTimer = Mathf.Max(0f, invulnerabilityDuration);
+            OnHealthChanged?.Invoke(currentHp, currentMaxHp);
+        }
+
         public void TakeDamage(int amount)
         {
-            if (isDead || isInvulnerable || isGodMode || amount <= 0) return;
+            if (isDead || IsInvulnerable || amount <= 0) return;
 
             int finalDamage = runtimeStats != null ? runtimeStats.CalculateMitigatedDamage(amount) : amount;
             if (finalDamage <= 0) return;

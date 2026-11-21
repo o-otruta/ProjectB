@@ -46,6 +46,7 @@ namespace ProjectB.Enemies
         private Coroutine waveDurationCoroutine;
         private Coroutine spawnWaveCoroutine;
         private Coroutine startWaveDelayCoroutine;
+        private Coroutine leashCoroutine;
 
         public static bool IsBossWave(int wave, int bossInterval)
         {
@@ -126,7 +127,7 @@ namespace ProjectB.Enemies
             {
                 heroHealth.OnDamageTaken += HandleHeroDamageTaken;
             }
-            StartCoroutine(LeashCheckCoroutine());
+            leashCoroutine = StartCoroutine(LeashCheckCoroutine());
             startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
         }
 
@@ -225,6 +226,7 @@ namespace ProjectB.Enemies
             waveDurationCoroutine = null;
             spawnWaveCoroutine = null;
             startWaveDelayCoroutine = null;
+            leashCoroutine = null;
 
             CopyActiveEnemiesToBuffer();
             for (int i = 0; i < enemyIterationBuffer.Count; i++)
@@ -622,6 +624,70 @@ namespace ProjectB.Enemies
                 }
             }
             enemyIterationBuffer.Clear();
+        }
+
+        public void ResumeAfterRevive()
+        {
+            if (heroHealth != null && heroHealth.IsDead) return;
+
+            enemyIterationBuffer.Clear();
+            foreach (var enemy in activeEnemies)
+            {
+                if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy)
+                {
+                    enemyIterationBuffer.Add(enemy);
+                }
+            }
+            for (int i = 0; i < enemyIterationBuffer.Count; i++)
+            {
+                activeEnemies.Remove(enemyIterationBuffer[i]);
+            }
+            enemyIterationBuffer.Clear();
+
+            Vector3 heroPos = heroTarget != null ? heroTarget.position : Vector3.zero;
+            const float safeRadius = 4.5f;
+            float safeRadiusSq = safeRadius * safeRadius;
+
+            CopyActiveEnemiesToBuffer();
+            for (int i = 0; i < enemyIterationBuffer.Count; i++)
+            {
+                var enemy = enemyIterationBuffer[i];
+                if (enemy == null) continue;
+
+                enemy.OnDied -= HandleEnemyDied;
+                enemy.OnDied += HandleEnemyDied;
+
+                if (heroTarget != null)
+                {
+                    Vector3 diff = enemy.transform.position - heroPos;
+                    diff.y = 0f;
+                    if (diff.sqrMagnitude < safeRadiusSq)
+                    {
+                        Vector3 pushDir = diff.sqrMagnitude > 0.001f ? diff.normalized : Vector3.forward;
+                        enemy.Teleport(ClampToArena(heroPos + pushDir * 5.5f));
+                    }
+                }
+            }
+            enemyIterationBuffer.Clear();
+
+            if (leashCoroutine != null)
+            {
+                StopCoroutine(leashCoroutine);
+            }
+            leashCoroutine = StartCoroutine(LeashCheckCoroutine());
+
+            CheckWaveEnd();
+
+            bool isBossWave = waveConfig != null
+                && waveConfig.bosses != null
+                && waveConfig.bosses.Count > 0
+                && IsBossWave(currentWave, waveConfig.bossInterval);
+
+            if (!isSpawning && activeEnemies.Count > 0 && maxWaveDurationWait != null && !isBossWave)
+            {
+                if (waveDurationCoroutine != null) StopCoroutine(waveDurationCoroutine);
+                waveDurationCoroutine = StartCoroutine(WaveDurationCoroutine(currentWave));
+            }
         }
 
         [ContextMenu("Debug: Jump To Wave 5 (Mini-Boss)")]

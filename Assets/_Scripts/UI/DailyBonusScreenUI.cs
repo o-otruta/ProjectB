@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using ProjectB.Ads;
+using ProjectB.Data;
 using ProjectB.Meta;
 using ProjectB.Data.Meta;
 
@@ -14,12 +16,22 @@ namespace ProjectB.UI
         [SerializeField] private GameObject allClaimedMessage;
 
         private DailyBonusManager bonusManager;
+        private AdManager adManager;
 
         [Inject]
-        public void Construct(DailyBonusManager bonusManager)
+        public void Construct(DailyBonusManager bonusManager, AdManager adManager = null)
         {
             this.bonusManager = bonusManager;
-            this.bonusManager.OnBonusStateChanged += RefreshUI;
+            this.adManager = adManager;
+
+            if (this.bonusManager != null)
+            {
+                this.bonusManager.OnBonusStateChanged += RefreshUI;
+            }
+            if (this.adManager != null)
+            {
+                this.adManager.OnAdStateChanged += RefreshUI;
+            }
         }
 
         private void OnEnable()
@@ -35,6 +47,10 @@ namespace ProjectB.UI
             if (bonusManager != null)
             {
                 bonusManager.OnBonusStateChanged -= RefreshUI;
+            }
+            if (adManager != null)
+            {
+                adManager.OnAdStateChanged -= RefreshUI;
             }
         }
 
@@ -75,22 +91,37 @@ namespace ProjectB.UI
                 dayItems[i].Setup(dayIndex, reward, coinsAmount, isClaimed, isCurrentDay);
             }
 
+            bool isCoinsReward = data.rewards != null
+                && data.rewards.Length > 0
+                && data.rewards[Mathf.Clamp(currentDay - 1, 0, data.rewards.Length - 1)].rewardType == DailyBonusRewardType.Coins;
+
             if (claimButton != null) claimButton.gameObject.SetActive(isRewardAvailable);
-            if (claimDoubleButton != null) claimDoubleButton.gameObject.SetActive(isRewardAvailable);
+            if (claimDoubleButton != null)
+            {
+                claimDoubleButton.gameObject.SetActive(isRewardAvailable && isCoinsReward);
+                claimDoubleButton.interactable = adManager == null || adManager.CanShowRewarded();
+            }
             if (allClaimedMessage != null) allClaimedMessage.SetActive(!isRewardAvailable);
         }
 
         private void OnClaimClicked()
         {
-            bonusManager.ClaimReward(watchAdForDouble: false);
+            bonusManager?.ClaimReward(watchAdForDouble: false);
         }
 
         private void OnClaimDoubleClicked()
         {
-            // Здесь в будущем будет вызов AdManager для просмотра рекламы
-            // Пока просто выдаем удвоенную награду (заглушка)
-            Debug.Log("[DailyBonusScreenUI] Watch Ad clicked! (Stub)");
-            bonusManager.ClaimReward(watchAdForDouble: true);
+            if (adManager != null)
+            {
+                adManager.ShowRewarded(AdPlacement.DailyBonusDouble, () =>
+                {
+                    bonusManager?.ClaimReward(watchAdForDouble: true);
+                });
+            }
+            else
+            {
+                bonusManager?.ClaimReward(watchAdForDouble: true);
+            }
         }
     }
 }

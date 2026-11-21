@@ -21,6 +21,11 @@ namespace ProjectB.UI
         [SerializeField] private GameObject achievementsSection;
         [SerializeField] private Transform achievementsContainer;
 
+        [Header("Ad Buttons")]
+        [SerializeField] private Button reviveButton;
+        [SerializeField] private Button doubleCoinsButton;
+        [SerializeField] private TextMeshProUGUI doubleCoinsButtonText;
+
         private GameManager gameManager;
         private AchievementManager achievementManager;
         private RunStatistics runStatistics;
@@ -39,6 +44,8 @@ namespace ProjectB.UI
             if (this.gameManager != null)
             {
                 this.gameManager.OnGameOver += Show;
+                this.gameManager.OnHeroRevived += Hide;
+                this.gameManager.OnCoinsDoubled += HandleCoinsDoubled;
             }
         }
 
@@ -55,6 +62,8 @@ namespace ProjectB.UI
             if (gameManager != null)
             {
                 gameManager.OnGameOver -= Show;
+                gameManager.OnHeroRevived -= Hide;
+                gameManager.OnCoinsDoubled -= HandleCoinsDoubled;
             }
         }
 
@@ -85,6 +94,39 @@ namespace ProjectB.UI
             }
 
             PopulateRunAchievements();
+            RefreshAdButtons();
+        }
+
+        private void RefreshAdButtons()
+        {
+            bool canRevive = gameManager != null && gameManager.CanRevive;
+            bool canDouble = gameManager != null && gameManager.CanDoubleCoins;
+
+            if (reviveButton != null)
+            {
+                reviveButton.interactable = canRevive;
+            }
+
+            if (doubleCoinsButton != null)
+            {
+                doubleCoinsButton.interactable = canDouble;
+            }
+
+            if (doubleCoinsButtonText != null)
+            {
+                doubleCoinsButtonText.text = (gameManager != null && gameManager.HasDoubledCoinsThisRun)
+                    ? "DOUBLED!"
+                    : "x2 COINS (AD)";
+            }
+        }
+
+        private void HandleCoinsDoubled(int newTotal)
+        {
+            if (coinsText != null)
+            {
+                coinsText.text = $"Coins Earned: {newTotal} (x2!)";
+            }
+            RefreshAdButtons();
         }
 
         private void PopulateRunAchievements()
@@ -193,6 +235,14 @@ namespace ProjectB.UI
             if (gameManager != null)
             {
                 gameManager.ReviveHero();
+            }
+        }
+
+        public void OnDoubleCoinsClicked()
+        {
+            if (gameManager != null)
+            {
+                gameManager.TryDoubleCoins();
             }
         }
     }

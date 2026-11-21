@@ -42,6 +42,12 @@ namespace ProjectB.Meta
         public float musicVolume = 1f;
         public float sfxVolume = 1f;
 
+        // --- Реклама и IAP ---
+        public int rewardedAdsWatchedToday;
+        public string lastAdWatchDate; // ISO 8601 yyyy-MM-dd (UTC)
+        public int runsSinceLastInterstitial;
+        public bool adsRemoved;
+
         // --- Версионирование ---
         public int saveVersion = 1;
     }
