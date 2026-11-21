@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Orbital Sword
   description: Summons swords that orbit around you.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1332a237a558782408d1a648c266af86, type: 3}
   rarity: 0
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: 64990f3739a2d5f4ca63493315be9a36, type: 2}

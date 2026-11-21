@@ -15,7 +15,7 @@ MonoBehaviour:
   id: reach_wave_50
   title: Legend
   description: Reach Wave 50 in a single run
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 18b1408d3ac434343bce202114e6f9cc, type: 3}
   conditionType: 0
   targetValue: 50
   targetId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatUpgradeCardData
   cardName: Magnet Range
   description: Increases pickup magnet radius by 1.5.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: bff30ea7e2f1eda4181921f957c6061b, type: 3}
   rarity: 0
   isConsumable: 0
   statType: 4

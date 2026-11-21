@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Ice Aura
   description: Slows and damages nearby enemies around you.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: af3a716bd6ec2a4459869403a52bc276, type: 3}
   rarity: 1
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: 4a783cdfce20f9e4cbcc07426419a142, type: 2}

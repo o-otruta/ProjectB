@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: 'Synergy: Blade Storm'
   description: 'Orbital Sword + Boomerang: +2 Orbital Swords (+15 dmg) and +2 Boomerangs
     (+12 dmg).'
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c6d8ce9261281f64aa1cd9256c91f8ca, type: 3}
   rarity: 2
   isConsumable: 1
   synergyId: blade_storm

@@ -54,6 +54,10 @@ namespace ProjectB.UI
         private void Awake()
         {
             parentCanvas = GetComponentInParent<Canvas>();
+            if (GetComponent<CanvasRenderer>() == null)
+            {
+                gameObject.AddComponent<CanvasRenderer>();
+            }
             if (GetComponent<Graphic>() == null)
             {
                 gameObject.AddComponent<InvisibleRaycastTarget>();

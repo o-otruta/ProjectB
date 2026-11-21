@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Laser Turret: Faster Deploy'
   description: Reduces turret deployment cooldown by 1s.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 887a7b86087a19044838fb8668eb3248, type: 3}
   rarity: 2
   isConsumable: 0
   targetAbilityId: LaserTurret

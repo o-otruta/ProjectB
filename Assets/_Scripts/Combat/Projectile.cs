@@ -7,21 +7,29 @@ namespace ProjectB.Combat
     public class Projectile : MonoBehaviour
     {
         private const float MAX_LIFETIME = 5f;
+        private static readonly Collider[] splashHits = new Collider[24];
 
         private IObjectPool<Projectile> pool;
         private Transform target;
         private IDamageable targetDamageable;
         private WeaponData data;
+        private LayerMask enemyLayer;
         private bool isReturned;
         private float damageMultiplier = 1f;
         private float spawnTime;
 
-        public void Initialize(WeaponData weaponData, Transform targetTransform, IObjectPool<Projectile> projectilePool, float damageMultiplier = 1f)
+        public void Initialize(
+            WeaponData weaponData,
+            Transform targetTransform,
+            IObjectPool<Projectile> projectilePool,
+            float damageMultiplier = 1f,
+            LayerMask enemyLayer = default)
         {
             data = weaponData;
             target = targetTransform;
             targetDamageable = targetTransform != null ? targetTransform.GetComponent<IDamageable>() : null;
             pool = projectilePool;
+            this.enemyLayer = enemyLayer;
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
             spawnTime = Time.time;
@@ -80,10 +88,26 @@ namespace ProjectB.Combat
 
         private void HitTarget()
         {
-            if (targetDamageable != null && !targetDamageable.IsDead)
+            int finalDamage = data != null ? Mathf.RoundToInt(data.damage * damageMultiplier) : 0;
+
+            if (targetDamageable != null && !targetDamageable.IsDead && finalDamage > 0)
             {
-                int finalDamage = Mathf.RoundToInt(data.damage * damageMultiplier);
                 targetDamageable.TakeDamage(finalDamage);
+            }
+
+            if (data != null && data.splashRadius > 0f && finalDamage > 0 && enemyLayer.value != 0)
+            {
+                int hits = Physics.OverlapSphereNonAlloc(transform.position, data.splashRadius, splashHits, enemyLayer);
+                for (int i = 0; i < hits; i++)
+                {
+                    if (splashHits[i] != null &&
+                        splashHits[i].TryGetComponent<IDamageable>(out var splashTarget) &&
+                        splashTarget != targetDamageable &&
+                        !splashTarget.IsDead)
+                    {
+                        splashTarget.TakeDamage(finalDamage);
+                    }
+                }
             }
 
             ReturnToPool();

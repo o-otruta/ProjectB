@@ -15,7 +15,7 @@ MonoBehaviour:
   id: kill_5000_enemies
   title: Harvester
   description: Kill 5,000 enemies cumulatively
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b94b148922eeb14429c3bc54515dcf56, type: 3}
   conditionType: 1
   targetValue: 5000
   targetId: 

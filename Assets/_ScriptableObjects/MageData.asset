@@ -15,20 +15,20 @@ MonoBehaviour:
   id: mage
   heroName: Mage
   description: Arcane spellcaster channeling devastating elemental power.
-  icon: {fileID: 0}
-  unlockedByDefault: 1
+  icon: {fileID: 21300000, guid: 14d7f06af2b5c2b4d845325d4e6263dd, type: 3}
+  unlockedByDefault: 0
   moveSpeed: 5.2
   rotationSpeed: 15
   maxHp: 80
-  startingWeapon: {fileID: 11400000, guid: 4fa926e9f08c2bc41bdbfa644351c788, type: 2}
+  startingWeapon: {fileID: 11400000, guid: 9c0f24eb26d00c241b885ab88d9241a1, type: 2}
   visualModelPrefab: {fileID: 6553997822085370749, guid: 0f41c76123ced6e408e0713568297ac9, type: 3}
   passiveType: 2
-  passiveValue: 15
+  passiveValue: 20
   passiveName: Arcane Mastery
-  passiveDescription: +15% Global Damage
-  ultimateType: 0
-  ultimateName: Arcane Barrier
-  ultimateDescription: Become invulnerable for 5 seconds.
-  ultimateDuration: 5
+  passiveDescription: +20% Global Damage
+  ultimateType: 1
+  ultimateName: Meteor Shower
+  ultimateDescription: Calls down 6 explosive voxel meteors around you.
+  ultimateDuration: 3
   ultimateCooldown: 22
-  ultimateIcon: {fileID: 0}
+  ultimateIcon: {fileID: 21300000, guid: ced9c52099082374d919bb22fe08b195, type: 3}

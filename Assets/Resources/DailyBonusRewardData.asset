@@ -16,30 +16,30 @@ MonoBehaviour:
   - rewardType: 0
     coinsAmount: 100
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: b553bad845c5cd748a91efaa0e890c23, type: 3}
   - rewardType: 0
     coinsAmount: 200
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: a499c9dfdb1e6d54ebf708d59edc03ab, type: 3}
   - rewardType: 0
     coinsAmount: 300
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 54c1ca80105e2214aa61d5d815de26b4, type: 3}
   - rewardType: 0
     coinsAmount: 400
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 18e722a289e9fd6419b354a37feb5115, type: 3}
   - rewardType: 0
     coinsAmount: 500
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 176efb588788a18498309156c763aab2, type: 3}
   - rewardType: 0
     coinsAmount: 600
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: aab120c14709d3d4ba985472ba32b7f6, type: 3}
   - rewardType: 0
     coinsAmount: 700
     abilityId: 
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: e8ba0a57d1342f9468084b4f0d9ddfd9, type: 3}
   cycleCoinMultiplier: 1.2
   maxMultiplierCycles: 5

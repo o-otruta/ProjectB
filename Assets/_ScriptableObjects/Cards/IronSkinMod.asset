@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Iron Skin: +15 Armor'
   description: Further increases Armor by +15.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8ce0d906c7fcd944eab4bd915f26272e, type: 3}
   rarity: 0
   isConsumable: 0
   targetAbilityId: IronSkin

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: SwiftBoots
   abilityName: Swift Boots
   description: Increases movement speed by +1.0.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 7d248ea9c175a3d41b335888c18b697e, type: 3}
   type: 1
   rarity: 1
   unlockedByDefault: 1

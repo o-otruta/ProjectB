@@ -53,6 +53,7 @@ namespace ProjectB.Abilities
                     if (ability != null)
                     {
                         ability.SetRuntimeStats(runtimeStats);
+                        ability.SetEventBus(eventBus);
                         ability.Initialize(data);
                         activeAbilities.Add(ability);
                         added = true;

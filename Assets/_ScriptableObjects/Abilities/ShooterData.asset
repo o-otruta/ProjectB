@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Shooter
   abilityName: Shooter
   description: Periodically fires homing projectiles at nearby enemies.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: bdacd3cc4d09fdf43a1c524d4868db62, type: 3}
   type: 0
   rarity: 0
   unlockedByDefault: 1

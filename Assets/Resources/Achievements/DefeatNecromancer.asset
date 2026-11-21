@@ -15,7 +15,7 @@ MonoBehaviour:
   id: defeat_necromancer
   title: Soul Vanquisher
   description: Defeat the Necromancer boss
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 9e05ed58434790743bee1bbdd34f97c4, type: 3}
   conditionType: 2
   targetValue: 1
   targetId: necromancer

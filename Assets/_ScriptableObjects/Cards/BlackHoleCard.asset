@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Black Hole
   description: Pulls enemies inward and deals periodic damage.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 3d86cb956a5d30d4c92255c330087ec6, type: 3}
   rarity: 3
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: e381772a05e7def418b8defb3909e0c2, type: 2}

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: collect_8_abilities
   title: Grand Collector
   description: Equip 8 different abilities in a single run
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 387aa3144c02666489a4e621afc88fbf, type: 3}
   conditionType: 4
   targetValue: 8
   targetId: 

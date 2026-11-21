@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Fireball
   abilityName: Fireball
   description: Launches explosive fireballs that deal area damage.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4656414fcff5301478327796754f194c, type: 3}
   type: 0
   rarity: 1
   unlockedByDefault: 1

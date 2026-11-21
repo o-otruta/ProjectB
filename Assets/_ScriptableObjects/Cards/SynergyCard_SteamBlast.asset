@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: 'Synergy: Steam Blast'
   description: 'Fireball + Ice Aura: Fireball gains +2 projectiles & +15 damage;
     Ice Aura gains +2.0 radius & +10 damage.'
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: f0ecb864c6f59d54791bff6b25c11b9f, type: 3}
   rarity: 3
   isConsumable: 1
   synergyId: steam_blast

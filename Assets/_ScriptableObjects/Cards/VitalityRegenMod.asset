@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Vitality Regen: +2 HP/s'
   description: Increases health regeneration by +2 HP/s.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: db488e1f1682cd240a475aa14e9bd6a4, type: 3}
   rarity: 1
   isConsumable: 0
   targetAbilityId: VitalityRegen

@@ -113,7 +113,7 @@ namespace ProjectB.Combat
             if (p == null) return;
             
             p.transform.position = firePoint != null ? firePoint.position : (ownerTransform != null ? ownerTransform.position : Vector3.zero);
-            p.Initialize(weaponData, target, projectilePool, damageMultiplier);
+            p.Initialize(weaponData, target, projectilePool, damageMultiplier, enemyLayer);
         }
 
         public void DrawGizmos()

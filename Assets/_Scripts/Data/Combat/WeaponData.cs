@@ -17,6 +17,9 @@ namespace ProjectB.Data.Combat
         
         [Tooltip("Скорость полета снаряда")]
         public float projectileSpeed = 10f;
+
+        [Tooltip("Optional AoE splash radius on impact (0 = single target)")]
+        public float splashRadius = 0f;
         
         [Header("Visuals")]
         [Tooltip("Префаб снаряда (с компонентом Projectile)")]

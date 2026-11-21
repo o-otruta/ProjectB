@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Iron Skin
   description: Grants +20 Armor to reduce incoming damage.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 17ea798a9b5c9ea4f8b7dca4da68afc6, type: 3}
   rarity: 0
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: eb942b8eee33e7a45bf158b54bcce643, type: 2}

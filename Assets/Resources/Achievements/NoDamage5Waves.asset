@@ -15,7 +15,7 @@ MonoBehaviour:
   id: no_damage_5_waves
   title: Untouchable
   description: Complete 5 consecutive waves without taking damage
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4d9b5331714194b43bcb1d22caf43b4c, type: 3}
   conditionType: 5
   targetValue: 5
   targetId: 

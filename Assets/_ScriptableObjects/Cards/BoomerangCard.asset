@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Boomerang
   description: Throws piercing boomerangs that return to you.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c348308696bc1ff4db76cdb8b9e2d3d2, type: 3}
   rarity: 1
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: a1f17187f4b1949458485bb6e7249ee2, type: 2}

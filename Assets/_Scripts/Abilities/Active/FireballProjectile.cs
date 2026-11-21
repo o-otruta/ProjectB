@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Abilities
 {
@@ -9,12 +10,21 @@ namespace ProjectB.Abilities
 
         private float explosionRadius;
         private Vector3 lastKnownTargetPos;
+        private GameEventBus eventBus;
 
-        public void InitializeFireball(float damage, float speed, float explosionRadius, Transform target, LayerMask enemyLayer, UnityEngine.Pool.IObjectPool<AbilityProjectile> pool)
+        public void InitializeFireball(
+            float damage,
+            float speed,
+            float explosionRadius,
+            Transform target,
+            LayerMask enemyLayer,
+            UnityEngine.Pool.IObjectPool<AbilityProjectile> pool,
+            GameEventBus eventBus = null)
         {
             base.Initialize(damage, speed, target, enemyLayer, pool);
             this.explosionRadius = explosionRadius;
             this.lastKnownTargetPos = target != null ? target.position : transform.position;
+            this.eventBus = eventBus;
         }
 
         protected override void Update()
@@ -60,6 +70,7 @@ namespace ProjectB.Abilities
                 }
             }
 
+            eventBus?.Publish(new FireballExplodedEvent(transform.position, explosionRadius));
             ReturnToPool();
         }
     }

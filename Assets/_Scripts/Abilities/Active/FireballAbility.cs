@@ -60,7 +60,7 @@ namespace ProjectB.Abilities
                 offset.y = 0;
                 p.transform.position = transform.position + offset;
                 
-                p.InitializeFireball(GetScaledDamage(currentDamage), currentSpeed, currentExplosionRadius, chosenTarget, ProjectileData.targetLayer, projectilePool);
+                p.InitializeFireball(GetScaledDamage(currentDamage), currentSpeed, currentExplosionRadius, chosenTarget, ProjectileData.targetLayer, projectilePool, eventBus);
             }
         }
     }

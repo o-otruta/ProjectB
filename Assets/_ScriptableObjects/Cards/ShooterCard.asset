@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Shooter
   description: Periodically fires homing projectiles at nearby enemies.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: bdacd3cc4d09fdf43a1c524d4868db62, type: 3}
   rarity: 0
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: e18f86282a15c9745a9d525aaa99bd18, type: 2}

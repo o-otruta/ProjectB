@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Laser Turret
   description: Deploys a stationary turret that fires a continuous laser beam.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c65babb62877fd84c9c45deabc629737, type: 3}
   rarity: 2
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: 259ddc1f761d62442890dfcdbbfebce9, type: 2}

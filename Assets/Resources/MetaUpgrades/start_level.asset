@@ -15,7 +15,7 @@ MonoBehaviour:
   id: start_level
   displayName: Starting Level
   description: Start with higher level.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 657960fe31c471d4480231c5bdb2180a, type: 3}
   baseCost: 1000
   costMultiplier: 2
   maxLevel: 3

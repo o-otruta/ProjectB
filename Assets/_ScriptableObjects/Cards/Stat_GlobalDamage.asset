@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatUpgradeCardData
   cardName: Damage Up
   description: Increases all damage by 10%.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1736809e1c1fae74289e72a55fa1a1a5, type: 3}
   rarity: 1
   isConsumable: 0
   statType: 2

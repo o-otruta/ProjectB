@@ -133,7 +133,10 @@ namespace ProjectB.Tests.EditMode
                 typeof(HeroSelectionUI).GetMethod("Awake", flags).Invoke(ui, null);
                 typeof(HeroSelectionUI).GetMethod("OnEnable", flags).Invoke(ui, null);
 
-                Assert.IsNotNull(panelGo.GetComponent<InvisibleRaycastTarget>(), "HeroSelectionUI should add InvisibleRaycastTarget when no Graphic is present");
+                Assert.IsNotNull(panelGo.GetComponent<CanvasRenderer>(), "PlayScreenPanel/HeroSelectionUI must have CanvasRenderer for GraphicRaycaster");
+                var raycastTarget = panelGo.GetComponent<InvisibleRaycastTarget>();
+                Assert.IsNotNull(raycastTarget, "HeroSelectionUI should add InvisibleRaycastTarget when no Graphic is present");
+                Assert.DoesNotThrow(() => { bool _ = raycastTarget.canvasRenderer.cull; });
                 Assert.IsFalse(nameText.raycastTarget, "Non-interactive HeroName label should not block swipe raycasts");
                 Assert.AreEqual("KNIGHT", nameText.text);
 

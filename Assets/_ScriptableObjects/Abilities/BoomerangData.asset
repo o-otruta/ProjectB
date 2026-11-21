@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Boomerang
   abilityName: Boomerang
   description: Throws piercing boomerangs that return to you.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c348308696bc1ff4db76cdb8b9e2d3d2, type: 3}
   type: 0
   rarity: 1
   unlockedByDefault: 1

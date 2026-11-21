@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
   cardName: Fireball
   description: Launches explosive fireballs that deal area damage.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4656414fcff5301478327796754f194c, type: 3}
   rarity: 1
   isConsumable: 1
   abilityData: {fileID: 11400000, guid: bc66750759fd78648b02bb75f17c7ad0, type: 2}

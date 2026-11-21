@@ -7,6 +7,7 @@ namespace ProjectB.UI
     /// A Graphic that is completely invisible but still acts as a raycast target.
     /// This avoids the "alpha 0.01" hack and saves rendering overhead by not generating any geometry.
     /// </summary>
+    [RequireComponent(typeof(CanvasRenderer))]
     public class InvisibleRaycastTarget : Graphic
     {
         public override void SetMaterialDirty() { }

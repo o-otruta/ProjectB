@@ -15,7 +15,7 @@ MonoBehaviour:
   id: find_5_chests
   title: Treasure Hunter
   description: Find 5 secret Treasure Chests on the arena
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 377ab47ec7bd6674e8499bb8c60a721d, type: 3}
   conditionType: 6
   targetValue: 5
   targetId: secret_chest

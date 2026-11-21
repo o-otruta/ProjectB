@@ -15,7 +15,7 @@ MonoBehaviour:
   id: find_3_scrolls
   title: Ancient Scholar
   description: Find 3 secret Ancient Scrolls on the arena
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 14ad23ff4413e5c4589d0a1c65a8e920, type: 3}
   conditionType: 6
   targetValue: 3
   targetId: secret_scroll

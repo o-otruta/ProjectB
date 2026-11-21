@@ -45,7 +45,13 @@ namespace ProjectB.Visuals
         private static readonly Color CoinSparkColor = new Color(1f, 0.86f, 0.2f, 1f);
         private static readonly Color LevelUpColor = new Color(1f, 0.92f, 0.35f, 1f);
         private static readonly Color ShieldUltColor = new Color(0.28f, 0.88f, 1f, 1f);
+        private static readonly Color MeteorUltColor = new Color(1f, 0.48f, 0.14f, 1f);
+        private static readonly Color FireballPrimaryColor = new Color(1f, 0.45f, 0.12f, 1f);
+        private static readonly Color FireballSecondaryColor = new Color(1f, 0.88f, 0.22f, 1f);
+        private static readonly Color MeteorPrimaryColor = new Color(1f, 0.25f, 0.12f, 1f);
+        private static readonly Color MeteorSecondaryColor = new Color(1f, 0.85f, 0.2f, 1f);
         private static readonly Color SecretPickupColor = new Color(0.88f, 0.4f, 1f, 1f);
+        private static readonly Color SecretRewardTextColor = new Color(1f, 0.9f, 0.32f, 1f);
 
         [Inject]
         public void Construct(
@@ -101,7 +107,7 @@ namespace ProjectB.Visuals
                     var go = new GameObject("DmgNum", typeof(RectTransform));
                     go.transform.SetParent(canvasGo.transform, false);
                     var rt = (RectTransform)go.transform;
-                    rt.sizeDelta = new Vector2(220f, 80f);
+                    rt.sizeDelta = new Vector2(520f, 90f);
 
                     var tmp = go.AddComponent<TextMeshProUGUI>();
                     tmp.alignment = TextAlignmentOptions.Center;
@@ -187,6 +193,8 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<HeroLeveledUpEvent>(OnHeroLeveledUp);
                 eventBus.Subscribe<BossSpawnedEvent>(OnBossSpawned);
                 eventBus.Subscribe<SecretItemCollectedEvent>(OnSecretItemCollected);
+                eventBus.Subscribe<FireballExplodedEvent>(OnFireballExploded);
+                eventBus.Subscribe<MeteorImpactEvent>(OnMeteorImpact);
             }
 
             if (heroHealth != null)
@@ -214,6 +222,8 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<HeroLeveledUpEvent>(OnHeroLeveledUp);
                 eventBus.Unsubscribe<BossSpawnedEvent>(OnBossSpawned);
                 eventBus.Unsubscribe<SecretItemCollectedEvent>(OnSecretItemCollected);
+                eventBus.Unsubscribe<FireballExplodedEvent>(OnFireballExploded);
+                eventBus.Unsubscribe<MeteorImpactEvent>(OnMeteorImpact);
             }
 
             if (heroHealth != null)
@@ -303,22 +313,107 @@ namespace ProjectB.Visuals
             cameraController?.Shake(evt.IsMiniBoss ? 0.22f : 0.42f, evt.IsMiniBoss ? 0.2f : 0.35f);
         }
 
-        private void OnSecretItemCollected(SecretItemCollectedEvent _)
+        private void OnSecretItemCollected(SecretItemCollectedEvent evt)
         {
             if (heroHealth != null)
             {
-                EmitBurst(heroHealth.transform.position + Vector3.up * 1.0f, SecretPickupColor, 18, 6.0f, 0.28f);
+                Vector3 heroPos = heroHealth.transform.position;
+                EmitBurst(heroPos + Vector3.up * 1.0f, SecretPickupColor, 18, 6.0f, 0.28f);
+
+                if (damagePool != null)
+                {
+                    string label = !string.IsNullOrEmpty(evt.RewardSummary) ? evt.RewardSummary : evt.DisplayName;
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        var item = damagePool.Get();
+                        item.ShowText(heroPos, label, SecretRewardTextColor, 1.35f, 1.6f, mainCamera, damagePool);
+                    }
+                }
             }
             audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.9f, randomizePitch: false);
+        }
+
+        private void OnFireballExploded(FireballExplodedEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.35f,
+                Mathf.Max(1f, evt.Radius),
+                FireballPrimaryColor,
+                FireballSecondaryColor,
+                ringCount: 16,
+                centerCount: 4,
+                speed: 4.5f,
+                size: 0.3f);
+            cameraController?.Shake(0.08f, 0.08f);
+        }
+
+        private void OnMeteorImpact(MeteorImpactEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.4f,
+                Mathf.Max(1.5f, evt.Radius),
+                MeteorPrimaryColor,
+                MeteorSecondaryColor,
+                ringCount: 20,
+                centerCount: 8,
+                speed: 6.5f,
+                size: 0.4f);
+            cameraController?.Shake(0.28f, 0.18f);
+            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.65f, randomizePitch: true);
         }
 
         private void OnUltimateStateChanged()
         {
             if (heroUltimate != null && heroUltimate.IsActive && heroHealth != null)
             {
-                EmitBurst(heroHealth.transform.position + Vector3.up * 1.0f, ShieldUltColor, 18, 6.5f, 0.3f);
+                HeroUltimateType ultType = heroUltimate.ActiveHeroData != null
+                    ? heroUltimate.ActiveHeroData.ultimateType
+                    : HeroUltimateType.Shield;
+
+                Color burstColor = ultType == HeroUltimateType.MeteorStrike ? MeteorUltColor : ShieldUltColor;
+                EmitBurst(heroHealth.transform.position + Vector3.up * 1.0f, burstColor, 18, 6.5f, 0.3f);
                 audioManager?.PlaySfx(SfxType.ShieldUlt, volumeScale: 0.9f, randomizePitch: false);
                 cameraController?.Shake(0.18f, 0.14f);
+            }
+        }
+
+        public void EmitExplosionRing(
+            Vector3 worldPos,
+            float radius,
+            Color primaryColor,
+            Color secondaryColor,
+            int ringCount,
+            int centerCount,
+            float speed,
+            float size)
+        {
+            if (burstParticles == null) return;
+
+            var emitParams = new ParticleSystem.EmitParams
+            {
+                startSize = size
+            };
+
+            float step = (Mathf.PI * 2f) / Mathf.Max(1, ringCount);
+            for (int i = 0; i < ringCount; i++)
+            {
+                float angle = step * i + Random.Range(-0.12f, 0.12f);
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+                float spawnDist = radius * Random.Range(0.35f, 0.85f);
+
+                emitParams.position = new Vector3(
+                    worldPos.x + cos * spawnDist,
+                    worldPos.y,
+                    worldPos.z + sin * spawnDist);
+                emitParams.velocity = new Vector3(cos, Random.Range(0.45f, 0.85f), sin).normalized * Random.Range(speed * 0.7f, speed);
+                emitParams.startColor = (i & 1) == 0 ? primaryColor : secondaryColor;
+                burstParticles.Emit(emitParams, 1);
+            }
+
+            if (centerCount > 0)
+            {
+                EmitBurst(worldPos, secondaryColor, centerCount, speed * 0.8f, size * 1.1f);
             }
         }
 

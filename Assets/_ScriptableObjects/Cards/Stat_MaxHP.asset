@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatUpgradeCardData
   cardName: +20 Max HP
   description: Increases maximum health by 20.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 5540213714f7bd84fb9fbb1e6d5f0415, type: 3}
   rarity: 0
   isConsumable: 0
   statType: 0

@@ -56,6 +56,48 @@ namespace ProjectB.Visuals
             Camera cam,
             IObjectPool<DamageNumberItem> ownerPool)
         {
+            Vector3 jitter = new Vector3(Random.Range(-0.45f, 0.45f), Random.Range(1.0f, 1.45f), Random.Range(-0.25f, 0.25f));
+            ShowInternal(
+                worldPos + jitter,
+                new Vector3(Random.Range(-0.6f, 0.6f), 2.4f, 0f),
+                GetCachedNumberText(amount),
+                color,
+                scale,
+                0.65f,
+                cam,
+                ownerPool);
+        }
+
+        public void ShowText(
+            Vector3 worldPos,
+            string text,
+            Color color,
+            float scale,
+            float duration,
+            Camera cam,
+            IObjectPool<DamageNumberItem> ownerPool)
+        {
+            ShowInternal(
+                worldPos + Vector3.up * 1.8f,
+                new Vector3(0f, 1.3f, 0f),
+                text,
+                color,
+                scale,
+                Mathf.Max(0.4f, duration),
+                cam,
+                ownerPool);
+        }
+
+        private void ShowInternal(
+            Vector3 startWorldPos,
+            Vector3 initialVelocity,
+            string displayText,
+            Color color,
+            float scale,
+            float duration,
+            Camera cam,
+            IObjectPool<DamageNumberItem> ownerPool)
+        {
             pool = ownerPool;
             targetCamera = cam;
             if (rectTransform == null)
@@ -66,11 +108,10 @@ namespace ProjectB.Visuals
             baseColor = color;
             baseScale = scale;
             elapsed = 0f;
-            lifetime = 0.65f;
+            lifetime = duration;
 
-            Vector3 jitter = new Vector3(Random.Range(-0.45f, 0.45f), Random.Range(1.0f, 1.45f), Random.Range(-0.25f, 0.25f));
-            currentWorldPos = worldPos + jitter;
-            velocity = new Vector3(Random.Range(-0.6f, 0.6f), 2.4f, 0f);
+            currentWorldPos = startWorldPos;
+            velocity = initialVelocity;
 
             if (rectTransform != null)
             {
@@ -79,7 +120,7 @@ namespace ProjectB.Visuals
 
             if (textMesh != null)
             {
-                textMesh.text = GetCachedNumberText(amount);
+                textMesh.text = displayText;
                 textMesh.color = baseColor;
             }
 

@@ -235,20 +235,20 @@
 ---
 
 ### Спринт 1: Исправление текущих недоделок, иконки и визуальная полировка арены (P0)
-- [ ] **1.1. Подключить забытого `GoblinShooter` и выровнять ранние волны:**
+- [x] **1.1. Подключить забытого `GoblinShooter` и выровнять ранние волны:**
   - Создать `Assets/_ScriptableObjects/GoblinData.asset` (`ShootingEnemyData`: `hp: 28`, `speed: 2.8`, `contactDamage: 5`, `xpDrop: 2`, `coinDropChance: 0.25`, `modelPrefab: GoblinShooter.prefab`, `weaponData: EnemyShooterWeapon.asset`, `stopDistance: 5.5`).
   - В [BatData.asset](file:///d:/UnityProjects/ProjectB/Assets/_ScriptableObjects/BatData.asset) снизить `hp` с `75` до `38` и поднять `speed` до `3.2`.
   - Добавить `GoblinData.asset` в `WaveManager.enemyTypes` в [Gameplay.unity](file:///d:/UnityProjects/ProjectB/Assets/_Scenes/Gameplay.unity).
-- [ ] **1.2. Доделать героя Мага (`Mage`):**
+- [x] **1.2. Доделать героя Мага (`Mage`):**
   - В [MageData.asset](file:///d:/UnityProjects/ProjectB/Assets/_ScriptableObjects/MageData.asset) выставить `unlockedByDefault: 0`, `passiveValue: 20` (`+20% Global Damage`), `ultimateName: Meteor Shower`, `ultimateDescription: Calls down 6 explosive voxel meteors around you.`.
   - В [ReachWave25.asset](file:///d:/UnityProjects/ProjectB/Assets/Resources/Achievements/ReachWave25.asset) изменить награду на `rewardType: 2` (`UnlockHero`), `rewardId: mage`, `description: Reach Wave 25 to unlock the Mage hero`.
   - В [HeroData.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Data/HeroData.cs) добавить `HeroUltimateType.MeteorStrike = 1` и реализовать в [HeroUltimate.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Player/HeroUltimate.cs) спавн 6 AoE-ударов метеоров по врагам в радиусе `7м` с воксельными партиклами и камерой-шейком.
-- [ ] **1.3. Визуальный фидбек взрыва `Fireball` и подбора Секретов:**
+- [x] **1.3. Визуальный фидбек взрыва `Fireball` и подбора Секретов:**
   - В [FireballProjectile.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/Active/FireballProjectile.cs) публиковать событие взрыва (или добавить `FireballExplodedEvent` в `GameEvents.cs`), по которому [VfxFeedbackManager.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Visuals/VfxFeedbackManager.cs) эмитит кольцо из 14–18 оранжево-жёлтых воксельных кубов по радиусу `explosionRadius`.
   - В `VfxFeedbackManager.OnSecretItemCollected()` отображать крупный всплывающий текст `evt.RewardSummary` над героем, а также добавить на HUD стрелку-компас к активному секрету (`SecretItemSpawner.ActiveItem`), когда он ближе `45м` и находится за кадром.
-- [ ] **1.4. Генерация 2D-иконок для всех ScriptableObjects (`IconGenerator`):**
+- [x] **1.4. Генерация 2D-иконок для всех ScriptableObjects (`IconGenerator`):**
   - Написать Editor-утилиту `Assets/_Scripts/Editor/Generators/VoxelIconGenerator.cs`, которая генерирует чёткие цветные пиксель/воксель-иконки (`64x64` / `128x128` PNG в `Assets/_UI/Icons/Generated/`) и автоматически назначает `icon` во все `AbilityData`, `CardData`, `HeroData`, `AchievementData`, `MetaUpgradeData` и `DailyBonusRewardData`.
-- [ ] **1.5. Улучшение пола арены, префабов и URP Post-Processing:**
+- [x] **1.5. Улучшение пола арены, префабов и URP Post-Processing:**
   - Сгенерировать тайловую воксельную шахматную текстуру травы (`FloorGrid.png`, `FilterMode.Point`) и подключить её в [FloorMat.mat](file:///d:/UnityProjects/ProjectB/Assets/_Materials/FloorMat.mat) с тайлингом по размеру арены, чтобы движение камеры отлично читалось.
   - На [LaserTurret.prefab](file:///d:/UnityProjects/ProjectB/Assets/_Prefabs/LaserTurret.prefab) заменить импортированный `.obj` материал на shared-материал с `enableInstancing = true`.
   - На [Slime.prefab](file:///d:/UnityProjects/ProjectB/Assets/_Prefabs/Enemies/Slime.prefab) сбросить корневой `m_LocalPosition` в `(0, 0, 0)` и добавить `VoxelMeshAnimator` с `enableBobbing = true` (`bobbingSpeed: 6`, `bobbingHeight: 0.12`).

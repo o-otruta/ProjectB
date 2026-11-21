@@ -15,7 +15,7 @@ MonoBehaviour:
   id: hero_speed
   displayName: Movement Speed
   description: Increases movement speed.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6e582abb13e9ae54fb605682bd8e9914, type: 3}
   baseCost: 200
   costMultiplier: 1.4
   maxLevel: 15

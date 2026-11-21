@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Orbital Sword: +1 Sword'
   description: Adds one extra orbiting sword.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ab15a06af2a27304ebbd857a511451db, type: 3}
   rarity: 1
   isConsumable: 0
   targetAbilityId: orbital_small_sword

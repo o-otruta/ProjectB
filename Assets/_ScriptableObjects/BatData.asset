@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdab362492ba4ec4ea63028f65795849, type: 3}
   m_Name: BatData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Enemies.ShootingEnemyData
-  hp: 75
-  speed: 2.5
+  hp: 38
+  speed: 3.2
   contactDamage: 5
   damageCooldown: 1
   contactRadius: 1

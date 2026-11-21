@@ -15,7 +15,7 @@ MonoBehaviour:
   id: LaserTurret
   abilityName: Laser Turret
   description: Deploys a stationary turret that fires a continuous laser beam.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c65babb62877fd84c9c45deabc629737, type: 3}
   type: 0
   rarity: 2
   unlockedByDefault: 0

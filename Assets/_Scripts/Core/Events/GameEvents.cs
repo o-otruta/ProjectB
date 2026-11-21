@@ -210,5 +210,35 @@ namespace ProjectB.Core.Events
             RewardSummary = rewardSummary;
         }
     }
+
+    /// <summary>
+    /// Огненный шар способности Fireball взорвался в точке попадания.
+    /// </summary>
+    public struct FireballExplodedEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+
+        public FireballExplodedEvent(Vector3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
+
+    /// <summary>
+    /// Удар метеора ультимейта Мага в указанной точке.
+    /// </summary>
+    public struct MeteorImpactEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+
+        public MeteorImpactEvent(Vector3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
 }
 

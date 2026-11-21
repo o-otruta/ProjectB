@@ -13,7 +13,8 @@ namespace ProjectB.Data
 
     public enum HeroUltimateType
     {
-        Shield = 0
+        Shield = 0,
+        MeteorStrike = 1
     }
 
     [CreateAssetMenu(fileName = "HeroData", menuName = "ProjectB/Data/HeroData")]
