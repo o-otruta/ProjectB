@@ -779,7 +779,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Watch AD
+  m_text: WATCH AD
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2929,6 +2929,8 @@ MonoBehaviour:
   descriptionText: {fileID: 372331018}
   bgImage: {fileID: 745542399}
   iconImage: {fileID: 0}
+  adBadgeObject: {fileID: 1842162724}
+  adBadgeText: {fileID: 169649673}
 --- !u!114 &745542399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4898,6 +4900,8 @@ MonoBehaviour:
   descriptionText: {fileID: 1740765901}
   bgImage: {fileID: 1364875315}
   iconImage: {fileID: 0}
+  adBadgeObject: {fileID: 0}
+  adBadgeText: {fileID: 0}
 --- !u!1 &1412037340
 GameObject:
   m_ObjectHideFlags: 0
@@ -7566,6 +7570,8 @@ MonoBehaviour:
   descriptionText: {fileID: 1307044106}
   bgImage: {fileID: 2077881136}
   iconImage: {fileID: 0}
+  adBadgeObject: {fileID: 0}
+  adBadgeText: {fileID: 0}
 --- !u!1 &2083907681
 GameObject:
   m_ObjectHideFlags: 0
@@ -7871,6 +7877,7 @@ MonoBehaviour:
   - {fileID: 2077881138}
   - {fileID: 1364875317}
   - {fileID: 745542398}
+  freeCardsCount: 2
 --- !u!1 &2111706374
 GameObject:
   m_ObjectHideFlags: 0

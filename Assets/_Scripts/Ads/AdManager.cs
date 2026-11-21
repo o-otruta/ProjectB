@@ -141,7 +141,9 @@ namespace ProjectB.Ads
             if (isShowingAd || provider == null || !provider.IsInterstitialReady) return false;
             if (saveManager?.Data != null && saveManager.Data.adsRemoved) return false;
 
-            int threshold = config != null && config.runsPerInterstitial > 0 ? config.runsPerInterstitial : 3;
+            int threshold = config != null ? config.runsPerInterstitial : 0;
+            if (threshold <= 0) return false;
+
             int runs = saveManager?.Data != null ? saveManager.Data.runsSinceLastInterstitial : 0;
             return runs >= threshold;
         }

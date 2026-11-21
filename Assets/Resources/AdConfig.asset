@@ -18,5 +18,5 @@ MonoBehaviour:
   iosInterstitialAdUnitId: ca-app-pub-3940256099942544/4411468910
   maxRewardedPerSession: 10
   maxRewardedPerDay: 20
-  runsPerInterstitial: 3
+  runsPerInterstitial: 0
   reviveInvulnerabilitySeconds: 3

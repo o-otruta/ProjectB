@@ -7,7 +7,8 @@ namespace ProjectB.Data
         GameOverDoubleCoins = 0,
         GameOverRevive = 1,
         DailyBonusDouble = 2,
-        BetweenRunsInterstitial = 3
+        BetweenRunsInterstitial = 3,
+        LevelUpThirdCard = 4
     }
 
     [CreateAssetMenu(fileName = "AdConfig", menuName = "ProjectB/Data/Ad Config")]
@@ -22,7 +23,8 @@ namespace ProjectB.Data
         [Header("Caps & Pacing")]
         [Min(0)] public int maxRewardedPerSession = 10;
         [Min(0)] public int maxRewardedPerDay = 20;
-        [Min(1)] public int runsPerInterstitial = 3;
+        [Tooltip("0 disables between-run interstitials.")]
+        [Min(0)] public int runsPerInterstitial = 0;
 
         [Header("Revive Tuning")]
         [Min(0f)] public float reviveInvulnerabilitySeconds = 3f;
