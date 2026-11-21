@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c56900f287f95834c95f00cb1921271c, type: 3}
+  m_Name: AudioCatalog
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AudioCatalog
+  hitClip: {fileID: 8300000, guid: a18df01fdb42afd4f938d26cc76ca310, type: 3}
+  enemyDeathClip: {fileID: 8300000, guid: ae52e2fe770fc954ba36ede2ef9ea2ec, type: 3}
+  xpPickupClip: {fileID: 8300000, guid: 241a9b285ae7c454fb25cacddba056f8, type: 3}
+  coinPickupClip: {fileID: 8300000, guid: 34a27d4bb649fe34da3943fb5ae40d64, type: 3}
+  levelUpClip: {fileID: 8300000, guid: de31e30a93f548e49b34991b635c86b2, type: 3}
+  heroHitClip: {fileID: 8300000, guid: cc95ed6115dfc264abd45e0b019323a8, type: 3}
+  shieldUltClip: {fileID: 8300000, guid: 062622d4f66b13041ba4955314506f5c, type: 3}
+  bossSpawnClip: {fileID: 8300000, guid: aa8ed142236d3804298caee9c488b66a, type: 3}
+  secretPickupClip: {fileID: 8300000, guid: a507bde84a2e9924cbd491629a15da89, type: 3}
+  uiClickClip: {fileID: 8300000, guid: 5e76c685755bed44cbb8631f63b4cffc, type: 3}
+  menuMusicClip: {fileID: 8300000, guid: 49e239280579706408921489dd4ff59e, type: 3}
+  gameplayMusicClip: {fileID: 8300000, guid: f8bf20650b70ee542bb69525e38f34b0, type: 3}
+  musicBaseVolume: 0.42
+  sfxBaseVolume: 0.85

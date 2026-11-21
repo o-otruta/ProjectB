@@ -17,6 +17,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<AchievementScreenUI>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             builder.RegisterComponentInHierarchy<DailyBonusScreenUI>();
+            builder.RegisterComponentInHierarchy<SettingsPopupUI>();
         }
     }
 }

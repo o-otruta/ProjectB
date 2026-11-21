@@ -20,6 +20,7 @@ namespace ProjectB.Core
             builder.Register<AchievementManager>(Lifetime.Singleton);
             builder.Register<DailyBonusManager>(Lifetime.Singleton);
             builder.Register<SelectedHeroService>(Lifetime.Singleton);
+            builder.Register<AudioManager>(Lifetime.Singleton);
         }
 
         private void OnApplicationPause(bool pauseStatus)

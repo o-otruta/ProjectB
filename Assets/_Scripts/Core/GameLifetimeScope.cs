@@ -12,6 +12,7 @@ using ProjectB.Meta;
 using ProjectB.Core.Events;
 using ProjectB.Combat;
 using ProjectB.Arena;
+using ProjectB.Visuals;
 
 namespace ProjectB.Core
 {
@@ -35,6 +36,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<UpgradeManager>();
             builder.RegisterComponentInHierarchy<ArenaGenerator>();
             builder.RegisterComponentInHierarchy<SecretItemSpawner>();
+            builder.RegisterComponentInHierarchy<VfxFeedbackManager>();
             builder.RegisterComponentInHierarchy<CameraController>();
             
             // Register UI

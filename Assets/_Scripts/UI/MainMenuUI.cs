@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
+using ProjectB.Data;
 using ProjectB.Meta;
 using UnityEngine.SceneManagement;
 
@@ -15,19 +17,26 @@ namespace ProjectB.UI
         [SerializeField] private AbilitiesScreenUI abilitiesScreenUI;
         [SerializeField] private AchievementScreenUI achievementScreenUI;
         [SerializeField] private DailyBonusScreenUI dailyBonusScreenUI;
+        [SerializeField] private SettingsPopupUI settingsPopupUI;
         [SerializeField] private BottomTabUI[] tabs;
         [SerializeField] private GameObject playScreenPanel;
 
         private SaveManager saveManager;
         private DailyBonusManager bonusManager;
         private AchievementManager achievementManager;
+        private AudioManager audioManager;
 
         [Inject]
-        public void Construct(SaveManager saveManager, DailyBonusManager bonusManager, AchievementManager achievementManager = null)
+        public void Construct(
+            SaveManager saveManager,
+            DailyBonusManager bonusManager,
+            AchievementManager achievementManager = null,
+            AudioManager audioManager = null)
         {
             this.saveManager = saveManager;
             this.bonusManager = bonusManager;
             this.achievementManager = achievementManager;
+            this.audioManager = audioManager;
             
             if (this.saveManager != null)
             {
@@ -49,6 +58,7 @@ namespace ProjectB.UI
         private void Start()
         {
             UpdateBadges();
+            audioManager?.PlayMusic(MusicType.Menu);
             
             // Set default tab on startup
             OnPlayClicked();
@@ -121,12 +131,14 @@ namespace ProjectB.UI
 
         public void StartGame()
         {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             Debug.Log("[MainMenuUI] Start Game clicked!");
             SceneManager.LoadScene("Gameplay");
         }
 
         public void OnPlayClicked()
         {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             Debug.Log("[MainMenuUI] Play tab clicked");
             CloseAllPanels();
             SelectTab(2);
@@ -138,6 +150,7 @@ namespace ProjectB.UI
 
         public void OnUpgradesClicked()
         {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             Debug.Log("[MainMenuUI] Upgrades clicked");
             CloseAllPanels();
             SelectTab(0);
@@ -153,6 +166,7 @@ namespace ProjectB.UI
 
         public void OnAbilitiesClicked()
         {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             CloseAllPanels();
             SelectTab(1);
             if (abilitiesScreenUI != null)
@@ -167,6 +181,7 @@ namespace ProjectB.UI
 
         public void OnAchievementsClicked()
         {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             Debug.Log("[MainMenuUI] Achievements clicked");
             CloseAllPanels();
             SelectTab(3);
@@ -180,6 +195,7 @@ namespace ProjectB.UI
 
         public void OnBonusClicked()
         {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             Debug.Log("[MainMenuUI] Bonus clicked");
             CloseAllPanels();
             SelectTab(4);
@@ -191,7 +207,15 @@ namespace ProjectB.UI
 
         public void OnSettingsClicked()
         {
-            Debug.Log("[MainMenuUI] Settings clicked (Placeholder)");
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            if (settingsPopupUI != null)
+            {
+                settingsPopupUI.Show();
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuUI] SettingsPopupUI reference is missing!");
+            }
         }
     }
 }

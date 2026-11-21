@@ -5,6 +5,36 @@ using ProjectB.Abilities;
 namespace ProjectB.Core.Events
 {
     /// <summary>
+    /// Враг получил урон. Публикуется из EnemyBase.TakeDamage()
+    /// </summary>
+    public struct EnemyDamagedEvent
+    {
+        public Vector3 Position;
+        public int Damage;
+        public bool IsBossOrMiniBoss;
+
+        public EnemyDamagedEvent(Vector3 position, int damage, bool isBossOrMiniBoss)
+        {
+            Position = position;
+            Damage = damage;
+            IsBossOrMiniBoss = isBossOrMiniBoss;
+        }
+    }
+
+    /// <summary>
+    /// Кристалл XP подобран героем.
+    /// </summary>
+    public struct XpCollectedEvent
+    {
+        public int Amount;
+
+        public XpCollectedEvent(int amount)
+        {
+            Amount = amount;
+        }
+    }
+
+    /// <summary>
     /// Враг погиб. Публикуется из EnemyBase.Die()
     /// </summary>
     public struct EnemyDiedEvent

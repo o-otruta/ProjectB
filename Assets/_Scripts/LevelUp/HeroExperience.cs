@@ -135,7 +135,12 @@ namespace ProjectB.LevelUp
 
         public void AddExperience(int amount)
         {
-            CurrentXP += Mathf.RoundToInt(amount * xpMultiplier);
+            int gained = Mathf.RoundToInt(amount * xpMultiplier);
+            CurrentXP += gained;
+            if (gained > 0)
+            {
+                eventBus?.Publish(new XpCollectedEvent(gained));
+            }
             
             while (CurrentXP >= XPToNextLevel)
             {

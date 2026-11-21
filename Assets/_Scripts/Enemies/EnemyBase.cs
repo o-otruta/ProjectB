@@ -26,12 +26,15 @@ namespace ProjectB.Enemies
         private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
         private static readonly Color EliteTintColor = new Color(0.6f, 0f, 0.8f);
         private static readonly Color MiniBossTintColor = new Color(1f, 0.42f, 0.12f);
+        private static readonly Color HitFlashColor = new Color(1f, 0.92f, 0.85f);
+        private const float HIT_FLASH_DURATION = 0.08f;
 
         private Renderer[] enemyRenderers;
         private MaterialPropertyBlock propBlock;
         private Vector3 baseLocalScale = Vector3.one;
         private bool baseScaleCaptured;
         private bool isElite;
+        private float hitFlashTimer;
         protected bool isMiniBoss;
         protected string activeBossId;
 
@@ -93,6 +96,7 @@ namespace ProjectB.Enemies
 
             isElite = false;
             isMiniBoss = false;
+            hitFlashTimer = 0f;
             activeBossId = null;
             ClearTint();
         }
@@ -178,10 +182,38 @@ namespace ProjectB.Enemies
         protected virtual void Update()
         {
             if (!isAlive || target == null || enemyData == null) return;
+            UpdateHitFlash();
             UpdateSlowTimer();
             if (IsTargetDead()) return;
             UpdateMovement();
             UpdateAttack();
+        }
+
+        private void UpdateHitFlash()
+        {
+            if (hitFlashTimer <= 0f) return;
+            hitFlashTimer -= Time.deltaTime;
+            if (hitFlashTimer <= 0f)
+            {
+                hitFlashTimer = 0f;
+                RestoreBaseTint();
+            }
+        }
+
+        private void RestoreBaseTint()
+        {
+            if (isMiniBoss)
+            {
+                ApplyTint(MiniBossTintColor);
+            }
+            else if (isElite)
+            {
+                ApplyTint(EliteTintColor);
+            }
+            else
+            {
+                ClearTint();
+            }
         }
 
         private void UpdateSlowTimer()
@@ -276,6 +308,8 @@ namespace ProjectB.Enemies
             
             currentHp = Mathf.Max(0, currentHp - amount);
 
+            eventBus?.Publish(new EnemyDamagedEvent(transform.position, amount, isMiniBoss || IsBoss));
+
             if (isMiniBoss || IsBoss)
             {
                 eventBus?.Publish(new BossHealthChangedEvent(BossId, currentHp, maxHp));
@@ -284,6 +318,11 @@ namespace ProjectB.Enemies
             if (currentHp <= 0)
             {
                 Die();
+            }
+            else
+            {
+                hitFlashTimer = HIT_FLASH_DURATION;
+                ApplyTint(HitFlashColor);
             }
         }
 

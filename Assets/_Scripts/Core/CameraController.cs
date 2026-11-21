@@ -38,9 +38,23 @@ namespace ProjectB.Core
         private float defaultFOV;
         private float defaultOrthoSize;
         private float lastAspect;
+        private float shakeTimer;
+        private float shakeDuration;
+        private float shakeIntensity;
 
         public float DefaultOrthoSize => defaultOrthoSize;
         public float DefaultFOV => defaultFOV;
+
+        public void Shake(float intensity = 0.28f, float duration = 0.16f)
+        {
+            if (intensity <= 0f || duration <= 0f) return;
+            if (shakeTimer <= 0f || intensity >= shakeIntensity)
+            {
+                shakeIntensity = intensity;
+                shakeDuration = duration;
+                shakeTimer = duration;
+            }
+        }
 
         private void Awake()
         {
@@ -97,6 +111,14 @@ namespace ProjectB.Core
             else
             {
                 transform.position = targetPosition;
+            }
+
+            if (shakeTimer > 0f && Time.deltaTime > 0f)
+            {
+                shakeTimer -= Time.deltaTime;
+                float damper = shakeDuration > 0f ? Mathf.Clamp01(shakeTimer / shakeDuration) : 0f;
+                Vector2 rnd = Random.insideUnitCircle * (shakeIntensity * damper);
+                transform.position += transform.right * rnd.x + transform.up * rnd.y;
             }
         }
 
