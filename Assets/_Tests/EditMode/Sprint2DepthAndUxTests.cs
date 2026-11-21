@@ -213,6 +213,15 @@ namespace ProjectB.Tests.EditMode
             abilityCard.cardName = "Shooter";
             abilityCard.abilityData = shooterData;
 
+            var passiveData = Track(ScriptableObject.CreateInstance<StatPassiveAbilityData>());
+            passiveData.id = "BattleFury";
+            passiveData.abilityName = "Battle Fury";
+            passiveData.type = AbilityType.Passive;
+
+            var passiveAbilityCard = Track(ScriptableObject.CreateInstance<AbilityCardData>());
+            passiveAbilityCard.cardName = "Battle Fury";
+            passiveAbilityCard.abilityData = passiveData;
+
             var modCard = Track(ScriptableObject.CreateInstance<AbilityModifierCardData>());
             modCard.cardName = "Shooter: +1 Projectile";
             modCard.targetAbilityId = "Shooter";
@@ -228,7 +237,8 @@ namespace ProjectB.Tests.EditMode
             statCard.statType = StatType.MaxHP;
             statCard.value = 20f;
 
-            Assert.AreEqual("NEW!", CardSelectionUI.FormatLevelBadge(abilityCard, heroAbilities, out _));
+            Assert.AreEqual("NEW ACTIVE", CardSelectionUI.FormatLevelBadge(abilityCard, heroAbilities, out _));
+            Assert.AreEqual("NEW PASSIVE", CardSelectionUI.FormatLevelBadge(passiveAbilityCard, heroAbilities, out _));
             Assert.AreEqual("SYNERGY!", CardSelectionUI.FormatLevelBadge(synergyCard, heroAbilities, out _));
             Assert.AreEqual("STAT BOOST", CardSelectionUI.FormatLevelBadge(statCard, heroAbilities, out _));
 
@@ -464,11 +474,142 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(GetPrivateField(pauseMenu, "sfxValueText"), "PauseMenuUI.sfxValueText must be wired");
                 Assert.IsNotNull(GetPrivateField(pauseMenu, "resumeButton"), "PauseMenuUI.resumeButton must be wired");
                 Assert.IsNotNull(GetPrivateField(pauseMenu, "quitToMenuButton"), "PauseMenuUI.quitToMenuButton must be wired");
+
+                var abilityHud = safeArea.GetComponentInChildren<AbilityHudUI>(true);
+                Assert.IsNotNull(abilityHud, "AbilityHudUI missing under SafeAreaHUD");
+                Assert.IsNotNull(abilityHud.GetComponent<HorizontalLayoutGroup>(), "AbilityHud must use HorizontalLayoutGroup");
+                Assert.IsNull(abilityHud.transform.Find("ActiveRow"), "ACT row label must be removed");
+                Assert.IsNull(abilityHud.transform.Find("PassiveRow"), "PAS row label must be removed");
+                Assert.IsNotNull(abilityHud.transform.Find("ActiveSlots"));
+                Assert.IsNotNull(abilityHud.transform.Find("Divider"));
+                Assert.IsNotNull(abilityHud.transform.Find("PassiveSlots"));
+                Assert.IsNotNull(GetPrivateField(abilityHud, "activeSlotsContainer"), "AbilityHudUI.activeSlotsContainer must be wired");
+                Assert.IsNotNull(GetPrivateField(abilityHud, "passiveSlotsContainer"), "AbilityHudUI.passiveSlotsContainer must be wired");
+                var bossBar = safeArea.Find("BossHealthBar") as RectTransform;
+                Assert.IsNotNull(bossBar);
+                Assert.LessOrEqual(bossBar.anchoredPosition.y, -225f, "BossHealthBar must sit cleanly below single-row AbilityHud");
             }
             finally
             {
                 if (openedHere) EditorSceneManager.CloseScene(scene, true);
             }
+        }
+
+        [Test]
+        public void AbilityHudUI_SeparatesActivesAndPassivesIntoDedicatedRowsWithEmptySockets()
+        {
+            var stats = new HeroRuntimeStats();
+            var bus = new GameEventBus();
+            var heroGo = Track(new GameObject("TestHero"));
+            var heroAbilities = heroGo.AddComponent<HeroAbilities>();
+            heroAbilities.Construct(stats, bus, null, null);
+
+            var passive1 = Track(ScriptableObject.CreateInstance<StatPassiveAbilityData>());
+            passive1.id = "BattleFury";
+            passive1.abilityName = "Battle Fury";
+            passive1.type = AbilityType.Passive;
+            passive1.effectType = PassiveEffectType.DamagePercent;
+            passive1.baseValue = 15f;
+
+            var active1 = Track(ScriptableObject.CreateInstance<OrbitalCompanionAbilityData>());
+            active1.id = "orbital_small_sword";
+            active1.abilityName = "Orbital Sword";
+            active1.type = AbilityType.Active;
+            active1.count = 1;
+            active1.baseDamage = 10;
+            active1.orbitSpeed = 100f;
+            active1.orbitDistance = 2f;
+            active1.baseArea = 1f;
+            active1.prefab = Track(new GameObject("OrbitalDummy"));
+
+            var passive2 = Track(ScriptableObject.CreateInstance<StatPassiveAbilityData>());
+            passive2.id = "IronSkin";
+            passive2.abilityName = "Iron Skin";
+            passive2.type = AbilityType.Passive;
+            passive2.effectType = PassiveEffectType.ArmorFlat;
+            passive2.baseValue = 20f;
+
+            var active2 = Track(ScriptableObject.CreateInstance<ShooterAbilityData>());
+            active2.id = "Shooter";
+            active2.abilityName = "Shooter";
+            active2.type = AbilityType.Active;
+            active2.baseDamage = 10;
+            active2.baseCooldown = 1f;
+            active2.projectileCount = 1;
+            active2.projectileSpeed = 12f;
+            active2.searchRadius = 10f;
+
+            // Build AbilityHudUI with dedicated Active and Passive row containers
+            var prefabGo = Track(new GameObject("SlotPrefab", typeof(RectTransform), typeof(Image), typeof(AbilityHudSlotUI)));
+            var slotPrefab = prefabGo.GetComponent<AbilityHudSlotUI>();
+            var bgGo = Track(new GameObject("Bg", typeof(RectTransform), typeof(Image)));
+            bgGo.transform.SetParent(prefabGo.transform, false);
+            var lvlBadgeGo = Track(new GameObject("LevelBadge", typeof(RectTransform), typeof(Image)));
+            lvlBadgeGo.transform.SetParent(prefabGo.transform, false);
+            var lvlTmp = Track(new GameObject("LevelText", typeof(RectTransform), typeof(TextMeshProUGUI)));
+            lvlTmp.transform.SetParent(lvlBadgeGo.transform, false);
+            SetPrivateField(slotPrefab, "borderImage", prefabGo.GetComponent<Image>());
+            SetPrivateField(slotPrefab, "backgroundImage", bgGo.GetComponent<Image>());
+            SetPrivateField(slotPrefab, "levelText", lvlTmp.GetComponent<TextMeshProUGUI>());
+
+            var hudGo = Track(new GameObject("AbilityHud", typeof(RectTransform), typeof(AbilityHudUI)));
+            var activeRow = Track(new GameObject("ActiveSlots", typeof(RectTransform)));
+            activeRow.transform.SetParent(hudGo.transform, false);
+            var passiveRow = Track(new GameObject("PassiveSlots", typeof(RectTransform)));
+            passiveRow.transform.SetParent(hudGo.transform, false);
+
+            var hud = hudGo.GetComponent<AbilityHudUI>();
+            SetPrivateField(hud, "activeSlotsContainer", activeRow.transform);
+            SetPrivateField(hud, "passiveSlotsContainer", passiveRow.transform);
+            SetPrivateField(hud, "slotPrefab", slotPrefab);
+            hud.Construct(heroAbilities);
+
+            // Pick in interleaved order: Passive1 -> Active1 -> Passive2 -> Active2
+            Assert.IsTrue(heroAbilities.AddAbility(passive1));
+            Assert.IsTrue(heroAbilities.AddAbility(active1));
+            Assert.IsTrue(heroAbilities.AddAbility(passive2));
+            Assert.IsTrue(heroAbilities.AddAbility(active2));
+
+            var shooterContainer = GameObject.Find("Projectiles_Shooter");
+            if (shooterContainer != null) Track(shooterContainer);
+
+            hud.Refresh();
+
+            Assert.AreEqual(HeroAbilities.MAX_ACTIVE_SLOTS, hud.ActiveSlots.Count);
+            Assert.AreEqual(HeroAbilities.MAX_PASSIVE_SLOTS, hud.PassiveSlots.Count);
+
+            // Active row has Active1, Active2, then 4 empty sockets
+            Assert.AreSame(active1, hud.ActiveSlots[0].CurrentData);
+            Assert.AreSame(active2, hud.ActiveSlots[1].CurrentData);
+            for (int i = 2; i < HeroAbilities.MAX_ACTIVE_SLOTS; i++)
+            {
+                Assert.IsTrue(hud.ActiveSlots[i].IsEmpty, $"Active slot {i} should be empty");
+                Assert.IsTrue(hud.ActiveSlots[i].gameObject.activeSelf, $"Empty socket {i} must stay visible");
+                Assert.IsFalse(lvlBadgeGo == null); // sanity
+                Assert.IsFalse(hud.ActiveSlots[i].transform.Find("LevelBadge").gameObject.activeSelf);
+            }
+
+            // Passive row has Passive1, Passive2, then 4 empty sockets
+            Assert.AreSame(passive1, hud.PassiveSlots[0].CurrentData);
+            Assert.AreSame(passive2, hud.PassiveSlots[1].CurrentData);
+            for (int i = 2; i < HeroAbilities.MAX_PASSIVE_SLOTS; i++)
+            {
+                Assert.IsTrue(hud.PassiveSlots[i].IsEmpty, $"Passive slot {i} should be empty");
+                Assert.IsTrue(hud.PassiveSlots[i].gameObject.activeSelf, $"Empty passive socket {i} must stay visible");
+                Assert.IsFalse(hud.PassiveSlots[i].transform.Find("LevelBadge").gameObject.activeSelf);
+            }
+
+            // Upgrading updates levels in place within dedicated rows without shifting slots
+            heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
+            heroAbilities.UpgradeAbility("BattleFury", ModifierType.Damage, 10f);
+            hud.Refresh();
+
+            Assert.AreSame(active1, hud.ActiveSlots[0].CurrentData);
+            Assert.AreSame(active2, hud.ActiveSlots[1].CurrentData);
+            Assert.AreSame(passive1, hud.PassiveSlots[0].CurrentData);
+            Assert.AreSame(passive2, hud.PassiveSlots[1].CurrentData);
+            Assert.AreEqual("Lv2", ((TextMeshProUGUI)GetPrivateField(hud.ActiveSlots[1], "levelText")).text);
+            Assert.AreEqual("Lv2", ((TextMeshProUGUI)GetPrivateField(hud.PassiveSlots[0], "levelText")).text);
         }
 
         private static CardUI CreateCardSlot(Transform parent, string name)

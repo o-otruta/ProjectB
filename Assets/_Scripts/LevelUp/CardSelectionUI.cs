@@ -153,7 +153,17 @@ namespace ProjectB.LevelUp
         {
             switch (card)
             {
-                case AbilityCardData:
+                case AbilityCardData abilityCard:
+                    if (abilityCard.abilityData != null && abilityCard.abilityData.type == AbilityType.Passive)
+                    {
+                        badgeColor = new Color(0.14f, 0.64f, 0.76f, 1f);
+                        return "NEW PASSIVE";
+                    }
+                    if (abilityCard.abilityData != null && abilityCard.abilityData.type == AbilityType.Active)
+                    {
+                        badgeColor = new Color(0.86f, 0.44f, 0.14f, 1f);
+                        return "NEW ACTIVE";
+                    }
                     badgeColor = new Color(0.18f, 0.72f, 0.32f, 1f);
                     return "NEW!";
 

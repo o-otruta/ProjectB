@@ -14,19 +14,28 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI initialsText;
         [SerializeField] private TextMeshProUGUI levelText;
 
+        public AbilityData CurrentData { get; private set; }
+        public bool IsEmpty => CurrentData == null;
+
         public void SetAbility(AbilityData data, int level)
         {
             if (data == null)
             {
-                gameObject.SetActive(false);
+                SetEmpty(AbilityType.Active);
                 return;
             }
 
+            CurrentData = data;
             gameObject.SetActive(true);
 
             Color rarityColor = GetRarityColor(data.rarity);
             if (borderImage != null) borderImage.color = rarityColor;
-            if (backgroundImage != null) backgroundImage.color = new Color(0.12f, 0.14f, 0.2f, 0.92f);
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = data.type == AbilityType.Passive
+                    ? new Color(0.09f, 0.16f, 0.21f, 0.94f)
+                    : new Color(0.14f, 0.13f, 0.19f, 0.94f);
+            }
 
             bool hasIcon = data.icon != null;
             if (iconImage != null)
@@ -49,10 +58,47 @@ namespace ProjectB.UI
                 }
             }
 
+            SetLevelBadgeVisible(true);
             if (levelText != null)
             {
                 levelText.text = $"Lv{level}";
             }
+        }
+
+        public void SetEmpty(AbilityType slotType)
+        {
+            CurrentData = null;
+            gameObject.SetActive(true);
+
+            if (borderImage != null)
+            {
+                borderImage.color = slotType == AbilityType.Passive
+                    ? new Color(0.24f, 0.78f, 0.88f, 0.34f)
+                    : new Color(0.95f, 0.58f, 0.2f, 0.34f);
+            }
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = new Color(0.08f, 0.1f, 0.15f, 0.42f);
+            }
+            if (iconImage != null)
+            {
+                iconImage.gameObject.SetActive(false);
+            }
+            if (initialsText != null)
+            {
+                initialsText.gameObject.SetActive(false);
+            }
+            SetLevelBadgeVisible(false);
+        }
+
+        private void SetLevelBadgeVisible(bool visible)
+        {
+            if (levelText == null) return;
+            if (levelText.transform.parent != null && levelText.transform.parent != transform)
+            {
+                levelText.transform.parent.gameObject.SetActive(visible);
+            }
+            levelText.gameObject.SetActive(visible);
         }
 
         public static Color GetRarityColor(CardRarity rarity)

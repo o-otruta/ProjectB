@@ -7,12 +7,20 @@ namespace ProjectB.UI
 {
     public class AbilityHudUI : MonoBehaviour
     {
-        [SerializeField] private Transform slotsContainer;
+        [SerializeField] private Transform activeSlotsContainer;
+        [SerializeField] private Transform passiveSlotsContainer;
+        [SerializeField] private Transform slotsContainer; // Legacy fallback
         [SerializeField] private AbilityHudSlotUI slotPrefab;
+        [SerializeField] private float slotSize = 68f;
 
         private HeroAbilities heroAbilities;
-        private readonly List<AbilityHudSlotUI> slots = new List<AbilityHudSlotUI>();
+        private readonly List<AbilityHudSlotUI> activeSlots = new List<AbilityHudSlotUI>(HeroAbilities.MAX_ACTIVE_SLOTS);
+        private readonly List<AbilityHudSlotUI> passiveSlots = new List<AbilityHudSlotUI>(HeroAbilities.MAX_PASSIVE_SLOTS);
+        private readonly List<AbilityHudSlotUI> legacySlots = new List<AbilityHudSlotUI>();
         private bool isSubscribed;
+
+        public IReadOnlyList<AbilityHudSlotUI> ActiveSlots => activeSlots;
+        public IReadOnlyList<AbilityHudSlotUI> PassiveSlots => passiveSlots;
 
         [Inject]
         public void Construct(HeroAbilities heroAbilities)
@@ -60,21 +68,39 @@ namespace ProjectB.UI
 
         public void Refresh()
         {
-            if (heroAbilities == null || slotsContainer == null) return;
+            if (heroAbilities == null) return;
 
             var actives = heroAbilities.ActiveAbilities;
             var passives = heroAbilities.PassiveAbilities;
-            int totalCount = actives.Count + passives.Count;
 
-            EnsureSlotCount(totalCount);
+            if (activeSlotsContainer != null || passiveSlotsContainer != null)
+            {
+                if (activeSlotsContainer != null)
+                {
+                    EnsureSlotCount(activeSlotsContainer, activeSlots, HeroAbilities.MAX_ACTIVE_SLOTS);
+                    PopulateFixedRow(actives, activeSlots, AbilityType.Active);
+                }
+
+                if (passiveSlotsContainer != null)
+                {
+                    EnsureSlotCount(passiveSlotsContainer, passiveSlots, HeroAbilities.MAX_PASSIVE_SLOTS);
+                    PopulateFixedRow(passives, passiveSlots, AbilityType.Passive);
+                }
+                return;
+            }
+
+            if (slotsContainer == null) return;
+
+            int totalCount = actives.Count + passives.Count;
+            EnsureSlotCount(slotsContainer, legacySlots, totalCount);
 
             int slotIndex = 0;
             for (int i = 0; i < actives.Count; i++)
             {
                 var ability = actives[i];
-                if (ability != null && slotIndex < slots.Count)
+                if (ability != null && slotIndex < legacySlots.Count)
                 {
-                    slots[slotIndex].SetAbility(ability.Data, ability.Level);
+                    legacySlots[slotIndex].SetAbility(ability.Data, ability.Level);
                     slotIndex++;
                 }
             }
@@ -82,28 +108,50 @@ namespace ProjectB.UI
             for (int i = 0; i < passives.Count; i++)
             {
                 var ability = passives[i];
-                if (ability != null && slotIndex < slots.Count)
+                if (ability != null && slotIndex < legacySlots.Count)
                 {
-                    slots[slotIndex].SetAbility(ability.Data, ability.Level);
+                    legacySlots[slotIndex].SetAbility(ability.Data, ability.Level);
                     slotIndex++;
                 }
             }
 
-            for (int i = slotIndex; i < slots.Count; i++)
+            for (int i = slotIndex; i < legacySlots.Count; i++)
             {
-                slots[i].gameObject.SetActive(false);
+                legacySlots[i].gameObject.SetActive(false);
             }
         }
 
-        private void EnsureSlotCount(int required)
+        private static void PopulateFixedRow<T>(IReadOnlyList<T> abilities, List<AbilityHudSlotUI> slots, AbilityType slotType)
+            where T : AbilityBase
         {
-            if (slotPrefab == null) return;
-
-            while (slots.Count < required)
+            int filledCount = 0;
+            for (int i = 0; i < abilities.Count && filledCount < slots.Count; i++)
             {
-                var slot = Instantiate(slotPrefab, slotsContainer);
+                var ability = abilities[i];
+                if (ability == null) continue;
+                slots[filledCount].SetAbility(ability.Data, ability.Level);
+                filledCount++;
+            }
+
+            for (int i = filledCount; i < slots.Count; i++)
+            {
+                slots[i].SetEmpty(slotType);
+            }
+        }
+
+        private void EnsureSlotCount(Transform container, List<AbilityHudSlotUI> pool, int required)
+        {
+            if (slotPrefab == null || container == null) return;
+
+            while (pool.Count < required)
+            {
+                var slot = Instantiate(slotPrefab, container);
+                if (slot.transform is RectTransform rt && slotSize > 0f)
+                {
+                    rt.sizeDelta = new Vector2(slotSize, slotSize);
+                }
                 slot.gameObject.SetActive(false);
-                slots.Add(slot);
+                pool.Add(slot);
             }
         }
     }

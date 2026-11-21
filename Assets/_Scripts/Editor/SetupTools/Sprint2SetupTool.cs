@@ -203,6 +203,7 @@ namespace ProjectB.EditorScripts
                 TMP_FontAsset defaultFont = ResolveDefaultFont(canvas);
                 SetupCardSelectionPolish(canvas, defaultFont);
                 SetupPauseMenuAndButton(canvas, defaultFont);
+                SetupAbilityHudRows(canvas, defaultFont);
 
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
@@ -590,6 +591,108 @@ namespace ProjectB.EditorScripts
             so.FindProperty("quitToMenuButton").objectReferenceValue = quitButton;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(pauseMenuUi);
+        }
+
+        private static void SetupAbilityHudRows(Canvas canvas, TMP_FontAsset defaultFont)
+        {
+            Transform safeArea = canvas.transform.Find("SafeAreaHUD");
+            if (safeArea == null)
+            {
+                Debug.LogWarning("[Sprint2SetupTool] SafeAreaHUD not found under Canvas.");
+                return;
+            }
+
+            Transform abilityHudTf = safeArea.Find("AbilityHud");
+            if (abilityHudTf == null)
+            {
+                Debug.LogWarning("[Sprint2SetupTool] AbilityHud not found under SafeAreaHUD.");
+                return;
+            }
+
+            var hudRt = (RectTransform)abilityHudTf;
+            hudRt.anchoredPosition = new Vector2(0f, -142f);
+            hudRt.sizeDelta = new Vector2(-40f, 76f);
+
+            var oldVlg = abilityHudTf.GetComponent<VerticalLayoutGroup>();
+            if (oldVlg != null)
+            {
+                Object.DestroyImmediate(oldVlg);
+            }
+
+            Transform oldActiveRow = abilityHudTf.Find("ActiveRow");
+            if (oldActiveRow != null) Object.DestroyImmediate(oldActiveRow.gameObject);
+            Transform oldPassiveRow = abilityHudTf.Find("PassiveRow");
+            if (oldPassiveRow != null) Object.DestroyImmediate(oldPassiveRow.gameObject);
+
+            var hlg = EnsureComponent<HorizontalLayoutGroup>(abilityHudTf.gameObject);
+            hlg.spacing = 10f;
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
+
+            Transform activeSlots = EnsureHorizontalSlotGroup(abilityHudTf, "ActiveSlots", 0);
+            EnsureDivider(abilityHudTf, "Divider", 1);
+            Transform passiveSlots = EnsureHorizontalSlotGroup(abilityHudTf, "PassiveSlots", 2);
+
+            var hudUi = abilityHudTf.GetComponent<AbilityHudUI>();
+            if (hudUi != null)
+            {
+                var so = new SerializedObject(hudUi);
+                so.FindProperty("activeSlotsContainer").objectReferenceValue = activeSlots;
+                so.FindProperty("passiveSlotsContainer").objectReferenceValue = passiveSlots;
+                so.FindProperty("slotSize").floatValue = 68f;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(hudUi);
+            }
+
+            Transform bossBarTf = safeArea.Find("BossHealthBar");
+            if (bossBarTf != null)
+            {
+                var bossRt = (RectTransform)bossBarTf;
+                bossRt.anchoredPosition = new Vector2(bossRt.anchoredPosition.x, -236f);
+            }
+        }
+
+        private static Transform EnsureHorizontalSlotGroup(Transform parent, string groupName, int siblingIndex)
+        {
+            Transform tf = parent.Find(groupName);
+            GameObject go = tf != null
+                ? tf.gameObject
+                : new GameObject(groupName, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            if (tf == null) go.transform.SetParent(parent, false);
+            go.transform.SetSiblingIndex(siblingIndex);
+
+            var rt = (RectTransform)go.transform;
+            rt.sizeDelta = new Vector2(438f, 68f);
+
+            var hlg = EnsureComponent<HorizontalLayoutGroup>(go);
+            hlg.spacing = 6f;
+            hlg.childAlignment = TextAnchor.MiddleLeft;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
+
+            return go.transform;
+        }
+
+        private static void EnsureDivider(Transform parent, string dividerName, int siblingIndex)
+        {
+            Transform tf = parent.Find(dividerName);
+            GameObject go = tf != null
+                ? tf.gameObject
+                : new GameObject(dividerName, typeof(RectTransform), typeof(Image));
+            if (tf == null) go.transform.SetParent(parent, false);
+            go.transform.SetSiblingIndex(siblingIndex);
+
+            var rt = (RectTransform)go.transform;
+            rt.sizeDelta = new Vector2(3f, 48f);
+
+            var img = EnsureComponent<Image>(go);
+            img.color = new Color(1f, 1f, 1f, 0.28f);
+            img.raycastTarget = false;
         }
 
         private static void EnsurePauseBar(Transform parent, string barName, Vector2 pos)
