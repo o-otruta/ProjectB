@@ -1,4 +1,7 @@
 ﻿<Solution>
-  <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="ProjectB.Data.csproj" />
+  <Project Path="ProjectB.Runtime.csproj" />
+  <Project Path="ProjectB.Editor.csproj" />
+  <Project Path="ProjectB.Tests.EditMode.csproj" />
+  <Project Path="ProjectB.Meta.csproj" />
 </Solution>
