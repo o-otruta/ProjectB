@@ -1,8 +1,13 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using ProjectB.Data;
 using ProjectB.Meta;
+using ProjectB.UI;
 
 namespace ProjectB.Tests.EditMode
 {
@@ -97,6 +102,74 @@ namespace ProjectB.Tests.EditMode
             finally
             {
                 reloadedSave.Dispose();
+            }
+        }
+
+        [Test]
+        public void HeroSelectionUI_HorizontalSwipesChangeHero_AndVerticalSwipeIsIgnored()
+        {
+            saveManager.UnlockHero("mage", saveImmediately: false);
+            var service = new SelectedHeroService(saveManager, catalog);
+
+            var canvasGo = new GameObject("TestCanvas", typeof(RectTransform), typeof(Canvas));
+            var panelGo = new GameObject("HeroSelectionPanel", typeof(RectTransform));
+            panelGo.transform.SetParent(canvasGo.transform, false);
+
+            var nameGo = new GameObject("HeroName", typeof(RectTransform), typeof(TextMeshProUGUI));
+            nameGo.transform.SetParent(panelGo.transform, false);
+            var nameText = nameGo.GetComponent<TextMeshProUGUI>();
+            nameText.raycastTarget = true;
+
+            var ui = panelGo.AddComponent<HeroSelectionUI>();
+            var so = new UnityEditor.SerializedObject(ui);
+            so.FindProperty("heroNameText").objectReferenceValue = nameText;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var eventSystemGo = new GameObject("TestEventSystem", typeof(EventSystem));
+            try
+            {
+                ui.Construct(service);
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(HeroSelectionUI).GetMethod("Awake", flags).Invoke(ui, null);
+                typeof(HeroSelectionUI).GetMethod("OnEnable", flags).Invoke(ui, null);
+
+                Assert.IsNotNull(panelGo.GetComponent<InvisibleRaycastTarget>(), "HeroSelectionUI should add InvisibleRaycastTarget when no Graphic is present");
+                Assert.IsFalse(nameText.raycastTarget, "Non-interactive HeroName label should not block swipe raycasts");
+                Assert.AreEqual("KNIGHT", nameText.text);
+
+                var eventSystem = eventSystemGo.GetComponent<EventSystem>();
+                var pointer = new PointerEventData(eventSystem);
+
+                // Swipe left -> next hero (Mage)
+                pointer.position = new Vector2(400f, 500f);
+                ui.OnPointerDown(pointer);
+                pointer.position = new Vector2(240f, 510f);
+                ui.OnDrag(pointer);
+                ui.OnPointerUp(pointer);
+                Assert.AreEqual("MAGE", nameText.text);
+                Assert.AreEqual("mage", service.GetSelectedHero().id);
+
+                // Vertical swipe -> ignored (stays Mage)
+                pointer.position = new Vector2(300f, 400f);
+                ui.OnPointerDown(pointer);
+                pointer.position = new Vector2(315f, 620f);
+                ui.OnDrag(pointer);
+                ui.OnPointerUp(pointer);
+                Assert.AreEqual("MAGE", nameText.text);
+
+                // Swipe right -> previous hero (Knight)
+                pointer.position = new Vector2(220f, 500f);
+                ui.OnPointerDown(pointer);
+                pointer.position = new Vector2(390f, 495f);
+                ui.OnDrag(pointer);
+                ui.OnPointerUp(pointer);
+                Assert.AreEqual("KNIGHT", nameText.text);
+                Assert.AreEqual("knight", service.GetSelectedHero().id);
+            }
+            finally
+            {
+                Object.DestroyImmediate(eventSystemGo);
+                Object.DestroyImmediate(canvasGo);
             }
         }
     }

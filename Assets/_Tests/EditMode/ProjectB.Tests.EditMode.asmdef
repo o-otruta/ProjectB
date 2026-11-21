@@ -5,6 +5,8 @@
         "ProjectB.Data",
         "ProjectB.Meta",
         "ProjectB.Runtime",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

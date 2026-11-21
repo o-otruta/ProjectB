@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
@@ -8,7 +9,7 @@ using ProjectB.Meta;
 
 namespace ProjectB.UI
 {
-    public class HeroSelectionUI : MonoBehaviour
+    public class HeroSelectionUI : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
         [Header("Hero Info UI")]
         [SerializeField] private TextMeshProUGUI heroNameText;
@@ -23,6 +24,9 @@ namespace ProjectB.UI
         [SerializeField] private Button startRunButton;
         [SerializeField] private TextMeshProUGUI startButtonText;
 
+        [Header("Swipe Settings")]
+        [SerializeField] private float swipeThreshold = 50f;
+
         [Header("Optional 3D Preview")]
         [SerializeField] private Transform heroPreviewVisualRoot;
 
@@ -32,6 +36,9 @@ namespace ProjectB.UI
 
         private int currentIndex;
         private GameObject spawnedPreviewModel;
+        private Vector2 pointerDownPosition;
+        private bool isTrackingSwipe;
+        private Canvas parentCanvas;
 
         [Inject]
         public void Construct(
@@ -46,14 +53,74 @@ namespace ProjectB.UI
 
         private void Awake()
         {
+            parentCanvas = GetComponentInParent<Canvas>();
+            if (GetComponent<Graphic>() == null)
+            {
+                gameObject.AddComponent<InvisibleRaycastTarget>();
+            }
+
+            DisableRaycastTarget(heroNameText);
+            DisableRaycastTarget(heroStatusText);
+            DisableRaycastTarget(passiveText);
+            DisableRaycastTarget(ultimateText);
+            DisableRaycastTarget(statsText);
+
             if (prevHeroButton != null) prevHeroButton.onClick.AddListener(SelectPrevious);
             if (nextHeroButton != null) nextHeroButton.onClick.AddListener(SelectNext);
+        }
+
+        private static void DisableRaycastTarget(Graphic graphic)
+        {
+            if (graphic != null)
+            {
+                graphic.raycastTarget = false;
+            }
         }
 
         private void OnEnable()
         {
             SyncIndexToSelectedHero();
             RefreshUI();
+        }
+
+        private void OnDisable()
+        {
+            isTrackingSwipe = false;
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (eventData == null) return;
+            pointerDownPosition = eventData.position;
+            isTrackingSwipe = true;
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            // Required by Unity EventSystem so pointer press tracking stays active during swipes.
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (!isTrackingSwipe || eventData == null) return;
+            isTrackingSwipe = false;
+
+            Vector2 delta = eventData.position - pointerDownPosition;
+            if (parentCanvas == null) parentCanvas = GetComponentInParent<Canvas>();
+            float scaleFactor = parentCanvas != null && parentCanvas.scaleFactor > 0f ? parentCanvas.scaleFactor : 1f;
+            float effectiveThreshold = swipeThreshold * scaleFactor;
+
+            if (Mathf.Abs(delta.x) >= effectiveThreshold && Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
+            {
+                if (delta.x < 0f)
+                {
+                    SelectNext();
+                }
+                else
+                {
+                    SelectPrevious();
+                }
+            }
         }
 
         private void Start()

@@ -1,9 +1,12 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
+using ProjectB.Arena;
 using ProjectB.Combat;
 using ProjectB.Core.Events;
 using ProjectB.Data;
@@ -11,7 +14,9 @@ using ProjectB.Data.Combat;
 using ProjectB.Data.Enemies;
 using ProjectB.Enemies;
 using ProjectB.LevelUp;
+using ProjectB.Meta;
 using ProjectB.Player;
+using ProjectB.UI;
 using ProjectB.Visuals;
 
 namespace ProjectB.Tests.EditMode
@@ -305,6 +310,146 @@ namespace ProjectB.Tests.EditMode
                 {
                     EditorSceneManager.CloseScene(gameplayScene, true);
                 }
+            }
+        }
+
+        [Test]
+        public void ArenaGenerator_InGameplayScene_HasInstancedFloorMaterial()
+        {
+            Material expectedFloorMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Materials/FloorMat.mat");
+            Assert.IsNotNull(expectedFloorMat, "Assets/_Materials/FloorMat.mat must exist");
+            Assert.IsTrue(expectedFloorMat.enableInstancing, "FloorMat must have enableInstancing = true");
+
+            Scene alreadyLoaded = SceneManager.GetSceneByPath("Assets/_Scenes/Gameplay.unity");
+            bool openedHere = !alreadyLoaded.isLoaded;
+            Scene gameplayScene = openedHere
+                ? EditorSceneManager.OpenScene("Assets/_Scenes/Gameplay.unity", OpenSceneMode.Additive)
+                : alreadyLoaded;
+            try
+            {
+                ArenaGenerator arenaGen = null;
+                foreach (GameObject root in gameplayScene.GetRootGameObjects())
+                {
+                    arenaGen = root.GetComponentInChildren<ArenaGenerator>(true);
+                    if (arenaGen != null) break;
+                }
+
+                Assert.IsNotNull(arenaGen, "Gameplay.unity must contain ArenaGenerator");
+                var assignedMat = new SerializedObject(arenaGen).FindProperty("_floorMaterial").objectReferenceValue as Material;
+                Assert.AreSame(expectedFloorMat, assignedMat, "ArenaGenerator._floorMaterial must reference FloorMat.mat");
+            }
+            finally
+            {
+                if (openedHere)
+                {
+                    EditorSceneManager.CloseScene(gameplayScene, true);
+                }
+            }
+        }
+
+        [Test]
+        public void MenuHeroRotator_ConfigureAsPreviewDummy_DisablesPhysicsAndGameplayBehaviours()
+        {
+            GameObject heroPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Hero.prefab");
+            Assert.IsNotNull(heroPrefab);
+
+            GameObject instance = Object.Instantiate(heroPrefab);
+            spawned.Add(instance);
+
+            var rotator = instance.AddComponent<MenuHeroRotator>();
+            rotator.ConfigureAsPreviewDummy();
+
+            var rb = instance.GetComponent<Rigidbody>();
+            Assert.IsNotNull(rb);
+            Assert.IsTrue(rb.isKinematic, "Preview hero Rigidbody must be kinematic");
+            Assert.AreEqual(RigidbodyInterpolation.None, rb.interpolation, "Preview hero Rigidbody must disable interpolation");
+            Assert.IsFalse(rb.detectCollisions, "Preview hero Rigidbody must disable collision detection");
+
+            var col = instance.GetComponent<Collider>();
+            Assert.IsNotNull(col);
+            Assert.IsFalse(col.enabled, "Preview hero Collider must be disabled");
+
+            var rootBehaviours = instance.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < rootBehaviours.Length; i++)
+            {
+                if (rootBehaviours[i] == rotator)
+                {
+                    Assert.IsTrue(rotator.enabled);
+                }
+                else
+                {
+                    Assert.IsFalse(rootBehaviours[i].enabled, $"{rootBehaviours[i].GetType().Name} must be disabled on menu preview");
+                }
+            }
+        }
+
+        [Test]
+        public void EnemyDeathHandler_NormalEnemyLootDrop_SpawnsXpAndCoinWithoutOverlapping()
+        {
+            var bus = new GameEventBus();
+            var heroGo = new GameObject("DummyHero");
+            spawned.Add(heroGo);
+            var heroHealth = heroGo.AddComponent<HeroHealth>();
+            var heroExp = heroGo.AddComponent<HeroExperience>();
+            var heroEcon = heroGo.AddComponent<HeroEconomy>();
+
+            var xpGo = new GameObject("TestXpManager");
+            spawned.Add(xpGo);
+            var xpMgr = xpGo.AddComponent<XpManager>();
+            xpMgr.Construct(heroHealth, heroExp);
+
+            var coinGo = new GameObject("TestCoinManager");
+            spawned.Add(coinGo);
+            var coinMgr = coinGo.AddComponent<CoinManager>();
+            coinMgr.Construct(heroHealth, heroEcon);
+
+            XpCrystal spawnedCrystal = null;
+            CoinPickup spawnedCoin = null;
+            IObjectPool<XpCrystal> xpPool = null;
+            xpPool = new ObjectPool<XpCrystal>(() =>
+            {
+                var go = new GameObject("TestXpCrystal");
+                spawned.Add(go);
+                spawnedCrystal = go.AddComponent<XpCrystal>();
+                return spawnedCrystal;
+            });
+            IObjectPool<CoinPickup> coinPool = null;
+            coinPool = new ObjectPool<CoinPickup>(() =>
+            {
+                var go = new GameObject("TestCoinPickup");
+                spawned.Add(go);
+                spawnedCoin = go.AddComponent<CoinPickup>();
+                return spawnedCoin;
+            });
+
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(XpManager).GetField("xpPool", flags).SetValue(xpMgr, xpPool);
+            typeof(CoinManager).GetField("coinPool", flags).SetValue(coinMgr, coinPool);
+
+            var enemyData = ScriptableObject.CreateInstance<EnemyData>();
+            spawned.Add(enemyData);
+            enemyData.xpDrop = 1;
+            enemyData.coinDrop = 1;
+            enemyData.coinDropChance = 1f;
+
+            var handler = new EnemyDeathHandler(xpMgr, coinMgr, null, null, bus);
+            handler.Start();
+            try
+            {
+                Vector3 deathPos = new Vector3(4f, 0f, -2f);
+                bus.Publish(new EnemyDiedEvent(deathPos, enemyData, wasElite: false, wasMiniBoss: false, wasBoss: false));
+
+                Assert.IsNotNull(spawnedCrystal, "Expected XpCrystal to be spawned");
+                Assert.IsNotNull(spawnedCoin, "Expected CoinPickup to be spawned");
+
+                Vector2 crystalXZ = new Vector2(spawnedCrystal.transform.position.x, spawnedCrystal.transform.position.z);
+                Vector2 coinXZ = new Vector2(spawnedCoin.transform.position.x, spawnedCoin.transform.position.z);
+                float separation = Vector2.Distance(crystalXZ, coinXZ);
+                Assert.GreaterOrEqual(separation, 0.7f, $"XP and coin drops overlapped (distance={separation})");
+            }
+            finally
+            {
+                handler.Dispose();
             }
         }
     }

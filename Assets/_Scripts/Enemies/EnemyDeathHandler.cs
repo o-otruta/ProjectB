@@ -63,17 +63,27 @@ namespace ProjectB.Enemies
                 }
                 else
                 {
-                    Vector2 rand = UnityEngine.Random.insideUnitCircle * 0.5f;
-                    Vector3 dropPos = evt.Position + new Vector3(rand.x, 0f, rand.y);
+                    bool dropXp = _xpManager != null && evt.EnemyData.xpDrop > 0;
+                    bool dropCoin = _coinManager != null && evt.EnemyData.coinDrop > 0 && UnityEngine.Random.value < evt.EnemyData.coinDropChance;
 
-                    if (_xpManager != null && evt.EnemyData.xpDrop > 0)
+                    if (dropXp && dropCoin)
                     {
-                        _xpManager.SpawnXp(dropPos, evt.EnemyData.xpDrop);
+                        float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                        float radius = UnityEngine.Random.Range(0.4f, 0.55f);
+                        Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+
+                        _xpManager.SpawnXp(evt.Position + offset, evt.EnemyData.xpDrop);
+                        _coinManager.SpawnCoin(evt.Position - offset, evt.EnemyData.coinDrop);
                     }
-
-                    if (_coinManager != null && evt.EnemyData.coinDrop > 0 && UnityEngine.Random.value < evt.EnemyData.coinDropChance)
+                    else if (dropXp)
                     {
-                        _coinManager.SpawnCoin(dropPos, evt.EnemyData.coinDrop);
+                        Vector2 rand = UnityEngine.Random.insideUnitCircle * 0.4f;
+                        _xpManager.SpawnXp(evt.Position + new Vector3(rand.x, 0f, rand.y), evt.EnemyData.xpDrop);
+                    }
+                    else if (dropCoin)
+                    {
+                        Vector2 rand = UnityEngine.Random.insideUnitCircle * 0.4f;
+                        _coinManager.SpawnCoin(evt.Position + new Vector3(rand.x, 0f, rand.y), evt.EnemyData.coinDrop);
                     }
                 }
             }

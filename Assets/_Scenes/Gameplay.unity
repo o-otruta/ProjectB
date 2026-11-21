@@ -5958,7 +5958,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Arena.ArenaGenerator
   _config: {fileID: 11400000, guid: 976164aa9dd3e634db2d1a630209e2b2, type: 2}
-  _floorMaterial: {fileID: 0}
+  _floorMaterial: {fileID: 2100000, guid: e3f5c8451a30ea14997207ae1afe9555, type: 2}
   _wallMaterial: {fileID: 0}
   _generateOnStart: 1
   _visibleWalls: 0

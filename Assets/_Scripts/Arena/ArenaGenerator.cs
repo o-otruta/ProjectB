@@ -130,10 +130,9 @@ namespace ProjectB.Arena
                 }
                 else
                 {
-                    if (_fallbackFloorMaterial == null && renderer.sharedMaterial != null)
+                    if (_fallbackFloorMaterial == null)
                     {
-                        _fallbackFloorMaterial = new Material(renderer.sharedMaterial);
-                        _fallbackFloorMaterial.color = new Color(0.2f, 0.5f, 0.2f);
+                        _fallbackFloorMaterial = CreateFallbackMaterial(renderer.sharedMaterial, new Color(0.2f, 0.5f, 0.2f));
                     }
                     if (_fallbackFloorMaterial != null)
                     {
@@ -186,10 +185,9 @@ namespace ProjectB.Arena
                     }
                     else
                     {
-                        if (_fallbackWallMaterial == null && renderer.sharedMaterial != null)
+                        if (_fallbackWallMaterial == null)
                         {
-                            _fallbackWallMaterial = new Material(renderer.sharedMaterial);
-                            _fallbackWallMaterial.color = Color.gray;
+                            _fallbackWallMaterial = CreateFallbackMaterial(renderer.sharedMaterial, Color.gray);
                         }
                         if (_fallbackWallMaterial != null)
                         {
@@ -198,6 +196,22 @@ namespace ProjectB.Arena
                     }
                 }
             }
+        }
+
+        private static Material CreateFallbackMaterial(Material existingDefault, Color color)
+        {
+            Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
+            Material mat = urpLit != null
+                ? new Material(urpLit)
+                : (existingDefault != null ? new Material(existingDefault) : null);
+
+            if (mat != null)
+            {
+                mat.color = color;
+                mat.enableInstancing = true;
+            }
+
+            return mat;
         }
 
         private void GenerateObstacles()

@@ -8320,9 +8320,9 @@ RectTransform:
   - {fileID: 767245555}
   - {fileID: 1021146547}
   - {fileID: 969002451}
+  - {fileID: 1351305939}
   - {fileID: 1774789139}
   - {fileID: 578533061}
-  - {fileID: 1351305939}
   - {fileID: 890210183}
   - {fileID: 972285305}
   m_Father: {fileID: 806114167}
@@ -11050,6 +11050,14 @@ PrefabInstance:
     - target: {fileID: 3655051533755666143, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
       propertyPath: m_Name
       value: Hero
+      objectReference: {fileID: 0}
+    - target: {fileID: 3576323769353352720, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
+      propertyPath: m_IsKinematic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3576323769353352720, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
+      propertyPath: m_Interpolate
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
