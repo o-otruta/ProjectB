@@ -18,13 +18,18 @@ namespace ProjectB.UI
 
         private SaveManager saveManager;
         private AchievementManager achievementManager;
+        private AbilitySlotService abilitySlotService;
         private readonly List<AbilityCollectionItemUI> spawnedItems = new List<AbilityCollectionItemUI>();
 
         [Inject]
-        public void Construct(SaveManager saveManager, AchievementManager achievementManager = null)
+        public void Construct(
+            SaveManager saveManager,
+            AchievementManager achievementManager = null,
+            AbilitySlotService abilitySlotService = null)
         {
             this.saveManager = saveManager;
             this.achievementManager = achievementManager;
+            this.abilitySlotService = abilitySlotService;
 
             if (isActiveAndEnabled)
             {
@@ -80,7 +85,9 @@ namespace ProjectB.UI
 
             if (headerText != null)
             {
-                headerText.text = $"Abilities ({unlockedCount} / {totalCount})";
+                int act = abilitySlotService != null ? abilitySlotService.MaxActiveSlots : AbilitySlotService.BASE_ACTIVE_SLOTS;
+                int pas = abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : AbilitySlotService.BASE_PASSIVE_SLOTS;
+                headerText.text = $"Abilities ({unlockedCount}/{totalCount})  •  Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}A {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}P";
             }
         }
 

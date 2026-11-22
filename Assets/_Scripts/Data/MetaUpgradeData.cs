@@ -10,7 +10,10 @@ namespace ProjectB.Data
         MagnetRadius,
         StartLevel,
         XPBonus,
-        AbilityDamage
+        AbilityDamage,
+        BonusActiveSlots = 7,
+        BonusPassiveSlots = 8,
+        CritMultiplier = 9
     }
 
     [CreateAssetMenu(fileName = "NewMetaUpgrade", menuName = "ProjectB/Meta Upgrade Data")]

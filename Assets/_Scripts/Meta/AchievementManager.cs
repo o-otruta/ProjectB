@@ -146,6 +146,12 @@ namespace ProjectB.Meta
                         _saveManager.UnlockHero(achievement.rewardId, saveImmediately: false);
                     }
                     break;
+                case AchievementRewardType.UnlockActiveSlot:
+                    _saveManager.AddBonusActiveSlots(Mathf.Max(1, achievement.rewardValue), saveImmediately: false);
+                    break;
+                case AchievementRewardType.UnlockPassiveSlot:
+                    _saveManager.AddBonusPassiveSlots(Mathf.Max(1, achievement.rewardValue), saveImmediately: false);
+                    break;
                 case AchievementRewardType.None:
                 default:
                     break;

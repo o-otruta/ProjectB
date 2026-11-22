@@ -446,6 +446,7 @@ MonoBehaviour:
   iconImage: {fileID: 2243196511654878752}
   initialsText: {fileID: 4096568300648617142}
   levelText: {fileID: 3521978303543302678}
+  lockedIconSprite: {fileID: 21300000, guid: 646518c487e985346b1b34f935a429f6, type: 3}
 --- !u!1 &8380112484394845290
 GameObject:
   m_ObjectHideFlags: 0

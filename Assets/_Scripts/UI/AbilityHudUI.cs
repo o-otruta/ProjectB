@@ -78,13 +78,13 @@ namespace ProjectB.UI
                 if (activeSlotsContainer != null)
                 {
                     EnsureSlotCount(activeSlotsContainer, activeSlots, HeroAbilities.MAX_ACTIVE_SLOTS);
-                    PopulateFixedRow(actives, activeSlots, AbilityType.Active);
+                    PopulateFixedRow(actives, activeSlots, AbilityType.Active, heroAbilities.UnlockedActiveSlots);
                 }
 
                 if (passiveSlotsContainer != null)
                 {
                     EnsureSlotCount(passiveSlotsContainer, passiveSlots, HeroAbilities.MAX_PASSIVE_SLOTS);
-                    PopulateFixedRow(passives, passiveSlots, AbilityType.Passive);
+                    PopulateFixedRow(passives, passiveSlots, AbilityType.Passive, heroAbilities.UnlockedPassiveSlots);
                 }
                 return;
             }
@@ -121,7 +121,7 @@ namespace ProjectB.UI
             }
         }
 
-        private static void PopulateFixedRow<T>(IReadOnlyList<T> abilities, List<AbilityHudSlotUI> slots, AbilityType slotType)
+        private static void PopulateFixedRow<T>(IReadOnlyList<T> abilities, List<AbilityHudSlotUI> slots, AbilityType slotType, int unlockedCount)
             where T : AbilityBase
         {
             int filledCount = 0;
@@ -133,9 +133,17 @@ namespace ProjectB.UI
                 filledCount++;
             }
 
+            int unlockedLimit = Mathf.Clamp(unlockedCount, 0, slots.Count);
             for (int i = filledCount; i < slots.Count; i++)
             {
-                slots[i].SetEmpty(slotType);
+                if (i < unlockedLimit)
+                {
+                    slots[i].SetEmpty(slotType);
+                }
+                else
+                {
+                    slots[i].SetLocked(slotType);
+                }
             }
         }
 

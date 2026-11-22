@@ -20,6 +20,7 @@ namespace ProjectB.Core
         {
             builder.Register<SaveManager>(Lifetime.Singleton);
             builder.Register<MetaUpgradeManager>(Lifetime.Singleton);
+            builder.Register<AbilitySlotService>(Lifetime.Singleton);
             builder.Register<AchievementManager>(Lifetime.Singleton);
             builder.Register<DailyBonusManager>(Lifetime.Singleton);
             builder.Register<SelectedHeroService>(Lifetime.Singleton);

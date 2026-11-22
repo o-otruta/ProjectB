@@ -52,6 +52,12 @@ namespace ProjectB.UI
                             ? $"Hero Unlocked: {achievement.rewardId}"
                             : "New Hero Unlocked!";
                         break;
+                    case AchievementRewardType.UnlockActiveSlot:
+                        descriptionText.text = $"+{Mathf.Max(1, achievement.rewardValue)} Active Ability Slot";
+                        break;
+                    case AchievementRewardType.UnlockPassiveSlot:
+                        descriptionText.text = $"+{Mathf.Max(1, achievement.rewardValue)} Passive Ability Slot";
+                        break;
                     default:
                         descriptionText.text = "Reward Unlocked!";
                         break;

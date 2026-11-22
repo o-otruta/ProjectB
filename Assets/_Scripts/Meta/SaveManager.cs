@@ -244,5 +244,22 @@ namespace ProjectB.Meta
             Data.selectedHeroId = heroId;
             CommitChange(saveImmediately);
         }
+
+        public int GetBonusActiveSlots() => Data != null ? Mathf.Max(0, Data.bonusActiveSlots) : 0;
+        public int GetBonusPassiveSlots() => Data != null ? Mathf.Max(0, Data.bonusPassiveSlots) : 0;
+
+        public void AddBonusActiveSlots(int amount, bool saveImmediately = true)
+        {
+            if (amount <= 0 || Data == null) return;
+            Data.bonusActiveSlots += amount;
+            CommitChange(saveImmediately);
+        }
+
+        public void AddBonusPassiveSlots(int amount, bool saveImmediately = true)
+        {
+            if (amount <= 0 || Data == null) return;
+            Data.bonusPassiveSlots += amount;
+            CommitChange(saveImmediately);
+        }
     }
 }

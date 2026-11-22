@@ -9,8 +9,10 @@ namespace ProjectB.Abilities
 {
     public class HeroAbilities : MonoBehaviour
     {
-        public const int MAX_ACTIVE_SLOTS = 6;
-        public const int MAX_PASSIVE_SLOTS = 6;
+        public const int DEFAULT_ACTIVE_SLOTS = AbilitySlotService.BASE_ACTIVE_SLOTS;
+        public const int DEFAULT_PASSIVE_SLOTS = AbilitySlotService.BASE_PASSIVE_SLOTS;
+        public const int MAX_ACTIVE_SLOTS = AbilitySlotService.MAX_ACTIVE_SLOTS;
+        public const int MAX_PASSIVE_SLOTS = AbilitySlotService.MAX_PASSIVE_SLOTS;
 
         private List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
         private List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
@@ -19,10 +21,13 @@ namespace ProjectB.Abilities
         private HeroHealth heroHealth;
         private GameEventBus eventBus;
         private AchievementManager achievementManager;
+        private AbilitySlotService abilitySlotService;
 
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
         public int TotalAbilitiesCount => activeAbilities.Count + passiveAbilities.Count;
+        public int UnlockedActiveSlots => abilitySlotService != null ? abilitySlotService.MaxActiveSlots : DEFAULT_ACTIVE_SLOTS;
+        public int UnlockedPassiveSlots => abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : DEFAULT_PASSIVE_SLOTS;
 
         public event System.Action OnAbilitiesUpdated;
 
@@ -31,12 +36,32 @@ namespace ProjectB.Abilities
             HeroRuntimeStats runtimeStats,
             GameEventBus eventBus,
             AchievementManager achievementManager = null,
-            HeroHealth heroHealth = null)
+            HeroHealth heroHealth = null,
+            AbilitySlotService abilitySlotService = null)
         {
+            if (this.abilitySlotService != null)
+            {
+                this.abilitySlotService.OnSlotCapacityChanged -= OnAbilitiesChanged;
+            }
+
             this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
             this.achievementManager = achievementManager;
             this.heroHealth = heroHealth != null ? heroHealth : GetComponent<HeroHealth>();
+            this.abilitySlotService = abilitySlotService;
+
+            if (this.abilitySlotService != null)
+            {
+                this.abilitySlotService.OnSlotCapacityChanged += OnAbilitiesChanged;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (abilitySlotService != null)
+            {
+                abilitySlotService.OnSlotCapacityChanged -= OnAbilitiesChanged;
+            }
         }
 
         public bool AddAbility(AbilityData data)
@@ -47,7 +72,7 @@ namespace ProjectB.Abilities
 
             if (data.type == AbilityType.Active)
             {
-                if (!HasActive(data.id, out _) && activeAbilities.Count < MAX_ACTIVE_SLOTS)
+                if (!HasActive(data.id, out _) && activeAbilities.Count < UnlockedActiveSlots)
                 {
                     var ability = data.CreateAbility(transform) as ActiveAbility;
                     if (ability != null)
@@ -62,7 +87,7 @@ namespace ProjectB.Abilities
             }
             else if (data.type == AbilityType.Passive)
             {
-                if (!HasPassive(data.id, out _) && passiveAbilities.Count < MAX_PASSIVE_SLOTS)
+                if (!HasPassive(data.id, out _) && passiveAbilities.Count < UnlockedPassiveSlots)
                 {
                     var ability = data.CreateAbility(transform) as PassiveAbility;
                     if (ability != null)
@@ -127,8 +152,8 @@ namespace ProjectB.Abilities
             }
         }
 
-        public bool CanAddActive() => activeAbilities.Count < MAX_ACTIVE_SLOTS;
-        public bool CanAddPassive() => passiveAbilities.Count < MAX_PASSIVE_SLOTS;
+        public bool CanAddActive() => activeAbilities.Count < UnlockedActiveSlots;
+        public bool CanAddPassive() => passiveAbilities.Count < UnlockedPassiveSlots;
 
         public int GetAbilityLevel(string id)
         {

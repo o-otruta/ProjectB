@@ -13,9 +13,11 @@ namespace ProjectB.UI
         [SerializeField] private Image iconImage;
         [SerializeField] private TextMeshProUGUI initialsText;
         [SerializeField] private TextMeshProUGUI levelText;
+        [SerializeField] private Sprite lockedIconSprite;
 
         public AbilityData CurrentData { get; private set; }
-        public bool IsEmpty => CurrentData == null;
+        public bool IsLocked { get; private set; }
+        public bool IsEmpty => CurrentData == null && !IsLocked;
 
         public void SetAbility(AbilityData data, int level)
         {
@@ -26,6 +28,7 @@ namespace ProjectB.UI
             }
 
             CurrentData = data;
+            IsLocked = false;
             gameObject.SetActive(true);
 
             Color rarityColor = GetRarityColor(data.rarity);
@@ -68,6 +71,7 @@ namespace ProjectB.UI
         public void SetEmpty(AbilityType slotType)
         {
             CurrentData = null;
+            IsLocked = false;
             gameObject.SetActive(true);
 
             if (borderImage != null)
@@ -87,6 +91,43 @@ namespace ProjectB.UI
             if (initialsText != null)
             {
                 initialsText.gameObject.SetActive(false);
+            }
+            SetLevelBadgeVisible(false);
+        }
+
+        public void SetLocked(AbilityType slotType)
+        {
+            CurrentData = null;
+            IsLocked = true;
+            gameObject.SetActive(true);
+
+            if (borderImage != null)
+            {
+                borderImage.color = new Color(0.32f, 0.36f, 0.44f, 0.32f);
+            }
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = new Color(0.05f, 0.06f, 0.09f, 0.58f);
+            }
+
+            bool hasLockSprite = lockedIconSprite != null;
+            if (iconImage != null)
+            {
+                iconImage.gameObject.SetActive(hasLockSprite);
+                if (hasLockSprite)
+                {
+                    iconImage.sprite = lockedIconSprite;
+                    iconImage.color = new Color(0.62f, 0.68f, 0.78f, 0.75f);
+                }
+            }
+            if (initialsText != null)
+            {
+                initialsText.gameObject.SetActive(!hasLockSprite);
+                if (!hasLockSprite)
+                {
+                    initialsText.text = "LK";
+                    initialsText.color = new Color(0.55f, 0.6f, 0.68f, 0.75f);
+                }
             }
             SetLevelBadgeVisible(false);
         }

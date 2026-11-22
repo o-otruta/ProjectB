@@ -26,6 +26,9 @@ namespace ProjectB.Meta
         public List<string> unlockedHeroIds = new List<string>();
         // ID выбранного героя для старта забега
         public string selectedHeroId = "knight";
+        // Дополнительные слоты способностей, открытые через ачивки
+        public int bonusActiveSlots;
+        public int bonusPassiveSlots;
 
         // --- Кумулятивная статистика (для ачивок) ---
         public int totalKills;

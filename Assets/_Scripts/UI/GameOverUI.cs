@@ -202,6 +202,8 @@ namespace ProjectB.UI
                 AchievementRewardType.GiveCoins => $"+{ach.rewardValue} Coins",
                 AchievementRewardType.UnlockAbility => $"Unlocked: {ach.rewardId}",
                 AchievementRewardType.UnlockHero => $"Hero: {ach.rewardId}",
+                AchievementRewardType.UnlockActiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Active Slot",
+                AchievementRewardType.UnlockPassiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Passive Slot",
                 _ => string.Empty
             };
         }

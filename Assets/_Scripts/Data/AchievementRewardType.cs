@@ -5,6 +5,8 @@ namespace ProjectB.Data
         None,
         UnlockAbility,
         UnlockHero,
-        GiveCoins
+        GiveCoins,
+        UnlockActiveSlot = 4,
+        UnlockPassiveSlot = 5
     }
 }

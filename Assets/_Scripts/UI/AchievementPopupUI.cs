@@ -130,6 +130,10 @@ namespace ProjectB.UI
                         : "New Hero Unlocked!";
                 case AchievementRewardType.GiveCoins:
                     return $"Achievement Unlocked! +{data.rewardValue} Coins";
+                case AchievementRewardType.UnlockActiveSlot:
+                    return $"+{Mathf.Max(1, data.rewardValue)} Active Slot Unlocked!";
+                case AchievementRewardType.UnlockPassiveSlot:
+                    return $"+{Mathf.Max(1, data.rewardValue)} Passive Slot Unlocked!";
                 default:
                     return "Achievement Unlocked!";
             }
