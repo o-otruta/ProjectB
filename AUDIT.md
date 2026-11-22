@@ -271,23 +271,27 @@
 ---
 
 ### Спринт 3: Расширение арсенала — 6 новых Активных, 4 Пассивных способности и 5 Синергий (P1)
-- [ ] **3.1. Расширить `HeroRuntimeStats` под новые механики:**
+- [x] **3.1. Расширить `HeroRuntimeStats` под новые механики:**
   - В [HeroRuntimeStats.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Player/HeroRuntimeStats.cs) добавить свойства:
     - `CooldownReductionMultiplier` (от `0.5f` до `1.0f`, применяется ко всем `ActiveAbility`),
-    - `CritChance` (`0..1f`) и `CritMultiplier` (`2.0f`) с методом `RollDamage(float rawDamage, out bool isCrit)`,
+    - `CritChance` (`0..1f`) и `CritMultiplier` (`1.1f` базовый, с прокачкой через `CriticalLensMod_Multiplier` и мета-апгрейд `crit_multiplier`) с методом `RollDamage(float rawDamage, out bool isCrit)`,
     - `CoinMultiplier` (`1.0f+`, применяется в `HeroEconomy.AddCoin`).
   - Обновить `EnemyDamagedEvent` и [DamageNumberItem.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Visuals/DamageNumberItem.cs) для поддержки флага `IsCrit` (увеличенный масштаб `1.45x` и ярко-оранжевый цвет).
-- [ ] **3.2. Реализовать 6 новых активных способностей (Раздел 4.3.А):**
+- [x] **3.2. Реализовать 6 новых активных способностей (Раздел 4.3.А):**
   - `ChainLightningAbility` + `ChainLightningAbilityData`
   - `PoisonFlaskAbility` + `PoisonPuddle` (пулимый объект зоны) + `PoisonFlaskAbilityData`
   - `GuardianShieldAbility` (с knockback через `EnemyBase.ApplyPull`)
   - `MiniDragonAbility` + `DragonFollower` (первый миньон-спутник с `SmoothDamp` следованием и залпом огня)
   - `VoxelTornadoAbility` + `TornadoProjectile`
   - `SeismicHammerAbility`
-- [ ] **3.3. Создать 4 новые пассивные способности и 5 новых синергий (Разделы 4.3.Б и 4.3.В):**
+- [x] **3.3. Создать 4 новые пассивные способности и 5 новых синергий (Разделы 4.3.Б и 4.3.В):**
   - Создать `.asset`-файлы для `ChronoTome`, `CriticalLens`, `TitanHeart`, `GoldenIdol` и их карточек.
   - Создать 5 новых `SynergyData` + `SynergyCardData` (`Thunderstorm`, `Toxic Inferno`, `Aegis Phalanx`, `Dragon Lord`, `Cataclysm Vortex`) и зарегистрировать их в `UpgradeManager.synergies` и `AbilityCatalog.asset`.
   - При взятии карточки `SynergyCardData` проигрывать особый VFX/SFX эволюции в `VfxFeedbackManager`.
+- [x] **3.4. Расширяемые слоты способностей (3+3 базовых -> 6+6 через ачивки и интерфейс для дерева прокачки):**
+  - Реализован [AbilitySlotService.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Meta/AbilitySlotService.cs) с поддержкой `SaveData.bonusActiveSlots`/`bonusPassiveSlots`, `MetaUpgradeEffectType.BonusActiveSlots`/`BonusPassiveSlots` и расширяемого интерфейса `IAbilitySlotBonusProvider` для будущего дерева прокачки.
+  - [HeroAbilities.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/HeroAbilities.cs) и [AbilityHudUI.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/UI/AbilityHudUI.cs) ограничивают забег разблокированными слотами (по умолчанию `3` активных + `3` пассивных) и отображают заблокированные ячейки с иконкой замка.
+  - Добавлены 6 ачивок расширения слотов (`UnlockActiveSlot` / `UnlockPassiveSlot`) в `Assets/Resources/Achievements/`.
 
 ---
 
