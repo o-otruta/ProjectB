@@ -8,13 +8,16 @@ namespace ProjectB.Data
         None = 0,
         MaxHpPercent = 1,
         GlobalDamagePercent = 2,
-        MoveSpeedPercent = 3
+        MoveSpeedPercent = 3,
+        XpAndMagnetPercent = 4
     }
 
     public enum HeroUltimateType
     {
         Shield = 0,
-        MeteorStrike = 1
+        MeteorStrike = 1,
+        ArrowRain = 2,
+        SoulNova = 3
     }
 
     [CreateAssetMenu(fileName = "HeroData", menuName = "ProjectB/Data/HeroData")]

@@ -89,6 +89,7 @@ namespace ProjectB.LevelUp
             if (runtimeStats != null)
             {
                 MagnetRadius = runtimeStats.GetMagnetRadius(baseMagnetRadius);
+                xpMultiplier = runtimeStats.XpMultiplier;
             }
         }
 

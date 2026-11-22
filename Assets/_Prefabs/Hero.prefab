@@ -285,6 +285,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Player.HeroUltimate
   fallbackHeroData: {fileID: 11400000, guid: 16d952ca2481f154ab1f0c676e8a63b7, type: 2}
   shieldVisual: {fileID: 1933129062480438446}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  soulNovaMesh: {fileID: -2432090755550338912, guid: 3ffc7a48bf999d842a9899d64553e229, type: 3}
+  soulNovaBaseMaterial: {fileID: 2100000, guid: 3c915e3bfde7add42a5c05425f359f44, type: 2}
+  soulNovaGlowMaterial: {fileID: 2100000, guid: 82ab1ca224eece7469421b11b6e831bf, type: 2}
 --- !u!1 &5004205951048006136
 GameObject:
   m_ObjectHideFlags: 0

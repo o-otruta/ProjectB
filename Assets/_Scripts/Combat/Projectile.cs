@@ -17,6 +17,7 @@ namespace ProjectB.Combat
         private WeaponData data;
         private LayerMask enemyLayer;
         private HeroRuntimeStats runtimeStats;
+        private HeroHealth ownerHealth;
         private bool isReturned;
         private float damageMultiplier = 1f;
         private float spawnTime;
@@ -27,7 +28,8 @@ namespace ProjectB.Combat
             IObjectPool<Projectile> projectilePool,
             float damageMultiplier = 1f,
             LayerMask enemyLayer = default,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            HeroHealth ownerHealth = null)
         {
             data = weaponData;
             target = targetTransform;
@@ -35,6 +37,7 @@ namespace ProjectB.Combat
             pool = projectilePool;
             this.enemyLayer = enemyLayer;
             this.runtimeStats = runtimeStats;
+            this.ownerHealth = ownerHealth;
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
             spawnTime = Time.time;
@@ -99,6 +102,7 @@ namespace ProjectB.Combat
             {
                 int finalDamage = RollHitDamage(rawDamage, out bool isCrit);
                 DealDamage(targetDamageable, finalDamage, isCrit);
+                TryApplyLifesteal();
             }
 
             if (data != null && data.splashRadius > 0f && rawDamage > 0f && enemyLayer.value != 0)
@@ -118,6 +122,17 @@ namespace ProjectB.Combat
             }
 
             ReturnToPool();
+        }
+
+        private void TryApplyLifesteal()
+        {
+            if (data == null || data.lifestealAmount <= 0 || data.lifestealChance <= 0f) return;
+            if (ownerHealth == null || ownerHealth.IsDead) return;
+
+            if (data.lifestealChance >= 1f || Random.value < data.lifestealChance)
+            {
+                ownerHealth.Heal(data.lifestealAmount);
+            }
         }
 
         private int RollHitDamage(float rawDamage, out bool isCrit)

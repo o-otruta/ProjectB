@@ -126,12 +126,37 @@ namespace ProjectB.EditorScripts
                 var hero = AssetDatabase.LoadAssetAtPath<HeroData>(path);
                 if (hero == null) continue;
 
-                string heroKey = hero.id == "mage" ? "hero_mage" : "hero_knight";
-                string ultKey = hero.ultimateType == HeroUltimateType.MeteorStrike ? "ult_meteor" : "ult_shield";
-                Color32 frameCol = hero.id == "mage" ? Purple : IceBlue;
+                string heroKey = hero.id switch
+                {
+                    "mage" => "hero_mage",
+                    "ranger" => "hero_ranger",
+                    "necromancer" => "hero_necromancer",
+                    _ => "hero_knight"
+                };
+                string ultKey = hero.ultimateType switch
+                {
+                    HeroUltimateType.MeteorStrike => "ult_meteor",
+                    HeroUltimateType.ArrowRain => "ult_arrow_rain",
+                    HeroUltimateType.SoulNova => "ult_soul_nova",
+                    _ => "ult_shield"
+                };
+                Color32 frameCol = hero.id switch
+                {
+                    "mage" => Purple,
+                    "ranger" => Green,
+                    "necromancer" => Cyan,
+                    _ => IceBlue
+                };
+                Color32 ultFrameCol = hero.ultimateType switch
+                {
+                    HeroUltimateType.MeteorStrike => FireOrange,
+                    HeroUltimateType.ArrowRain => Green,
+                    HeroUltimateType.SoulNova => Cyan,
+                    _ => IceBlue
+                };
 
                 hero.icon = GetOrCreateSprite($"hero_{hero.id}", framed: true, spriteCache, heroKey, frameCol);
-                hero.ultimateIcon = GetOrCreateSprite($"ult_{hero.id}", framed: true, spriteCache, ultKey, hero.ultimateType == HeroUltimateType.MeteorStrike ? FireOrange : IceBlue);
+                hero.ultimateIcon = GetOrCreateSprite($"ult_{hero.id}", framed: true, spriteCache, ultKey, ultFrameCol);
                 EditorUtility.SetDirty(hero);
             }
 
@@ -613,7 +638,15 @@ namespace ProjectB.EditorScripts
             if (ach.id.Contains("crystal")) return "secret_crystal";
             if (ach.id.Contains("golem")) return "boss_golem";
             if (ach.id.Contains("necromancer")) return "boss_necro";
-            if (ach.rewardType == AchievementRewardType.UnlockHero) return "hero_mage";
+            if (ach.rewardType == AchievementRewardType.UnlockHero)
+            {
+                return ach.rewardId switch
+                {
+                    "ranger" => "hero_ranger",
+                    "necromancer" => "hero_necromancer",
+                    _ => "hero_mage"
+                };
+            }
             if (ach.rewardType == AchievementRewardType.UnlockActiveSlot) return "slot_active";
             if (ach.rewardType == AchievementRewardType.UnlockPassiveSlot) return "slot_passive";
             if (ach.rewardType == AchievementRewardType.UnlockAbility && !string.IsNullOrEmpty(ach.rewardId))
@@ -1023,6 +1056,82 @@ namespace ProjectB.EditorScripts
                     "...KRRRK..KRRK..",
                     "....KKK....KK...",
                     "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["hero_ranger"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KEEEEEFK....",
+                    "...KEEEWWEEEK...",
+                    "...KEKKKKKKEK...",
+                    "...KEKYYKKYEK...",
+                    "...KEEEEEEEFK...",
+                    "....KFFFFBFK....",
+                    "...KBEEEEBBK....",
+                    "..KBNEEEEKBHK...",
+                    "..KKKFFFFKKK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["hero_necromancer"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KQPPPPQK....",
+                    "...KQQKKKKQQK...",
+                    "...KQKYYKKYQK...",
+                    "...KQQKKKKQQK...",
+                    "....KQQWWQQK....",
+                    "...KWWQPPQWWK...",
+                    "..KWWQQPPQQWWK..",
+                    "...KKQQPPQQKK...",
+                    ".....KKKKKK.....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["ult_arrow_rain"] = new[]
+                {
+                    "................",
+                    "..KK...KK...KK..",
+                    ".KEEK.KEEK.KEEK.",
+                    "..KBK..KBK..KBK.",
+                    "..KBK..KBK..KBK.",
+                    "..KBK..KBK..KBK.",
+                    "..KHK..KHK..KHK.",
+                    ".KHHHK.KHHHK.KHK",
+                    "..KHK..KHK..KHHK",
+                    "...K....K....KH.",
+                    "....KK...KK...K.",
+                    "...KHHK.KHHK....",
+                    "....KK...KK.....",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["ult_soul_nova"] = new[]
+                {
+                    "................",
+                    "..KK........KK..",
+                    ".KYYK..KK..KYYK.",
+                    "..KK.KWWWWK.KK..",
+                    "....KWWWWWWK....",
+                    ".KK.KWKKWWKK.KK.",
+                    "KYYKKWKYYKWKKYYK",
+                    ".KK.KWWWWWWK.KK.",
+                    "....KWWKKWWK....",
+                    "..KK.KWWWWK.KK..",
+                    ".KYYK..KK..KYYK.",
+                    "..KK........KK..",
                     "................",
                     "................",
                     "................",

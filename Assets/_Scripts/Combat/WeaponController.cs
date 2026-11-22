@@ -13,6 +13,7 @@ namespace ProjectB.Combat
         private Transform firePoint;
         private Transform projectileContainer;
         private HeroRuntimeStats runtimeStats;
+        private HeroHealth ownerHealth;
 
         private IObjectPool<Projectile> projectilePool;
         private float nextFireTime;
@@ -32,7 +33,8 @@ namespace ProjectB.Combat
             Transform firePoint,
             Transform rootContainer,
             float damageMultiplier = 1f,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            HeroHealth ownerHealth = null)
         {
             this.weaponData = data;
             this.enemyLayer = enemyLayer;
@@ -40,6 +42,7 @@ namespace ProjectB.Combat
             this.firePoint = firePoint;
             this.damageMultiplier = damageMultiplier;
             this.runtimeStats = runtimeStats;
+            this.ownerHealth = ownerHealth;
 
             projectileContainer = new GameObject($"ProjectileContainer_{data.name}").transform;
             projectileContainer.SetParent(rootContainer);
@@ -123,7 +126,7 @@ namespace ProjectB.Combat
             if (p == null) return;
             
             p.transform.position = firePoint != null ? firePoint.position : (ownerTransform != null ? ownerTransform.position : Vector3.zero);
-            p.Initialize(weaponData, target, projectilePool, damageMultiplier, enemyLayer, runtimeStats);
+            p.Initialize(weaponData, target, projectilePool, damageMultiplier, enemyLayer, runtimeStats, ownerHealth);
         }
 
         public void DrawGizmos()

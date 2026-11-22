@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef2ffd51e5694c747b713dca256afa79, type: 3}
+  m_Name: RangerData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroData
+  id: ranger
+  heroName: Ranger
+  description: Swift forest marksman unleashing rapid arrows and deadly volleys.
+  icon: {fileID: 21300000, guid: cc364ba8396e8c949b32db8062135d69, type: 3}
+  unlockedByDefault: 0
+  moveSpeed: 5.6
+  rotationSpeed: 15
+  maxHp: 90
+  startingWeapon: {fileID: 11400000, guid: 54a575a986343d649ace2cdcf2518336, type: 2}
+  visualModelPrefab: {fileID: 1028195260883705984, guid: 1730f7e3f0e3df142823caf6b8643c1e, type: 3}
+  passiveType: 3
+  passiveValue: 25
+  passiveName: Windrunner
+  passiveDescription: +25% Move Speed
+  ultimateType: 2
+  ultimateName: Arrow Rain
+  ultimateDescription: Unleashes 3 waves of arrows in an 8m radius, dealing 150 damage
+    and slowing enemies by 50%.
+  ultimateDuration: 2.4
+  ultimateCooldown: 20
+  ultimateIcon: {fileID: 21300000, guid: 8bb1b927b4f9e974282358eb570afc12, type: 3}

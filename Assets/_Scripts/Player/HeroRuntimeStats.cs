@@ -19,12 +19,16 @@ namespace ProjectB.Player
         public float MetaMagnetMultiplier { get; }
         public float MetaWeaponDamageMultiplier { get; }
         public float MetaAbilityDamageMultiplier { get; }
-        public float XpMultiplier { get; }
+        public float MetaXpMultiplier { get; }
         public int StartingBonusLevels { get; }
 
         public float HeroPassiveHpMultiplier { get; private set; } = 1f;
         public float HeroPassiveDamageMultiplier { get; private set; } = 1f;
         public float HeroPassiveSpeedMultiplier { get; private set; } = 1f;
+        public float HeroPassiveXpMultiplier { get; private set; } = 1f;
+        public float HeroPassiveMagnetMultiplier { get; private set; } = 1f;
+
+        public float XpMultiplier => MetaXpMultiplier * HeroPassiveXpMultiplier;
 
         public float GlobalDamageMultiplier { get; private set; } = 1f;
         public float Armor { get; private set; } = 0f;
@@ -59,7 +63,7 @@ namespace ProjectB.Player
                 MetaMagnetMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.MagnetRadius) / 100f;
                 MetaWeaponDamageMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.HeroDamage) / 100f;
                 MetaAbilityDamageMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.AbilityDamage) / 100f;
-                XpMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.XPBonus) / 100f;
+                MetaXpMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.XPBonus) / 100f;
                 StartingBonusLevels = Mathf.Max(0, Mathf.RoundToInt(metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.StartLevel)));
                 CritMultiplier = Mathf.Max(1.0f, BASE_CRIT_MULTIPLIER + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.CritMultiplier));
             }
@@ -70,7 +74,7 @@ namespace ProjectB.Player
                 MetaMagnetMultiplier = 1f;
                 MetaWeaponDamageMultiplier = 1f;
                 MetaAbilityDamageMultiplier = 1f;
-                XpMultiplier = 1f;
+                MetaXpMultiplier = 1f;
                 StartingBonusLevels = 0;
                 CritMultiplier = BASE_CRIT_MULTIPLIER;
             }
@@ -86,6 +90,8 @@ namespace ProjectB.Player
             HeroPassiveHpMultiplier = 1f;
             HeroPassiveDamageMultiplier = 1f;
             HeroPassiveSpeedMultiplier = 1f;
+            HeroPassiveXpMultiplier = 1f;
+            HeroPassiveMagnetMultiplier = 1f;
 
             if (heroData != null && heroData.passiveValue > 0f)
             {
@@ -99,6 +105,11 @@ namespace ProjectB.Player
                         break;
                     case HeroPassiveType.MoveSpeedPercent:
                         HeroPassiveSpeedMultiplier = 1f + heroData.passiveValue / 100f;
+                        break;
+                    case HeroPassiveType.XpAndMagnetPercent:
+                        float factor = 1f + heroData.passiveValue / 100f;
+                        HeroPassiveXpMultiplier = factor;
+                        HeroPassiveMagnetMultiplier = factor;
                         break;
                     case HeroPassiveType.None:
                     default:
@@ -211,7 +222,7 @@ namespace ProjectB.Player
 
         public float GetMagnetRadius(float baseRadius)
         {
-            return Mathf.Max(0f, baseRadius * MetaMagnetMultiplier + MagnetRadiusFlatBonus);
+            return Mathf.Max(0f, baseRadius * HeroPassiveMagnetMultiplier * MetaMagnetMultiplier + MagnetRadiusFlatBonus);
         }
 
         /// <summary>
