@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroData
   id: mage
   heroName: Mage
-  description: Arcane spellcaster firing explosive AoE bolts (14 dmg, 1.5m splash radius) and channeling devastating elemental power.
+  description: Arcane spellcaster firing explosive AoE bolts (14 dmg, 1.5m splash
+    radius) and channeling devastating elemental power.
   icon: {fileID: 21300000, guid: 14d7f06af2b5c2b4d845325d4e6263dd, type: 3}
   unlockedByDefault: 0
   moveSpeed: 5.2
@@ -25,10 +26,32 @@ MonoBehaviour:
   passiveType: 2
   passiveValue: 20
   passiveName: Arcane Mastery
-  passiveDescription: "+20% Global Damage\n<b>Weapon:</b> Arcane Blast (14 AoE dmg, 1.5m splash)"
+  passiveDescription: '+20% Global Damage
+
+    <b>Weapon:</b> Arcane Blast (14 AoE
+    dmg, 1.5m splash)'
   ultimateType: 1
   ultimateName: Meteor Shower
-  ultimateDescription: Calls down 6 explosive meteors around you, dealing 80 AoE damage each in a 3.5m radius.
+  ultimateDescription: Calls down 6 explosive meteors around you, dealing 80 AoE
+    damage each in a 3.5m radius.
   ultimateDuration: 3
   ultimateCooldown: 22
   ultimateIcon: {fileID: 21300000, guid: ced9c52099082374d919bb22fe08b195, type: 3}
+  shieldPulseRadius: 4.5
+  shieldPulseDamage: 40
+  shieldPulseKnockback: 2.5
+  meteorCount: 6
+  meteorSearchRadius: 7
+  meteorExplosionRadius: 3.5
+  meteorBaseDamage: 80
+  arrowRainWaveCount: 3
+  arrowRainRadius: 8
+  arrowRainWaveDamage: 50
+  arrowRainSlowFactor: 0.5
+  arrowRainSlowDuration: 4
+  soulNovaBoltCount: 12
+  soulNovaBaseDamage: 60
+  soulNovaRange: 10
+  soulNovaSpeed: 16
+  soulNovaHitRadius: 0.42
+  soulNovaHealPercent: 0.35

@@ -14,24 +14,6 @@ namespace ProjectB.Player
 {
     public class HeroUltimate : MonoBehaviour
     {
-        private const int METEOR_COUNT = 6;
-        private const float METEOR_SEARCH_RADIUS = 7f;
-        private const float METEOR_EXPLOSION_RADIUS = 3.5f;
-        private const float METEOR_BASE_DAMAGE = 80f;
-
-        private const int ARROW_RAIN_WAVE_COUNT = 3;
-        private const float ARROW_RAIN_RADIUS = 8f;
-        private const float ARROW_RAIN_WAVE_DAMAGE = 50f;
-        private const float ARROW_RAIN_SLOW_FACTOR = 0.5f;
-        private const float ARROW_RAIN_SLOW_DURATION = 4.0f;
-
-        private const int SOUL_NOVA_BOLT_COUNT = 12;
-        private const float SOUL_NOVA_BASE_DAMAGE = 60f;
-        private const float SOUL_NOVA_RANGE = 10f;
-        private const float SOUL_NOVA_SPEED = 16f;
-        private const float SOUL_NOVA_HIT_RADIUS = 0.42f;
-        private const float SOUL_NOVA_HEAL_PERCENT = 0.35f;
-
         private struct SoulBoltState
         {
             public bool active;
@@ -80,13 +62,15 @@ namespace ProjectB.Player
         private Transform[] soulBoltVisuals;
 
         private int resolvedEnemyLayerMask;
+        private int resolvedObstacleLayerMask = -1;
 
         public HeroData ActiveHeroData => activeHeroData != null ? activeHeroData : (selectedHeroService?.GetSelectedHero() ?? fallbackHeroData);
         public bool IsActive => isActive;
         public float ActiveRemaining => activeRemaining;
         public float ActiveDuration => ActiveHeroData != null ? Mathf.Max(0.1f, ActiveHeroData.ultimateDuration) : 5f;
         public float CooldownRemaining => cooldownRemaining;
-        public float CooldownDuration => ActiveHeroData != null ? Mathf.Max(0.1f, ActiveHeroData.ultimateCooldown) : 25f;
+        public float BaseCooldownDuration => ActiveHeroData != null ? Mathf.Max(0.1f, ActiveHeroData.ultimateCooldown) : 25f;
+        public float CooldownDuration => runtimeStats != null ? runtimeStats.GetEffectiveCooldown(BaseCooldownDuration, 1f) : BaseCooldownDuration;
         public bool IsReady => !isActive && cooldownRemaining <= 0f && (heroHealth == null || !heroHealth.IsDead);
 
         public event Action OnStateChanged;
@@ -138,7 +122,11 @@ namespace ProjectB.Player
         public void Prewarm()
         {
             ResolveEnemyLayerMask();
-            EnsureSoulNovaState();
+            HeroData data = ActiveHeroData;
+            if (data == null || data.ultimateType == HeroUltimateType.SoulNova)
+            {
+                EnsureSoulNovaState();
+            }
         }
 
         public void SimulateFrameTick()
@@ -267,18 +255,104 @@ namespace ProjectB.Player
             }
 
             OnStateChanged?.Invoke();
+            TriggerShieldShockwave();
+        }
+
+        public int TriggerShieldShockwave()
+        {
+            HeroData data = ActiveHeroData;
+            float radius = data != null ? Mathf.Max(0f, data.shieldPulseRadius) : 4.5f;
+            float baseDamage = data != null ? Mathf.Max(0f, data.shieldPulseDamage) : 40f;
+            float knockback = data != null ? Mathf.Max(0f, data.shieldPulseKnockback) : 2.5f;
+            Vector3 heroPos = transform.position;
+
+            int affected = 0;
+            if (radius > 0f)
+            {
+                int mask = ResolveEnemyLayerMask();
+                int obsMask = ResolveObstacleLayerMask();
+                float damageMult = runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f;
+                float rawDamage = baseDamage * damageMult;
+
+                int hits = Physics.OverlapSphereNonAlloc(heroPos, radius, ultDamageBuffer, mask);
+                for (int i = 0; i < hits; i++)
+                {
+                    Collider col = ultDamageBuffer[i];
+                    if (col == null) continue;
+                    if (!col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
+                    if (damageable is HeroHealth) continue;
+
+                    if (rawDamage > 0f)
+                    {
+                        bool isCrit = false;
+                        int finalDamage = runtimeStats != null
+                            ? runtimeStats.RollDamage(rawDamage, out isCrit)
+                            : Mathf.Max(1, Mathf.RoundToInt(rawDamage));
+
+                        if (damageable is EnemyBase enemyDmg)
+                        {
+                            enemyDmg.TakeDamage(finalDamage, isCrit);
+                        }
+                        else
+                        {
+                            damageable.TakeDamage(finalDamage);
+                        }
+                    }
+
+                    if (knockback > 0f && col.TryGetComponent<EnemyBase>(out var enemy) && !enemy.IsDead)
+                    {
+                        Vector3 pushDir = enemy.transform.position - heroPos;
+                        pushDir.y = 0f;
+                        if (pushDir.sqrMagnitude < 0.0001f)
+                        {
+                            pushDir = transform.forward;
+                            pushDir.y = 0f;
+                        }
+
+                        if (pushDir.sqrMagnitude > 0.0001f)
+                        {
+                            pushDir.Normalize();
+                            float safeDist = knockback;
+                            if (obsMask != 0 && Physics.SphereCast(
+                                enemy.transform.position + Vector3.up * 0.5f,
+                                0.35f,
+                                pushDir,
+                                out RaycastHit hit,
+                                knockback + 0.2f,
+                                obsMask,
+                                QueryTriggerInteraction.Ignore))
+                            {
+                                safeDist = Mathf.Max(0f, hit.distance - 0.25f);
+                            }
+
+                            if (safeDist > 0.01f)
+                            {
+                                enemy.ApplyPull(pushDir * safeDist);
+                            }
+                        }
+                    }
+
+                    affected++;
+                }
+            }
+
+            eventBus?.Publish(new ShieldShockwaveEvent(heroPos, radius));
+            return affected;
         }
 
         private void ActivateMeteorStrike()
         {
+            HeroData data = ActiveHeroData;
+            int count = data != null ? Mathf.Max(1, data.meteorCount) : 6;
+
             isActive = true;
             activeUltimateType = HeroUltimateType.MeteorStrike;
             float duration = ActiveDuration;
             activeRemaining = duration;
             cooldownRemaining = 0f;
-            meteorsRemaining = METEOR_COUNT;
+            meteorsRemaining = count;
             arrowWavesRemaining = 0;
-            meteorInterval = duration / METEOR_COUNT;
+            meteorInterval = duration / count;
             nextMeteorTimer = meteorInterval;
 
             OnStateChanged?.Invoke();
@@ -287,15 +361,18 @@ namespace ProjectB.Player
 
         private void ActivateArrowRain()
         {
+            HeroData data = ActiveHeroData;
+            int waveCount = data != null ? Mathf.Max(1, data.arrowRainWaveCount) : 3;
+
             isActive = true;
             activeUltimateType = HeroUltimateType.ArrowRain;
             float duration = Mathf.Max(0.6f, ActiveDuration);
             activeRemaining = duration;
             cooldownRemaining = 0f;
             meteorsRemaining = 0;
-            arrowWavesRemaining = ARROW_RAIN_WAVE_COUNT;
+            arrowWavesRemaining = waveCount;
             arrowWaveIndex = 0;
-            arrowWaveInterval = duration / ARROW_RAIN_WAVE_COUNT;
+            arrowWaveInterval = duration / waveCount;
             nextArrowWaveTimer = arrowWaveInterval;
 
             OnStateChanged?.Invoke();
@@ -310,12 +387,18 @@ namespace ProjectB.Player
             }
             arrowWaveIndex++;
 
+            HeroData data = ActiveHeroData;
+            float radius = data != null ? Mathf.Max(1f, data.arrowRainRadius) : 8f;
+            float waveDamage = data != null ? Mathf.Max(0f, data.arrowRainWaveDamage) : 50f;
+            float slowFactor = data != null ? Mathf.Clamp(data.arrowRainSlowFactor, 0.1f, 1f) : 0.5f;
+            float slowDuration = data != null ? Mathf.Max(0f, data.arrowRainSlowDuration) : 4.0f;
+
             int mask = ResolveEnemyLayerMask();
             Vector3 heroPos = transform.position;
             float damageMult = runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f;
-            float rawDamage = ARROW_RAIN_WAVE_DAMAGE * damageMult;
+            float rawDamage = waveDamage * damageMult;
 
-            int hits = Physics.OverlapSphereNonAlloc(heroPos, ARROW_RAIN_RADIUS, ultDamageBuffer, mask);
+            int hits = Physics.OverlapSphereNonAlloc(heroPos, radius, ultDamageBuffer, mask);
             int damagedCount = 0;
             for (int i = 0; i < hits; i++)
             {
@@ -342,16 +425,21 @@ namespace ProjectB.Player
 
                 if (col.TryGetComponent<ISlowable>(out var slowable))
                 {
-                    slowable.ApplySlow(ARROW_RAIN_SLOW_FACTOR, ARROW_RAIN_SLOW_DURATION);
+                    slowable.ApplySlow(slowFactor, slowDuration);
                 }
             }
 
-            eventBus?.Publish(new ArrowRainWaveEvent(heroPos, ARROW_RAIN_RADIUS, arrowWaveIndex));
+            eventBus?.Publish(new ArrowRainWaveEvent(heroPos, radius, arrowWaveIndex));
             return damagedCount;
         }
 
         private void ActivateSoulNova()
         {
+            HeroData data = ActiveHeroData;
+            int boltCount = data != null ? Mathf.Max(1, data.soulNovaBoltCount) : 12;
+            float range = data != null ? Mathf.Max(1f, data.soulNovaRange) : 10f;
+            float healPercent = data != null ? Mathf.Clamp01(data.soulNovaHealPercent) : 0.35f;
+
             isActive = true;
             activeUltimateType = HeroUltimateType.SoulNova;
             activeRemaining = Mathf.Max(0.75f, ActiveDuration);
@@ -360,17 +448,17 @@ namespace ProjectB.Player
             arrowWavesRemaining = 0;
 
             int healAmount = 0;
-            if (heroHealth != null && !heroHealth.IsDead)
+            if (heroHealth != null && !heroHealth.IsDead && healPercent > 0f)
             {
                 int targetMax = Mathf.Max(1, heroHealth.MaxHp);
-                healAmount = Mathf.Max(1, Mathf.RoundToInt(targetMax * SOUL_NOVA_HEAL_PERCENT));
+                healAmount = Mathf.Max(1, Mathf.RoundToInt(targetMax * healPercent));
                 heroHealth.Heal(healAmount);
             }
 
             EnsureSoulNovaState();
             Vector3 origin = transform.position + Vector3.up * 0.6f;
-            float angleStep = (Mathf.PI * 2f) / SOUL_NOVA_BOLT_COUNT;
-            for (int i = 0; i < SOUL_NOVA_BOLT_COUNT; i++)
+            float angleStep = (Mathf.PI * 2f) / boltCount;
+            for (int i = 0; i < boltCount; i++)
             {
                 float angle = angleStep * i;
                 Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
@@ -380,7 +468,7 @@ namespace ProjectB.Player
                 soulBolts[i].distanceTraveled = 0f;
                 soulBolts[i].hitIds.Clear();
 
-                if (soulBoltVisuals != null && soulBoltVisuals[i] != null)
+                if (soulBoltVisuals != null && i < soulBoltVisuals.Length && soulBoltVisuals[i] != null)
                 {
                     soulBoltVisuals[i].gameObject.SetActive(true);
                     soulBoltVisuals[i].position = origin;
@@ -390,17 +478,23 @@ namespace ProjectB.Player
 
             OnStateChanged?.Invoke();
             StepSoulNova(0f);
-            eventBus?.Publish(new SoulNovaCastEvent(transform.position, SOUL_NOVA_RANGE, healAmount));
+            eventBus?.Publish(new SoulNovaCastEvent(transform.position, range, healAmount));
         }
 
         public int StepSoulNova(float deltaTime)
         {
             if (soulBolts == null) return 0;
 
+            HeroData data = ActiveHeroData;
+            float baseDamage = data != null ? Mathf.Max(0f, data.soulNovaBaseDamage) : 60f;
+            float speed = data != null ? Mathf.Max(1f, data.soulNovaSpeed) : 16f;
+            float hitRadius = data != null ? Mathf.Max(0.1f, data.soulNovaHitRadius) : 0.42f;
+            float range = data != null ? Mathf.Max(1f, data.soulNovaRange) : 10f;
+
             int mask = ResolveEnemyLayerMask();
             float damageMult = runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f;
-            float rawDamage = SOUL_NOVA_BASE_DAMAGE * damageMult;
-            float stepDist = Mathf.Max(0f, deltaTime) * SOUL_NOVA_SPEED;
+            float rawDamage = baseDamage * damageMult;
+            float stepDist = Mathf.Max(0f, deltaTime) * speed;
             int totalHits = 0;
 
             for (int b = 0; b < soulBolts.Length; b++)
@@ -410,12 +504,12 @@ namespace ProjectB.Player
                 soulBolts[b].position += soulBolts[b].direction * stepDist;
                 soulBolts[b].distanceTraveled += stepDist;
 
-                if (soulBoltVisuals != null && soulBoltVisuals[b] != null)
+                if (soulBoltVisuals != null && b < soulBoltVisuals.Length && soulBoltVisuals[b] != null)
                 {
                     soulBoltVisuals[b].position = soulBolts[b].position;
                 }
 
-                int hits = Physics.OverlapSphereNonAlloc(soulBolts[b].position, SOUL_NOVA_HIT_RADIUS, ultDamageBuffer, mask);
+                int hits = Physics.OverlapSphereNonAlloc(soulBolts[b].position, hitRadius, ultDamageBuffer, mask);
                 for (int i = 0; i < hits; i++)
                 {
                     Collider col = ultDamageBuffer[i];
@@ -441,10 +535,10 @@ namespace ProjectB.Player
                     totalHits++;
                 }
 
-                if (soulBolts[b].distanceTraveled >= SOUL_NOVA_RANGE)
+                if (soulBolts[b].distanceTraveled >= range)
                 {
                     soulBolts[b].active = false;
-                    if (soulBoltVisuals != null && soulBoltVisuals[b] != null)
+                    if (soulBoltVisuals != null && b < soulBoltVisuals.Length && soulBoltVisuals[b] != null)
                     {
                         soulBoltVisuals[b].gameObject.SetActive(false);
                     }
@@ -456,12 +550,23 @@ namespace ProjectB.Player
 
         private void EnsureSoulNovaState()
         {
-            if (soulBolts == null)
+            HeroData data = ActiveHeroData;
+            int boltCount = data != null ? Mathf.Max(1, data.soulNovaBoltCount) : 12;
+
+            if (soulBolts == null || soulBolts.Length != boltCount)
             {
-                soulBolts = new SoulBoltState[SOUL_NOVA_BOLT_COUNT];
-                for (int i = 0; i < SOUL_NOVA_BOLT_COUNT; i++)
+                soulBolts = new SoulBoltState[boltCount];
+                for (int i = 0; i < boltCount; i++)
                 {
                     soulBolts[i].hitIds = new HashSet<EntityId>(32);
+                }
+
+                if (soulNovaVisualRoot != null)
+                {
+                    if (Application.isPlaying) Destroy(soulNovaVisualRoot.gameObject);
+                    else DestroyImmediate(soulNovaVisualRoot.gameObject);
+                    soulNovaVisualRoot = null;
+                    soulBoltVisuals = null;
                 }
             }
 
@@ -469,9 +574,9 @@ namespace ProjectB.Player
             {
                 var rootGo = new GameObject("SoulNovaVisuals");
                 soulNovaVisualRoot = rootGo.transform;
-                soulBoltVisuals = new Transform[SOUL_NOVA_BOLT_COUNT];
+                soulBoltVisuals = new Transform[boltCount];
 
-                for (int i = 0; i < SOUL_NOVA_BOLT_COUNT; i++)
+                for (int i = 0; i < boltCount; i++)
                 {
                     GameObject boltGo;
                     if (soulNovaMesh != null)
@@ -497,7 +602,11 @@ namespace ProjectB.Player
                         boltGo.name = $"SoulBolt_{i}";
                         boltGo.transform.localScale = Vector3.one * 0.35f;
                         var col = boltGo.GetComponent<Collider>();
-                        if (col != null) Destroy(col);
+                        if (col != null)
+                        {
+                            if (Application.isPlaying) Destroy(col);
+                            else DestroyImmediate(col);
+                        }
                     }
 
                     boltGo.transform.SetParent(soulNovaVisualRoot, false);
@@ -533,14 +642,19 @@ namespace ProjectB.Player
             if (meteorsRemaining <= 0) return;
             meteorsRemaining--;
 
+            HeroData data = ActiveHeroData;
+            float searchRadius = data != null ? Mathf.Max(1f, data.meteorSearchRadius) : 7f;
+            float explosionRadius = data != null ? Mathf.Max(0.5f, data.meteorExplosionRadius) : 3.5f;
+            float baseDamage = data != null ? Mathf.Max(0f, data.meteorBaseDamage) : 80f;
+
             int mask = ResolveEnemyLayerMask();
             Vector3 heroPos = transform.position;
-            Vector3 impactPos = FindMeteorImpactPoint(heroPos, mask);
+            Vector3 impactPos = FindMeteorImpactPoint(heroPos, mask, searchRadius);
 
             float damageMult = runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f;
-            float rawDamage = METEOR_BASE_DAMAGE * damageMult;
+            float rawDamage = baseDamage * damageMult;
 
-            int hits = Physics.OverlapSphereNonAlloc(impactPos, METEOR_EXPLOSION_RADIUS, ultDamageBuffer, mask);
+            int hits = Physics.OverlapSphereNonAlloc(impactPos, explosionRadius, ultDamageBuffer, mask);
             for (int i = 0; i < hits; i++)
             {
                 Collider col = ultDamageBuffer[i];
@@ -562,19 +676,23 @@ namespace ProjectB.Player
                 }
             }
 
-            eventBus?.Publish(new MeteorImpactEvent(impactPos, METEOR_EXPLOSION_RADIUS));
+            eventBus?.Publish(new MeteorImpactEvent(impactPos, explosionRadius));
         }
 
-        private Vector3 FindMeteorImpactPoint(Vector3 heroPos, int mask)
+        private Vector3 FindMeteorImpactPoint(Vector3 heroPos, int mask, float searchRadius)
         {
-            int hits = Physics.OverlapSphereNonAlloc(heroPos, METEOR_SEARCH_RADIUS, meteorSearchBuffer, mask);
+            int hits = Physics.OverlapSphereNonAlloc(heroPos, searchRadius, meteorSearchBuffer, mask);
             int candidateCount = 0;
 
             for (int i = 0; i < hits && candidateCount < meteorCandidateBuffer.Length; i++)
             {
                 Collider col = meteorSearchBuffer[i];
                 if (col == null) continue;
-                if (col.TryGetComponent<IDamageable>(out var damageable) && damageable.IsDead) continue;
+                if (col.TryGetComponent<IDamageable>(out var damageable) &&
+                    !CombatTargetFilter.IsValidAutoAimTarget(col, damageable, mask))
+                {
+                    continue;
+                }
 
                 meteorCandidateBuffer[candidateCount++] = col.transform;
             }
@@ -608,6 +726,15 @@ namespace ProjectB.Player
                 resolvedEnemyLayerMask = mask != 0 ? mask : (1 << 8);
             }
             return resolvedEnemyLayerMask;
+        }
+
+        private int ResolveObstacleLayerMask()
+        {
+            if (resolvedObstacleLayerMask == -1)
+            {
+                resolvedObstacleLayerMask = LayerMask.GetMask("Obstacles");
+            }
+            return resolvedObstacleLayerMask;
         }
 
         private void DeactivateUltimate()

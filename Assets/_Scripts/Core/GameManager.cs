@@ -129,10 +129,21 @@ namespace ProjectB.Core
             int coins = runStatistics != null ? runStatistics.CoinsEarned : 0;
             lastShownRunCoins = coins;
 
+            RecordRunProgressToSave(wave, coins, notifyAdRunCompleted: true);
+
+            OnGameOver?.Invoke(wave, coins);
+            eventBus?.Publish(new GameOverEvent(wave, coins));
+        }
+
+        private void RecordRunProgressToSave(int wave, int coins, bool notifyAdRunCompleted)
+        {
             if (!hasCountedRunInTotals)
             {
                 hasCountedRunInTotals = true;
-                adManager?.NotifyRunCompleted();
+                if (notifyAdRunCompleted)
+                {
+                    adManager?.NotifyRunCompleted();
+                }
 
                 if (runStatistics != null && saveManager != null)
                 {
@@ -156,7 +167,6 @@ namespace ProjectB.Core
             }
             else if (runStatistics != null && saveManager != null)
             {
-                // 2nd death after revive: record only incremental deltas since 1st death
                 int deltaCoins = Mathf.Max(0, coins - recordedCoinsThisRun);
                 int deltaKills = Mathf.Max(0, runStatistics.EnemiesKilled - recordedKillsThisRun);
                 float deltaTime = Mathf.Max(0f, runStatistics.PlayTime - recordedPlayTimeThisRun);
@@ -171,9 +181,33 @@ namespace ProjectB.Core
                 recordedKillsThisRun = runStatistics.EnemiesKilled;
                 recordedPlayTimeThisRun = runStatistics.PlayTime;
             }
+        }
 
-            OnGameOver?.Invoke(wave, coins);
-            eventBus?.Publish(new GameOverEvent(wave, coins));
+        public void SaveAbandonedRunProgress()
+        {
+            if (currentState == GameState.GameOver)
+            {
+                saveManager?.SaveIfDirty();
+                return;
+            }
+
+            int wave = waveManager != null ? waveManager.CurrentWave : 1;
+            int coins = runStatistics != null ? runStatistics.CoinsEarned : 0;
+            RecordRunProgressToSave(wave, coins, notifyAdRunCompleted: false);
+        }
+
+        public void AbandonRunAndGoToMenu()
+        {
+            SaveAbandonedRunProgress();
+            if (Application.isPlaying)
+            {
+                GoToMenu();
+            }
+            else
+            {
+                Time.timeScale = 1f;
+                saveManager?.SaveIfDirty();
+            }
         }
 
         public bool PauseGame()

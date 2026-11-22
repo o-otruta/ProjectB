@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 using VContainer;
@@ -10,6 +11,7 @@ namespace ProjectB.Player
     public class HeroHealth : MonoBehaviour, IDamageable
     {
         [SerializeField] private HeroData heroData;
+        [SerializeField] [Min(0f)] private float postHitInvulnerabilityDuration = 0.18f;
         
         public event System.Action<int, int> OnHealthChanged;
         public event System.Action<int> OnDamageTaken;
@@ -21,12 +23,15 @@ namespace ProjectB.Player
         private bool isInvulnerable;
         private bool isGodMode;
         private float reviveInvulnerabilityTimer;
+        private float postHitInvulnerabilityTimer;
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
         private SelectedHeroService selectedHeroService;
 
         public bool IsDead => isDead;
-        public bool IsInvulnerable => isInvulnerable || isGodMode || reviveInvulnerabilityTimer > 0f;
+        public bool IsInvulnerable => isInvulnerable || isGodMode || reviveInvulnerabilityTimer > 0f || postHitInvulnerabilityTimer > 0f;
+        public bool IsPostHitInvulnerable => postHitInvulnerabilityTimer > 0f;
+        public float PostHitInvulnerabilityDuration => postHitInvulnerabilityDuration;
         public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
@@ -75,9 +80,24 @@ namespace ProjectB.Player
 
         private void Update()
         {
-            if (reviveInvulnerabilityTimer > 0f && Time.deltaTime > 0f)
+            if (Time.deltaTime > 0f)
             {
-                reviveInvulnerabilityTimer = Mathf.Max(0f, reviveInvulnerabilityTimer - Time.deltaTime);
+                TickInvulnerability(Time.deltaTime);
+            }
+        }
+
+        public void TickInvulnerability(float deltaTime)
+        {
+            if (deltaTime <= 0f) return;
+
+            if (reviveInvulnerabilityTimer > 0f)
+            {
+                reviveInvulnerabilityTimer = Mathf.Max(0f, reviveInvulnerabilityTimer - deltaTime);
+            }
+
+            if (postHitInvulnerabilityTimer > 0f)
+            {
+                postHitInvulnerabilityTimer = Mathf.Max(0f, postHitInvulnerabilityTimer - deltaTime);
             }
         }
 
@@ -85,6 +105,7 @@ namespace ProjectB.Player
         {
             isDead = false;
             currentHp = currentMaxHp;
+            postHitInvulnerabilityTimer = 0f;
             reviveInvulnerabilityTimer = Mathf.Max(0f, invulnerabilityDuration);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
@@ -98,6 +119,11 @@ namespace ProjectB.Player
 
             currentHp -= finalDamage;
             if (currentHp < 0) currentHp = 0;
+
+            if (currentHp > 0 && postHitInvulnerabilityDuration > 0f)
+            {
+                postHitInvulnerabilityTimer = Mathf.Max(postHitInvulnerabilityTimer, postHitInvulnerabilityDuration);
+            }
 
             OnDamageTaken?.Invoke(finalDamage);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
@@ -113,7 +139,9 @@ namespace ProjectB.Player
             if (isDead) return;
             isDead = true;
             isInvulnerable = false;
-            Debug.Log("[HeroHealth] Hero has died. Game Over!");
+            postHitInvulnerabilityTimer = 0f;
+            reviveInvulnerabilityTimer = 0f;
+            DevLog.Log("[HeroHealth] Hero has died. Game Over!");
             OnDied?.Invoke();
             eventBus?.Publish(new HeroDiedEvent());
         }

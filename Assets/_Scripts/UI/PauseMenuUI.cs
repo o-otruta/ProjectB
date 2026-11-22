@@ -19,11 +19,18 @@ namespace ProjectB.UI
         [SerializeField] private Button resumeButton;
         [SerializeField] private Button quitToMenuButton;
 
+        [Header("Quit Confirmation")]
+        [SerializeField] private GameObject quitConfirmPanel;
+        [SerializeField] private Button confirmQuitButton;
+        [SerializeField] private Button cancelQuitButton;
+        [SerializeField] private TextMeshProUGUI quitConfirmText;
+
         private GameManager gameManager;
         private AudioManager audioManager;
         private bool isSubscribedToGameOver;
 
         public bool IsPanelOpen => pausePanel != null && pausePanel.activeSelf;
+        public bool IsQuitConfirmOpen => quitConfirmPanel != null && quitConfirmPanel.activeSelf;
 
         [Inject]
         public void Construct(GameManager gameManager, AudioManager audioManager = null)
@@ -49,9 +56,12 @@ namespace ProjectB.UI
             if (pauseButton != null) pauseButton.onClick.AddListener(OnPauseClicked);
             if (resumeButton != null) resumeButton.onClick.AddListener(OnResumeClicked);
             if (quitToMenuButton != null) quitToMenuButton.onClick.AddListener(OnQuitToMenuClicked);
+            if (confirmQuitButton != null) confirmQuitButton.onClick.AddListener(OnConfirmQuitClicked);
+            if (cancelQuitButton != null) cancelQuitButton.onClick.AddListener(OnCancelQuitClicked);
             if (musicSlider != null) musicSlider.onValueChanged.AddListener(OnMusicSliderChanged);
             if (sfxSlider != null) sfxSlider.onValueChanged.AddListener(OnSfxSliderChanged);
 
+            if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
             if (pausePanel != null) pausePanel.SetActive(false);
         }
 
@@ -60,6 +70,8 @@ namespace ProjectB.UI
             if (pauseButton != null) pauseButton.onClick.RemoveListener(OnPauseClicked);
             if (resumeButton != null) resumeButton.onClick.RemoveListener(OnResumeClicked);
             if (quitToMenuButton != null) quitToMenuButton.onClick.RemoveListener(OnQuitToMenuClicked);
+            if (confirmQuitButton != null) confirmQuitButton.onClick.RemoveListener(OnConfirmQuitClicked);
+            if (cancelQuitButton != null) cancelQuitButton.onClick.RemoveListener(OnCancelQuitClicked);
             if (musicSlider != null) musicSlider.onValueChanged.RemoveListener(OnMusicSliderChanged);
             if (sfxSlider != null) sfxSlider.onValueChanged.RemoveListener(OnSfxSliderChanged);
 
@@ -74,7 +86,11 @@ namespace ProjectB.UI
         {
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
-                if (IsPanelOpen)
+                if (IsQuitConfirmOpen)
+                {
+                    OnCancelQuitClicked();
+                }
+                else if (IsPanelOpen)
                 {
                     OnResumeClicked();
                 }
@@ -92,6 +108,7 @@ namespace ProjectB.UI
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             SyncAudioControls();
 
+            if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
             if (pausePanel != null)
             {
                 pausePanel.SetActive(true);
@@ -103,6 +120,7 @@ namespace ProjectB.UI
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             audioManager?.SaveSettings();
 
+            if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
             if (pausePanel != null)
             {
                 pausePanel.SetActive(false);
@@ -114,14 +132,37 @@ namespace ProjectB.UI
         public void OnQuitToMenuClicked()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+
+            if (quitConfirmPanel != null)
+            {
+                quitConfirmPanel.SetActive(true);
+                return;
+            }
+
+            OnConfirmQuitClicked();
+        }
+
+        public void OnCancelQuitClicked()
+        {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            if (quitConfirmPanel != null)
+            {
+                quitConfirmPanel.SetActive(false);
+            }
+        }
+
+        public void OnConfirmQuitClicked()
+        {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             audioManager?.SaveSettings();
 
+            if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
             if (pausePanel != null)
             {
                 pausePanel.SetActive(false);
             }
 
-            gameManager?.GoToMenu();
+            gameManager?.AbandonRunAndGoToMenu();
         }
 
         private void SyncAudioControls()
@@ -154,6 +195,10 @@ namespace ProjectB.UI
 
         private void HandleGameOver(int _, int __)
         {
+            if (quitConfirmPanel != null)
+            {
+                quitConfirmPanel.SetActive(false);
+            }
             if (pausePanel != null)
             {
                 pausePanel.SetActive(false);

@@ -408,5 +408,20 @@ namespace ProjectB.Core.Events
             CoinReward = coinReward;
         }
     }
+
+    /// <summary>
+    /// Ударная волна ультимейта Рыцаря (Aegis Shield) при активации.
+    /// </summary>
+    public struct ShieldShockwaveEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+
+        public ShieldShockwaveEvent(Vector3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
 }
 

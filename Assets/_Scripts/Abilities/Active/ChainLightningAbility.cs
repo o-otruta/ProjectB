@@ -156,7 +156,11 @@ namespace ProjectB.Abilities
             {
                 Collider col = hitBuffer[i];
                 if (col == null) continue;
-                if (!col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
+                if (!col.TryGetComponent<IDamageable>(out var damageable) ||
+                    !CombatTargetFilter.IsValidAutoAimTarget(col, damageable, mask))
+                {
+                    continue;
+                }
 
                 Transform candidate = col.transform;
                 if (excludeSelected && ContainsTransform(chainTargets, candidate)) continue;

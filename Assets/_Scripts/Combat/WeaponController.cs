@@ -26,6 +26,17 @@ namespace ProjectB.Combat
             set => damageMultiplier = value;
         }
 
+        public float EffectiveAttackCooldown
+        {
+            get
+            {
+                if (weaponData == null) return 0f;
+                return runtimeStats != null
+                    ? runtimeStats.GetEffectiveCooldown(weaponData.attackCooldown, 0.08f)
+                    : Mathf.Max(0.08f, weaponData.attackCooldown);
+            }
+        }
+
         public WeaponController(
             WeaponData data,
             LayerMask enemyLayer,
@@ -110,7 +121,7 @@ namespace ProjectB.Combat
                 if (target != null)
                 {
                     Fire(target);
-                    nextFireTime = Time.time + weaponData.attackCooldown;
+                    nextFireTime = Time.time + EffectiveAttackCooldown;
                 }
                 else
                 {
@@ -131,7 +142,11 @@ namespace ProjectB.Combat
             {
                 Collider col = overlapResults[i];
                 if (col == null) continue;
-                if (col.TryGetComponent<IDamageable>(out var damageable) && damageable.IsDead) continue;
+                if (col.TryGetComponent<IDamageable>(out var damageable) &&
+                    !CombatTargetFilter.IsValidAutoAimTarget(col, damageable, enemyLayer))
+                {
+                    continue;
+                }
 
                 Transform potentialTarget = col.transform;
                 Vector3 directionToTarget = potentialTarget.position - center;

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using ProjectB.Enemies;
+using ProjectB.Combat;
 
 namespace ProjectB.Abilities
 {
@@ -75,7 +75,11 @@ namespace ProjectB.Abilities
             while (instances.Count > currentCount)
             {
                 var inst = instances[instances.Count - 1];
-                if (inst != null) Destroy(inst.gameObject);
+                if (inst != null)
+                {
+                    if (Application.isPlaying) Destroy(inst.gameObject);
+                    else DestroyImmediate(inst.gameObject);
+                }
                 instances.RemoveAt(instances.Count - 1);
             }
 
@@ -92,7 +96,11 @@ namespace ProjectB.Abilities
                     obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                     obj.transform.SetParent(transform);
                     var col = obj.GetComponent<Collider>();
-                    if (col != null) Destroy(col);
+                    if (col != null)
+                    {
+                        if (Application.isPlaying) Destroy(col);
+                        else DestroyImmediate(col);
+                    }
                 }
                 obj.name = $"Orbital_{i}";
                 obj.transform.localScale = Vector3.one * currentArea;
@@ -159,15 +167,14 @@ namespace ProjectB.Abilities
                 for (int i = 0; i < count; i++)
                 {
                     var col = hitBuffer[i];
-                    var enemy = col.GetComponent<EnemyBase>();
-                    if (enemy == null || enemy.IsDead) continue;
+                    if (col == null || !col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
 
                     EntityId enemyId = col.gameObject.GetEntityId();
 
                     if (!enemyDamageCooldowns.TryGetValue(enemyId, out float nextDamageTime) || currentTime >= nextDamageTime)
                     {
                         int scaledDamage = RollScaledDamage(currentDamage, out bool isCrit);
-                        enemy.TakeDamage(scaledDamage, isCrit);
+                        DealDamage(damageable, scaledDamage, isCrit);
                         enemyDamageCooldowns[enemyId] = currentTime + effectiveTick;
                     }
                 }

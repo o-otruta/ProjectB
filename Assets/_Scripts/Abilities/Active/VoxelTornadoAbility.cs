@@ -173,7 +173,11 @@ namespace ProjectB.Abilities
             {
                 Collider col = hitBuffer[i];
                 if (col == null) continue;
-                if (!col.TryGetComponent<IDamageable>(out var dmg) || dmg.IsDead) continue;
+                if (!col.TryGetComponent<IDamageable>(out var dmg) ||
+                    !CombatTargetFilter.IsValidAutoAimTarget(col, dmg, layer))
+                {
+                    continue;
+                }
 
                 float sqr = (col.transform.position - origin).sqrMagnitude;
                 if (sqr < bestSqr)

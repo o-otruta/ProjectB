@@ -329,6 +329,7 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<BarrelExplodedEvent>(OnBarrelExploded);
                 eventBus.Subscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
                 eventBus.Subscribe<ChallengeShrineEvent>(OnChallengeShrine);
+                eventBus.Subscribe<ShieldShockwaveEvent>(OnShieldShockwave);
             }
 
             if (heroHealth != null)
@@ -367,6 +368,7 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<BarrelExplodedEvent>(OnBarrelExploded);
                 eventBus.Unsubscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
                 eventBus.Unsubscribe<ChallengeShrineEvent>(OnChallengeShrine);
+                eventBus.Unsubscribe<ShieldShockwaveEvent>(OnShieldShockwave);
             }
 
             if (heroHealth != null)
@@ -687,6 +689,20 @@ namespace ProjectB.Visuals
 
             audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.95f, randomizePitch: false);
             cameraController?.Shake(0.16f, 0.12f);
+        }
+
+        private void OnShieldShockwave(ShieldShockwaveEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.6f,
+                Mathf.Max(1.5f, evt.Radius),
+                ShieldUltColor,
+                LevelUpColor,
+                ringCount: 22,
+                centerCount: 6,
+                speed: 6.2f,
+                size: 0.32f);
+            cameraController?.Shake(0.18f, 0.12f);
         }
 
         private void OnChallengeShrine(ChallengeShrineEvent evt)

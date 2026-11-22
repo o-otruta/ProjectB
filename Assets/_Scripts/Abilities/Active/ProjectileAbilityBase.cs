@@ -132,7 +132,11 @@ namespace ProjectB.Abilities
             {
                 Collider col = hitBuffer[i];
                 if (col == null) continue;
-                if (col.TryGetComponent<IDamageable>(out var dmg) && dmg.IsDead) continue;
+                if (col.TryGetComponent<IDamageable>(out var dmg) &&
+                    !CombatTargetFilter.IsValidAutoAimTarget(col, dmg, targetLayer))
+                {
+                    continue;
+                }
 
                 var target = col.transform;
                 float sqrDist = (target.position - transform.position).sqrMagnitude;
@@ -166,7 +170,11 @@ namespace ProjectB.Abilities
                 {
                     Collider col = hitBuffer[i];
                     if (col == null) continue;
-                    if (col.TryGetComponent<IDamageable>(out var dmg) && dmg.IsDead) continue;
+                    if (col.TryGetComponent<IDamageable>(out var dmg) &&
+                        !CombatTargetFilter.IsValidAutoAimTarget(col, dmg, targetLayer))
+                    {
+                        continue;
+                    }
 
                     Transform candidate = col.transform;
                     if (results.Contains(candidate)) continue;

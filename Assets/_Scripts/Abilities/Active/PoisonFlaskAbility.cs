@@ -239,7 +239,11 @@ namespace ProjectB.Abilities
                 {
                     Collider col = hitBuffer[i];
                     if (col == null) continue;
-                    if (!col.TryGetComponent<IDamageable>(out var dmg) || dmg.IsDead) continue;
+                    if (!col.TryGetComponent<IDamageable>(out var dmg) ||
+                        !CombatTargetFilter.IsValidAutoAimTarget(col, dmg, targetLayer))
+                    {
+                        continue;
+                    }
 
                     Transform cand = col.transform;
                     if (results.Contains(cand)) continue;

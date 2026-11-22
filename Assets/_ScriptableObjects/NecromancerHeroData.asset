@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroData
   id: necromancer
   heroName: Necromancer
-  description: Master of souls firing life-draining bolts (20% chance on hit to heal 2 HP) and harvesting essence for faster growth.
+  description: Master of souls firing life-draining bolts (20% chance on hit to heal
+    2 HP) and harvesting essence for faster growth.
   icon: {fileID: 21300000, guid: 694976933c96f514c931e96cc3eab06f, type: 3}
   unlockedByDefault: 0
   moveSpeed: 5
@@ -25,10 +26,32 @@ MonoBehaviour:
   passiveType: 4
   passiveValue: 35
   passiveName: Soul Harvest
-  passiveDescription: "+35% XP & Magnet Radius\n<b>Weapon:</b> Soul Bolt (11 dmg, 20% chance to heal 2 HP on hit)"
+  passiveDescription: '+35% XP & Magnet Radius
+
+    <b>Weapon:</b> Soul Bolt (11
+    dmg, 20% chance to heal 2 HP on hit)'
   ultimateType: 3
   ultimateName: Army of the Dead
-  ultimateDescription: Fires 12 piercing spectral skulls in all directions (60 dmg each) and instantly heals 35% Max HP.
+  ultimateDescription: Fires 12 piercing spectral skulls in all directions (60 dmg
+    each) and instantly heals 35% Max HP.
   ultimateDuration: 1
   ultimateCooldown: 24
   ultimateIcon: {fileID: 21300000, guid: 318b69bcb1eeac3429364806b5e29df0, type: 3}
+  shieldPulseRadius: 4.5
+  shieldPulseDamage: 40
+  shieldPulseKnockback: 2.5
+  meteorCount: 6
+  meteorSearchRadius: 7
+  meteorExplosionRadius: 3.5
+  meteorBaseDamage: 80
+  arrowRainWaveCount: 3
+  arrowRainRadius: 8
+  arrowRainWaveDamage: 50
+  arrowRainSlowFactor: 0.5
+  arrowRainSlowDuration: 4
+  soulNovaBoltCount: 12
+  soulNovaBaseDamage: 60
+  soulNovaRange: 10
+  soulNovaSpeed: 16
+  soulNovaHitRadius: 0.42
+  soulNovaHealPercent: 0.35
