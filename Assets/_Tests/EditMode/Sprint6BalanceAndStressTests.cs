@@ -6,6 +6,7 @@ using NUnit.Framework;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using ProjectB.Abilities;
 using ProjectB.Arena;
@@ -27,6 +28,7 @@ namespace ProjectB.Tests.EditMode
     public class Sprint6BalanceAndStressTests
     {
         private readonly List<UnityEngine.Object> spawned = new List<UnityEngine.Object>();
+        private readonly HashSet<GameObject> preExistingRoots = new HashSet<GameObject>();
         private bool hadOriginalSave;
         private string originalSaveJson;
 
@@ -37,6 +39,16 @@ namespace ProjectB.Tests.EditMode
             originalSaveJson = hadOriginalSave ? PlayerPrefs.GetString(SaveManager.SAVE_KEY) : null;
             PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
             Time.timeScale = 1f;
+
+            preExistingRoots.Clear();
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() && activeScene.isLoaded)
+            {
+                foreach (GameObject root in activeScene.GetRootGameObjects())
+                {
+                    if (root != null) preExistingRoots.Add(root);
+                }
+            }
         }
 
         [TearDown]
@@ -52,6 +64,20 @@ namespace ProjectB.Tests.EditMode
                 }
             }
             spawned.Clear();
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() && activeScene.isLoaded)
+            {
+                foreach (GameObject root in activeScene.GetRootGameObjects())
+                {
+                    if (root != null && !preExistingRoots.Contains(root))
+                    {
+                        UnityEngine.Object.DestroyImmediate(root);
+                    }
+                }
+            }
+            preExistingRoots.Clear();
+            Physics.SyncTransforms();
 
             if (hadOriginalSave)
             {
@@ -76,7 +102,7 @@ namespace ProjectB.Tests.EditMode
         [Test]
         public void AllFourHeroUltimates_ScaleWithRuntimeStatsCritAndTransitionToCooldown()
         {
-            var bus = new GameEventBus();
+            using var bus = new GameEventBus();
             int meteorEvents = 0;
             int arrowWaveEvents = 0;
             int soulNovaEvents = 0;
@@ -208,7 +234,10 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(2, config.GetEligibleEntriesForWave(3, eligible));
             Assert.IsTrue(eligible.Exists(e => e.enemy.name == "GoblinData"));
 
-            Assert.AreEqual(3, config.GetEligibleEntriesForWave(5, eligible));
+            Assert.AreEqual(2, config.GetEligibleEntriesForWave(5, eligible));
+            Assert.IsFalse(eligible.Exists(e => e.enemy.name == "SkeletonData"), "SkeletonData shifted to Wave 6 to avoid Mini-Boss Wave 5");
+
+            Assert.AreEqual(3, config.GetEligibleEntriesForWave(6, eligible));
             var skelEntry = eligible.Find(e => e.enemy.name == "SkeletonData");
             Assert.IsNotNull(skelEntry);
             Assert.AreEqual(4, skelEntry.packSize);
@@ -216,7 +245,10 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(4, config.GetEligibleEntriesForWave(7, eligible));
             Assert.IsTrue(eligible.Exists(e => e.enemy.name == "BatData"));
 
-            Assert.AreEqual(5, config.GetEligibleEntriesForWave(10, eligible));
+            Assert.AreEqual(4, config.GetEligibleEntriesForWave(10, eligible));
+            Assert.IsFalse(eligible.Exists(e => e.enemy.name == "BombBugData"), "BombBugData shifted to Wave 11 to avoid Mini-Boss Wave 10");
+
+            Assert.AreEqual(5, config.GetEligibleEntriesForWave(11, eligible));
             Assert.IsTrue(eligible.Exists(e => e.enemy.name == "BombBugData"));
 
             Assert.AreEqual(6, config.GetEligibleEntriesForWave(14, eligible));
@@ -367,7 +399,7 @@ namespace ProjectB.Tests.EditMode
             using var slotService = new AbilitySlotService(saveManager, metaMgr);
             var achMgr = new AchievementManager(saveManager);
             var runStats = new RunStatistics();
-            var bus = new GameEventBus();
+            using var bus = new GameEventBus();
 
             var stats = new HeroRuntimeStats(metaMgr);
             var heroGo = Track(new GameObject("Wave40Hero"));

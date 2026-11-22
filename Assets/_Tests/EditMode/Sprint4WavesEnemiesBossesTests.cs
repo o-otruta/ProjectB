@@ -132,14 +132,13 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(glowMat.GetTexture("_EmissionMap"));
             }
 
-            // 3. Verify 5 effect materials exist and have instancing enabled
+            // 3. Verify 4 effect materials exist and have instancing enabled
             string[] fxMatPaths =
             {
                 "Assets/_Materials/ChargeTelegraphMat.mat",
                 "Assets/_Materials/FrostTelegraphMat.mat",
                 "Assets/_Materials/FrostSpikeMat.mat",
-                "Assets/_Materials/BlizzardRingMat.mat",
-                "Assets/_Materials/EliteAuraMat.mat"
+                "Assets/_Materials/BlizzardRingMat.mat"
             };
             foreach (string path in fxMatPaths)
             {
@@ -196,7 +195,6 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(6, waveConfig.enemySchedule.Count);
             Assert.AreEqual(3, waveConfig.bosses.Count);
             Assert.AreSame(lichData, waveConfig.bosses[2]);
-            Assert.IsNotNull(waveConfig.eliteAuraMaterial);
 
             // 6. Verify Gameplay scene WaveManager references WaveConfig.asset
             Scene alreadyLoaded = SceneManager.GetSceneByPath("Assets/_Scenes/Gameplay.unity");
@@ -484,6 +482,7 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(1, novaEvents);
 
             // 2. Blizzard Ring: safe inside inner eye (< 3m), safe outside (> 9m), damaged inside [3..9m]
+            heroHealth.TickInvulnerability(0.25f); // Expire post-hit i-frames from Ice Spikes before testing Blizzard tick
             heroMove.ClearSlow();
             int hpBeforeBlizzard = heroHealth.CurrentHp;
 

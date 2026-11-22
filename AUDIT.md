@@ -213,26 +213,26 @@
 ---
 
 ### Спринт 7: Критические фиксы, Separation врагов, Волны «Знакомства» и Фундамент Баланса (P0)
-- [ ] **7.1. Zero-GC Spatial Separation для роя врагов:**
+- [x] **7.1. Zero-GC Spatial Separation для роя врагов:**
   - Реализовать `EnemySeparationSystem` (пространственная сетка `2×2м` на фиксированных массивах без аллокаций, обновление в [WaveManager.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Enemies/WaveManager.cs) раз в 2 кадра), мягко расталкивающий соседних `EnemyBase` в радиусе `0.85м` с учётом `ObstacleMask`, чтобы толпа не слипалась в одну точку.
-- [ ] **7.2. Волны «знакомства» с новыми врагами (`EnemyIntroWave`, без баннеров и подсказок):**
+- [x] **7.2. Волны «знакомства» с новыми врагами (`EnemyIntroWave`, без баннеров и подсказок):**
   - В [WaveConfig.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Data/Enemies/WaveConfig.cs) добавить в `EnemyWaveEntry` поля `bool triggerIntroWave = true` и `float introSpawnShare = 0.5f` (половина мобов волны — новый тип).
   - Сдвинуть `minWave`, пересекающиеся с мини-боссами (`SkeletonRunner`: `minWave = 6`, `BombSlime`: `minWave = 11`).
   - В `WaveManager` на волне дебюта (`entry.minWave == currentWave`) гарантировать ~50% спавнов именно нового врага, без всплывающих подсказок и UI-баннеров.
-- [ ] **7.3. Фиксы критических багов (`PauseMenu`, `HeroUltimate`, `CDR`, `ExplosiveBarrel`, `i-frames`):**
+- [x] **7.3. Фиксы критических багов (`PauseMenu`, `HeroUltimate`, `CDR`, `ExplosiveBarrel`, `i-frames`):**
   - Добавить `GameManager.AbandonRunAndGoToMenu()` с сохранением `RunResult` в `SaveManager` + подтверждение в [PauseMenuUI.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/UI/PauseMenuUI.cs).
   - Вынести все `private const` параметры ульт из [HeroUltimate.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Player/HeroUltimate.cs#L17-L34) в [HeroData.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Data/HeroData.cs) и заполнить 4 `HeroData`-ассета; добавить ульте Рыцаря (`Shield`) импульс отбрасывания (`4.5м`, `40` урона).
   - Применить `CooldownReductionMultiplier` в [WeaponController.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Combat/WeaponController.cs#L113) и [HeroUltimate.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Player/HeroUltimate.cs#L619).
   - В `WeaponController` и стрелковых скиллах не целиться в `ExplosiveBarrel`, если рядом с бочкой (`3.5м`) нет врагов; в [OrbitalCompanionAbility.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/Active/OrbitalCompanionAbility.cs#L162) поддержать `IDamageable`.
   - Добавить `postHitInvulnerabilityDuration = 0.18f` в [HeroHealth.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Player/HeroHealth.cs).
-- [ ] **7.4. Раздельные кривые баланса в `WaveConfig` + Инструмент-симулятор:**
+- [x] **7.4. Раздельные кривые баланса в `WaveConfig` + Инструмент-симулятор:**
   - В `WaveConfig` разделить скейлинг на `GetHpDifficultyMultiplier(int wave)` и `GetDamageDifficultyMultiplier(int wave)` (настраиваемые параметры/кривая, мягкие дефолты на данном этапе — точный тюнинг в Спринте 12 после внедрения всех синергий!).
   - Добавить Editor-инструмент `Assets/_Scripts/Editor/Debug/BalanceCurveSimulator.cs` (окно/логирование расчётных HP врагов и боссов на волнах 1, 5, 10, 25, 50, 75, 100).
-- [ ] **7.5. Очистка репозитория и техдолга:**
+- [x] **7.5. Очистка репозитория и техдолга:**
   - Очистить [DefaultVolumeProfile.asset](file:///d:/UnityProjects/ProjectB/Assets/Settings/DefaultVolumeProfile.asset) от 12 лишних URP-оверрайдов (оставить только `Bloom`, `Vignette`, `ColorAdjustments`).
   - Удалить мёртвые `WaveConfig.eliteAuraMaterial`, параметр `auraMaterial` в `EnemyBase.MakeElite()`, `Assets/_Materials/EliteAuraMat.mat`, `ArtSources/Blender/Ranger.blend1`, локальные сборочные файлы (`test.apk` и др., обновить `.gitignore`).
   - Пересохранить 37 ScriptableObjects с legacy `Assembly-CSharp::`; обернуть рантайм `Debug.Log` в `DevLog`.
-- [ ] **7.6. Тесты Спринта 7:** `Sprint7FixesAndSeparationTests.cs` (separation zero-GC + отсутствие слипания, Intro Wave ~50% спавн нового моба, сохранение монет при AbandonRun, CDR оружия/ульты, Data-Driven `HeroUltimate`, i-frames героя).
+- [x] **7.6. Тесты Спринта 7:** `Sprint7FixesAndSeparationTests.cs` (separation zero-GC + отсутствие слипания, Intro Wave ~50% спавн нового моба, сохранение монет при AbandonRun, CDR оружия/ульты, Data-Driven `HeroUltimate`, i-frames героя).
 
 ---
 
