@@ -8,6 +8,11 @@ namespace ProjectB.UI
 {
     public class UltimateButtonUI : MonoBehaviour
     {
+        private static readonly string[] CachedTenthsStrings = BuildTenthsCache(151);
+        private static readonly string[] CachedSecondsStrings = BuildSecondsCache(121);
+        private static readonly Color ActiveFillColor = new Color(0.3f, 0.9f, 1f, 0.45f);
+        private static readonly Color CooldownFillColor = new Color(0f, 0f, 0f, 0.65f);
+
         [SerializeField] private Button button;
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Image iconImage;
@@ -23,6 +28,44 @@ namespace ProjectB.UI
         private HeroUltimate heroUltimate;
         private int lastDisplayedState = -1; // 0 = ready, 1 = active, 2 = cooldown
         private int lastDisplayedValue = int.MinValue;
+
+        private static string[] BuildTenthsCache(int count)
+        {
+            var arr = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                arr[i] = $"{(i / 10)}.{(i % 10)}s";
+            }
+            return arr;
+        }
+
+        private static string[] BuildSecondsCache(int count)
+        {
+            var arr = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                arr[i] = $"{i}s";
+            }
+            return arr;
+        }
+
+        public static string GetCachedTenthsText(int tenths)
+        {
+            if (tenths >= 0 && tenths < CachedTenthsStrings.Length)
+            {
+                return CachedTenthsStrings[tenths];
+            }
+            return $"{(tenths / 10f):0.0}s";
+        }
+
+        public static string GetCachedSecondsText(int seconds)
+        {
+            if (seconds >= 0 && seconds < CachedSecondsStrings.Length)
+            {
+                return CachedSecondsStrings[seconds];
+            }
+            return $"{seconds}s";
+        }
 
         [Inject]
         public void Construct(HeroUltimate heroUltimate)
@@ -94,9 +137,9 @@ namespace ProjectB.UI
                 float ratio = Mathf.Clamp01(heroUltimate.ActiveRemaining / heroUltimate.ActiveDuration);
                 if (cooldownFillImage != null)
                 {
-                    cooldownFillImage.gameObject.SetActive(true);
+                    if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
                     cooldownFillImage.fillAmount = ratio;
-                    cooldownFillImage.color = new Color(0.3f, 0.9f, 1f, 0.45f);
+                    if (lastDisplayedState != 1) cooldownFillImage.color = ActiveFillColor;
                 }
 
                 int tenths = Mathf.CeilToInt(heroUltimate.ActiveRemaining * 10f);
@@ -106,7 +149,7 @@ namespace ProjectB.UI
                     lastDisplayedValue = tenths;
                     if (button != null) button.interactable = false;
                     if (backgroundImage != null) backgroundImage.color = activeColor;
-                    if (statusText != null) statusText.text = $"{(tenths / 10f):0.0}s";
+                    if (statusText != null) statusText.text = GetCachedTenthsText(tenths);
                 }
             }
             else if (heroUltimate.CooldownRemaining > 0f)
@@ -114,9 +157,9 @@ namespace ProjectB.UI
                 float ratio = Mathf.Clamp01(heroUltimate.CooldownRemaining / heroUltimate.CooldownDuration);
                 if (cooldownFillImage != null)
                 {
-                    cooldownFillImage.gameObject.SetActive(true);
+                    if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
                     cooldownFillImage.fillAmount = ratio;
-                    cooldownFillImage.color = new Color(0f, 0f, 0f, 0.65f);
+                    if (lastDisplayedState != 2) cooldownFillImage.color = CooldownFillColor;
                 }
 
                 int seconds = Mathf.CeilToInt(heroUltimate.CooldownRemaining);
@@ -126,7 +169,7 @@ namespace ProjectB.UI
                     lastDisplayedValue = seconds;
                     if (button != null) button.interactable = false;
                     if (backgroundImage != null) backgroundImage.color = cooldownColor;
-                    if (statusText != null) statusText.text = $"{seconds}s";
+                    if (statusText != null) statusText.text = GetCachedSecondsText(seconds);
                 }
             }
             else

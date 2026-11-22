@@ -25,6 +25,7 @@ namespace ProjectB.Arena
         private IObjectPool<VacuumMagnetPickup> pickupPool;
         private Transform poolContainer;
         private int pickupsLayer;
+        private System.Action<VacuumMagnetPickup> cachedPickupCollectedHandler;
 
         public float PullSpeed => pullSpeed;
 
@@ -47,6 +48,7 @@ namespace ProjectB.Arena
         {
             if (pickupPool != null) return;
 
+            cachedPickupCollectedHandler = HandlePickupCollected;
             pickupsLayer = LayerMask.NameToLayer("Pickups");
             poolContainer = new GameObject("VacuumMagnetContainer").transform;
 
@@ -54,10 +56,33 @@ namespace ProjectB.Arena
                 createFunc: CreatePickupInstance,
                 actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
                 actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
-                actionOnDestroy: p => { if (p != null) Destroy(p.gameObject); },
+                actionOnDestroy: p =>
+                {
+                    if (p != null)
+                    {
+                        if (Application.isPlaying) Destroy(p.gameObject);
+                        else DestroyImmediate(p.gameObject);
+                    }
+                },
                 collectionCheck: false,
                 defaultCapacity: 4,
                 maxSize: 16);
+        }
+
+        public void PrewarmPool(int count = 4)
+        {
+            EnsurePool();
+            if (pickupPool == null || count <= 0) return;
+
+            var temp = new VacuumMagnetPickup[count];
+            for (int i = 0; i < count; i++)
+            {
+                temp[i] = pickupPool.Get();
+            }
+            for (int i = 0; i < count; i++)
+            {
+                if (temp[i] != null) pickupPool.Release(temp[i]);
+            }
         }
 
         private VacuumMagnetPickup CreatePickupInstance()
@@ -121,7 +146,7 @@ namespace ProjectB.Arena
             position.y = 0f;
             pickup.transform.position = position;
             Transform heroTransform = heroHealth != null ? heroHealth.transform : null;
-            pickup.Initialize(heroTransform, HandlePickupCollected, pickupPool);
+            pickup.Initialize(heroTransform, cachedPickupCollectedHandler, pickupPool);
             return pickup;
         }
 
@@ -146,7 +171,8 @@ namespace ProjectB.Arena
             pickupPool?.Clear();
             if (poolContainer != null)
             {
-                Destroy(poolContainer.gameObject);
+                if (Application.isPlaying) Destroy(poolContainer.gameObject);
+                else DestroyImmediate(poolContainer.gameObject);
             }
         }
     }

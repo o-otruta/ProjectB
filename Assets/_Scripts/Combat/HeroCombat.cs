@@ -29,6 +29,13 @@ namespace ProjectB.Combat
 
         private void Start()
         {
+            EnsureInitialized();
+        }
+
+        public void EnsureInitialized()
+        {
+            if (projectilesRoot != null) return;
+
             projectilesRoot = new GameObject("ProjectilesRoot").transform;
 
             if (runtimeStats != null)
@@ -36,19 +43,36 @@ namespace ProjectB.Combat
                 runtimeStats.OnStatsChanged += RefreshWeaponMultipliers;
             }
 
-            HeroData selectedHero = selectedHeroService?.GetSelectedHero();
-            if (selectedHero != null && selectedHero.startingWeapon != null)
+            if (activeWeapons.Count == 0)
             {
-                AddWeapon(selectedHero.startingWeapon);
-            }
-            else
-            {
-                // Инициализация стартового оружия из префаба (fallback)
-                foreach (var weapon in startingWeapons)
+                HeroData selectedHero = selectedHeroService?.GetSelectedHero();
+                if (selectedHero != null && selectedHero.startingWeapon != null)
                 {
-                    AddWeapon(weapon);
+                    AddWeapon(selectedHero.startingWeapon);
+                }
+                else
+                {
+                    // Инициализация стартового оружия из префаба (fallback)
+                    foreach (var weapon in startingWeapons)
+                    {
+                        AddWeapon(weapon);
+                    }
                 }
             }
+        }
+
+        public void PrewarmWeapons(int countPerWeapon = 20)
+        {
+            EnsureInitialized();
+            for (int i = 0; i < activeWeapons.Count; i++)
+            {
+                activeWeapons[i]?.PrewarmPool(countPerWeapon);
+            }
+        }
+
+        public void SimulateFrameTick()
+        {
+            Update();
         }
 
         private void OnDestroy()
@@ -56,6 +80,12 @@ namespace ProjectB.Combat
             if (runtimeStats != null)
             {
                 runtimeStats.OnStatsChanged -= RefreshWeaponMultipliers;
+            }
+            if (projectilesRoot != null)
+            {
+                if (Application.isPlaying) Destroy(projectilesRoot.gameObject);
+                else DestroyImmediate(projectilesRoot.gameObject);
+                projectilesRoot = null;
             }
         }
 

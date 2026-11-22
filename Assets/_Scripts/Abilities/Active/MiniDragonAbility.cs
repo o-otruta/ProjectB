@@ -10,7 +10,7 @@ namespace ProjectB.Abilities
         private MiniDragonAbilityData DragonData => Data as MiniDragonAbilityData;
 
         private readonly List<DragonFollower> followers = new List<DragonFollower>();
-        private readonly Collider[] hitBuffer = new Collider[48];
+        private readonly Collider[] hitBuffer = new Collider[128];
 
         private float currentDamage;
         private float currentCooldown;
@@ -48,10 +48,29 @@ namespace ProjectB.Abilities
                 createFunc: CreateFlameInstance,
                 actionOnGet: f => { if (f != null) f.gameObject.SetActive(true); },
                 actionOnRelease: f => { if (f != null) f.gameObject.SetActive(false); },
-                actionOnDestroy: f => { if (f != null) Destroy(f.gameObject); },
+                actionOnDestroy: f => { if (f != null) SafeDestroy(f.gameObject); },
                 collectionCheck: true,
                 defaultCapacity: 9,
                 maxSize: 60);
+
+            if (Application.isPlaying)
+            {
+                PrewarmPools(9);
+            }
+        }
+
+        public override void PrewarmPools(int count = 0)
+        {
+            if (flamePool == null) return;
+            int targetCount = count > 0 ? count : 9;
+            var temp = new DragonFlameProjectile[targetCount];
+            for (int i = 0; i < targetCount; i++) temp[i] = flamePool.Get();
+            for (int i = 0; i < targetCount; i++) if (temp[i] != null) flamePool.Release(temp[i]);
+        }
+
+        public override void SimulateFrameTick()
+        {
+            Update();
         }
 
         private DragonFlameProjectile CreateFlameInstance()

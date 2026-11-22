@@ -13,8 +13,13 @@ namespace ProjectB.Abilities
         private float currentSlowDuration;
         
         private float nextTickTime;
-        private Collider[] hitBuffer = new Collider[100];
+        private Collider[] hitBuffer = new Collider[128];
         private GameObject visualAura;
+
+        public override void SimulateFrameTick()
+        {
+            Update();
+        }
 
         public override void Initialize(AbilityData data)
         {

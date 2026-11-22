@@ -64,11 +64,38 @@ namespace ProjectB.Combat
                 },
                 actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
                 actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
-                actionOnDestroy: p => { if (p != null) Object.Destroy(p.gameObject); },
+                actionOnDestroy: p =>
+                {
+                    if (p != null)
+                    {
+                        if (Application.isPlaying) Object.Destroy(p.gameObject);
+                        else Object.DestroyImmediate(p.gameObject);
+                    }
+                },
                 collectionCheck: true,
                 defaultCapacity: 20,
                 maxSize: 100
             );
+
+            if (Application.isPlaying)
+            {
+                PrewarmPool(12);
+            }
+        }
+
+        public void PrewarmPool(int count = 20)
+        {
+            if (projectilePool == null || weaponData == null || weaponData.projectilePrefab == null || count <= 0) return;
+
+            var temp = new Projectile[count];
+            for (int i = 0; i < count; i++)
+            {
+                temp[i] = projectilePool.Get();
+            }
+            for (int i = 0; i < count; i++)
+            {
+                if (temp[i] != null) projectilePool.Release(temp[i]);
+            }
         }
 
         private const float EMPTY_SCAN_COOLDOWN = 0.15f;

@@ -535,7 +535,7 @@ namespace ProjectB.EditorScripts
             var data = LoadOrCreateSO<HeroData>($"{SO_DIR}/RangerData.asset");
             data.id = "ranger";
             data.heroName = "Ranger";
-            data.description = "Swift forest marksman unleashing rapid arrows and deadly volleys.";
+            data.description = "Swift forest marksman firing rapid long-range arrows (9 dmg, 3.1/s, 11m range) and deadly volleys.";
             data.unlockedByDefault = false;
             data.moveSpeed = 5.6f;
             data.rotationSpeed = 15f;
@@ -545,10 +545,10 @@ namespace ProjectB.EditorScripts
             data.passiveType = HeroPassiveType.MoveSpeedPercent;
             data.passiveValue = 25f;
             data.passiveName = "Windrunner";
-            data.passiveDescription = "+25% Move Speed";
+            data.passiveDescription = "+25% Move Speed\n<b>Weapon:</b> Rapid Bow (9 dmg, 3.1/s, 11m range)";
             data.ultimateType = HeroUltimateType.ArrowRain;
             data.ultimateName = "Arrow Rain";
-            data.ultimateDescription = "Unleashes 3 waves of arrows in an 8m radius, dealing 150 damage and slowing enemies by 50%.";
+            data.ultimateDescription = "Unleashes 3 waves of arrows in an 8m radius, dealing 150 total damage (3x50) and slowing enemies by 50% for 4s.";
             data.ultimateDuration = 2.4f;
             data.ultimateCooldown = 20f;
             EditorUtility.SetDirty(data);
@@ -560,7 +560,7 @@ namespace ProjectB.EditorScripts
             var data = LoadOrCreateSO<HeroData>($"{SO_DIR}/NecromancerHeroData.asset");
             data.id = "necromancer";
             data.heroName = "Necromancer";
-            data.description = "Master of souls harvesting essence for faster growth and devastating spirit blasts.";
+            data.description = "Master of souls firing life-draining bolts (20% chance on hit to heal 2 HP) and harvesting essence for faster growth.";
             data.unlockedByDefault = false;
             data.moveSpeed = 5.0f;
             data.rotationSpeed = 15f;
@@ -570,10 +570,10 @@ namespace ProjectB.EditorScripts
             data.passiveType = HeroPassiveType.XpAndMagnetPercent;
             data.passiveValue = 35f;
             data.passiveName = "Soul Harvest";
-            data.passiveDescription = "+35% XP & Magnet Radius";
+            data.passiveDescription = "+35% XP & Magnet Radius\n<b>Weapon:</b> Soul Bolt (11 dmg, 20% chance to heal 2 HP on hit)";
             data.ultimateType = HeroUltimateType.SoulNova;
             data.ultimateName = "Army of the Dead";
-            data.ultimateDescription = "Fires 12 piercing spectral skulls in all directions and heals 35% Max HP.";
+            data.ultimateDescription = "Fires 12 piercing spectral skulls in all directions (60 dmg each) and instantly heals 35% Max HP.";
             data.ultimateDuration = 1.0f;
             data.ultimateCooldown = 24f;
             EditorUtility.SetDirty(data);

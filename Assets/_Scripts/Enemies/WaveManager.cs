@@ -27,8 +27,11 @@ namespace ProjectB.Enemies
         private Transform enemyContainer;
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
         private Dictionary<BossData, IObjectPool<EnemyBase>> bossPools;
-        private readonly HashSet<EnemyBase> activeEnemies = new HashSet<EnemyBase>();
-        private readonly List<EnemyBase> enemyIterationBuffer = new List<EnemyBase>();
+        private readonly HashSet<EnemyBase> activeEnemies = new HashSet<EnemyBase>(256);
+        private readonly List<EnemyBase> enemyIterationBuffer = new List<EnemyBase>(256);
+        private System.Action<EnemyBase> cachedEnemyDiedHandler;
+        private System.Action<EnemyData, Vector3> cachedSummonMinionCallback;
+        private System.Func<Vector3, float, float, Vector3> cachedSafePositionProvider;
 
         private WaitForSeconds waveDelayWait;
         private WaitForSeconds spawnDelayWait;
@@ -38,6 +41,7 @@ namespace ProjectB.Enemies
         private int currentWave = 1;
         public int CurrentWave => currentWave;
         public int EnemiesAlive => activeEnemies.Count;
+        public IReadOnlyCollection<EnemyBase> ActiveEnemies => activeEnemies;
         public WaveConfig Config => waveConfig;
         private bool isSpawning = false;
         private bool tookDamageInCurrentWave = false;
@@ -101,25 +105,55 @@ namespace ProjectB.Enemies
                 return;
             }
 
-            waveDelayWait = new WaitForSeconds(waveConfig.waveDelay);
-            spawnDelayWait = new WaitForSeconds(waveConfig.spawnDelay);
-            maxWaveDurationWait = waveConfig.maxWaveDuration > 0f ? new WaitForSeconds(waveConfig.maxWaveDuration) : null;
-            obstacleMask = LayerMask.GetMask("Obstacles");
+            EnsurePoolsInitialized();
 
-            enemyContainer = new GameObject("EnemyContainer").transform;
-            enemyPools = new Dictionary<EnemyData, IObjectPool<EnemyBase>>();
-            bossPools = new Dictionary<BossData, IObjectPool<EnemyBase>>();
-
-            for (int i = 0; i < waveConfig.enemySchedule.Count; i++)
+            eventBus?.Subscribe<GameOverEvent>(OnGameOver);
+            if (heroHealth != null)
             {
-                var entry = waveConfig.enemySchedule[i];
-                if (entry != null && entry.enemy != null)
+                heroHealth.OnDamageTaken += HandleHeroDamageTaken;
+            }
+            leashCoroutine = StartCoroutine(LeashCheckCoroutine());
+            startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
+        }
+
+        public void EnsurePoolsInitialized()
+        {
+            if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
+            if (cachedSummonMinionCallback == null) cachedSummonMinionCallback = SpawnSummonedMinion;
+            if (cachedSafePositionProvider == null) cachedSafePositionProvider = GetValidPositionNear;
+
+            if (waveConfig != null)
+            {
+                waveDelayWait ??= new WaitForSeconds(waveConfig.waveDelay);
+                spawnDelayWait ??= new WaitForSeconds(waveConfig.spawnDelay);
+                if (maxWaveDurationWait == null && waveConfig.maxWaveDuration > 0f)
                 {
-                    EnsureEnemyPool(entry.enemy);
+                    maxWaveDurationWait = new WaitForSeconds(waveConfig.maxWaveDuration);
                 }
             }
 
-            if (waveConfig.bosses != null)
+            obstacleMask = LayerMask.GetMask("Obstacles");
+
+            if (enemyContainer == null)
+            {
+                enemyContainer = new GameObject("EnemyContainer").transform;
+            }
+            enemyPools ??= new Dictionary<EnemyData, IObjectPool<EnemyBase>>();
+            bossPools ??= new Dictionary<BossData, IObjectPool<EnemyBase>>();
+
+            if (waveConfig?.enemySchedule != null)
+            {
+                for (int i = 0; i < waveConfig.enemySchedule.Count; i++)
+                {
+                    var entry = waveConfig.enemySchedule[i];
+                    if (entry != null && entry.enemy != null)
+                    {
+                        EnsureEnemyPool(entry.enemy);
+                    }
+                }
+            }
+
+            if (waveConfig?.bosses != null)
             {
                 for (int i = 0; i < waveConfig.bosses.Count; i++)
                 {
@@ -132,25 +166,54 @@ namespace ProjectB.Enemies
                     }
                 }
             }
+        }
 
-            eventBus?.Subscribe<GameOverEvent>(OnGameOver);
-            if (heroHealth != null)
+        public void PrewarmPools(int countPerEnemyType = 24)
+        {
+            EnsurePoolsInitialized();
+            if (enemyPools == null || countPerEnemyType <= 0) return;
+
+            var temp = new List<EnemyBase>(countPerEnemyType);
+            foreach (var kvp in enemyPools)
             {
-                heroHealth.OnDamageTaken += HandleHeroDamageTaken;
+                var pool = kvp.Value;
+                if (pool == null) continue;
+                temp.Clear();
+                for (int i = 0; i < countPerEnemyType; i++)
+                {
+                    var instance = pool.Get();
+                    if (instance != null)
+                    {
+                        instance.Initialize(kvp.Key, heroTarget, pool, eventBus, 1f);
+                        temp.Add(instance);
+                    }
+                }
+                for (int i = 0; i < temp.Count; i++)
+                {
+                    pool.Release(temp[i]);
+                }
             }
-            leashCoroutine = StartCoroutine(LeashCheckCoroutine());
-            startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
+            temp.Clear();
         }
 
         private void EnsureEnemyPool(EnemyData enemyData)
         {
-            if (enemyData == null || enemyPools.ContainsKey(enemyData)) return;
+            if (enemyData == null) return;
+            enemyPools ??= new Dictionary<EnemyData, IObjectPool<EnemyBase>>();
+            if (enemyPools.ContainsKey(enemyData)) return;
 
             var pool = new ObjectPool<EnemyBase>(
                 createFunc: () => CreateEnemyInstance(enemyData),
                 actionOnGet: e => e.gameObject.SetActive(true),
                 actionOnRelease: e => e.gameObject.SetActive(false),
-                actionOnDestroy: e => Destroy(e.gameObject),
+                actionOnDestroy: e =>
+                {
+                    if (e != null)
+                    {
+                        if (Application.isPlaying) Destroy(e.gameObject);
+                        else DestroyImmediate(e.gameObject);
+                    }
+                },
                 collectionCheck: false,
                 defaultCapacity: 30,
                 maxSize: 300
@@ -160,13 +223,22 @@ namespace ProjectB.Enemies
 
         private void EnsureBossPool(BossData bossData)
         {
-            if (bossData == null || bossPools.ContainsKey(bossData)) return;
+            if (bossData == null) return;
+            bossPools ??= new Dictionary<BossData, IObjectPool<EnemyBase>>();
+            if (bossPools.ContainsKey(bossData)) return;
 
             var pool = new ObjectPool<EnemyBase>(
                 createFunc: () => CreateEnemyInstance(bossData),
                 actionOnGet: e => e.gameObject.SetActive(true),
                 actionOnRelease: e => e.gameObject.SetActive(false),
-                actionOnDestroy: e => Destroy(e.gameObject),
+                actionOnDestroy: e =>
+                {
+                    if (e != null)
+                    {
+                        if (Application.isPlaying) Destroy(e.gameObject);
+                        else DestroyImmediate(e.gameObject);
+                    }
+                },
                 collectionCheck: false,
                 defaultCapacity: 1,
                 maxSize: 4
@@ -195,7 +267,10 @@ namespace ProjectB.Enemies
             EnemyBase enemy = go.GetComponent<EnemyBase>();
             if (enemy == null)
             {
-                Debug.LogError($"Enemy prefab '{data.name}' is missing EnemyBase component! Adding default EnemyBase.", go);
+                if (data.modelPrefab != null)
+                {
+                    Debug.LogError($"Enemy prefab '{data.name}' is missing EnemyBase component! Adding default EnemyBase.", go);
+                }
                 enemy = go.AddComponent<EnemyBase>();
             }
             return enemy;
@@ -212,6 +287,12 @@ namespace ProjectB.Enemies
                 heroHealth.OnDamageTaken -= HandleHeroDamageTaken;
             }
             StopAllCoroutines();
+            if (enemyContainer != null)
+            {
+                if (Application.isPlaying) Destroy(enemyContainer.gameObject);
+                else DestroyImmediate(enemyContainer.gameObject);
+                enemyContainer = null;
+            }
         }
 
         private void HandleHeroDamageTaken(int amount)
@@ -243,9 +324,9 @@ namespace ProjectB.Enemies
             for (int i = 0; i < enemyIterationBuffer.Count; i++)
             {
                 var enemy = enemyIterationBuffer[i];
-                if (enemy != null)
+                if (enemy != null && cachedEnemyDiedHandler != null)
                 {
-                    enemy.OnDied -= HandleEnemyDied;
+                    enemy.OnDied -= cachedEnemyDiedHandler;
                 }
             }
             enemyIterationBuffer.Clear();
@@ -446,8 +527,29 @@ namespace ProjectB.Enemies
             return packCount;
         }
 
+        public EnemyBase SpawnEnemyForWave(
+            EnemyData selectedType,
+            Vector3 spawnPos,
+            int waveNumber,
+            bool makeElite = false,
+            EliteArchetype eliteArchetype = EliteArchetype.Berserker)
+        {
+            if (selectedType == null) return null;
+            EnsurePoolsInitialized();
+            currentWave = Mathf.Max(1, waveNumber);
+            float diffPerWave = waveConfig != null ? waveConfig.difficultyPerWave : 0.1f;
+            float difficultyMultiplier = 1f + (currentWave - 1) * diffPerWave;
+            EnemyBase enemy = SpawnEnemyInstance(selectedType, spawnPos, difficultyMultiplier);
+            if (makeElite && enemy != null)
+            {
+                enemy.MakeElite(eliteArchetype, waveConfig);
+            }
+            return enemy;
+        }
+
         private EnemyBase SpawnEnemyInstance(EnemyData selectedType, Vector3 spawnPos, float difficultyMultiplier)
         {
+            if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
             EnsureEnemyPool(selectedType);
             IObjectPool<EnemyBase> pool = enemyPools[selectedType];
 
@@ -460,8 +562,7 @@ namespace ProjectB.Enemies
             }
 
             enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
-            enemy.OnDied -= HandleEnemyDied;
-            enemy.OnDied += HandleEnemyDied;
+            enemy.OnDied += cachedEnemyDiedHandler;
             activeEnemies.Add(enemy);
             return enemy;
         }
@@ -501,6 +602,7 @@ namespace ProjectB.Enemies
         private void SpawnBoss(BossData bossData)
         {
             if (bossData == null) return;
+            EnsurePoolsInitialized();
             EnsureBossPool(bossData);
 
             IObjectPool<EnemyBase> pool = bossPools[bossData];
@@ -517,8 +619,8 @@ namespace ProjectB.Enemies
                     pool,
                     eventBus,
                     enemyProjectilePool,
-                    SpawnSummonedMinion,
-                    GetValidPositionNear,
+                    cachedSummonMinionCallback,
+                    cachedSafePositionProvider,
                     difficultyMultiplier);
             }
             else
@@ -526,8 +628,7 @@ namespace ProjectB.Enemies
                 enemy.Initialize(bossData, heroTarget, pool, eventBus, difficultyMultiplier);
             }
 
-            enemy.OnDied -= HandleEnemyDied;
-            enemy.OnDied += HandleEnemyDied;
+            enemy.OnDied += cachedEnemyDiedHandler;
             activeEnemies.Add(enemy);
         }
 
@@ -541,6 +642,7 @@ namespace ProjectB.Enemies
                 : waveConfig?.SelectEnemyEntryForWave(currentWave, 0f)?.enemy;
             if (dataToSpawn == null) return;
 
+            if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
             EnsureEnemyPool(dataToSpawn);
             IObjectPool<EnemyBase> pool = enemyPools[dataToSpawn];
 
@@ -555,14 +657,16 @@ namespace ProjectB.Enemies
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
             minion.Initialize(dataToSpawn, heroTarget, pool, eventBus, difficultyMultiplier);
 
-            minion.OnDied -= HandleEnemyDied;
-            minion.OnDied += HandleEnemyDied;
+            minion.OnDied += cachedEnemyDiedHandler;
             activeEnemies.Add(minion);
         }
 
         private void HandleEnemyDied(EnemyBase enemy)
         {
-            enemy.OnDied -= HandleEnemyDied;
+            if (cachedEnemyDiedHandler != null)
+            {
+                enemy.OnDied -= cachedEnemyDiedHandler;
+            }
             activeEnemies.Remove(enemy);
             CheckWaveEnd();
         }
@@ -641,7 +745,7 @@ namespace ProjectB.Enemies
                 var e = enemyIterationBuffer[i];
                 if (e != null)
                 {
-                    e.OnDied -= HandleEnemyDied;
+                    if (cachedEnemyDiedHandler != null) e.OnDied -= cachedEnemyDiedHandler;
                     e.Despawn();
                 }
             }
@@ -691,14 +795,15 @@ namespace ProjectB.Enemies
             const float safeRadius = 4.5f;
             float safeRadiusSq = safeRadius * safeRadius;
 
+            if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
             CopyActiveEnemiesToBuffer();
             for (int i = 0; i < enemyIterationBuffer.Count; i++)
             {
                 var enemy = enemyIterationBuffer[i];
                 if (enemy == null) continue;
 
-                enemy.OnDied -= HandleEnemyDied;
-                enemy.OnDied += HandleEnemyDied;
+                enemy.OnDied -= cachedEnemyDiedHandler;
+                enemy.OnDied += cachedEnemyDiedHandler;
 
                 if (heroTarget != null)
                 {

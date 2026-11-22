@@ -27,7 +27,7 @@ namespace ProjectB.Data
         public string id = "knight";
         public string heroName = "Knight";
         [TextArea(2, 4)]
-        public string description = "Sturdy melee warrior protected by an impenetrable shield.";
+        public string description = "Sturdy warrior firing steady bolts (10 dmg, 2/s, 8m range) and protected by an impenetrable shield.";
         public Sprite icon;
         public bool unlockedByDefault = true;
 
@@ -54,13 +54,13 @@ namespace ProjectB.Data
         public float passiveValue = 100f;
         public string passiveName = "Iron Will";
         [TextArea(1, 3)]
-        public string passiveDescription = "+100% Max HP";
+        public string passiveDescription = "+100% Max HP\n<b>Weapon:</b> Steady Bolt (10 dmg, 2/s, 8m range)";
 
         [Header("Ultimate Ability")]
         public HeroUltimateType ultimateType = HeroUltimateType.Shield;
         public string ultimateName = "Aegis Shield";
         [TextArea(1, 3)]
-        public string ultimateDescription = "Become invulnerable for 5 seconds.";
+        public string ultimateDescription = "Become completely invulnerable to all damage for 5 seconds.";
         public float ultimateDuration = 5f;
         public float ultimateCooldown = 25f;
         public Sprite ultimateIcon;

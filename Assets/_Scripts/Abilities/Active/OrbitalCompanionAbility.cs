@@ -13,10 +13,10 @@ namespace ProjectB.Abilities
         private const float SCAN_INTERVAL = 0.08f;
 
         private float tickRate = 0.5f; 
-        private Dictionary<EntityId, float> enemyDamageCooldowns = new Dictionary<EntityId, float>();
+        private Dictionary<EntityId, float> enemyDamageCooldowns = new Dictionary<EntityId, float>(128);
         private float nextCleanupTime = 0f;
         private float nextScanTime = 0f;
-        private List<EntityId> keysToRemove = new List<EntityId>();
+        private List<EntityId> keysToRemove = new List<EntityId>(128);
 
         // Modifiable stats
         private int currentCount;
@@ -62,7 +62,12 @@ namespace ProjectB.Abilities
             }
         }
 
-        private Collider[] hitBuffer = new Collider[32]; // Optimization buffer
+        private Collider[] hitBuffer = new Collider[64]; // Optimization buffer
+
+        public override void SimulateFrameTick()
+        {
+            Update();
+        }
 
         private void SpawnInstances()
         {

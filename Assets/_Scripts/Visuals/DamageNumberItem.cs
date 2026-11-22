@@ -6,16 +6,18 @@ namespace ProjectB.Visuals
 {
     /// <summary>
     /// Pooled screen-space overlay floating damage number projected from world space.
-    /// Uses a static cached string table for 0..999 to eliminate per-hit GC allocations.
+    /// Uses a static cached string table for 0..2499 to eliminate per-hit GC allocations.
     /// </summary>
     public class DamageNumberItem : MonoBehaviour
     {
-        private static readonly string[] CachedNumbers = BuildNumberCache(1000, string.Empty);
-        private static readonly string[] CachedCritNumbers = BuildNumberCache(1000, "!");
+        private static readonly string[] CachedNumbers = BuildNumberCache(2500, string.Empty, string.Empty);
+        private static readonly string[] CachedCritNumbers = BuildNumberCache(2500, string.Empty, "!");
+        private static readonly string[] CachedHealNumbers = BuildNumberCache(501, "+", " HP");
 
         [SerializeField] private TextMeshProUGUI textMesh;
 
         private IObjectPool<DamageNumberItem> pool;
+        private System.Action<DamageNumberItem> onReleasedCallback;
         private Camera targetCamera;
         private RectTransform rectTransform;
         private Vector3 currentWorldPos;
@@ -24,13 +26,23 @@ namespace ProjectB.Visuals
         private float elapsed;
         private float lifetime = 0.65f;
         private float baseScale = 1f;
+        private bool isReleased = true;
 
-        private static string[] BuildNumberCache(int count, string suffix)
+        private static string[] BuildNumberCache(int count, string prefix, string suffix)
         {
             var arr = new string[count];
+            bool hasPrefix = !string.IsNullOrEmpty(prefix);
+            bool hasSuffix = !string.IsNullOrEmpty(suffix);
             for (int i = 0; i < count; i++)
             {
-                arr[i] = string.IsNullOrEmpty(suffix) ? i.ToString() : $"{i}{suffix}";
+                if (!hasPrefix && !hasSuffix)
+                {
+                    arr[i] = i.ToString();
+                }
+                else
+                {
+                    arr[i] = $"{prefix}{i}{suffix}";
+                }
             }
             return arr;
         }
@@ -53,9 +65,23 @@ namespace ProjectB.Visuals
             return $"{value}!";
         }
 
+        public static string GetCachedHealText(int value)
+        {
+            if (value >= 0 && value < CachedHealNumbers.Length)
+            {
+                return CachedHealNumbers[value];
+            }
+            return $"+{value} HP";
+        }
+
         public void SetTextMesh(TextMeshProUGUI tmp)
         {
             textMesh = tmp;
+        }
+
+        public void SetReleaseCallback(System.Action<DamageNumberItem> callback)
+        {
+            onReleasedCallback = callback;
         }
 
         public void Show(
@@ -121,6 +147,7 @@ namespace ProjectB.Visuals
             baseScale = scale;
             elapsed = 0f;
             lifetime = duration;
+            isReleased = false;
 
             currentWorldPos = startWorldPos;
             velocity = initialVelocity;
@@ -141,13 +168,18 @@ namespace ProjectB.Visuals
 
         private void Update()
         {
-            if (Time.deltaTime <= 0f) return;
+            Tick(Time.deltaTime);
+        }
 
-            elapsed += Time.deltaTime;
+        public void Tick(float deltaTime)
+        {
+            if (isReleased || deltaTime <= 0f) return;
+
+            elapsed += deltaTime;
             float t = Mathf.Clamp01(elapsed / lifetime);
 
-            currentWorldPos += velocity * Time.deltaTime;
-            velocity.y = Mathf.Max(0.4f, velocity.y - 3.2f * Time.deltaTime);
+            currentWorldPos += velocity * deltaTime;
+            velocity.y = Mathf.Max(0.4f, velocity.y - 3.2f * deltaTime);
 
             // Pop-in then gentle settle
             float pop = t < 0.2f ? Mathf.Lerp(0.7f, 1.15f, t / 0.2f) : Mathf.Lerp(1.15f, 0.9f, (t - 0.2f) / 0.8f);
@@ -189,8 +221,12 @@ namespace ProjectB.Visuals
             }
         }
 
-        private void ReturnToPool()
+        public void ReturnToPool()
         {
+            if (isReleased) return;
+            isReleased = true;
+            onReleasedCallback?.Invoke(this);
+
             if (pool != null)
             {
                 pool.Release(this);

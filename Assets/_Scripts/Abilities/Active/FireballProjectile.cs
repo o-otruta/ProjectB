@@ -7,7 +7,7 @@ namespace ProjectB.Abilities
 {
     public class FireballProjectile : AbilityProjectile
     {
-        private static readonly Collider[] explosionHits = new Collider[32];
+        private static readonly Collider[] explosionHits = new Collider[64];
 
         private float explosionRadius;
         private Vector3 lastKnownTargetPos;

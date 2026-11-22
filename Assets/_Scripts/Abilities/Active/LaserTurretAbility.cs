@@ -45,7 +45,12 @@ namespace ProjectB.Abilities
                         obj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                         obj.transform.SetParent(turretContainer);
                         obj.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-                        Destroy(obj.GetComponent<CapsuleCollider>());
+                        var col = obj.GetComponent<CapsuleCollider>();
+                        if (col != null)
+                        {
+                            if (Application.isPlaying) Destroy(col);
+                            else DestroyImmediate(col);
+                        }
                     }
                     var t = obj.GetComponent<LaserTurret>();
                     if (t == null) t = obj.AddComponent<LaserTurret>();
@@ -53,11 +58,37 @@ namespace ProjectB.Abilities
                 },
                 actionOnGet: t => { if (t != null) t.gameObject.SetActive(true); },
                 actionOnRelease: t => { if (t != null) t.gameObject.SetActive(false); },
-                actionOnDestroy: t => { if (t != null) Destroy(t.gameObject); },
+                actionOnDestroy: t =>
+                {
+                    if (t != null)
+                    {
+                        if (Application.isPlaying) Destroy(t.gameObject);
+                        else DestroyImmediate(t.gameObject);
+                    }
+                },
                 collectionCheck: true,
                 defaultCapacity: 3,
                 maxSize: 10
             );
+
+            if (Application.isPlaying)
+            {
+                PrewarmPools(3);
+            }
+        }
+
+        public override void PrewarmPools(int count = 0)
+        {
+            if (turretPool == null) return;
+            int targetCount = count > 0 ? count : 3;
+            var temp = new LaserTurret[targetCount];
+            for (int i = 0; i < targetCount; i++) temp[i] = turretPool.Get();
+            for (int i = 0; i < targetCount; i++) if (temp[i] != null) turretPool.Release(temp[i]);
+        }
+
+        public override void SimulateFrameTick()
+        {
+            Update();
         }
 
         public override void ApplyModifier(ModifierType type, float value)
@@ -124,7 +155,8 @@ namespace ProjectB.Abilities
             turretPool?.Clear();
             if (turretContainer != null)
             {
-                Destroy(turretContainer.gameObject);
+                if (Application.isPlaying) Destroy(turretContainer.gameObject);
+                else DestroyImmediate(turretContainer.gameObject);
             }
         }
     }

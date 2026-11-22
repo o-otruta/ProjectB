@@ -94,10 +94,10 @@ namespace ProjectB.EditorScripts
                 mage.passiveType = HeroPassiveType.GlobalDamagePercent;
                 mage.passiveValue = 20f;
                 mage.passiveName = "Arcane Mastery";
-                mage.passiveDescription = "+20% Global Damage";
+                mage.passiveDescription = "+20% Global Damage\n<b>Weapon:</b> Arcane Blast (14 AoE dmg, 1.5m splash)";
                 mage.ultimateType = HeroUltimateType.MeteorStrike;
                 mage.ultimateName = "Meteor Shower";
-                mage.ultimateDescription = "Calls down 6 explosive voxel meteors around you.";
+                mage.ultimateDescription = "Calls down 6 explosive meteors around you, dealing 80 AoE damage each in a 3.5m radius.";
                 mage.ultimateDuration = 3f;
                 mage.ultimateCooldown = 22f;
                 EditorUtility.SetDirty(mage);

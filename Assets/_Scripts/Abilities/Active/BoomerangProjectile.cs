@@ -15,8 +15,8 @@ namespace ProjectB.Abilities
         private bool returning;
         private Transform returnTarget;
 
-        private HashSet<EntityId> damagedEnemies = new HashSet<EntityId>();
-        private Collider[] overlapHits = new Collider[20];
+        private HashSet<EntityId> damagedEnemies = new HashSet<EntityId>(32);
+        private Collider[] overlapHits = new Collider[64];
         private float hitRadius = 1f;
 
         public void InitializeBoomerang(

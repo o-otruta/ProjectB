@@ -41,9 +41,9 @@ namespace ProjectB.Player
             public HashSet<EntityId> hitIds;
         }
 
-        private static readonly Collider[] meteorSearchBuffer = new Collider[64];
-        private static readonly Collider[] ultDamageBuffer = new Collider[64];
-        private static readonly Transform[] meteorCandidateBuffer = new Transform[64];
+        private static readonly Collider[] meteorSearchBuffer = new Collider[128];
+        private static readonly Collider[] ultDamageBuffer = new Collider[128];
+        private static readonly Transform[] meteorCandidateBuffer = new Transform[128];
 
         [SerializeField] private HeroData fallbackHeroData;
         [SerializeField] private GameObject shieldVisual;
@@ -128,7 +128,22 @@ namespace ProjectB.Player
             {
                 heroHealth.OnDied += HandleHeroDied;
             }
+            if (activeHeroData != null && activeHeroData.ultimateType == HeroUltimateType.SoulNova)
+            {
+                EnsureSoulNovaState();
+            }
             OnStateChanged?.Invoke();
+        }
+
+        public void Prewarm()
+        {
+            ResolveEnemyLayerMask();
+            EnsureSoulNovaState();
+        }
+
+        public void SimulateFrameTick()
+        {
+            Update();
         }
 
         private void OnDestroy()
@@ -446,7 +461,7 @@ namespace ProjectB.Player
                 soulBolts = new SoulBoltState[SOUL_NOVA_BOLT_COUNT];
                 for (int i = 0; i < SOUL_NOVA_BOLT_COUNT; i++)
                 {
-                    soulBolts[i].hitIds = new HashSet<EntityId>();
+                    soulBolts[i].hitIds = new HashSet<EntityId>(32);
                 }
             }
 

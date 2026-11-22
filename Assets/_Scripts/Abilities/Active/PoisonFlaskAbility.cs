@@ -22,8 +22,13 @@ namespace ProjectB.Abilities
         private IObjectPool<PoisonPuddle> puddlePool;
         private System.Action<Vector3> cachedLandCallback;
 
-        private readonly Collider[] hitBuffer = new Collider[48];
+        private readonly Collider[] hitBuffer = new Collider[128];
         private readonly List<Transform> targetBuffer = new List<Transform>(8);
+
+        public override void SimulateFrameTick()
+        {
+            Update();
+        }
 
         public override void Initialize(AbilityData data)
         {
@@ -52,7 +57,7 @@ namespace ProjectB.Abilities
                 createFunc: CreateFlaskInstance,
                 actionOnGet: f => { if (f != null) f.gameObject.SetActive(true); },
                 actionOnRelease: f => { if (f != null) f.gameObject.SetActive(false); },
-                actionOnDestroy: f => { if (f != null) Destroy(f.gameObject); },
+                actionOnDestroy: f => { if (f != null) SafeDestroy(f.gameObject); },
                 collectionCheck: true,
                 defaultCapacity: 4,
                 maxSize: 24);
@@ -61,10 +66,32 @@ namespace ProjectB.Abilities
                 createFunc: CreatePuddleInstance,
                 actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
                 actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
-                actionOnDestroy: p => { if (p != null) Destroy(p.gameObject); },
+                actionOnDestroy: p => { if (p != null) SafeDestroy(p.gameObject); },
                 collectionCheck: true,
                 defaultCapacity: 4,
                 maxSize: 24);
+
+            if (Application.isPlaying)
+            {
+                PrewarmPools(4);
+            }
+        }
+
+        public override void PrewarmPools(int count = 0)
+        {
+            int targetCount = count > 0 ? count : 4;
+            if (flaskPool != null)
+            {
+                var tempFlasks = new PoisonFlaskProjectile[targetCount];
+                for (int i = 0; i < targetCount; i++) tempFlasks[i] = flaskPool.Get();
+                for (int i = 0; i < targetCount; i++) if (tempFlasks[i] != null) flaskPool.Release(tempFlasks[i]);
+            }
+            if (puddlePool != null)
+            {
+                var tempPuddles = new PoisonPuddle[targetCount];
+                for (int i = 0; i < targetCount; i++) tempPuddles[i] = puddlePool.Get();
+                for (int i = 0; i < targetCount; i++) if (tempPuddles[i] != null) puddlePool.Release(tempPuddles[i]);
+            }
         }
 
         private PoisonFlaskProjectile CreateFlaskInstance()
@@ -98,7 +125,9 @@ namespace ProjectB.Abilities
         {
             var go = new GameObject("PoisonPuddle");
             go.transform.SetParent(zoneContainer, false);
-            return go.AddComponent<PoisonPuddle>();
+            var puddle = go.AddComponent<PoisonPuddle>();
+            puddle.PrewarmVisual(FlaskData != null ? FlaskData.puddleMaterial : null);
+            return puddle;
         }
 
         public override void ApplyModifier(ModifierType type, float value)

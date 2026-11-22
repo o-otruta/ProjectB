@@ -40,6 +40,26 @@ namespace ProjectB.Visuals
         private ParticleSystem burstParticles;
         private bool isSubscribed;
 
+        public const int MAX_ACTIVE_DAMAGE_NUMBERS = 80;
+        private readonly System.Collections.Generic.List<DamageNumberItem> activeDamageNumbers =
+            new System.Collections.Generic.List<DamageNumberItem>(MAX_ACTIVE_DAMAGE_NUMBERS);
+        private System.Action<DamageNumberItem> cachedDamageItemReleaseHandler;
+
+        private static readonly string[] CachedShrineProgressStrings =
+        {
+            "SHRINE: 0/6",
+            "SHRINE: 1/6",
+            "SHRINE: 2/6",
+            "SHRINE: 3/6",
+            "SHRINE: 4/6",
+            "SHRINE: 5/6",
+            "SHRINE: 6/6"
+        };
+        private const string CachedShrineStartText = "CHALLENGE! Defeat 6 Elites!";
+        private const string CachedShrineCompleteText = "SHRINE CLEARED! +100 Coins";
+
+        public int ActiveDamageNumberCount => activeDamageNumbers.Count;
+
         private static readonly Color DeathColorNormal = new Color(0.95f, 0.35f, 0.28f, 1f);
         private static readonly Color DeathColorElite = new Color(0.75f, 0.22f, 0.95f, 1f);
         private static readonly Color DeathColorJuggernaut = new Color(0.96f, 0.72f, 0.18f, 1f);
@@ -93,25 +113,43 @@ namespace ProjectB.Visuals
 
         private void Start()
         {
-            mainCamera = cameraController != null
-                ? cameraController.GetComponent<Camera>()
-                : Camera.main;
-            if (mainCamera == null) mainCamera = Camera.main;
-
-            InitializeDamagePool();
-            InitializeBurstParticles();
-            Subscribe();
-
+            EnsureInitialized();
             audioManager?.PlayMusic(MusicType.Gameplay);
+        }
+
+        public void EnsureInitialized()
+        {
+            if (mainCamera == null)
+            {
+                mainCamera = cameraController != null
+                    ? cameraController.GetComponent<Camera>()
+                    : Camera.main;
+                if (mainCamera == null) mainCamera = Camera.main;
+            }
+
+            if (damagePool == null)
+            {
+                InitializeDamagePool();
+            }
+
+            if (burstParticles == null)
+            {
+                InitializeBurstParticles();
+            }
+
+            Subscribe();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
+            activeDamageNumbers.Clear();
         }
 
         private void InitializeDamagePool()
         {
+            cachedDamageItemReleaseHandler = HandleDamageItemReleased;
+
             var canvasGo = new GameObject("DamageNumbersCanvas");
             canvasGo.transform.SetParent(transform, false);
 
@@ -140,17 +178,80 @@ namespace ProjectB.Visuals
                     tmp.raycastTarget = false;
                     tmp.outlineWidth = 0.22f;
                     tmp.outlineColor = new Color32(10, 10, 14, 220);
+                    tmp.text = "00000!"; // Pre-allocate internal TMP char buffer at pool creation time
 
                     var item = go.AddComponent<DamageNumberItem>();
                     item.SetTextMesh(tmp);
+                    item.SetReleaseCallback(cachedDamageItemReleaseHandler);
                     return item;
                 },
                 actionOnGet: item => item.gameObject.SetActive(true),
                 actionOnRelease: item => item.gameObject.SetActive(false),
-                actionOnDestroy: item => Destroy(item.gameObject),
+                actionOnDestroy: item =>
+                {
+                    if (item != null)
+                    {
+                        if (Application.isPlaying) Destroy(item.gameObject);
+                        else DestroyImmediate(item.gameObject);
+                    }
+                },
                 collectionCheck: false,
-                defaultCapacity: 40,
-                maxSize: 120);
+                defaultCapacity: MAX_ACTIVE_DAMAGE_NUMBERS,
+                maxSize: MAX_ACTIVE_DAMAGE_NUMBERS);
+
+            // Pre-warm all pooled DamageNumberItems upfront so combat never instantiates TextMeshProUGUI
+            var prewarmBuffer = new DamageNumberItem[MAX_ACTIVE_DAMAGE_NUMBERS];
+            for (int i = 0; i < MAX_ACTIVE_DAMAGE_NUMBERS; i++)
+            {
+                prewarmBuffer[i] = damagePool.Get();
+            }
+            for (int i = 0; i < MAX_ACTIVE_DAMAGE_NUMBERS; i++)
+            {
+                damagePool.Release(prewarmBuffer[i]);
+            }
+        }
+
+        private void HandleDamageItemReleased(DamageNumberItem item)
+        {
+            activeDamageNumbers.Remove(item);
+        }
+
+        private DamageNumberItem AcquireDamageNumberItem()
+        {
+            if (damagePool == null) return null;
+
+            if (activeDamageNumbers.Count >= MAX_ACTIVE_DAMAGE_NUMBERS)
+            {
+                DamageNumberItem oldest = activeDamageNumbers[0];
+                if (oldest != null)
+                {
+                    oldest.ReturnToPool();
+                }
+                else
+                {
+                    activeDamageNumbers.RemoveAt(0);
+                }
+            }
+
+            DamageNumberItem item = damagePool.Get();
+            if (item != null)
+            {
+                activeDamageNumbers.Add(item);
+            }
+            return item;
+        }
+
+        public void TickDamageNumbers(float deltaTime)
+        {
+            for (int i = activeDamageNumbers.Count - 1; i >= 0; i--)
+            {
+                if (i >= activeDamageNumbers.Count) continue;
+                var item = activeDamageNumbers[i];
+                if (item != null)
+                {
+                    item.Tick(deltaTime);
+                }
+            }
         }
 
         private void InitializeBurstParticles()
@@ -195,7 +296,8 @@ namespace ProjectB.Visuals
                 {
                     psRenderer.sharedMaterial = tempCube.GetComponent<MeshRenderer>().sharedMaterial;
                 }
-                Destroy(tempCube);
+                if (Application.isPlaying) Destroy(tempCube);
+                else DestroyImmediate(tempCube);
                 psRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 psRenderer.receiveShadows = false;
                 psRenderer.enableGPUInstancing = true;
@@ -282,14 +384,17 @@ namespace ProjectB.Visuals
         {
             if (damagePool != null && evt.Damage > 0)
             {
-                var item = damagePool.Get();
-                Color col = evt.IsCrit
-                    ? critDamageColor
-                    : (evt.IsBossOrMiniBoss ? bossDamageColor : normalDamageColor);
-                float scale = evt.IsCrit
-                    ? 1.45f
-                    : (evt.IsBossOrMiniBoss ? 1.25f : 1.0f);
-                item.Show(evt.Position, evt.Damage, col, scale, mainCamera, damagePool, evt.IsCrit);
+                var item = AcquireDamageNumberItem();
+                if (item != null)
+                {
+                    Color col = evt.IsCrit
+                        ? critDamageColor
+                        : (evt.IsBossOrMiniBoss ? bossDamageColor : normalDamageColor);
+                    float scale = evt.IsCrit
+                        ? 1.45f
+                        : (evt.IsBossOrMiniBoss ? 1.25f : 1.0f);
+                    item.Show(evt.Position, evt.Damage, col, scale, mainCamera, damagePool, evt.IsCrit);
+                }
             }
 
             audioManager?.PlaySfx(SfxType.Hit, volumeScale: evt.IsCrit ? 0.8f : 0.65f, randomizePitch: true);
@@ -329,8 +434,8 @@ namespace ProjectB.Visuals
         {
             if (heroHealth != null && damagePool != null && amount > 0)
             {
-                var item = damagePool.Get();
-                item.Show(heroHealth.transform.position, amount, heroDamageColor, 1.3f, mainCamera, damagePool);
+                var item = AcquireDamageNumberItem();
+                item?.Show(heroHealth.transform.position, amount, heroDamageColor, 1.3f, mainCamera, damagePool);
             }
 
             audioManager?.PlaySfx(SfxType.HeroHit, volumeScale: 0.9f, randomizePitch: true);
@@ -382,8 +487,8 @@ namespace ProjectB.Visuals
                     string label = !string.IsNullOrEmpty(evt.RewardSummary) ? evt.RewardSummary : evt.DisplayName;
                     if (!string.IsNullOrEmpty(label))
                     {
-                        var item = damagePool.Get();
-                        item.ShowText(heroPos, label, SecretRewardTextColor, 1.35f, 1.6f, mainCamera, damagePool);
+                        var item = AcquireDamageNumberItem();
+                        item?.ShowText(heroPos, label, SecretRewardTextColor, 1.35f, 1.6f, mainCamera, damagePool);
                     }
                 }
             }
@@ -434,8 +539,8 @@ namespace ProjectB.Visuals
 
             if (damagePool != null && !string.IsNullOrEmpty(evt.DisplayName))
             {
-                var item = damagePool.Get();
-                item.ShowText(heroPos, evt.DisplayName, SynergyGoldColor, 1.45f, 1.8f, mainCamera, damagePool);
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(heroPos, evt.DisplayName, SynergyGoldColor, 1.45f, 1.8f, mainCamera, damagePool);
             }
 
             audioManager?.PlaySfx(SfxType.LevelUp, volumeScale: 0.95f, randomizePitch: false);
@@ -541,8 +646,8 @@ namespace ProjectB.Visuals
 
             if (evt.HealAmount > 0 && damagePool != null)
             {
-                var item = damagePool.Get();
-                item.ShowText(evt.Position, $"+{evt.HealAmount} HP", SoulHealTextColor, 1.3f, 1.4f, mainCamera, damagePool);
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.Position, DamageNumberItem.GetCachedHealText(evt.HealAmount), SoulHealTextColor, 1.3f, 1.4f, mainCamera, damagePool);
             }
         }
 
@@ -576,8 +681,8 @@ namespace ProjectB.Visuals
 
             if (damagePool != null)
             {
-                var item = damagePool.Get();
-                item.ShowText(evt.Position, "VACUUM MAGNET!", VacuumPrimaryColor, 1.35f, 1.6f, mainCamera, damagePool);
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.Position, "VACUUM MAGNET!", VacuumPrimaryColor, 1.35f, 1.6f, mainCamera, damagePool);
             }
 
             audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.95f, randomizePitch: false);
@@ -600,8 +705,11 @@ namespace ProjectB.Visuals
                         size: 0.34f);
                     if (damagePool != null)
                     {
-                        var item = damagePool.Get();
-                        item.ShowText(evt.Position, $"CHALLENGE! Defeat {evt.TotalElites} Elites!", ShrineStartColor, 1.35f, 1.8f, mainCamera, damagePool);
+                        var item = AcquireDamageNumberItem();
+                        string startMsg = evt.TotalElites == 6
+                            ? CachedShrineStartText
+                            : $"CHALLENGE! Defeat {evt.TotalElites} Elites!";
+                        item?.ShowText(evt.Position, startMsg, ShrineStartColor, 1.35f, 1.8f, mainCamera, damagePool);
                     }
                     audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.85f, randomizePitch: false);
                     cameraController?.Shake(0.26f, 0.2f);
@@ -612,8 +720,11 @@ namespace ProjectB.Visuals
                     if (damagePool != null)
                     {
                         int defeated = Mathf.Max(0, evt.TotalElites - evt.RemainingElites);
-                        var item = damagePool.Get();
-                        item.ShowText(evt.Position, $"SHRINE: {defeated}/{evt.TotalElites}", ShrineStartColor, 1.15f, 1.1f, mainCamera, damagePool);
+                        string progMsg = evt.TotalElites == 6 && defeated >= 0 && defeated < CachedShrineProgressStrings.Length
+                            ? CachedShrineProgressStrings[defeated]
+                            : $"SHRINE: {defeated}/{evt.TotalElites}";
+                        var item = AcquireDamageNumberItem();
+                        item?.ShowText(evt.Position, progMsg, ShrineStartColor, 1.15f, 1.1f, mainCamera, damagePool);
                     }
                     break;
 
@@ -629,8 +740,11 @@ namespace ProjectB.Visuals
                         size: 0.38f);
                     if (damagePool != null)
                     {
-                        var item = damagePool.Get();
-                        item.ShowText(evt.Position, $"SHRINE CLEARED! +{evt.CoinReward} Coins", ShrineCompleteColor, 1.45f, 2.0f, mainCamera, damagePool);
+                        var item = AcquireDamageNumberItem();
+                        string completeMsg = evt.CoinReward == 100
+                            ? CachedShrineCompleteText
+                            : $"SHRINE CLEARED! +{evt.CoinReward} Coins";
+                        item?.ShowText(evt.Position, completeMsg, ShrineCompleteColor, 1.45f, 2.0f, mainCamera, damagePool);
                     }
                     audioManager?.PlaySfx(SfxType.LevelUp, volumeScale: 0.95f, randomizePitch: false);
                     audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.9f, randomizePitch: false);

@@ -18,9 +18,14 @@ namespace ProjectB.Abilities
         private float boltHideTime;
         private LineRenderer lineRenderer;
 
-        private readonly Collider[] hitBuffer = new Collider[64];
+        private readonly Collider[] hitBuffer = new Collider[128];
         private readonly List<Transform> chainTargets = new List<Transform>(16);
         private Vector3[] boltPoints = new Vector3[64];
+
+        public override void SimulateFrameTick()
+        {
+            Update();
+        }
 
         public override void Initialize(AbilityData data)
         {

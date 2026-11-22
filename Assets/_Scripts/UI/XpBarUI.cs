@@ -6,10 +6,32 @@ namespace ProjectB.UI
 {
     public class XpBarUI : MonoBehaviour
     {
+        private static readonly string[] CachedLevelLabels = BuildLevelLabels(201);
+
         private LevelUp.HeroExperience heroExperience;
         [SerializeField] private Slider xpSlider;
         [SerializeField] private TMPro.TextMeshProUGUI levelText;
         private bool isInitialized = false;
+        private int lastDisplayedLevel = int.MinValue;
+
+        private static string[] BuildLevelLabels(int count)
+        {
+            var arr = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                arr[i] = $"Lv {i}";
+            }
+            return arr;
+        }
+
+        public static string GetCachedLevelText(int level)
+        {
+            if (level >= 0 && level < CachedLevelLabels.Length)
+            {
+                return CachedLevelLabels[level];
+            }
+            return $"Lv {level}";
+        }
 
         [Inject]
         public void Construct(LevelUp.HeroExperience heroExperience)
@@ -72,9 +94,10 @@ namespace ProjectB.UI
 
         private void UpdateLevelText(int newLevel)
         {
-            if (levelText != null)
+            if (levelText != null && newLevel != lastDisplayedLevel)
             {
-                levelText.text = $"Lv {newLevel}";
+                lastDisplayedLevel = newLevel;
+                levelText.text = GetCachedLevelText(newLevel);
             }
         }
     }

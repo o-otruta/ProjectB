@@ -102,6 +102,8 @@ namespace ProjectB.Enemies
             nextBlizzardCooldown = data != null ? Mathf.Max(3f, data.blizzardCooldown * 0.65f) : 6.0f;
 
             meshAnimator?.Stop();
+            EnsureSpikeVisuals();
+            EnsureBlizzardVisuals();
             HideAllFrostVisuals();
         }
 

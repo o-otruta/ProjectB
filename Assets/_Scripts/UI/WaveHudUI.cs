@@ -8,11 +8,33 @@ namespace ProjectB.UI
 {
     public class WaveHudUI : MonoBehaviour
     {
+        private static readonly string[] CachedWaveLabels = BuildWaveLabels(201);
+
         [SerializeField] private TextMeshProUGUI waveText;
 
         private WaveManager waveManager;
         private GameEventBus eventBus;
         private bool isSubscribed;
+        private int lastDisplayedWave = int.MinValue;
+
+        private static string[] BuildWaveLabels(int count)
+        {
+            var arr = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                arr[i] = $"Wave {i}";
+            }
+            return arr;
+        }
+
+        public static string GetCachedWaveText(int wave)
+        {
+            if (wave >= 0 && wave < CachedWaveLabels.Length)
+            {
+                return CachedWaveLabels[wave];
+            }
+            return $"Wave {wave}";
+        }
 
         [Inject]
         public void Construct(WaveManager waveManager, GameEventBus eventBus)
@@ -68,9 +90,10 @@ namespace ProjectB.UI
 
         private void UpdateWaveText(int wave)
         {
-            if (waveText != null)
+            if (waveText != null && wave != lastDisplayedWave)
             {
-                waveText.text = $"Wave {wave}";
+                lastDisplayedWave = wave;
+                waveText.text = GetCachedWaveText(wave);
             }
         }
     }

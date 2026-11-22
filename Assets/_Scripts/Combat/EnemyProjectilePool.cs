@@ -50,7 +50,14 @@ namespace ProjectB.Combat
                 createFunc: () => CreateProjectile(weaponData),
                 actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
                 actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
-                actionOnDestroy: p => { if (p != null) UnityEngine.Object.Destroy(p.gameObject); },
+                actionOnDestroy: p =>
+                {
+                    if (p != null)
+                    {
+                        if (Application.isPlaying) UnityEngine.Object.Destroy(p.gameObject);
+                        else UnityEngine.Object.DestroyImmediate(p.gameObject);
+                    }
+                },
                 collectionCheck: false,
                 defaultCapacity: 16,
                 maxSize: 200
@@ -58,6 +65,21 @@ namespace ProjectB.Combat
 
             _pools[weaponData] = pool;
             return pool;
+        }
+
+        public void Prewarm(WeaponData weaponData, int count = 24)
+        {
+            if (weaponData == null || count <= 0) return;
+            var pool = GetOrCreatePool(weaponData);
+            var temp = new EnemyProjectile[count];
+            for (int i = 0; i < count; i++)
+            {
+                temp[i] = pool.Get();
+            }
+            for (int i = 0; i < count; i++)
+            {
+                if (temp[i] != null) pool.Release(temp[i]);
+            }
         }
 
         private EnemyProjectile CreateProjectile(WeaponData weaponData)
@@ -77,7 +99,8 @@ namespace ProjectB.Combat
                 if (col != null)
                 {
                     col.enabled = false;
-                    UnityEngine.Object.Destroy(col);
+                    if (Application.isPlaying) UnityEngine.Object.Destroy(col);
+                    else UnityEngine.Object.DestroyImmediate(col);
                 }
             }
 
@@ -99,7 +122,8 @@ namespace ProjectB.Combat
 
             if (_rootContainer != null)
             {
-                UnityEngine.Object.Destroy(_rootContainer.gameObject);
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_rootContainer.gameObject);
+                else UnityEngine.Object.DestroyImmediate(_rootContainer.gameObject);
                 _rootContainer = null;
             }
         }

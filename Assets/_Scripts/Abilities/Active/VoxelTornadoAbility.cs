@@ -17,7 +17,7 @@ namespace ProjectB.Abilities
         private float nextFireTime;
         private Transform tornadoContainer;
         private IObjectPool<TornadoProjectile> tornadoPool;
-        private readonly Collider[] hitBuffer = new Collider[48];
+        private readonly Collider[] hitBuffer = new Collider[128];
 
         public override void Initialize(AbilityData data)
         {
@@ -40,14 +40,42 @@ namespace ProjectB.Abilities
                 {
                     var go = new GameObject("VoxelTornado");
                     go.transform.SetParent(tornadoContainer, false);
-                    return go.AddComponent<TornadoProjectile>();
+                    var proj = go.AddComponent<TornadoProjectile>();
+                    proj.PrewarmVisual(TornadoData != null ? TornadoData.tornadoMaterial : null);
+                    return proj;
                 },
                 actionOnGet: t => { if (t != null) t.gameObject.SetActive(true); },
                 actionOnRelease: t => { if (t != null) t.gameObject.SetActive(false); },
-                actionOnDestroy: t => { if (t != null) Destroy(t.gameObject); },
+                actionOnDestroy: t =>
+                {
+                    if (t != null)
+                    {
+                        if (Application.isPlaying) Destroy(t.gameObject);
+                        else DestroyImmediate(t.gameObject);
+                    }
+                },
                 collectionCheck: true,
                 defaultCapacity: 4,
                 maxSize: 20);
+
+            if (Application.isPlaying)
+            {
+                PrewarmPools(4);
+            }
+        }
+
+        public override void PrewarmPools(int count = 0)
+        {
+            if (tornadoPool == null) return;
+            int targetCount = count > 0 ? count : 4;
+            var temp = new TornadoProjectile[targetCount];
+            for (int i = 0; i < targetCount; i++) temp[i] = tornadoPool.Get();
+            for (int i = 0; i < targetCount; i++) if (temp[i] != null) tornadoPool.Release(temp[i]);
+        }
+
+        public override void SimulateFrameTick()
+        {
+            Update();
         }
 
         public override void ApplyModifier(ModifierType type, float value)

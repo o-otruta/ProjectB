@@ -8,7 +8,7 @@ namespace ProjectB.Abilities
 {
     public class PoisonPuddle : MonoBehaviour
     {
-        private static readonly Collider[] hitBuffer = new Collider[48];
+        private static readonly Collider[] hitBuffer = new Collider[128];
 
         private float radius;
         private float tickInterval;
@@ -56,6 +56,11 @@ namespace ProjectB.Abilities
             nextTickTime = now;
             ApplyTick();
             nextTickTime = now + this.tickInterval;
+        }
+
+        public void PrewarmVisual(Material puddleMaterial)
+        {
+            EnsureVisual(puddleMaterial);
         }
 
         private void EnsureVisual(Material puddleMaterial)

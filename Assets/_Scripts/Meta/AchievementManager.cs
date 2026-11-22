@@ -48,6 +48,12 @@ namespace ProjectB.Meta
                     _achievementsByCondition[achievement.conditionType] = list;
                 }
                 list.Add(achievement);
+
+                if (_saveManager?.Data?.achievementProgress != null &&
+                    !_saveManager.Data.achievementProgress.ContainsKey(achievement.id))
+                {
+                    _saveManager.Data.achievementProgress.Add(achievement.id, 0);
+                }
             }
         }
 

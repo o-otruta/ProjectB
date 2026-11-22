@@ -31,7 +31,7 @@ namespace ProjectB.Abilities
         private float nextScanTime;
         private Transform currentTarget;
         private IDamageable currentTargetDamageable;
-        private Collider[] hitBuffer = new Collider[50];
+        private Collider[] hitBuffer = new Collider[128];
 
         public void Initialize(
             float searchRadius,

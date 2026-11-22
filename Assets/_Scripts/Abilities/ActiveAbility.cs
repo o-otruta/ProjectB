@@ -22,6 +22,14 @@ namespace ProjectB.Abilities
             eventBus = bus;
         }
 
+        public virtual void PrewarmPools(int count = 0)
+        {
+        }
+
+        public virtual void SimulateFrameTick()
+        {
+        }
+
         protected float GetScaledDamage(float rawDamage)
         {
             float multiplier = runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f;

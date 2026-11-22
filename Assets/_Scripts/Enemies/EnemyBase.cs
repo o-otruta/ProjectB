@@ -127,6 +127,10 @@ namespace ProjectB.Enemies
             {
                 enemyRenderers = GetComponentsInChildren<Renderer>(true);
             }
+            if (propBlock == null)
+            {
+                propBlock = new MaterialPropertyBlock();
+            }
 
             isElite = false;
             eliteArchetype = EliteArchetype.None;
@@ -317,6 +321,11 @@ namespace ProjectB.Enemies
             }
         }
 
+        public void SimulateFrameTick()
+        {
+            Update();
+        }
+
         protected virtual void Update()
         {
             if (!isAlive || target == null || enemyData == null) return;
@@ -408,8 +417,10 @@ namespace ProjectB.Enemies
                 Collider col = EliteAuraHitBuffer[i];
                 if (col == null) continue;
 
-                EnemyBase ally = col.GetComponent<EnemyBase>();
-                if (ally == null) ally = col.GetComponentInParent<EnemyBase>();
+                if (!col.TryGetComponent<EnemyBase>(out var ally))
+                {
+                    ally = col.GetComponentInParent<EnemyBase>();
+                }
                 if (ally == null || ally == this || ally.IsDead || ally.IsElite || ally.IsMiniBoss || ally.IsBoss)
                 {
                     continue;

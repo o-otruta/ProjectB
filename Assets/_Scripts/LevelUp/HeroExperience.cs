@@ -103,13 +103,18 @@ namespace ProjectB.LevelUp
 
         private const float MAGNET_SCAN_INTERVAL = 0.08f;
 
-        private Collider[] magnetResults = new Collider[64];
+        private Collider[] magnetResults = new Collider[128];
         private float nextMagnetScanTime;
         private ProjectB.Player.HeroHealth heroHealth;
 
         private void Awake()
         {
             heroHealth = GetComponent<ProjectB.Player.HeroHealth>();
+        }
+
+        public void SimulateFrameTick()
+        {
+            Update();
         }
 
         private void Update()
@@ -119,19 +124,29 @@ namespace ProjectB.LevelUp
             if (Time.time < nextMagnetScanTime) return;
 
             nextMagnetScanTime = Time.time + MAGNET_SCAN_INTERVAL;
+            ScanAndMagnetizeNearbyPickups();
+        }
 
+        public int ScanAndMagnetizeNearbyPickups()
+        {
             int count = Physics.OverlapSphereNonAlloc(transform.position, MagnetRadius, magnetResults, pickupLayer);
+            int magnetized = 0;
             for (int i = 0; i < count; i++)
             {
-                if (magnetResults[i].TryGetComponent<XpCrystal>(out var crystal))
+                Collider col = magnetResults[i];
+                if (col == null) continue;
+                if (col.TryGetComponent<XpCrystal>(out var crystal))
                 {
                     crystal.Magnetize(magnetSpeed);
+                    magnetized++;
                 }
-                else if (magnetResults[i].TryGetComponent<CoinPickup>(out var coin))
+                else if (col.TryGetComponent<CoinPickup>(out var coin))
                 {
                     coin.Magnetize(magnetSpeed);
+                    magnetized++;
                 }
             }
+            return magnetized;
         }
 
         public void AddExperience(int amount)

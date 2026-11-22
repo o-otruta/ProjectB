@@ -234,7 +234,7 @@ namespace ProjectB.UI
 
             if (passiveText != null)
             {
-                passiveText.text = $"<b>Passive:</b> {hero.passiveName} ({hero.passiveDescription})";
+                passiveText.text = $"<b>Passive:</b> {hero.passiveName} — {hero.passiveDescription}";
             }
 
             if (ultimateText != null)

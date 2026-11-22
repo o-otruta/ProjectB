@@ -3,6 +3,7 @@ using TMPro;
 using VContainer;
 using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.Visuals;
 
 namespace ProjectB.UI
 {
@@ -13,6 +14,7 @@ namespace ProjectB.UI
         private RunStatistics runStatistics;
         private GameEventBus eventBus;
         private bool isSubscribed;
+        private int lastDisplayedCoins = int.MinValue;
 
         [Inject]
         public void Construct(RunStatistics runStatistics, GameEventBus eventBus)
@@ -70,7 +72,11 @@ namespace ProjectB.UI
             if (coinsText != null)
             {
                 int coins = runStatistics != null ? runStatistics.CoinsEarned : 0;
-                coinsText.text = coins.ToString();
+                if (coins != lastDisplayedCoins)
+                {
+                    lastDisplayedCoins = coins;
+                    coinsText.text = DamageNumberItem.GetCachedNumberText(coins);
+                }
             }
         }
     }

@@ -18,9 +18,14 @@ namespace ProjectB.Abilities
         
         private float nextTickTime;
         private float nextScanTime;
-        private Collider[] hitBuffer = new Collider[100];
-        private readonly System.Collections.Generic.List<EnemyBase> capturedEnemies = new System.Collections.Generic.List<EnemyBase>(64);
+        private Collider[] hitBuffer = new Collider[128];
+        private readonly System.Collections.Generic.List<EnemyBase> capturedEnemies = new System.Collections.Generic.List<EnemyBase>(128);
         private GameObject visualHole;
+
+        public override void SimulateFrameTick()
+        {
+            Update();
+        }
 
         private static int ObstacleMask
         {

@@ -8,7 +8,7 @@ namespace ProjectB.Abilities
 {
     public class TornadoProjectile : MonoBehaviour
     {
-        private static readonly Collider[] hitBuffer = new Collider[64];
+        private static readonly Collider[] hitBuffer = new Collider[128];
         private static int cachedObstacleMask = -1;
 
         private Vector3 originPos;
@@ -93,6 +93,11 @@ namespace ProjectB.Abilities
             nextTickTime = Time.time;
             ApplyVortexStep(dt: 0f, applyDamage: true);
             nextTickTime = Time.time + this.tickInterval;
+        }
+
+        public void PrewarmVisual(Material tornadoMat)
+        {
+            EnsureVisual(tornadoMat);
         }
 
         private void EnsureVisual(Material tornadoMat)

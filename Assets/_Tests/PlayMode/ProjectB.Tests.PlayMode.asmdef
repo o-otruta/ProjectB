@@ -1,0 +1,28 @@
+{
+    "name": "ProjectB.Tests.PlayMode",
+    "rootNamespace": "ProjectB.Tests.PlayMode",
+    "references": [
+        "ProjectB.Data",
+        "ProjectB.Meta",
+        "ProjectB.Runtime",
+        "VContainer",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

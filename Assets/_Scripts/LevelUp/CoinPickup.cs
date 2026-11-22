@@ -29,11 +29,16 @@ namespace ProjectB.LevelUp
 
         private void Update()
         {
-            if (!isMagnetized || Time.deltaTime <= 0f || heroTarget == null) return;
+            Tick(Time.deltaTime);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!isMagnetized || deltaTime <= 0f || heroTarget == null) return;
 
             Vector3 targetPos = heroTarget.position + Vector3.up;
             // Fly towards hero
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, magnetSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, magnetSpeed * deltaTime);
             
             // If reached hero
             if ((transform.position - targetPos).sqrMagnitude < 0.25f)

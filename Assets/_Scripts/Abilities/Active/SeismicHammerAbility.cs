@@ -9,7 +9,12 @@ namespace ProjectB.Abilities
         private SeismicHammerAbilityData HammerData => Data as SeismicHammerAbilityData;
 
         private const float WAVE_ANIM_DURATION = 0.28f;
-        private readonly Collider[] hitBuffer = new Collider[80];
+        private readonly Collider[] hitBuffer = new Collider[128];
+
+        public override void SimulateFrameTick()
+        {
+            Update();
+        }
 
         private float currentDamage;
         private float currentCooldown;

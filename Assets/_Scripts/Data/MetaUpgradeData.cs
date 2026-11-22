@@ -40,5 +40,11 @@ namespace ProjectB.Data
         [Tooltip("Значение, которое добавляется за каждый купленный уровень")]
         public float effectPerLevel;
         public MetaUpgradeEffectType effectType;
+
+        public int GetCostForLevel(int currentLevel)
+        {
+            if (currentLevel < 0 || (maxLevel > 0 && currentLevel >= maxLevel)) return -1;
+            return Mathf.RoundToInt(baseCost * Mathf.Pow(costMultiplier, currentLevel));
+        }
     }
 }

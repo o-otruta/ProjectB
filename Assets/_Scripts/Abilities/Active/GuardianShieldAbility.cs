@@ -13,9 +13,9 @@ namespace ProjectB.Abilities
         private static int cachedObstacleMask = -1;
 
         private readonly List<Transform> shields = new List<Transform>();
-        private readonly Dictionary<EntityId, float> enemyHitCooldowns = new Dictionary<EntityId, float>();
-        private readonly List<EntityId> keysToRemove = new List<EntityId>();
-        private readonly Collider[] hitBuffer = new Collider[32];
+        private readonly Dictionary<EntityId, float> enemyHitCooldowns = new Dictionary<EntityId, float>(128);
+        private readonly List<EntityId> keysToRemove = new List<EntityId>(128);
+        private readonly Collider[] hitBuffer = new Collider[64];
 
         private int currentCount;
         private float currentDamage;
@@ -135,6 +135,11 @@ namespace ProjectB.Abilities
             if (obj == null) return;
             if (Application.isPlaying) Destroy(obj);
             else DestroyImmediate(obj);
+        }
+
+        public override void SimulateFrameTick()
+        {
+            Update();
         }
 
         private void Update()

@@ -21,6 +21,9 @@ namespace ProjectB.UI
         private GameEventBus eventBus;
         private string activeBossId;
         private bool isSubscribed;
+        private int lastDisplayedCur = int.MinValue;
+        private int lastDisplayedMax = int.MinValue;
+        private readonly char[] hpCharBuffer = new char[24];
 
         [Inject]
         public void Construct(GameEventBus eventBus)
@@ -126,15 +129,20 @@ namespace ProjectB.UI
                 hpSlider.value = safeCur;
             }
 
-            if (hpValueText != null)
+            if (hpValueText != null && (safeCur != lastDisplayedCur || safeMax != lastDisplayedMax))
             {
-                hpValueText.text = $"{safeCur} / {safeMax}";
+                lastDisplayedCur = safeCur;
+                lastDisplayedMax = safeMax;
+                int len = HpBarUI.WriteRatioToBuffer(hpCharBuffer, safeCur, safeMax);
+                hpValueText.SetCharArray(hpCharBuffer, 0, len);
             }
         }
 
         public void Hide()
         {
             activeBossId = null;
+            lastDisplayedCur = int.MinValue;
+            lastDisplayedMax = int.MinValue;
             if (barRoot != null) barRoot.SetActive(false);
         }
     }

@@ -4,4 +4,5 @@
   <Project Path="ProjectB.Editor.csproj" />
   <Project Path="ProjectB.Tests.EditMode.csproj" />
   <Project Path="ProjectB.Meta.csproj" />
+  <Project Path="ProjectB.Tests.PlayMode.csproj" />
 </Solution>

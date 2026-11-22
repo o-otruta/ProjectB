@@ -18,7 +18,7 @@ namespace ProjectB.Abilities
         protected float currentRange;
 
         protected float nextFireTime;
-        protected Collider[] hitBuffer = new Collider[50];
+        protected Collider[] hitBuffer = new Collider[128];
         protected IObjectPool<AbilityProjectile> projectilePool;
         protected Transform projectileContainer;
 
@@ -42,11 +42,43 @@ namespace ProjectB.Abilities
                 createFunc: CreateProjectilePrefab,
                 actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
                 actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
-                actionOnDestroy: p => { if (p != null) Destroy(p.gameObject); },
+                actionOnDestroy: p =>
+                {
+                    if (p != null)
+                    {
+                        if (Application.isPlaying) Destroy(p.gameObject);
+                        else DestroyImmediate(p.gameObject);
+                    }
+                },
                 collectionCheck: true,
                 defaultCapacity: DefaultPoolCapacity,
                 maxSize: MaxPoolCapacity
             );
+
+            if (Application.isPlaying)
+            {
+                PrewarmPools(DefaultPoolCapacity);
+            }
+        }
+
+        public override void PrewarmPools(int count = 0)
+        {
+            if (projectilePool == null) return;
+            int targetCount = count > 0 ? count : DefaultPoolCapacity;
+            var temp = new AbilityProjectile[targetCount];
+            for (int i = 0; i < targetCount; i++)
+            {
+                temp[i] = projectilePool.Get();
+            }
+            for (int i = 0; i < targetCount; i++)
+            {
+                if (temp[i] != null) projectilePool.Release(temp[i]);
+            }
+        }
+
+        public override void SimulateFrameTick()
+        {
+            Update();
         }
 
         protected virtual int DefaultPoolCapacity => 10;
@@ -158,7 +190,10 @@ namespace ProjectB.Abilities
         {
             projectilePool?.Clear();
             if (projectileContainer != null)
-                Destroy(projectileContainer.gameObject);
+            {
+                if (Application.isPlaying) Destroy(projectileContainer.gameObject);
+                else DestroyImmediate(projectileContainer.gameObject);
+            }
         }
     }
 }

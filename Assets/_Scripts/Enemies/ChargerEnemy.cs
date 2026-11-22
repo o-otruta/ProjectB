@@ -77,6 +77,7 @@ namespace ProjectB.Enemies
                 meshAnimator.Play();
             }
 
+            EnsureTelegraphLine();
             SetTelegraphActive(false);
         }
 
