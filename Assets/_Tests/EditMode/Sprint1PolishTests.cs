@@ -97,17 +97,18 @@ namespace ProjectB.Tests.EditMode
                 }
 
                 Assert.IsNotNull(waveMgr, "WaveManager missing in Gameplay.unity");
-                var enemyTypesProp = new SerializedObject(waveMgr).FindProperty("enemyTypes");
+                Assert.IsNotNull(waveMgr.Config, "WaveManager.Config missing in Gameplay.unity");
                 bool hasGoblin = false;
-                for (int i = 0; i < enemyTypesProp.arraySize; i++)
+                foreach (var entry in waveMgr.Config.enemySchedule)
                 {
-                    if (enemyTypesProp.GetArrayElementAtIndex(i).objectReferenceValue == goblin)
+                    if (entry != null && entry.enemy == goblin)
                     {
                         hasGoblin = true;
+                        Assert.AreEqual(3, entry.minWave, "GoblinData should enter on Wave 3");
                         break;
                     }
                 }
-                Assert.IsTrue(hasGoblin, "WaveManager.enemyTypes must contain GoblinData.asset");
+                Assert.IsTrue(hasGoblin, "WaveConfig.enemySchedule must contain GoblinData.asset");
             }
             finally
             {

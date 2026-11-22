@@ -296,15 +296,15 @@
 ---
 
 ### Спринт 4: Фазовое расписание волн, новые враги (`Skeleton`, `BombBug`, `OrcCharger`), элиты и боссы (P2)
-- [ ] **4.1. Фазовая система волн в `WaveConfig` и `WaveManager`:**
-  - Добавить в [WaveConfig.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Data/Enemies/WaveConfig.cs) список `List<EnemyWaveEntry>` (`EnemyData enemy`, `int minWave`, `int maxWave`, `float spawnWeight`), сохранив обратную совместимость с `WaveManager.enemyTypes`.
-- [ ] **4.2. Реализовать новые классы врагов и воксельные префабы (Раздел 4.4.А):**
-  - `SkeletonRunner` (`SkeletonData.asset`, воксельная модель скелета, `minWave: 5`, также назначить как `minionData` в `NecromancerBossData.asset`).
-  - `ExploderEnemy : EnemyBase` (`BombBugData.asset`, `minWave: 10`: телеграфируемый самоподрыв при сближении с героем).
-  - `ChargerEnemy : EnemyBase` (`OrcChargerData.asset`, `minWave: 14`: телеграфируемый прямолинейный рывок).
-- [ ] **4.3. Разнообразить Элитных врагов и добавить Босса Волны 75 (`FrostLichBoss`):**
-  - Добавить 3 архетипа элит (`Berserker`, `Juggernaut`, `Haste Aura`) в `EnemyBase.MakeElite()`.
-  - Реализовать `FrostLichBoss : BossBase` с линейными телеграфами ледяных шипов и добавить его в `WaveConfig.bosses`.
+- [x] **4.1. Фазовая система волн в `WaveConfig` и `WaveManager`:**
+  - Добавить в [WaveConfig.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Data/Enemies/WaveConfig.cs) список `List<EnemyWaveEntry>` (`EnemyData enemy`, `int minWave`, `int maxWave`, `float spawnWeight`, `int packSize`) как единый источник истины; удалить дублирующий список `WaveManager.enemyTypes`.
+- [x] **4.2. Реализовать новые классы врагов и воксельные префабы (Раздел 4.4.А):**
+  - `SkeletonRunner` (`SkeletonData.asset`, воксельная модель скелета + `.blend`, `minWave: 5`, `packSize: 4`, также назначен как `minionData` в `NecromancerBossData.asset`).
+  - `ExploderEnemy : EnemyBase` (`BombBugData.asset`, воксельная модель `BombSlime` + `.blend`, `minWave: 10`: телеграфируемый самоподрыв с уроном по герою и врагам).
+  - `ChargerEnemy : EnemyBase` (`OrcChargerData.asset`, воксельная модель `OrcCharger` + `.blend`, `minWave: 14`: телеграфируемый прямолинейный рывок с остановкой об препятствия).
+- [x] **4.3. Разнообразить Элитных врагов и добавить Босса Волны 75 (`FrostLichBoss`):**
+  - Добавить 3 архетипа элит (`Berserker`, `Juggernaut`, `HasteAura`) в `EnemyBase.MakeElite()`.
+  - Реализовать `FrostLichBoss : BossBase` (воксельная модель `FrostLich` + `.blend`, крестовые ледяные шипы и кольцо метели с безопасной внутренней зоной `3м`) и добавить его в `WaveConfig.bosses` на Волну 75.
 
 ---
 
