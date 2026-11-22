@@ -38,6 +38,7 @@ namespace ProjectB.Enemies
             getSafePositionNearTarget = safePositionProvider;
             activeBossId = data != null ? data.bossId : "boss";
             isMiniBoss = data != null && data.isMiniBoss;
+            pullResistance = data != null ? Mathf.Clamp01(data.pullResistance) : 0.15f;
 
             float summonCd = data != null && data.summonCooldown > 0f ? data.summonCooldown : 10f;
             nextSummonTime = Time.time + summonCd * 0.6f;
@@ -92,10 +93,7 @@ namespace ProjectB.Enemies
 
         public override void ApplyPull(Vector3 pullDelta)
         {
-            if (!isAlive) return;
-            float mult = bossData != null ? bossData.pullResistance : 0.15f;
-            if (mult <= 0f) return;
-            transform.position += pullDelta * mult;
+            base.ApplyPull(pullDelta);
         }
     }
 }

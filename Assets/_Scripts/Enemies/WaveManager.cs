@@ -16,7 +16,6 @@ namespace ProjectB.Enemies
         private const int MAX_ACTIVE_ENEMIES_FOR_SUMMON = 80;
 
         [SerializeField] private WaveConfig waveConfig;
-        [SerializeField] private List<EnemyData> enemyTypes;
         
         private HeroHealth heroHealth;
         private Transform heroTarget;
@@ -67,6 +66,14 @@ namespace ProjectB.Enemies
             return bossEncounterIndex % bossCount;
         }
 
+        public static EliteArchetype PickEliteArchetype(float normalizedRoll)
+        {
+            float clamped = Mathf.Clamp01(normalizedRoll);
+            if (clamped < 1f / 3f) return EliteArchetype.Berserker;
+            if (clamped < 2f / 3f) return EliteArchetype.Juggernaut;
+            return EliteArchetype.HasteAura;
+        }
+
         [Inject]
         public void Construct(
             HeroHealth heroHealth, 
@@ -88,9 +95,9 @@ namespace ProjectB.Enemies
 
         private void Start()
         {
-            if (waveConfig == null || enemyTypes == null || enemyTypes.Count == 0 || heroTarget == null)
+            if (waveConfig == null || waveConfig.enemySchedule == null || waveConfig.enemySchedule.Count == 0 || heroTarget == null)
             {
-                Debug.LogError("WaveManager missing references or enemy types!");
+                Debug.LogError("WaveManager missing WaveConfig, enemySchedule, or heroTarget!");
                 return;
             }
 
@@ -103,9 +110,13 @@ namespace ProjectB.Enemies
             enemyPools = new Dictionary<EnemyData, IObjectPool<EnemyBase>>();
             bossPools = new Dictionary<BossData, IObjectPool<EnemyBase>>();
 
-            foreach (var enemyData in enemyTypes)
+            for (int i = 0; i < waveConfig.enemySchedule.Count; i++)
             {
-                EnsureEnemyPool(enemyData);
+                var entry = waveConfig.enemySchedule[i];
+                if (entry != null && entry.enemy != null)
+                {
+                    EnsureEnemyPool(entry.enemy);
+                }
             }
 
             if (waveConfig.bosses != null)
@@ -291,15 +302,16 @@ namespace ProjectB.Enemies
                 SpawnMiniBoss();
             }
 
-            for (int i = 0; i < enemiesToSpawn; i++)
+            int spawnedCount = 0;
+            while (spawnedCount < enemiesToSpawn)
             {
                 if (heroTarget == null || (heroHealth != null && heroHealth.IsDead) || currentWave != waveNumber)
                 {
                     if (currentWave == waveNumber) isSpawning = false;
                     yield break;
                 }
-                
-                SpawnEnemy();
+
+                spawnedCount += SpawnEnemyOrPack(enemiesToSpawn - spawnedCount);
                 yield return spawnDelayWait;
             }
             
@@ -398,63 +410,75 @@ namespace ProjectB.Enemies
             return GetValidPositionNear(center, minRad, maxRad);
         }
 
-        private void SpawnEnemy()
+        private int SpawnEnemyOrPack(int remainingInWave)
         {
-            EnemyData selectedType = enemyTypes[Random.Range(0, enemyTypes.Count)];
+            EnemyWaveEntry selectedEntry = waveConfig != null
+                ? waveConfig.SelectEnemyEntryForWave(currentWave, Random.value)
+                : null;
+            if (selectedEntry == null || selectedEntry.enemy == null) return 1;
+
+            int packCount = Mathf.Clamp(selectedEntry.packSize, 1, Mathf.Max(1, remainingInWave));
+            Vector3 basePos = GetValidSpawnPosition();
+            float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
+            bool spawnedEliteInPack = false;
+
+            for (int i = 0; i < packCount; i++)
+            {
+                Vector3 spawnPos = i == 0
+                    ? basePos
+                    : GetValidPositionNear(basePos, 0.9f, 1.8f);
+
+                EnemyBase enemy = SpawnEnemyInstance(selectedEntry.enemy, spawnPos, difficultyMultiplier);
+
+                if (!spawnedEliteInPack && currentWave >= waveConfig.minWaveForElites)
+                {
+                    float chance = Mathf.Min(
+                        waveConfig.maxEliteChance,
+                        (currentWave - waveConfig.minWaveForElites + 1) * waveConfig.eliteChancePerWave);
+                    if (Random.value < chance)
+                    {
+                        enemy.MakeElite(PickEliteArchetype(Random.value), waveConfig);
+                        spawnedEliteInPack = true;
+                    }
+                }
+            }
+
+            return packCount;
+        }
+
+        private EnemyBase SpawnEnemyInstance(EnemyData selectedType, Vector3 spawnPos, float difficultyMultiplier)
+        {
+            EnsureEnemyPool(selectedType);
             IObjectPool<EnemyBase> pool = enemyPools[selectedType];
-            
+
             EnemyBase enemy = pool.Get();
-            Vector3 spawnPos = GetValidSpawnPosition();
-            enemy.transform.position = spawnPos;
+            enemy.transform.position = ClampToArena(spawnPos);
 
             if (enemy is ShootingEnemy shootingEnemy)
             {
                 shootingEnemy.SetProjectilePool(enemyProjectilePool);
             }
-            
-            float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
 
-            if (currentWave >= waveConfig.minWaveForElites)
-            {
-                float chance = Mathf.Min(waveConfig.maxEliteChance, (currentWave - waveConfig.minWaveForElites + 1) * waveConfig.eliteChancePerWave);
-                if (Random.value < chance)
-                {
-                    enemy.MakeElite(waveConfig.eliteHpMultiplier, waveConfig.eliteDamageMultiplier);
-                }
-            }
-            
+            enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
             enemy.OnDied -= HandleEnemyDied;
             enemy.OnDied += HandleEnemyDied;
-            
             activeEnemies.Add(enemy);
+            return enemy;
         }
 
         private void SpawnMiniBoss()
         {
-            if (enemyTypes == null || enemyTypes.Count == 0) return;
+            if (waveConfig == null) return;
 
-            EnemyData selectedType = enemyTypes[Random.Range(0, enemyTypes.Count)];
-            IObjectPool<EnemyBase> pool = enemyPools[selectedType];
-
-            EnemyBase enemy = pool.Get();
-            enemy.transform.position = GetValidSpawnPosition();
-
-            if (enemy is ShootingEnemy shootingEnemy)
-            {
-                shootingEnemy.SetProjectilePool(enemyProjectilePool);
-            }
+            EnemyData selectedType = waveConfig.SelectMiniBossEnemyForWave(currentWave, Random.value);
+            if (selectedType == null) return;
 
             float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
-            enemy.Initialize(selectedType, heroTarget, pool, eventBus, difficultyMultiplier);
+            EnemyBase enemy = SpawnEnemyInstance(selectedType, GetValidSpawnPosition(), difficultyMultiplier);
             enemy.MakeMiniBoss(
                 waveConfig.miniBossHpMultiplier,
                 waveConfig.miniBossDamageMultiplier,
                 waveConfig.miniBossScale);
-
-            enemy.OnDied -= HandleEnemyDied;
-            enemy.OnDied += HandleEnemyDied;
-            activeEnemies.Add(enemy);
         }
 
         private void SpawnBoss(BossData bossData)
@@ -495,7 +519,9 @@ namespace ProjectB.Enemies
             if (heroHealth != null && heroHealth.IsDead) return;
             if (activeEnemies.Count >= MAX_ACTIVE_ENEMIES_FOR_SUMMON) return;
 
-            EnemyData dataToSpawn = minionData != null ? minionData : (enemyTypes.Count > 0 ? enemyTypes[0] : null);
+            EnemyData dataToSpawn = minionData != null
+                ? minionData
+                : waveConfig?.SelectEnemyEntryForWave(currentWave, 0f)?.enemy;
             if (dataToSpawn == null) return;
 
             EnsureEnemyPool(dataToSpawn);
@@ -698,5 +724,8 @@ namespace ProjectB.Enemies
 
         [ContextMenu("Debug: Jump To Wave 50 (Necromancer Boss)")]
         public void DebugJumpToWave50() => JumpToWave(50);
+
+        [ContextMenu("Debug: Jump To Wave 75 (Frost Lich Boss)")]
+        public void DebugJumpToWave75() => JumpToWave(75);
     }
 }

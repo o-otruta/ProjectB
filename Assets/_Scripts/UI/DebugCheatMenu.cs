@@ -306,14 +306,19 @@ namespace ProjectB.UI
             });
 
             var waveRow2 = CreateRow(menuPanel.transform, 72f, 14f);
-            AddFlexButton(waveRow2.transform, "Wave 25 (Golem)", new Color(0.72f, 0.18f, 0.22f, 1f), () =>
+            AddFlexButton(waveRow2.transform, "W25 Golem", new Color(0.72f, 0.18f, 0.22f, 1f), () =>
             {
                 waveManager?.JumpToWave(25);
                 RefreshInfoHeader();
             });
-            AddFlexButton(waveRow2.transform, "Wave 50 (Necro)", new Color(0.5f, 0.2f, 0.72f, 1f), () =>
+            AddFlexButton(waveRow2.transform, "W50 Necro", new Color(0.5f, 0.2f, 0.72f, 1f), () =>
             {
                 waveManager?.JumpToWave(50);
+                RefreshInfoHeader();
+            });
+            AddFlexButton(waveRow2.transform, "W75 Lich", new Color(0.16f, 0.54f, 0.78f, 1f), () =>
+            {
+                waveManager?.JumpToWave(75);
                 RefreshInfoHeader();
             });
 

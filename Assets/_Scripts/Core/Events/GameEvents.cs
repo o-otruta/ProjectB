@@ -47,6 +47,7 @@ namespace ProjectB.Core.Events
         public bool WasMiniBoss;
         public bool WasBoss;
         public string BossId;
+        public EliteArchetype EliteArchetype;
 
         public EnemyDiedEvent(
             Vector3 position,
@@ -54,7 +55,8 @@ namespace ProjectB.Core.Events
             bool wasElite,
             bool wasMiniBoss = false,
             bool wasBoss = false,
-            string bossId = null)
+            string bossId = null,
+            EliteArchetype eliteArchetype = EliteArchetype.None)
         {
             Position = position;
             EnemyData = enemyData;
@@ -62,6 +64,7 @@ namespace ProjectB.Core.Events
             WasMiniBoss = wasMiniBoss;
             WasBoss = wasBoss;
             BossId = bossId;
+            EliteArchetype = eliteArchetype;
         }
     }
 
@@ -270,6 +273,38 @@ namespace ProjectB.Core.Events
         {
             Position = position;
             Radius = radius;
+        }
+    }
+
+    /// <summary>
+    /// Детонация врага-подрывника (ExploderEnemy).
+    /// </summary>
+    public struct EnemyExplodedEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+
+        public EnemyExplodedEvent(Vector3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
+
+    /// <summary>
+    /// Всплеск ледяной магии босса Frost Lich (ледяные шипы или старт бури).
+    /// </summary>
+    public struct FrostLichNovaEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+        public bool IsBlizzard;
+
+        public FrostLichNovaEvent(Vector3 position, float radius, bool isBlizzard)
+        {
+            Position = position;
+            Radius = radius;
+            IsBlizzard = isBlizzard;
         }
     }
 }

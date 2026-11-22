@@ -6,6 +6,7 @@ using VContainer;
 using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data;
+using ProjectB.Data.Enemies;
 using ProjectB.Player;
 
 namespace ProjectB.Visuals
@@ -41,7 +42,13 @@ namespace ProjectB.Visuals
 
         private static readonly Color DeathColorNormal = new Color(0.95f, 0.35f, 0.28f, 1f);
         private static readonly Color DeathColorElite = new Color(0.75f, 0.22f, 0.95f, 1f);
+        private static readonly Color DeathColorJuggernaut = new Color(0.96f, 0.72f, 0.18f, 1f);
+        private static readonly Color DeathColorHasteAura = new Color(0.24f, 0.88f, 1f, 1f);
         private static readonly Color DeathColorBoss = new Color(1f, 0.72f, 0.15f, 1f);
+        private static readonly Color ExploderPrimaryColor = new Color(1f, 0.24f, 0.16f, 1f);
+        private static readonly Color ExploderSecondaryColor = new Color(1f, 0.76f, 0.2f, 1f);
+        private static readonly Color FrostPrimaryColor = new Color(0.45f, 0.92f, 1f, 1f);
+        private static readonly Color FrostSecondaryColor = new Color(0.88f, 0.98f, 1f, 1f);
         private static readonly Color XpSparkColor = new Color(0.32f, 1f, 0.45f, 1f);
         private static readonly Color CoinSparkColor = new Color(1f, 0.86f, 0.2f, 1f);
         private static readonly Color LevelUpColor = new Color(1f, 0.92f, 0.35f, 1f);
@@ -202,6 +209,8 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<MeteorImpactEvent>(OnMeteorImpact);
                 eventBus.Subscribe<SynergyActivatedEvent>(OnSynergyActivated);
                 eventBus.Subscribe<SeismicSlamEvent>(OnSeismicSlam);
+                eventBus.Subscribe<EnemyExplodedEvent>(OnEnemyExploded);
+                eventBus.Subscribe<FrostLichNovaEvent>(OnFrostLichNova);
             }
 
             if (heroHealth != null)
@@ -233,6 +242,8 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<MeteorImpactEvent>(OnMeteorImpact);
                 eventBus.Unsubscribe<SynergyActivatedEvent>(OnSynergyActivated);
                 eventBus.Unsubscribe<SeismicSlamEvent>(OnSeismicSlam);
+                eventBus.Unsubscribe<EnemyExplodedEvent>(OnEnemyExploded);
+                eventBus.Unsubscribe<FrostLichNovaEvent>(OnFrostLichNova);
             }
 
             if (heroHealth != null)
@@ -266,7 +277,9 @@ namespace ProjectB.Visuals
         private void OnEnemyDied(EnemyDiedEvent evt)
         {
             int count = evt.WasBoss ? 26 : (evt.WasMiniBoss ? 18 : (evt.WasElite ? 12 : 7));
-            Color col = evt.WasBoss || evt.WasMiniBoss ? DeathColorBoss : (evt.WasElite ? DeathColorElite : DeathColorNormal);
+            Color col = evt.WasBoss || evt.WasMiniBoss
+                ? DeathColorBoss
+                : (evt.WasElite ? GetEliteDeathColor(evt.EliteArchetype) : DeathColorNormal);
             EmitBurst(evt.Position + Vector3.up * 0.6f, col, count, evt.WasBoss ? 8f : 5.2f, evt.WasBoss ? 0.45f : 0.28f);
 
             audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: evt.WasBoss ? 1.0f : 0.75f, randomizePitch: true);
@@ -279,6 +292,16 @@ namespace ProjectB.Visuals
             {
                 cameraController?.Shake(0.26f, 0.2f);
             }
+        }
+
+        private static Color GetEliteDeathColor(EliteArchetype archetype)
+        {
+            return archetype switch
+            {
+                EliteArchetype.Juggernaut => DeathColorJuggernaut,
+                EliteArchetype.HasteAura => DeathColorHasteAura,
+                _ => DeathColorElite
+            };
         }
 
         private void OnHeroDamaged(int amount)
@@ -412,6 +435,36 @@ namespace ProjectB.Visuals
                 size: 0.38f);
             audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.6f, randomizePitch: true);
             cameraController?.Shake(0.22f, 0.16f);
+        }
+
+        private void OnEnemyExploded(EnemyExplodedEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.35f,
+                Mathf.Max(1.2f, evt.Radius),
+                ExploderPrimaryColor,
+                ExploderSecondaryColor,
+                ringCount: 18,
+                centerCount: 8,
+                speed: 5.5f,
+                size: 0.34f);
+            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.52f, randomizePitch: true);
+            cameraController?.Shake(0.18f, 0.14f);
+        }
+
+        private void OnFrostLichNova(FrostLichNovaEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.35f,
+                Mathf.Max(2f, evt.Radius),
+                FrostPrimaryColor,
+                FrostSecondaryColor,
+                ringCount: evt.IsBlizzard ? 28 : 22,
+                centerCount: 10,
+                speed: 6.2f,
+                size: 0.36f);
+            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.62f, randomizePitch: true);
+            cameraController?.Shake(evt.IsBlizzard ? 0.22f : 0.18f, 0.15f);
         }
 
         private void OnUltimateStateChanged()

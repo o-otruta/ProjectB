@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectB.Combat;
 using ProjectB.Data;
 using ProjectB.Meta;
 using ProjectB.UI;
@@ -7,7 +8,7 @@ using VContainer;
 
 namespace ProjectB.Player
 {
-    public class HeroMovement : MonoBehaviour
+    public class HeroMovement : MonoBehaviour, ISlowable
     {
         [SerializeField] private HeroData heroData;
         private VirtualJoystick joystick;
@@ -25,6 +26,12 @@ namespace ProjectB.Player
         private HeroData activeHeroData;
         private float baseSpeed = 5f;
         private float moveSpeed;
+        private float slowFactor = 1f;
+        private float slowTimer = 0f;
+
+        public float CurrentSlowFactor => slowTimer > 0f ? slowFactor : 1f;
+        public bool IsSlowed => slowTimer > 0f;
+        public float EffectiveMoveSpeed => moveSpeed * CurrentSlowFactor;
 
         [Inject]
         public void Construct(VirtualJoystick joystick, HeroRuntimeStats runtimeStats, SelectedHeroService selectedHeroService = null)
@@ -99,15 +106,26 @@ namespace ProjectB.Player
             // Устанавливаем скорость напрямую. 
             // Это жестко контролирует движение и сбрасывает любые силы (импульсы),
             // которые враги пытаются передать герою при столкновении.
-            rb.linearVelocity = moveDir * moveSpeed;
+            rb.linearVelocity = moveDir * EffectiveMoveSpeed;
         }
 
         void Update()
         {
+            if (slowTimer > 0f && Time.deltaTime > 0f)
+            {
+                slowTimer -= Time.deltaTime;
+                if (slowTimer <= 0f)
+                {
+                    slowTimer = 0f;
+                    slowFactor = 1f;
+                }
+            }
+
             HeroData data = activeHeroData != null ? activeHeroData : heroData;
             if (data == null || joystick == null || Time.deltaTime <= 0f) return;
             if (hp != null && hp.IsDead)
             {
+                ClearSlow();
                 if (meshAnimator != null && meshAnimator.IsPlaying)
                 {
                     meshAnimator.Stop();
@@ -140,6 +158,26 @@ namespace ProjectB.Player
         }
 
         public float MoveSpeed => moveSpeed;
+
+        public void ApplySlow(float factor, float duration)
+        {
+            if (duration <= 0f) return;
+            float clampedFactor = Mathf.Clamp(factor, 0.25f, 1f);
+            if (slowTimer <= 0f || clampedFactor < slowFactor)
+            {
+                slowFactor = clampedFactor;
+            }
+            if (duration > slowTimer)
+            {
+                slowTimer = duration;
+            }
+        }
+
+        public void ClearSlow()
+        {
+            slowFactor = 1f;
+            slowTimer = 0f;
+        }
 
         public void IncreaseMoveSpeed(float amount)
         {

@@ -35,5 +35,28 @@ namespace ProjectB.Data.Enemies
         public int volleyProjectileCount = 5;
         public float volleySpreadAngle = 55f;
         public float volleyCooldown = 3.2f;
+
+        [Header("Frost Lich — Cross Ice Spikes")]
+        public float frostStopDistance = 7.5f;
+        public float spikeCooldown = 5.5f;
+        public float spikeTelegraphDuration = 1.0f;
+        public int spikeLineCount = 6;
+        public float spikeLineLength = 10f;
+        public float spikeLineHalfWidth = 0.85f;
+        public int spikeDamage = 35;
+        [Range(0.25f, 1f)]
+        public float spikeSlowFactor = 0.55f;
+        public float spikeSlowDuration = 2.5f;
+
+        [Header("Frost Lich — Blizzard Ring")]
+        public float blizzardCooldown = 9.0f;
+        public float blizzardTelegraphDuration = 1.15f;
+        public float blizzardActiveDuration = 3.2f;
+        public float blizzardSafeInnerRadius = 3.0f;
+        public float blizzardOuterRadius = 9.0f;
+        public float blizzardTickInterval = 0.5f;
+        public int blizzardTickDamage = 14;
+        [Range(0.25f, 1f)]
+        public float blizzardSlowFactor = 0.65f;
     }
 }
