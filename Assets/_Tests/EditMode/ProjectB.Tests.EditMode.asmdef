@@ -5,6 +5,7 @@
         "ProjectB.Data",
         "ProjectB.Meta",
         "ProjectB.Runtime",
+        "VContainer",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.RenderPipelines.Core.Runtime",

@@ -309,13 +309,14 @@
 ---
 
 ### Спринт 5: Новые Герои (`Ranger`, `Necromancer`), Интерактивная Арена и Биомы (P2)
-- [ ] **5.1. Добавить героев `Ranger` и `Necromancer` (Раздел 4.1):**
-  - Сгенерировать воксельные модели `Ranger` (с луком и плащом) и `NecromancerHero`, создать `RangerData.asset` и `NecromancerHeroData.asset`, добавить их в `HeroCatalog.asset` и реализовать ульты `HeroUltimateType.ArrowRain` и `HeroUltimateType.SoulNova`.
-- [ ] **5.2. Интерактивные объекты арены (Раздел 4.5.Б):**
-  - Реализовать `ExplosiveBarrel.cs` (воксельная бочка, детонирующая при попадании и наносящая AoE-урон врагам) и спавнить 8–12 бочек в `ArenaGenerator`.
-  - Добавить метод `MagnetizeAll(float speed)` в `XpManager` и `CoinManager` (с трекингом активных пикапов в `HashSet`) и дроп `VacuumMagnetPickup` с мини-боссов и боссов.
-  - Реализовать `ChallengeShrine.cs` (Алтарь Испытания).
-- [ ] **5.3. Система Биомов (Лес, Пустыня, Ледяные пещеры):**
+- [x] **5.1. Добавить героев `Ranger` и `Necromancer` (Раздел 4.1):**
+  - Сгенерированы воксельные модели `Ranger` (с луком и плащом), `NecromancerHero`, `RangerArrow`, `SoulBolt` с сохранением `.blend`-исходников в `ArtSources/Blender/`.
+  - Созданы `RangerData.asset`, `NecromancerHeroData.asset`, `RapidBowWeaponData.asset`, `SoulBoltWeaponData.asset`, обновлены `HeroCatalog.asset` и ачивки анлока (`Kill5000Enemies.asset` → `ranger`, `DefeatNecromancer.asset` → `necromancer`), реализованы пассивка `XpAndMagnetPercent`, вампиризм `WeaponData` и ульты `HeroUltimateType.ArrowRain` и `HeroUltimateType.SoulNova`.
+- [x] **5.2. Интерактивные объекты арены (Раздел 4.5.Б):**
+  - Реализован `ExplosiveBarrel.cs` (воксельная бочка с `.blend`-исходником, детонирующая от урона или касания героя с цепным подрывом и 150 AoE-уроном врагам) и спавн 8–12 бочек в `ArenaGenerator`.
+  - Добавлен метод `MagnetizeAll(float speed)` в `XpManager` и `CoinManager` (трекинг активных пикапов в `HashSet`), воксельный `VacuumMagnetPickup` + `VacuumMagnetSpawner` с дропом с мини-боссов (`25%`) и боссов (`100%`).
+  - Реализован `ChallengeShrine.cs` (воксельный Алтарь Испытания, призывающий кольцо из 6 элит и выдающий `+100` монет + гарантированный LevelUp при зачистке).
+- [ ] **5.3. Система Биомов (Лес, Пустыня, Ледяные пещеры):** *(пропущено по требованию пользователя — система биомов отложена как идея на будущее)*
   - Добавить выбор открытого биома на экране старта в `MainMenu` (`Forest`, `Desert`, `FrozenCaves`) с соответствующими `ArenaConfig` (цветовая палитра пола, префабы препятствий и декораций).
 
 ---
