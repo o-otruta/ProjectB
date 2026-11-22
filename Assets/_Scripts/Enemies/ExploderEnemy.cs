@@ -35,9 +35,10 @@ namespace ProjectB.Enemies
             Transform heroTarget,
             IObjectPool<EnemyBase> enemyPool,
             GameEventBus bus,
-            float difficultyMultiplier = 1f)
+            float difficultyMultiplier = 1f,
+            float damageDifficultyMultiplier = -1f)
         {
-            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier);
+            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier, damageDifficultyMultiplier);
 
             exploderData = data as ExploderEnemyData;
             isArming = false;

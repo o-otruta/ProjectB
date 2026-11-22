@@ -19,9 +19,9 @@ namespace ProjectB.Enemies
         }
 
         public override void Initialize(EnemyData data, Transform heroTarget,
-            IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f)
+            IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f, float damageDifficultyMultiplier = -1f)
         {
-            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier);
+            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier, damageDifficultyMultiplier);
             
             shootingData = data as ShootingEnemyData;
             nextFireTime = Time.time + Random.Range(0f, 1f); // Рассинхронизация

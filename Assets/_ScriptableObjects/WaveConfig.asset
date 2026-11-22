@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4eb70a6f3c8d47a448a76e6c0e7dd88c, type: 3}
   m_Name: WaveConfig
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Enemies.WaveConfig
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.WaveConfig
   baseEnemyCount: 5
   enemiesPerWaveMultiplier: 1.2
   spawnDelay: 0.5
@@ -20,37 +20,66 @@ MonoBehaviour:
   spawnRadiusMax: 15
   maxEnemiesPerWave: 50
   difficultyPerWave: 0.1
+  useSeparateDifficultyScaling: 1
+  hpLinearPerWave: 0.12
+  hpQuadraticPerWave: 0.002
+  hpCurveMultiplier:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  damageLinearPerWave: 0.05
+  maxDamageMultiplier: 6
+  damageCurveMultiplier:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   enemySchedule:
   - enemy: {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
     minWave: 1
     maxWave: 0
     spawnWeight: 1.4
     packSize: 1
+    triggerIntroWave: 0
+    introSpawnShare: 0.5
   - enemy: {fileID: 11400000, guid: ce3993e4a6d7430479db4af2e92e918f, type: 2}
     minWave: 3
     maxWave: 0
     spawnWeight: 1
     packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
   - enemy: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
-    minWave: 5
+    minWave: 6
     maxWave: 0
     spawnWeight: 0.85
     packSize: 4
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
   - enemy: {fileID: 11400000, guid: cddf28e2f636f834591c8101af197021, type: 2}
     minWave: 7
     maxWave: 0
     spawnWeight: 0.9
     packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
   - enemy: {fileID: 11400000, guid: 25a0c720dfb26e846a0f3ed9c26bf25e, type: 2}
-    minWave: 10
+    minWave: 11
     maxWave: 0
     spawnWeight: 0.7
     packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
   - enemy: {fileID: 11400000, guid: 9b87d44779d63944c92a508b97ac792e, type: 2}
     minWave: 14
     maxWave: 0
     spawnWeight: 0.65
     packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
   minWaveForElites: 10
   eliteChancePerWave: 0.05
   maxEliteChance: 0.25
@@ -65,7 +94,6 @@ MonoBehaviour:
   hasteAuraDamageMultiplier: 1.5
   hasteAuraRadius: 3.5
   hasteAuraSpeedBonus: 0.2
-  eliteAuraMaterial: {fileID: 2100000, guid: c24fa672905732648a1a4350fa797227, type: 2}
   miniBossInterval: 5
   miniBossHpMultiplier: 5
   miniBossDamageMultiplier: 2

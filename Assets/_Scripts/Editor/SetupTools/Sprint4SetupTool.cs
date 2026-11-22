@@ -38,7 +38,6 @@ namespace ProjectB.EditorScripts
             Material chargeTelegraphMat = EnsureTransparentUnlitMaterial($"{FX_MAT_DIR}/ChargeTelegraphMat.mat", new Color(1f, 0.18f, 0.12f, 0.55f));
             Material frostTelegraphMat = EnsureTransparentUnlitMaterial($"{FX_MAT_DIR}/FrostTelegraphMat.mat", new Color(0.35f, 0.88f, 1f, 0.58f));
             Material blizzardRingMat = EnsureTransparentUnlitMaterial($"{FX_MAT_DIR}/BlizzardRingMat.mat", new Color(0.25f, 0.72f, 1f, 0.34f));
-            Material eliteAuraMat = EnsureTransparentUnlitMaterial($"{FX_MAT_DIR}/EliteAuraMat.mat", new Color(1f, 1f, 1f, 0.65f));
             Material frostSpikeMat = EnsureEmissiveLitMaterial(
                 $"{FX_MAT_DIR}/FrostSpikeMat.mat",
                 new Color(0.6f, 0.95f, 1f, 1f),
@@ -56,7 +55,7 @@ namespace ProjectB.EditorScripts
             BossData lichData = CreateOrUpdateFrostLichBossData(lichPrefab, skeletonData);
 
             UpdateExistingEnemyAndBossAssets(skeletonData);
-            UpdateWaveConfigAsset(skeletonData, bombData, orcData, lichData, eliteAuraMat);
+            UpdateWaveConfigAsset(skeletonData, bombData, orcData, lichData);
             ResaveGameplayScene();
 
             AssetDatabase.SaveAssets();
@@ -554,8 +553,7 @@ namespace ProjectB.EditorScripts
             EnemyData skeletonData,
             ExploderEnemyData bombData,
             ChargerEnemyData orcData,
-            BossData lichData,
-            Material eliteAuraMat)
+            BossData lichData)
         {
             var waveConfig = AssetDatabase.LoadAssetAtPath<WaveConfig>($"{SO_DIR}/WaveConfig.asset");
             if (waveConfig == null)
@@ -572,12 +570,12 @@ namespace ProjectB.EditorScripts
 
             waveConfig.enemySchedule = new List<EnemyWaveEntry>
             {
-                new EnemyWaveEntry { enemy = slimeData, minWave = 1, maxWave = 0, spawnWeight = 1.4f, packSize = 1 },
-                new EnemyWaveEntry { enemy = goblinData, minWave = 3, maxWave = 0, spawnWeight = 1.0f, packSize = 1 },
-                new EnemyWaveEntry { enemy = skeletonData, minWave = 5, maxWave = 0, spawnWeight = 0.85f, packSize = 4 },
-                new EnemyWaveEntry { enemy = batData, minWave = 7, maxWave = 0, spawnWeight = 0.9f, packSize = 1 },
-                new EnemyWaveEntry { enemy = bombData, minWave = 10, maxWave = 0, spawnWeight = 0.7f, packSize = 1 },
-                new EnemyWaveEntry { enemy = orcData, minWave = 14, maxWave = 0, spawnWeight = 0.65f, packSize = 1 },
+                new EnemyWaveEntry { enemy = slimeData, minWave = 1, maxWave = 0, spawnWeight = 1.4f, packSize = 1, triggerIntroWave = false, introSpawnShare = 0.5f },
+                new EnemyWaveEntry { enemy = goblinData, minWave = 3, maxWave = 0, spawnWeight = 1.0f, packSize = 1, triggerIntroWave = true, introSpawnShare = 0.5f },
+                new EnemyWaveEntry { enemy = skeletonData, minWave = 6, maxWave = 0, spawnWeight = 0.85f, packSize = 4, triggerIntroWave = true, introSpawnShare = 0.5f },
+                new EnemyWaveEntry { enemy = batData, minWave = 7, maxWave = 0, spawnWeight = 0.9f, packSize = 1, triggerIntroWave = true, introSpawnShare = 0.5f },
+                new EnemyWaveEntry { enemy = bombData, minWave = 11, maxWave = 0, spawnWeight = 0.7f, packSize = 1, triggerIntroWave = true, introSpawnShare = 0.5f },
+                new EnemyWaveEntry { enemy = orcData, minWave = 14, maxWave = 0, spawnWeight = 0.65f, packSize = 1, triggerIntroWave = true, introSpawnShare = 0.5f },
             };
 
             waveConfig.bosses = new List<BossData>();
@@ -585,7 +583,6 @@ namespace ProjectB.EditorScripts
             if (necroData != null) waveConfig.bosses.Add(necroData);
             if (lichData != null) waveConfig.bosses.Add(lichData);
 
-            waveConfig.eliteAuraMaterial = eliteAuraMat;
             waveConfig.berserkerSpeedMultiplier = 1.25f;
             waveConfig.juggernautHpMultiplier = 4.5f;
             waveConfig.juggernautDamageMultiplier = 1.5f;

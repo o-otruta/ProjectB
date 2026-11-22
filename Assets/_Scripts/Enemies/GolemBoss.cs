@@ -42,9 +42,10 @@ namespace ProjectB.Enemies
             EnemyProjectilePool projectilePool,
             System.Action<EnemyData, Vector3> onSummonMinion,
             System.Func<Vector3, float, float, Vector3> safePositionProvider,
-            float difficultyMultiplier = 1f)
+            float difficultyMultiplier = 1f,
+            float damageDifficultyMultiplier = -1f)
         {
-            base.InitializeBoss(data, heroTarget, enemyPool, bus, projectilePool, onSummonMinion, safePositionProvider, difficultyMultiplier);
+            base.InitializeBoss(data, heroTarget, enemyPool, bus, projectilePool, onSummonMinion, safePositionProvider, difficultyMultiplier, damageDifficultyMultiplier);
 
             isTelegraphingSlam = false;
             slamImpactResetTime = 0f;

@@ -28,9 +28,10 @@ namespace ProjectB.Enemies
             EnemyProjectilePool projectilePool,
             Action<EnemyData, Vector3> onSummonMinion,
             Func<Vector3, float, float, Vector3> safePositionProvider,
-            float difficultyMultiplier = 1f)
+            float difficultyMultiplier = 1f,
+            float damageDifficultyMultiplier = -1f)
         {
-            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier);
+            base.Initialize(data, heroTarget, enemyPool, bus, difficultyMultiplier, damageDifficultyMultiplier);
 
             bossData = data;
             sharedProjectilePool = projectilePool;

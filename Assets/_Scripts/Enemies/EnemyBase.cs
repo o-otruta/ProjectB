@@ -96,7 +96,7 @@ namespace ProjectB.Enemies
             }
         }
 
-        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f)
+        public virtual void Initialize(EnemyData data, Transform heroTarget, IObjectPool<EnemyBase> enemyPool, GameEventBus bus, float difficultyMultiplier = 1f, float damageDifficultyMultiplier = -1f)
         {
             CaptureBaseScale();
             activeScaleMultiplier = 1f;
@@ -107,13 +107,18 @@ namespace ProjectB.Enemies
             target = heroTarget;
             pool = enemyPool;
             eventBus = bus;
-            
-            currentDamageMultiplier = difficultyMultiplier;
+
+            float effectiveHpMult = Mathf.Max(0.01f, difficultyMultiplier);
+            float effectiveDmgMult = damageDifficultyMultiplier >= 0f
+                ? Mathf.Max(0.01f, damageDifficultyMultiplier)
+                : effectiveHpMult;
+
+            currentDamageMultiplier = effectiveDmgMult;
             if (enemyData != null)
             {
-                maxHp = Mathf.Max(1, Mathf.RoundToInt(enemyData.hp * difficultyMultiplier));
+                maxHp = Mathf.Max(1, Mathf.RoundToInt(enemyData.hp * effectiveHpMult));
                 currentHp = maxHp;
-                currentDamage = Mathf.Max(1, Mathf.RoundToInt(enemyData.contactDamage * difficultyMultiplier));
+                currentDamage = Mathf.Max(1, Mathf.RoundToInt(enemyData.contactDamage * effectiveDmgMult));
             }
             isAlive = true;
             lastDamageTime = 0f;
@@ -158,15 +163,13 @@ namespace ProjectB.Enemies
                 scaleMultiplier: 1f,
                 pullResistanceOverride: 1f,
                 auraRadius: 0f,
-                auraSpeedBonus: 0f,
-                auraMaterial: null);
+                auraSpeedBonus: 0f);
         }
 
         public virtual void MakeElite(EliteArchetype archetype, WaveConfig config)
         {
             if (archetype == EliteArchetype.None) archetype = EliteArchetype.Berserker;
 
-            Material auraMat = config != null ? config.eliteAuraMaterial : null;
             switch (archetype)
             {
                 case EliteArchetype.Juggernaut:
@@ -178,8 +181,7 @@ namespace ProjectB.Enemies
                         scaleMultiplier: config != null ? config.juggernautScaleMultiplier : 1.35f,
                         pullResistanceOverride: config != null ? config.juggernautPullResistance : 0.2f,
                         auraRadius: 0f,
-                        auraSpeedBonus: 0f,
-                        auraMaterial: auraMat);
+                        auraSpeedBonus: 0f);
                     break;
 
                 case EliteArchetype.HasteAura:
@@ -191,8 +193,7 @@ namespace ProjectB.Enemies
                         scaleMultiplier: 1f,
                         pullResistanceOverride: 1f,
                         auraRadius: config != null ? config.hasteAuraRadius : 3.5f,
-                        auraSpeedBonus: config != null ? config.hasteAuraSpeedBonus : 0.2f,
-                        auraMaterial: auraMat);
+                        auraSpeedBonus: config != null ? config.hasteAuraSpeedBonus : 0.2f);
                     break;
 
                 case EliteArchetype.Berserker:
@@ -205,8 +206,7 @@ namespace ProjectB.Enemies
                         scaleMultiplier: 1f,
                         pullResistanceOverride: 1f,
                         auraRadius: 0f,
-                        auraSpeedBonus: 0f,
-                        auraMaterial: auraMat);
+                        auraSpeedBonus: 0f);
                     break;
             }
         }
@@ -219,8 +219,7 @@ namespace ProjectB.Enemies
             float scaleMultiplier = 1f,
             float pullResistanceOverride = 1f,
             float auraRadius = 3.5f,
-            float auraSpeedBonus = 0.2f,
-            Material auraMaterial = null)
+            float auraSpeedBonus = 0.2f)
         {
             if (isElite || isMiniBoss || IsBoss || !isAlive) return;
             if (archetype == EliteArchetype.None) archetype = EliteArchetype.Berserker;

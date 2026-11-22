@@ -25,6 +25,13 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Number of enemies spawned together in one cluster")]
         public int packSize = 1;
 
+        [Tooltip("First wave (minWave) acts as an intro wave with a guaranteed spawn share of this enemy")]
+        public bool triggerIntroWave = true;
+
+        [Range(0f, 1f)]
+        [Tooltip("Fraction of enemies in the intro wave that will be this newly introduced enemy")]
+        public float introSpawnShare = 0.5f;
+
         public bool IsEligibleForWave(int wave)
         {
             if (enemy == null || spawnWeight <= 0f) return false;
@@ -60,6 +67,32 @@ namespace ProjectB.Data.Enemies
 
         [Tooltip("Множитель увеличения здоровья и урона врагов с каждой волной (0.2 = +20% за волну)")]
         public float difficultyPerWave = 0.01f;
+
+        [Header("Difficulty Scaling Curves")]
+        [Tooltip("Использовать раздельные кривые роста HP и урона врагов")]
+        public bool useSeparateDifficultyScaling = true;
+
+        [Min(0f)]
+        [Tooltip("Линейный прирост HP врагов за волну (0.12 = +12%/волна)")]
+        public float hpLinearPerWave = 0.12f;
+
+        [Min(0f)]
+        [Tooltip("Квадратичный прирост HP врагов на высоких волнах")]
+        public float hpQuadraticPerWave = 0.002f;
+
+        [Tooltip("Опциональный множитель кривой HP по номеру волны (если заданы ключи)")]
+        public AnimationCurve hpCurveMultiplier = new AnimationCurve();
+
+        [Min(0f)]
+        [Tooltip("Линейный прирост урона врагов за волну (0.05 = +5%/волна)")]
+        public float damageLinearPerWave = 0.05f;
+
+        [Min(0f)]
+        [Tooltip("Максимальный потолок множителя урона врагов (0 = без потолка)")]
+        public float maxDamageMultiplier = 6.0f;
+
+        [Tooltip("Опциональный множитель кривой урона по номеру волны (если заданы ключи)")]
+        public AnimationCurve damageCurveMultiplier = new AnimationCurve();
 
         [Header("Phased Enemy Schedule")]
         [Tooltip("Фазовое расписание врагов: единый источник истины для WaveManager")]
@@ -108,9 +141,6 @@ namespace ProjectB.Data.Enemies
 
         [Tooltip("Бонус к скорости союзных врагов в ауре HasteAura (0.2 = +20%)")]
         public float hasteAuraSpeedBonus = 0.2f;
-
-        [Tooltip("Общий материал кольца ауры элитных врагов")]
-        public Material eliteAuraMaterial;
 
         [Header("Mini-Bosses (Every N Waves)")]
         [Tooltip("Интервал волн для появления мини-босса (каждые 5 волн, кроме босс-волн)")]
@@ -166,7 +196,65 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Безопасный отступ от внешних стен арены при спавне")]
         public float arenaPadding = 3f;
 
+        public float GetHpDifficultyMultiplier(int wave)
+        {
+            int w = Mathf.Max(0, wave - 1);
+            if (!useSeparateDifficultyScaling)
+            {
+                return Mathf.Max(1f, 1f + w * difficultyPerWave);
+            }
+
+            float mult = 1f + w * hpLinearPerWave + w * w * hpQuadraticPerWave;
+            if (hpCurveMultiplier != null && hpCurveMultiplier.length > 0)
+            {
+                mult *= Mathf.Max(0.1f, hpCurveMultiplier.Evaluate(wave));
+            }
+            return Mathf.Max(1f, mult);
+        }
+
+        public float GetDamageDifficultyMultiplier(int wave)
+        {
+            int w = Mathf.Max(0, wave - 1);
+            if (!useSeparateDifficultyScaling)
+            {
+                return Mathf.Max(1f, 1f + w * difficultyPerWave);
+            }
+
+            float mult = 1f + w * damageLinearPerWave;
+            if (damageCurveMultiplier != null && damageCurveMultiplier.length > 0)
+            {
+                mult *= Mathf.Max(0.1f, damageCurveMultiplier.Evaluate(wave));
+            }
+            if (maxDamageMultiplier > 0f)
+            {
+                mult = Mathf.Min(mult, maxDamageMultiplier);
+            }
+            return Mathf.Max(1f, mult);
+        }
+
+        public EnemyWaveEntry GetIntroEntryForWave(int wave)
+        {
+            if (enemySchedule == null || wave <= 0) return null;
+
+            for (int i = 0; i < enemySchedule.Count; i++)
+            {
+                EnemyWaveEntry entry = enemySchedule[i];
+                if (entry == null || !entry.triggerIntroWave || entry.introSpawnShare <= 0f) continue;
+                if (Mathf.Max(1, entry.minWave) == wave && entry.IsEligibleForWave(wave))
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
         public EnemyWaveEntry SelectEnemyEntryForWave(int wave, float normalizedRoll)
+        {
+            return SelectEnemyEntryForWave(wave, normalizedRoll, excludeEntry: null);
+        }
+
+        public EnemyWaveEntry SelectEnemyEntryForWave(int wave, float normalizedRoll, EnemyWaveEntry excludeEntry)
         {
             if (enemySchedule == null || enemySchedule.Count == 0) return null;
 
@@ -177,13 +265,17 @@ namespace ProjectB.Data.Enemies
                 EnemyWaveEntry entry = enemySchedule[i];
                 if (entry == null || entry.enemy == null) continue;
                 if (firstFallback == null) firstFallback = entry;
+                if (excludeEntry != null && ReferenceEquals(entry, excludeEntry)) continue;
                 if (entry.IsEligibleForWave(wave))
                 {
                     totalWeight += entry.spawnWeight;
                 }
             }
 
-            if (totalWeight <= 0f) return firstFallback;
+            if (totalWeight <= 0f)
+            {
+                return excludeEntry != null ? SelectEnemyEntryForWave(wave, normalizedRoll, null) : firstFallback;
+            }
 
             float target = Mathf.Clamp01(normalizedRoll) * totalWeight;
             float accumulated = 0f;
@@ -192,6 +284,7 @@ namespace ProjectB.Data.Enemies
             {
                 EnemyWaveEntry entry = enemySchedule[i];
                 if (entry == null || !entry.IsEligibleForWave(wave)) continue;
+                if (excludeEntry != null && ReferenceEquals(entry, excludeEntry)) continue;
 
                 lastEligible = entry;
                 accumulated += entry.spawnWeight;
