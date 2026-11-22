@@ -50,9 +50,6 @@ namespace ProjectB.Enemies
         private float hasteAuraRadius = 3.5f;
         private float hasteAuraSpeedBonus = 0.2f;
         private float nextHasteAuraPulseTime = 0f;
-        private Transform eliteAuraVisual;
-        private MeshRenderer[] eliteAuraRenderers;
-        private MaterialPropertyBlock auraPropBlock;
         private float hitFlashTimer;
         protected bool isMiniBoss;
         protected string activeBossId;
@@ -143,11 +140,6 @@ namespace ProjectB.Enemies
             hitFlashTimer = 0f;
             isMiniBoss = false;
             activeBossId = null;
-
-            if (eliteAuraVisual != null)
-            {
-                eliteAuraVisual.gameObject.SetActive(false);
-            }
 
             ClearTint();
         }
@@ -247,7 +239,6 @@ namespace ProjectB.Enemies
 
             Color tint = GetEliteTintColor(archetype);
             ApplyTint(tint);
-            UpdateEliteAuraVisual(archetype, activeScaleMultiplier, auraMaterial);
         }
 
         public static Color GetEliteTintColor(EliteArchetype archetype)
@@ -258,76 +249,6 @@ namespace ProjectB.Enemies
                 EliteArchetype.HasteAura => HasteAuraTintColor,
                 _ => EliteTintColor
             };
-        }
-
-        private void UpdateEliteAuraVisual(EliteArchetype archetype, float rootScaleMult, Material auraMaterial)
-        {
-            if (eliteAuraVisual == null)
-            {
-                var auraGo = new GameObject("EliteAuraVisual");
-                auraGo.transform.SetParent(transform, false);
-                eliteAuraVisual = auraGo.transform;
-
-                const int segments = 8;
-                eliteAuraRenderers = new MeshRenderer[segments];
-                for (int i = 0; i < segments; i++)
-                {
-                    float angle = (Mathf.PI * 2f / segments) * i;
-                    var seg = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    seg.name = $"AuraVoxel_{i}";
-                    seg.transform.SetParent(eliteAuraVisual, false);
-                    seg.transform.localPosition = new Vector3(Mathf.Cos(angle), 0.08f, Mathf.Sin(angle));
-                    seg.transform.localRotation = Quaternion.Euler(0f, -angle * Mathf.Rad2Deg, 0f);
-                    seg.transform.localScale = new Vector3(0.16f, 0.06f, 0.42f);
-
-                    var col = seg.GetComponent<Collider>();
-                    if (col != null)
-                    {
-                        if (Application.isPlaying) Destroy(col);
-                        else DestroyImmediate(col);
-                    }
-
-                    var mr = seg.GetComponent<MeshRenderer>();
-                    if (mr != null)
-                    {
-                        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                        mr.receiveShadows = false;
-                        eliteAuraRenderers[i] = mr;
-                    }
-                }
-            }
-
-            float worldRingRadius = archetype == EliteArchetype.HasteAura ? hasteAuraRadius : 0.95f * rootScaleMult;
-            float invScale = rootScaleMult > 0.001f ? 1f / rootScaleMult : 1f;
-            float localRingRadius = worldRingRadius * invScale;
-
-            eliteAuraVisual.localScale = Vector3.one;
-            for (int i = 0; i < eliteAuraRenderers.Length; i++)
-            {
-                var mr = eliteAuraRenderers[i];
-                if (mr == null) continue;
-                float angle = (Mathf.PI * 2f / eliteAuraRenderers.Length) * i;
-                mr.transform.localPosition = new Vector3(Mathf.Cos(angle) * localRingRadius, 0.08f * invScale, Mathf.Sin(angle) * localRingRadius);
-                mr.transform.localScale = new Vector3(0.18f * invScale, 0.06f * invScale, (archetype == EliteArchetype.HasteAura ? 0.65f : 0.38f) * invScale);
-                if (auraMaterial != null)
-                {
-                    mr.sharedMaterial = auraMaterial;
-                }
-            }
-
-            if (auraPropBlock == null) auraPropBlock = new MaterialPropertyBlock();
-            Color ringColor = GetEliteTintColor(archetype);
-            ringColor.a = archetype == EliteArchetype.HasteAura ? 0.72f : 0.55f;
-            auraPropBlock.SetColor(BaseColorPropertyId, ringColor);
-            for (int i = 0; i < eliteAuraRenderers.Length; i++)
-            {
-                if (eliteAuraRenderers[i] != null)
-                {
-                    eliteAuraRenderers[i].SetPropertyBlock(auraPropBlock);
-                }
-            }
-
-            eliteAuraVisual.gameObject.SetActive(true);
         }
 
         public virtual void MakeMiniBoss(float hpMultiplier = 5f, float damageMultiplier = 2f, float scaleMultiplier = 1.85f, string displayName = null)
@@ -465,11 +386,6 @@ namespace ProjectB.Enemies
         {
             if (isElite && eliteArchetype == EliteArchetype.HasteAura)
             {
-                if (eliteAuraVisual != null && eliteAuraVisual.gameObject.activeSelf)
-                {
-                    eliteAuraVisual.Rotate(Vector3.up, 36f * Time.deltaTime, Space.Self);
-                }
-
                 if (Time.time >= nextHasteAuraPulseTime)
                 {
                     nextHasteAuraPulseTime = Time.time + HASTE_PULSE_INTERVAL;
@@ -628,11 +544,6 @@ namespace ProjectB.Enemies
             if (!isAlive) return; // Guard от двойного вызова
             isAlive = false;
 
-            if (eliteAuraVisual != null)
-            {
-                eliteAuraVisual.gameObject.SetActive(false);
-            }
-
             if (isMiniBoss || IsBoss)
             {
                 eventBus?.Publish(new BossDefeatedEvent(BossId, isMiniBoss));
@@ -655,10 +566,6 @@ namespace ProjectB.Enemies
         {
             if (!isAlive) return;
             isAlive = false;
-            if (eliteAuraVisual != null)
-            {
-                eliteAuraVisual.gameObject.SetActive(false);
-            }
             ReturnToPool();
         }
 
