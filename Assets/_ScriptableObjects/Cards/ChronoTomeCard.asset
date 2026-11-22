@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: ChronoTomeCard
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
+  cardName: Chrono Tome
+  description: Reduces cooldowns of all active abilities by +10% (up to 50% total).
+  icon: {fileID: 21300000, guid: e47f4d0b997f3764f859b7e3591ceda4, type: 3}
+  rarity: 1
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: 71042973da9c415499e1f0c4361d8f0e, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: 19f2f19f553bec14ab9fb194418c210a, type: 2}

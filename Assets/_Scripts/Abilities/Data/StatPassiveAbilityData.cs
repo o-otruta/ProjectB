@@ -9,7 +9,10 @@ namespace ProjectB.Abilities
         MoveSpeedFlat = 2,
         HealthRegenPerSecond = 3,
         MagnetRadiusFlat = 4,
-        MaxHpFlat = 5
+        MaxHpFlat = 5,
+        CooldownReductionPercent = 6,
+        CritChancePercent = 7,
+        CoinBonusPercent = 8
     }
 
     [CreateAssetMenu(fileName = "NewStatPassiveAbility", menuName = "ProjectB/Abilities/Stat Passive Ability")]

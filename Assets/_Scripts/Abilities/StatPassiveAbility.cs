@@ -25,6 +25,12 @@ namespace ProjectB.Abilities
 
         public override void ApplyModifier(ModifierType type, float value)
         {
+            if (type == ModifierType.CritMultiplier)
+            {
+                runtimeStats?.AddCritMultiplier(value);
+                return;
+            }
+
             ApplyEffectValue(value);
         }
 
@@ -50,7 +56,24 @@ namespace ProjectB.Abilities
                     runtimeStats?.AddMagnetRadius(value);
                     break;
                 case PassiveEffectType.MaxHpFlat:
-                    heroHealth?.IncreaseMaxHealth(Mathf.RoundToInt(value));
+                    int hpBonus = Mathf.RoundToInt(value);
+                    if (heroHealth != null)
+                    {
+                        heroHealth.IncreaseMaxHealth(hpBonus);
+                    }
+                    else
+                    {
+                        runtimeStats?.AddMaxHp(hpBonus);
+                    }
+                    break;
+                case PassiveEffectType.CooldownReductionPercent:
+                    runtimeStats?.AddCooldownReductionPercent(value);
+                    break;
+                case PassiveEffectType.CritChancePercent:
+                    runtimeStats?.AddCritChancePercent(value);
+                    break;
+                case PassiveEffectType.CoinBonusPercent:
+                    runtimeStats?.AddCoinBonusPercent(value);
                     break;
             }
         }

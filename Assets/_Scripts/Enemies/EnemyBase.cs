@@ -304,11 +304,16 @@ namespace ProjectB.Enemies
 
         public virtual void TakeDamage(int amount)
         {
+            TakeDamage(amount, isCrit: false);
+        }
+
+        public virtual void TakeDamage(int amount, bool isCrit)
+        {
             if (!isAlive || amount <= 0) return;
             
             currentHp = Mathf.Max(0, currentHp - amount);
 
-            eventBus?.Publish(new EnemyDamagedEvent(transform.position, amount, isMiniBoss || IsBoss));
+            eventBus?.Publish(new EnemyDamagedEvent(transform.position, amount, isMiniBoss || IsBoss, isCrit));
 
             if (isMiniBoss || IsBoss)
             {

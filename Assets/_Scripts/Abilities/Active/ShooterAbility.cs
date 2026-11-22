@@ -49,7 +49,7 @@ namespace ProjectB.Abilities
                 offset.y = 0;
                 p.transform.position = transform.position + offset;
                 
-                p.Initialize(GetScaledDamage(currentDamage), currentSpeed, chosenTarget, ProjectileData.targetLayer, projectilePool);
+                p.Initialize(GetScaledDamage(currentDamage), currentSpeed, chosenTarget, ProjectileData.targetLayer, projectilePool, runtimeStats);
             }
         }
     }

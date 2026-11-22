@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: GoldenIdolCard
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
+  cardName: Golden Idol
+  description: Increases all coins earned during the run by +25%.
+  icon: {fileID: 21300000, guid: b1167511f5f502445bf15cb4a396f4c4, type: 3}
+  rarity: 1
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: ef9ad132da9504d428d7711589f3a78f, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: c3781b683f1dba34da7d79252a2a1e83, type: 2}

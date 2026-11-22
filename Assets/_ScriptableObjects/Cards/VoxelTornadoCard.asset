@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: VoxelTornadoCard
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
+  cardName: Arcane Tornado
+  description: Releases wandering voxel whirlwinds that pull enemies inward and shred
+    them.
+  icon: {fileID: 21300000, guid: 6148afc07c9f8ec4da2b69c393d755da, type: 3}
+  rarity: 2
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: 1b5a58f1878320d4483f849f1260e6ae, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: baaca4244fe20af4eb1a3c42ec5ac3e3, type: 2}
+  - {fileID: 11400000, guid: 2743d1b5c556e8a49804b4613a5c6642, type: 2}
+  - {fileID: 11400000, guid: dc07497e81a961e40a70dda216ad68dc, type: 2}

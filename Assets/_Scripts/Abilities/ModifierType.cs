@@ -10,6 +10,7 @@ namespace ProjectB.Abilities
         Area,
         Duration,
         PierceCount,
-        SlowAmount
+        SlowAmount,
+        CritMultiplier = 9
     }
 }

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: CriticalLensCard
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
+  cardName: Sniper Lens
+  description: Grants +12% Critical Hit Chance for weapons and abilities.
+  icon: {fileID: 21300000, guid: ec0817aa29e06924aa2911496bab8100, type: 3}
+  rarity: 2
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: ff6684175597bce40a6bb7a23df57a2e, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: 2560a86f7ba698842bd2f0c57609ef45, type: 2}
+  - {fileID: 11400000, guid: e8188c9c22a2ccb42b431c2628679275, type: 2}

@@ -12,12 +12,14 @@ namespace ProjectB.Core.Events
         public Vector3 Position;
         public int Damage;
         public bool IsBossOrMiniBoss;
+        public bool IsCrit;
 
-        public EnemyDamagedEvent(Vector3 position, int damage, bool isBossOrMiniBoss)
+        public EnemyDamagedEvent(Vector3 position, int damage, bool isBossOrMiniBoss, bool isCrit = false)
         {
             Position = position;
             Damage = damage;
             IsBossOrMiniBoss = isBossOrMiniBoss;
+            IsCrit = isCrit;
         }
     }
 
@@ -235,6 +237,36 @@ namespace ProjectB.Core.Events
         public float Radius;
 
         public MeteorImpactEvent(Vector3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
+
+    /// <summary>
+    /// Активирована синергия способностей.
+    /// </summary>
+    public struct SynergyActivatedEvent
+    {
+        public string SynergyId;
+        public string DisplayName;
+
+        public SynergyActivatedEvent(string synergyId, string displayName)
+        {
+            SynergyId = synergyId;
+            DisplayName = displayName;
+        }
+    }
+
+    /// <summary>
+    /// Сейсмическая волна способности Seismic Hammer.
+    /// </summary>
+    public struct SeismicSlamEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+
+        public SeismicSlamEvent(Vector3 position, float radius)
         {
             Position = position;
             Radius = radius;

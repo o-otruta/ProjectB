@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Enemies;
 using ProjectB.Player;
 using ProjectB.Visuals;
 using UnityEngine.Pool;
@@ -120,9 +121,21 @@ namespace ProjectB.Abilities
                     accumulatedDamage += effectiveDps * Time.deltaTime;
                     if (accumulatedDamage >= 1f)
                     {
-                        int dmg = Mathf.FloorToInt(accumulatedDamage);
-                        accumulatedDamage -= dmg;
-                        currentTargetDamageable.TakeDamage(dmg);
+                        int baseDmg = Mathf.FloorToInt(accumulatedDamage);
+                        accumulatedDamage -= baseDmg;
+                        bool isCrit = false;
+                        int finalDmg = runtimeStats != null
+                            ? runtimeStats.RollDamage(baseDmg, out isCrit)
+                            : baseDmg;
+
+                        if (currentTargetDamageable is EnemyBase enemy)
+                        {
+                            enemy.TakeDamage(finalDmg, isCrit);
+                        }
+                        else
+                        {
+                            currentTargetDamageable.TakeDamage(finalDmg);
+                        }
                     }
                 }
                 else

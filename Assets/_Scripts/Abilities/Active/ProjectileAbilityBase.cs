@@ -81,7 +81,7 @@ namespace ProjectB.Abilities
             if (Time.time >= nextFireTime)
             {
                 Fire();
-                nextFireTime = Time.time + currentCooldown;
+                nextFireTime = Time.time + GetEffectiveCooldown(currentCooldown);
             }
         }
 

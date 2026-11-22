@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectB.Player;
 using ProjectB.Abilities;
+using ProjectB.Core.Events;
 
 namespace ProjectB.LevelUp
 {
@@ -9,15 +10,18 @@ namespace ProjectB.LevelUp
         private readonly HeroHealth heroHealth;
         private readonly HeroRuntimeStats runtimeStats;
         private readonly HeroAbilities heroAbilities;
+        private readonly GameEventBus eventBus;
 
         public UpgradeApplier(
             HeroHealth heroHealth,
             HeroRuntimeStats runtimeStats,
-            HeroAbilities heroAbilities)
+            HeroAbilities heroAbilities,
+            GameEventBus eventBus = null)
         {
             this.heroHealth = heroHealth;
             this.runtimeStats = runtimeStats;
             this.heroAbilities = heroAbilities;
+            this.eventBus = eventBus;
         }
 
         public void ApplyCard(CardData card, UpgradeManager upgradeManager)
@@ -127,6 +131,8 @@ namespace ProjectB.LevelUp
             {
                 runtimeStats?.AddArmor(card.armorBonus);
             }
+
+            eventBus?.Publish(new SynergyActivatedEvent(card.synergyId, card.cardName));
         }
     }
 }

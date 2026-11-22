@@ -62,7 +62,7 @@ namespace ProjectB.Combat
         public void AddWeapon(WeaponData data)
         {
             if (data == null) return;
-            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier);
+            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier, runtimeStats);
             activeWeapons.Add(controller);
         }
 

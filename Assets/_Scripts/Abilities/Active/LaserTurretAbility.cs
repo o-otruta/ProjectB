@@ -93,7 +93,7 @@ namespace ProjectB.Abilities
             if (Time.time >= nextFireTime)
             {
                 SpawnTurret();
-                nextFireTime = Time.time + currentCooldown;
+                nextFireTime = Time.time + GetEffectiveCooldown(currentCooldown, 0.5f);
             }
         }
 

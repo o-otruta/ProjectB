@@ -11,6 +11,9 @@ namespace ProjectB.Player
     /// </summary>
     public class HeroRuntimeStats
     {
+        public const float MAX_COOLDOWN_REDUCTION = 0.5f;
+        public const float BASE_CRIT_MULTIPLIER = 1.1f;
+
         public float MetaHpMultiplier { get; }
         public float MetaSpeedMultiplier { get; }
         public float MetaMagnetMultiplier { get; }
@@ -28,6 +31,12 @@ namespace ProjectB.Player
         public float MoveSpeedFlatBonus { get; private set; } = 0f;
         public float MagnetRadiusFlatBonus { get; private set; } = 0f;
         public int MaxHpFlatBonus { get; private set; } = 0;
+
+        public float CooldownReduction { get; private set; } = 0f;
+        public float CooldownReductionMultiplier => Mathf.Clamp(1f - CooldownReduction, 0.5f, 1f);
+        public float CritChance { get; private set; } = 0f;
+        public float CritMultiplier { get; private set; } = BASE_CRIT_MULTIPLIER;
+        public float CoinMultiplier { get; private set; } = 1.0f;
 
         /// <summary>
         /// Итоговый множитель урона базового оружия: мета-множитель * пассивка героя * забеговый GlobalDamage.
@@ -52,6 +61,7 @@ namespace ProjectB.Player
                 MetaAbilityDamageMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.AbilityDamage) / 100f;
                 XpMultiplier = 1f + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.XPBonus) / 100f;
                 StartingBonusLevels = Mathf.Max(0, Mathf.RoundToInt(metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.StartLevel)));
+                CritMultiplier = Mathf.Max(1.0f, BASE_CRIT_MULTIPLIER + metaUpgradeManager.GetTotalBonus(MetaUpgradeEffectType.CritMultiplier));
             }
             else
             {
@@ -62,6 +72,7 @@ namespace ProjectB.Player
                 MetaAbilityDamageMultiplier = 1f;
                 XpMultiplier = 1f;
                 StartingBonusLevels = 0;
+                CritMultiplier = BASE_CRIT_MULTIPLIER;
             }
 
             if (selectedHeroService != null)
@@ -134,6 +145,58 @@ namespace ProjectB.Player
             if (flatAmount == 0) return;
             MaxHpFlatBonus += flatAmount;
             OnStatsChanged?.Invoke();
+        }
+
+        public void AddCooldownReductionPercent(float percent)
+        {
+            if (Mathf.Approximately(percent, 0f)) return;
+            CooldownReduction = Mathf.Clamp(CooldownReduction + percent / 100f, 0f, MAX_COOLDOWN_REDUCTION);
+            OnStatsChanged?.Invoke();
+        }
+
+        public void AddCritChancePercent(float percent)
+        {
+            if (Mathf.Approximately(percent, 0f)) return;
+            CritChance = Mathf.Clamp01(CritChance + percent / 100f);
+            OnStatsChanged?.Invoke();
+        }
+
+        public void AddCritMultiplier(float bonusMultiplier)
+        {
+            if (Mathf.Approximately(bonusMultiplier, 0f)) return;
+            CritMultiplier = Mathf.Max(1.0f, CritMultiplier + bonusMultiplier);
+            OnStatsChanged?.Invoke();
+        }
+
+        public void AddCoinBonusPercent(float percent)
+        {
+            if (Mathf.Approximately(percent, 0f)) return;
+            CoinMultiplier = Mathf.Max(1f, CoinMultiplier + percent / 100f);
+            OnStatsChanged?.Invoke();
+        }
+
+        public float GetEffectiveCooldown(float baseCooldown, float minCooldown = 0.1f)
+        {
+            return Mathf.Max(minCooldown, baseCooldown * CooldownReductionMultiplier);
+        }
+
+        public int RollDamage(float rawDamage, out bool isCrit)
+        {
+            if (rawDamage <= 0f)
+            {
+                isCrit = false;
+                return 0;
+            }
+
+            isCrit = CritChance > 0f && (CritChance >= 1f || UnityEngine.Random.value < CritChance);
+            float finalDamage = isCrit ? rawDamage * CritMultiplier : rawDamage;
+            return Mathf.Max(1, Mathf.RoundToInt(finalDamage));
+        }
+
+        public int ApplyCoinMultiplier(int baseCoins)
+        {
+            if (baseCoins <= 0) return 0;
+            return Mathf.Max(1, Mathf.RoundToInt(baseCoins * CoinMultiplier));
         }
 
         public int GetMaxHp(int baseMaxHp)

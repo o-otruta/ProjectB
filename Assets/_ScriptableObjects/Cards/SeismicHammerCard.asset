@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
+  m_Name: SeismicHammerCard
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
+  cardName: Seismic Hammer
+  description: Unleashes a crushing shockwave around you, dealing massive AoE damage
+    and slowing enemies by 80%.
+  icon: {fileID: 21300000, guid: 61fc263411a2ff641bfa53663cf2c50d, type: 3}
+  rarity: 3
+  isConsumable: 1
+  abilityData: {fileID: 11400000, guid: 60eb0e4216ea3b94697a38f5b26c9238, type: 2}
+  unlockedModifiers:
+  - {fileID: 11400000, guid: 797a9c3f6790d1249862cea37722c5bc, type: 2}
+  - {fileID: 11400000, guid: 94c64e91638391145b9d5b3b36db8154, type: 2}
+  - {fileID: 11400000, guid: 741ecc88f205c0042917055b3c40b94b, type: 2}

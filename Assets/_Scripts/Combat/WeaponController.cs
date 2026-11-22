@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Data.Combat;
+using ProjectB.Player;
 
 namespace ProjectB.Combat
 {
@@ -11,6 +12,7 @@ namespace ProjectB.Combat
         private Transform ownerTransform;
         private Transform firePoint;
         private Transform projectileContainer;
+        private HeroRuntimeStats runtimeStats;
 
         private IObjectPool<Projectile> projectilePool;
         private float nextFireTime;
@@ -23,13 +25,21 @@ namespace ProjectB.Combat
             set => damageMultiplier = value;
         }
 
-        public WeaponController(WeaponData data, LayerMask enemyLayer, Transform ownerTransform, Transform firePoint, Transform rootContainer, float damageMultiplier = 1f)
+        public WeaponController(
+            WeaponData data,
+            LayerMask enemyLayer,
+            Transform ownerTransform,
+            Transform firePoint,
+            Transform rootContainer,
+            float damageMultiplier = 1f,
+            HeroRuntimeStats runtimeStats = null)
         {
             this.weaponData = data;
             this.enemyLayer = enemyLayer;
             this.ownerTransform = ownerTransform;
             this.firePoint = firePoint;
             this.damageMultiplier = damageMultiplier;
+            this.runtimeStats = runtimeStats;
 
             projectileContainer = new GameObject($"ProjectileContainer_{data.name}").transform;
             projectileContainer.SetParent(rootContainer);
@@ -113,7 +123,7 @@ namespace ProjectB.Combat
             if (p == null) return;
             
             p.transform.position = firePoint != null ? firePoint.position : (ownerTransform != null ? ownerTransform.position : Vector3.zero);
-            p.Initialize(weaponData, target, projectilePool, damageMultiplier, enemyLayer);
+            p.Initialize(weaponData, target, projectilePool, damageMultiplier, enemyLayer, runtimeStats);
         }
 
         public void DrawGizmos()

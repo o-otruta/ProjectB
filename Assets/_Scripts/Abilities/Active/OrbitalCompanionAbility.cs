@@ -146,7 +146,7 @@ namespace ProjectB.Abilities
         {
             float hitRadius = currentArea / 2f;
             float currentTime = Time.time;
-            int scaledDamage = Mathf.Max(1, Mathf.RoundToInt(GetScaledDamage(currentDamage)));
+            float effectiveTick = GetEffectiveCooldown(tickRate, 0.15f);
 
             foreach (var inst in instances)
             {
@@ -161,8 +161,9 @@ namespace ProjectB.Abilities
 
                     if (!enemyDamageCooldowns.TryGetValue(enemyId, out float nextDamageTime) || currentTime >= nextDamageTime)
                     {
-                        enemy.TakeDamage(scaledDamage);
-                        enemyDamageCooldowns[enemyId] = currentTime + tickRate;
+                        int scaledDamage = RollScaledDamage(currentDamage, out bool isCrit);
+                        enemy.TakeDamage(scaledDamage, isCrit);
+                        enemyDamageCooldowns[enemyId] = currentTime + effectiveTick;
                     }
                 }
             }

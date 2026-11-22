@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
   id: collect_5_abilities
   title: Arsenal
-  description: Equip 5 different abilities in a single run
+  description: Equip 5 different abilities in a single run to unlock Dragon Whelp
   icon: {fileID: 21300000, guid: 456aa2646124c444ba662f96148f8191, type: 3}
   conditionType: 4
   targetValue: 5
   targetId: 
-  rewardType: 3
-  rewardValue: 300
-  rewardId: 
+  rewardType: 1
+  rewardValue: 0
+  rewardId: MiniDragon

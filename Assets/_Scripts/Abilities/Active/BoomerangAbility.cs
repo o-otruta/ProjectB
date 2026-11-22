@@ -56,7 +56,7 @@ namespace ProjectB.Abilities
                 }
 
                 p.transform.position = transform.position;
-                p.InitializeBoomerang(GetScaledDamage(currentDamage), currentSpeed, currentRange, currentPierceCount, dir, transform, ProjectileData.targetLayer, projectilePool);
+                p.InitializeBoomerang(GetScaledDamage(currentDamage), currentSpeed, currentRange, currentPierceCount, dir, transform, ProjectileData.targetLayer, projectilePool, runtimeStats);
             }
         }
     }

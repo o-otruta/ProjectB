@@ -10,7 +10,8 @@ namespace ProjectB.Visuals
     /// </summary>
     public class DamageNumberItem : MonoBehaviour
     {
-        private static readonly string[] CachedNumbers = BuildNumberCache(1000);
+        private static readonly string[] CachedNumbers = BuildNumberCache(1000, string.Empty);
+        private static readonly string[] CachedCritNumbers = BuildNumberCache(1000, "!");
 
         [SerializeField] private TextMeshProUGUI textMesh;
 
@@ -24,12 +25,12 @@ namespace ProjectB.Visuals
         private float lifetime = 0.65f;
         private float baseScale = 1f;
 
-        private static string[] BuildNumberCache(int count)
+        private static string[] BuildNumberCache(int count, string suffix)
         {
             var arr = new string[count];
             for (int i = 0; i < count; i++)
             {
-                arr[i] = i.ToString();
+                arr[i] = string.IsNullOrEmpty(suffix) ? i.ToString() : $"{i}{suffix}";
             }
             return arr;
         }
@@ -43,6 +44,15 @@ namespace ProjectB.Visuals
             return value.ToString();
         }
 
+        public static string GetCachedCritNumberText(int value)
+        {
+            if (value >= 0 && value < CachedCritNumbers.Length)
+            {
+                return CachedCritNumbers[value];
+            }
+            return $"{value}!";
+        }
+
         public void SetTextMesh(TextMeshProUGUI tmp)
         {
             textMesh = tmp;
@@ -54,16 +64,18 @@ namespace ProjectB.Visuals
             Color color,
             float scale,
             Camera cam,
-            IObjectPool<DamageNumberItem> ownerPool)
+            IObjectPool<DamageNumberItem> ownerPool,
+            bool isCrit = false)
         {
             Vector3 jitter = new Vector3(Random.Range(-0.45f, 0.45f), Random.Range(1.0f, 1.45f), Random.Range(-0.25f, 0.25f));
+            string label = isCrit ? GetCachedCritNumberText(amount) : GetCachedNumberText(amount);
             ShowInternal(
                 worldPos + jitter,
-                new Vector3(Random.Range(-0.6f, 0.6f), 2.4f, 0f),
-                GetCachedNumberText(amount),
+                new Vector3(Random.Range(-0.6f, 0.6f), isCrit ? 2.9f : 2.4f, 0f),
+                label,
                 color,
                 scale,
-                0.65f,
+                isCrit ? 0.78f : 0.65f,
                 cam,
                 ownerPool);
         }

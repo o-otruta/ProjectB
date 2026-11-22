@@ -56,8 +56,9 @@ namespace ProjectB.EditorScripts
 
             var spriteCache = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
 
-            // Compass UI arrow
+            // Compass UI arrow & HUD slot lock icon
             GetOrCreateSprite("ui_compass_arrow", framed: false, spriteCache);
+            GetOrCreateSprite("ui_slot_lock", framed: false, spriteCache);
 
             // 1. Abilities
             var abilityIconsById = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
@@ -142,9 +143,14 @@ namespace ProjectB.EditorScripts
                 if (ach == null) continue;
 
                 string key = ResolveAchievementTemplateKey(ach);
-                Color32 frameCol = ach.rewardType == AchievementRewardType.UnlockHero
-                    ? Gold
-                    : (ach.rewardType == AchievementRewardType.UnlockAbility ? Purple : Cyan);
+                Color32 frameCol = ach.rewardType switch
+                {
+                    AchievementRewardType.UnlockHero => Gold,
+                    AchievementRewardType.UnlockAbility => Purple,
+                    AchievementRewardType.UnlockActiveSlot => FireOrange,
+                    AchievementRewardType.UnlockPassiveSlot => Cyan,
+                    _ => Cyan
+                };
 
                 ach.icon = GetOrCreateSprite($"ach_{ach.id}", framed: true, spriteCache, key, frameCol);
                 EditorUtility.SetDirty(ach);
@@ -400,6 +406,7 @@ namespace ProjectB.EditorScripts
                 ModifierType.Speed => IceBlue,
                 ModifierType.PierceCount => FireOrange,
                 ModifierType.SlowAmount => IceBlue,
+                ModifierType.CritMultiplier => FireOrange,
                 _ => Gold
             };
 
@@ -556,6 +563,16 @@ namespace ProjectB.EditorScripts
                 "IronSkin" => "iron_skin",
                 "SwiftBoots" => "swift_boots",
                 "VitalityRegen" => "vitality_regen",
+                "ChainLightning" => "chain_lightning",
+                "PoisonAlchemist" => "poison_flask",
+                "GuardianShield" => "guardian_shield",
+                "MiniDragon" => "mini_dragon",
+                "VoxelTornado" => "voxel_tornado",
+                "EarthquakeSlam" => "seismic_hammer",
+                "ChronoTome" => "chrono_tome",
+                "CriticalLens" => "critical_lens",
+                "TitanHeart" => "titan_heart",
+                "GoldenIdol" => "golden_idol",
                 _ => "fallback_star"
             };
         }
@@ -580,6 +597,11 @@ namespace ProjectB.EditorScripts
                 "steam_blast" => "synergy_steam",
                 "blade_storm" => "synergy_blades",
                 "overcharged_grid" => "synergy_grid",
+                "thunder_storm" => "synergy_thunderstorm",
+                "toxic_inferno" => "synergy_toxic_inferno",
+                "aegis_phalanx" => "synergy_aegis_phalanx",
+                "dragon_lord" => "synergy_dragon_lord",
+                "cataclysm_vortex" => "synergy_cataclysm_vortex",
                 _ => "fallback_star"
             };
         }
@@ -592,6 +614,8 @@ namespace ProjectB.EditorScripts
             if (ach.id.Contains("golem")) return "boss_golem";
             if (ach.id.Contains("necromancer")) return "boss_necro";
             if (ach.rewardType == AchievementRewardType.UnlockHero) return "hero_mage";
+            if (ach.rewardType == AchievementRewardType.UnlockActiveSlot) return "slot_active";
+            if (ach.rewardType == AchievementRewardType.UnlockPassiveSlot) return "slot_passive";
             if (ach.rewardType == AchievementRewardType.UnlockAbility && !string.IsNullOrEmpty(ach.rewardId))
             {
                 return ResolveAbilityTemplateKey(ach.rewardId);
@@ -619,6 +643,7 @@ namespace ProjectB.EditorScripts
                 MetaUpgradeEffectType.StartLevel => "wave_banner",
                 MetaUpgradeEffectType.XPBonus => "secret_crystal",
                 MetaUpgradeEffectType.AbilityDamage => "fireball",
+                MetaUpgradeEffectType.CritMultiplier => "critical_lens",
                 _ => "fallback_star"
             };
         }
@@ -1208,6 +1233,348 @@ namespace ProjectB.EditorScripts
                     "......KGGK......",
                     "......KAAK......",
                     ".......KK.......",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["ui_slot_lock"] = new[]
+                {
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KWWWWWWK....",
+                    "...KWSSSSSSWK...",
+                    "...KWSKKKKWSK...",
+                    "...KWSK..KWSK...",
+                    "..KKKKKKKKKKKK..",
+                    "..KSSSSSSSSSSK..",
+                    "..KSDDDDDDDDDK..",
+                    "..KSDDKKKKDDDK..",
+                    "..KSDDKWWKDDDK..",
+                    "..KSDDKWWKDDDK..",
+                    "..KSDDKKKKDDDK..",
+                    "..KDDDDDDDDDDK..",
+                    "...KKKKKKKKKK...",
+                    "................"
+                },
+                ["slot_active"] = new[]
+                {
+                    "................",
+                    "................",
+                    "...KKKKKKKKKK...",
+                    "..KOOOOOOOOOOK..",
+                    "..KOOOHHHHOOOK..",
+                    "..KOOHWSSWHOOK..",
+                    "..KOOHWGGWHOOK..",
+                    "..KOOHWGGWHOOK..",
+                    "..KOOHWSSWHOOK..",
+                    "..KOOOHHHHOOOK..",
+                    "..KOOOOOOOOOOK..",
+                    "...KKKKKKKKKK...",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["slot_passive"] = new[]
+                {
+                    "................",
+                    "................",
+                    "...KKKKKKKKKK...",
+                    "..KYYYYYYYYYYK..",
+                    "..KYYYWWWWYYYK..",
+                    "..KYYWIIIIWYYK..",
+                    "..KYYWIWWWIYYK..",
+                    "..KYYWIWWWIYYK..",
+                    "..KYYWIIIIWYYK..",
+                    "..KYYYWWWWYYYK..",
+                    "..KYYYYYYYYYYK..",
+                    "...KKKKKKKKKK...",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["chain_lightning"] = new[]
+                {
+                    "................",
+                    "................",
+                    "........KKKK....",
+                    ".......KWWWWK...",
+                    "......KWYYYYK...",
+                    ".....KYYWWKK....",
+                    "....KYYWWK......",
+                    "...KYYYYWWWK....",
+                    "....KKKYYWWK....",
+                    "......KYYWK.....",
+                    ".....KYYWK......",
+                    "....KWWWK.......",
+                    "....KKKK........",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["poison_flask"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    ".....KBBBBK.....",
+                    "......KSSK......",
+                    "......KWWK......",
+                    ".....KKEEK......",
+                    "....KEEEEEKK....",
+                    "...KEEWEEEEFK...",
+                    "...KEEWWEEFFK...",
+                    "...KEEEEEEFFK...",
+                    "....KFFFFFFK....",
+                    ".....KKKKKK.....",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["guardian_shield"] = new[]
+                {
+                    "................",
+                    "................",
+                    "...KKKKKKKKKK...",
+                    "..KHHHHHHHHHHK..",
+                    "..KHWGGGGGGWHK..",
+                    "..KHGIIIIIIIGHK.",
+                    "..KHGIIWWIIIGHK.",
+                    "..KHGIIIIIIIGHK.",
+                    "...KHGGGGGGGHK..",
+                    "....KGGGGGGGK...",
+                    ".....KAAAAAK....",
+                    "......KAAAK.....",
+                    ".......KKK......",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["mini_dragon"] = new[]
+                {
+                    "................",
+                    "................",
+                    "....KK....KK....",
+                    "...KORK..KRRK...",
+                    "...KOORKKRRRK...",
+                    "....KORRRRKK....",
+                    "..KKRRRRRHHK....",
+                    ".KRRRRRROKKKK...",
+                    "..KKORRRROOK....",
+                    "....KORRRRK.....",
+                    "....KRRKKRK.....",
+                    "...KRRK..KHK....",
+                    "...KKK....KK....",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["voxel_tornado"] = new[]
+                {
+                    "................",
+                    "................",
+                    "..KKKKKKKKKKKK..",
+                    "..KYYWWWWWWYYK..",
+                    "...KYYIIIIYYK...",
+                    "....KYYYYYYK....",
+                    "...KYYWWWWYYK...",
+                    "....KIIYYIIK....",
+                    ".....KYYYYK.....",
+                    "......KWWK......",
+                    ".....KYYYK......",
+                    "......KYK.......",
+                    ".......K........",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["seismic_hammer"] = new[]
+                {
+                    "................",
+                    "................",
+                    "..KKKKKKKKKKKK..",
+                    "..KSSDDDDDDDDSK.",
+                    "..KSDGGGGGGGGSK.",
+                    "..KSDDDDDDDDDSK.",
+                    "..KKKKKKKKKKKK..",
+                    "......KBBK......",
+                    "......KBBK......",
+                    ".....KHHHHK.....",
+                    "....KOOOOOOK....",
+                    "...KHHKKKKHHK...",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["chrono_tome"] = new[]
+                {
+                    "................",
+                    "................",
+                    "....KKKKKKKK....",
+                    "...KYYYYYYYYK...",
+                    "...KYWWWWWWYK...",
+                    "...KYWKKKKWYK...",
+                    "...KYWKIWWWYK...",
+                    "...KYWKIWWWYK...",
+                    "...KYWKKKKWYK...",
+                    "...KYWWWWWWYK...",
+                    "...KJJJJJJJJK...",
+                    "....KKKKKKKK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["critical_lens"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    "...KKHHHHHHKK...",
+                    "..KHHOOOOOOHHK..",
+                    "..KHORWWWWROHK..",
+                    "..KHOWRRRRWOHK..",
+                    "..KHOWRRRRWOHK..",
+                    "..KHORWWWWROHK..",
+                    "..KHHOOOOOOHHK..",
+                    "...KKHHHHHHKK...",
+                    ".....KKKKKK.....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["titan_heart"] = new[]
+                {
+                    "................",
+                    "................",
+                    "...KKKK..KKKK...",
+                    "..KCCCCKKCCCCK..",
+                    "..KCWWCHHCCCCK..",
+                    "..KCWCHHHHCCCK..",
+                    "..KCCCHHHHCCCK..",
+                    "...KCCHHHCCCK...",
+                    "....KCCCCCCK....",
+                    ".....KCCCCK.....",
+                    "......KCCK......",
+                    ".......KK.......",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["golden_idol"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KHHHHHHK....",
+                    "....KHHGGHHK....",
+                    "...KHGKKKKGHK...",
+                    "...KHGGWWGGHK...",
+                    "....KGGGGGGK....",
+                    "...KGGHHHHGGK...",
+                    "...KGGGGGGGGK...",
+                    "..KAAAAAAAAAAK..",
+                    "..KKKKKKKKKKKK..",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["synergy_thunderstorm"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    "...KKIIWWIIKK...",
+                    "..KIIWWYYYYIIK..",
+                    "..KIIWYYYYWWIK..",
+                    "...KKKYYWWKKK...",
+                    ".....KYYWWK.....",
+                    "....KYYYYWWK....",
+                    ".....KKYYWK.....",
+                    "......KWWK......",
+                    ".......KK.......",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["synergy_toxic_inferno"] = new[]
+                {
+                    "................",
+                    "................",
+                    "......KKKK......",
+                    "....KKOEEOKK....",
+                    "...KOREEEEROK...",
+                    "..KROEEWWEEORK..",
+                    "..KROEEWWEEORK..",
+                    "..KRRREEEERRRK..",
+                    "...KRRFFFFRRK...",
+                    "....KKKKKKKK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["synergy_aegis_phalanx"] = new[]
+                {
+                    "................",
+                    "................",
+                    "..KK........KK..",
+                    ".KWHK......KWHK.",
+                    "..KWSKKKKKKWSK..",
+                    "...KHHHHHHHHK...",
+                    "...KHGIIIIIGHK..",
+                    "...KHGIIWWIGHK..",
+                    "...KWSGGGGWSK...",
+                    "..KGGK....KGGK..",
+                    "..KKK......KKK..",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["synergy_dragon_lord"] = new[]
+                {
+                    "................",
+                    "................",
+                    "...KK..KK..KK...",
+                    "..KHHKKHHKKHHK..",
+                    "..KHHHHHHHHHHK..",
+                    "...KRRRRRRRRK...",
+                    "..KRROOOOOORRK..",
+                    "..KRRHHKKHHRRK..",
+                    "...KRRRRRRRRK...",
+                    "....KGGGGGGK....",
+                    ".....KKKKKK.....",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["synergy_cataclysm_vortex"] = new[]
+                {
+                    "................",
+                    "................",
+                    "....KKKKKKKK....",
+                    "..KKPPYYYYPPKK..",
+                    ".KPPYYWWWWYYPPK.",
+                    ".KPQYKKKKKKYQPK.",
+                    ".KPQYKWWWWKYQPK.",
+                    ".KPQYKKKKKKYQPK.",
+                    ".KPPYYWWWWYYPPK.",
+                    "..KKPPYYYYPPKK..",
+                    "....KKKKKKKK....",
+                    "................",
+                    "................",
                     "................",
                     "................",
                     "................"

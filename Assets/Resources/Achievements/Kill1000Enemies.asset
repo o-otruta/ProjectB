@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
   id: kill_1000_enemies
   title: Exterminator
-  description: Kill 1,000 enemies cumulatively
+  description: Kill 1,000 enemies cumulatively to unlock Arcane Tornado
   icon: {fileID: 21300000, guid: 05550b1d50dc75c48a817e7e5a1e9da2, type: 3}
   conditionType: 1
   targetValue: 1000
   targetId: 
-  rewardType: 3
-  rewardValue: 600
-  rewardId: 
+  rewardType: 1
+  rewardValue: 0
+  rewardId: VoxelTornado

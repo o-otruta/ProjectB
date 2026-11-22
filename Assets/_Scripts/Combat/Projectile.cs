@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Data.Combat;
+using ProjectB.Enemies;
+using ProjectB.Player;
 
 namespace ProjectB.Combat
 {
@@ -14,6 +16,7 @@ namespace ProjectB.Combat
         private IDamageable targetDamageable;
         private WeaponData data;
         private LayerMask enemyLayer;
+        private HeroRuntimeStats runtimeStats;
         private bool isReturned;
         private float damageMultiplier = 1f;
         private float spawnTime;
@@ -23,13 +26,15 @@ namespace ProjectB.Combat
             Transform targetTransform,
             IObjectPool<Projectile> projectilePool,
             float damageMultiplier = 1f,
-            LayerMask enemyLayer = default)
+            LayerMask enemyLayer = default,
+            HeroRuntimeStats runtimeStats = null)
         {
             data = weaponData;
             target = targetTransform;
             targetDamageable = targetTransform != null ? targetTransform.GetComponent<IDamageable>() : null;
             pool = projectilePool;
             this.enemyLayer = enemyLayer;
+            this.runtimeStats = runtimeStats;
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
             spawnTime = Time.time;
@@ -88,14 +93,15 @@ namespace ProjectB.Combat
 
         private void HitTarget()
         {
-            int finalDamage = data != null ? Mathf.RoundToInt(data.damage * damageMultiplier) : 0;
+            float rawDamage = data != null ? data.damage * damageMultiplier : 0f;
 
-            if (targetDamageable != null && !targetDamageable.IsDead && finalDamage > 0)
+            if (targetDamageable != null && !targetDamageable.IsDead && rawDamage > 0f)
             {
-                targetDamageable.TakeDamage(finalDamage);
+                int finalDamage = RollHitDamage(rawDamage, out bool isCrit);
+                DealDamage(targetDamageable, finalDamage, isCrit);
             }
 
-            if (data != null && data.splashRadius > 0f && finalDamage > 0 && enemyLayer.value != 0)
+            if (data != null && data.splashRadius > 0f && rawDamage > 0f && enemyLayer.value != 0)
             {
                 int hits = Physics.OverlapSphereNonAlloc(transform.position, data.splashRadius, splashHits, enemyLayer);
                 for (int i = 0; i < hits; i++)
@@ -105,12 +111,36 @@ namespace ProjectB.Combat
                         splashTarget != targetDamageable &&
                         !splashTarget.IsDead)
                     {
-                        splashTarget.TakeDamage(finalDamage);
+                        int splashDamage = RollHitDamage(rawDamage, out bool splashCrit);
+                        DealDamage(splashTarget, splashDamage, splashCrit);
                     }
                 }
             }
 
             ReturnToPool();
+        }
+
+        private int RollHitDamage(float rawDamage, out bool isCrit)
+        {
+            if (runtimeStats != null)
+            {
+                return runtimeStats.RollDamage(rawDamage, out isCrit);
+            }
+            isCrit = false;
+            return Mathf.RoundToInt(rawDamage);
+        }
+
+        private static void DealDamage(IDamageable victim, int damage, bool isCrit)
+        {
+            if (victim == null || victim.IsDead || damage <= 0) return;
+            if (victim is EnemyBase enemy)
+            {
+                enemy.TakeDamage(damage, isCrit);
+            }
+            else
+            {
+                victim.TakeDamage(damage);
+            }
         }
 
         private void ReturnToPool()

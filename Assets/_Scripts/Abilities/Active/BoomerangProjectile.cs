@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ProjectB.Combat;
+using ProjectB.Player;
 
 namespace ProjectB.Abilities
 {
@@ -18,7 +19,16 @@ namespace ProjectB.Abilities
         private Collider[] overlapHits = new Collider[20];
         private float hitRadius = 1f;
 
-        public void InitializeBoomerang(float damage, float speed, float throwRange, int pierceCount, Vector3 direction, Transform returnTarget, LayerMask enemyLayer, UnityEngine.Pool.IObjectPool<AbilityProjectile> pool)
+        public void InitializeBoomerang(
+            float damage,
+            float speed,
+            float throwRange,
+            int pierceCount,
+            Vector3 direction,
+            Transform returnTarget,
+            LayerMask enemyLayer,
+            UnityEngine.Pool.IObjectPool<AbilityProjectile> pool,
+            HeroRuntimeStats runtimeStats = null)
         {
             this.damage = damage;
             this.speed = speed;
@@ -27,6 +37,7 @@ namespace ProjectB.Abilities
             this.returnTarget = returnTarget;
             this.enemyLayer = enemyLayer;
             this.pool = pool;
+            this.runtimeStats = runtimeStats;
             this.isReturned = false;
             this.spawnTime = Time.time;
 
@@ -92,7 +103,8 @@ namespace ProjectB.Abilities
                     EntityId id = hitCol.gameObject.GetEntityId();
                     if (!damagedEnemies.Contains(id))
                     {
-                        damageable.TakeDamage((int)damage);
+                        int finalDamage = RollHitDamage(damage, out bool isCrit);
+                        DealDamage(damageable, finalDamage, isCrit);
                         damagedEnemies.Add(id);
                         currentPierces++;
                     }

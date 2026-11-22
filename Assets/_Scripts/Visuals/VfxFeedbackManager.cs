@@ -25,6 +25,7 @@ namespace ProjectB.Visuals
         [Header("Floating Damage Numbers")]
         [SerializeField] private Color normalDamageColor = Color.white;
         [SerializeField] private Color bossDamageColor = new Color(1f, 0.84f, 0.25f, 1f);
+        [SerializeField] private Color critDamageColor = new Color(1f, 0.56f, 0.08f, 1f);
         [SerializeField] private Color heroDamageColor = new Color(1f, 0.28f, 0.28f, 1f);
 
         private GameEventBus eventBus;
@@ -52,6 +53,10 @@ namespace ProjectB.Visuals
         private static readonly Color MeteorSecondaryColor = new Color(1f, 0.85f, 0.2f, 1f);
         private static readonly Color SecretPickupColor = new Color(0.88f, 0.4f, 1f, 1f);
         private static readonly Color SecretRewardTextColor = new Color(1f, 0.9f, 0.32f, 1f);
+        private static readonly Color SynergyGoldColor = new Color(1f, 0.84f, 0.2f, 1f);
+        private static readonly Color SynergyPurpleColor = new Color(0.75f, 0.32f, 1f, 1f);
+        private static readonly Color SeismicPrimaryColor = new Color(0.92f, 0.58f, 0.16f, 1f);
+        private static readonly Color SeismicSecondaryColor = new Color(0.68f, 0.44f, 0.22f, 1f);
 
         [Inject]
         public void Construct(
@@ -195,6 +200,8 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<SecretItemCollectedEvent>(OnSecretItemCollected);
                 eventBus.Subscribe<FireballExplodedEvent>(OnFireballExploded);
                 eventBus.Subscribe<MeteorImpactEvent>(OnMeteorImpact);
+                eventBus.Subscribe<SynergyActivatedEvent>(OnSynergyActivated);
+                eventBus.Subscribe<SeismicSlamEvent>(OnSeismicSlam);
             }
 
             if (heroHealth != null)
@@ -224,6 +231,8 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<SecretItemCollectedEvent>(OnSecretItemCollected);
                 eventBus.Unsubscribe<FireballExplodedEvent>(OnFireballExploded);
                 eventBus.Unsubscribe<MeteorImpactEvent>(OnMeteorImpact);
+                eventBus.Unsubscribe<SynergyActivatedEvent>(OnSynergyActivated);
+                eventBus.Unsubscribe<SeismicSlamEvent>(OnSeismicSlam);
             }
 
             if (heroHealth != null)
@@ -242,12 +251,16 @@ namespace ProjectB.Visuals
             if (damagePool != null && evt.Damage > 0)
             {
                 var item = damagePool.Get();
-                Color col = evt.IsBossOrMiniBoss ? bossDamageColor : normalDamageColor;
-                float scale = evt.IsBossOrMiniBoss ? 1.25f : 1.0f;
-                item.Show(evt.Position, evt.Damage, col, scale, mainCamera, damagePool);
+                Color col = evt.IsCrit
+                    ? critDamageColor
+                    : (evt.IsBossOrMiniBoss ? bossDamageColor : normalDamageColor);
+                float scale = evt.IsCrit
+                    ? 1.45f
+                    : (evt.IsBossOrMiniBoss ? 1.25f : 1.0f);
+                item.Show(evt.Position, evt.Damage, col, scale, mainCamera, damagePool, evt.IsCrit);
             }
 
-            audioManager?.PlaySfx(SfxType.Hit, volumeScale: 0.65f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.Hit, volumeScale: evt.IsCrit ? 0.8f : 0.65f, randomizePitch: true);
         }
 
         private void OnEnemyDied(EnemyDiedEvent evt)
@@ -360,6 +373,45 @@ namespace ProjectB.Visuals
                 size: 0.4f);
             cameraController?.Shake(0.28f, 0.18f);
             audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.65f, randomizePitch: true);
+        }
+
+        private void OnSynergyActivated(SynergyActivatedEvent evt)
+        {
+            Vector3 heroPos = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            EmitExplosionRing(
+                heroPos + Vector3.up * 0.9f,
+                2.8f,
+                SynergyGoldColor,
+                SynergyPurpleColor,
+                ringCount: 24,
+                centerCount: 12,
+                speed: 6.2f,
+                size: 0.34f);
+
+            if (damagePool != null && !string.IsNullOrEmpty(evt.DisplayName))
+            {
+                var item = damagePool.Get();
+                item.ShowText(heroPos, evt.DisplayName, SynergyGoldColor, 1.45f, 1.8f, mainCamera, damagePool);
+            }
+
+            audioManager?.PlaySfx(SfxType.LevelUp, volumeScale: 0.95f, randomizePitch: false);
+            audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.85f, randomizePitch: false);
+            cameraController?.Shake(0.24f, 0.16f);
+        }
+
+        private void OnSeismicSlam(SeismicSlamEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.35f,
+                Mathf.Max(1.5f, evt.Radius),
+                SeismicPrimaryColor,
+                SeismicSecondaryColor,
+                ringCount: 22,
+                centerCount: 8,
+                speed: 6.0f,
+                size: 0.38f);
+            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.6f, randomizePitch: true);
+            cameraController?.Shake(0.22f, 0.16f);
         }
 
         private void OnUltimateStateChanged()

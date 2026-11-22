@@ -1,6 +1,7 @@
 using UnityEngine;
 using ProjectB.Combat;
 using ProjectB.Core.Events;
+using ProjectB.Player;
 
 namespace ProjectB.Abilities
 {
@@ -19,9 +20,10 @@ namespace ProjectB.Abilities
             Transform target,
             LayerMask enemyLayer,
             UnityEngine.Pool.IObjectPool<AbilityProjectile> pool,
-            GameEventBus eventBus = null)
+            GameEventBus eventBus = null,
+            HeroRuntimeStats runtimeStats = null)
         {
-            base.Initialize(damage, speed, target, enemyLayer, pool);
+            base.Initialize(damage, speed, target, enemyLayer, pool, runtimeStats);
             this.explosionRadius = explosionRadius;
             this.lastKnownTargetPos = target != null ? target.position : transform.position;
             this.eventBus = eventBus;
@@ -61,12 +63,12 @@ namespace ProjectB.Abilities
         protected override void HitTarget()
         {
             int hits = Physics.OverlapSphereNonAlloc(transform.position, explosionRadius, explosionHits, enemyLayer);
-            int finalDamage = Mathf.RoundToInt(damage);
             for (int i = 0; i < hits; i++)
             {
                 if (explosionHits[i] != null && explosionHits[i].TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
-                    damageable.TakeDamage(finalDamage);
+                    int finalDamage = RollHitDamage(damage, out bool isCrit);
+                    DealDamage(damageable, finalDamage, isCrit);
                 }
             }
 

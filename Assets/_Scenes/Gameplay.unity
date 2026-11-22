@@ -3452,10 +3452,25 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8eb94de09505975408c0535eebe4bfe3, type: 2}
   - {fileID: 11400000, guid: 6a457f80e45054848a4e355358576fba, type: 2}
   - {fileID: 11400000, guid: bb827ba1fd67a2647ab61632d8b73190, type: 2}
+  - {fileID: 11400000, guid: 8a08f44dae7633d4fb7bf868924c321d, type: 2}
+  - {fileID: 11400000, guid: d7617e9a0f27075499256068d0b816a9, type: 2}
+  - {fileID: 11400000, guid: 07ad54286e9a56246ba615c0f60eb325, type: 2}
+  - {fileID: 11400000, guid: 0b6cbdc1df42aa64ebdd5a037417c83d, type: 2}
+  - {fileID: 11400000, guid: 3345fe404546bcf408ab8e255c020933, type: 2}
+  - {fileID: 11400000, guid: ea4afe084a6e44740b924241713b3664, type: 2}
+  - {fileID: 11400000, guid: ed3fbec117320cb4fadebdc06d63222f, type: 2}
+  - {fileID: 11400000, guid: 5f4753a2be08e0940bde20eaeca1abcf, type: 2}
+  - {fileID: 11400000, guid: fc65562f4a655704a86be84b1f44918c, type: 2}
+  - {fileID: 11400000, guid: adad87728a9ac1044a73a7f281d7ac0b, type: 2}
   synergies:
   - {fileID: 11400000, guid: d6e014313b8309c459d5ab811f8ce6ee, type: 2}
   - {fileID: 11400000, guid: 4fc5451e6b2e5624c84e9d227e1251a3, type: 2}
   - {fileID: 11400000, guid: 5934e66735b42244abc995f501d74276, type: 2}
+  - {fileID: 11400000, guid: 93a5fb953bd65174e863c0ff0256ea9a, type: 2}
+  - {fileID: 11400000, guid: cb3e10fd0e9e41946bc370c2d3a79475, type: 2}
+  - {fileID: 11400000, guid: fd09ee0fc06b06341826c83a81ab830d, type: 2}
+  - {fileID: 11400000, guid: ff3f5908be74e9843bec74d539cc864f, type: 2}
+  - {fileID: 11400000, guid: 32e37a26a8d683d4bb1942efae6fb26e, type: 2}
 --- !u!1 &550641742
 GameObject:
   m_ObjectHideFlags: 0
@@ -6246,6 +6261,7 @@ MonoBehaviour:
   burstParticleMaterial: {fileID: 2100000, guid: 66f7432e678996e43a839553d4be5416, type: 2}
   normalDamageColor: {r: 1, g: 1, b: 1, a: 1}
   bossDamageColor: {r: 1, g: 0.84, b: 0.25, a: 1}
+  critDamageColor: {r: 1, g: 0.56, b: 0.08, a: 1}
   heroDamageColor: {r: 1, g: 0.28, b: 0.28, a: 1}
 --- !u!1 &1056693406
 GameObject:

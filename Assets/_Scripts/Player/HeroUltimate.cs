@@ -6,6 +6,7 @@ using ProjectB.Combat;
 using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data;
+using ProjectB.Enemies;
 using ProjectB.Meta;
 
 namespace ProjectB.Player
@@ -211,7 +212,7 @@ namespace ProjectB.Player
             Vector3 impactPos = FindMeteorImpactPoint(heroPos, mask);
 
             float damageMult = runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f;
-            int finalDamage = Mathf.Max(1, Mathf.RoundToInt(METEOR_BASE_DAMAGE * damageMult));
+            float rawDamage = METEOR_BASE_DAMAGE * damageMult;
 
             int hits = Physics.OverlapSphereNonAlloc(impactPos, METEOR_EXPLOSION_RADIUS, meteorDamageBuffer, mask);
             for (int i = 0; i < hits; i++)
@@ -219,7 +220,19 @@ namespace ProjectB.Player
                 Collider col = meteorDamageBuffer[i];
                 if (col != null && col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
-                    damageable.TakeDamage(finalDamage);
+                    bool isCrit = false;
+                    int finalDamage = runtimeStats != null
+                        ? runtimeStats.RollDamage(rawDamage, out isCrit)
+                        : Mathf.Max(1, Mathf.RoundToInt(rawDamage));
+
+                    if (damageable is EnemyBase enemy)
+                    {
+                        enemy.TakeDamage(finalDamage, isCrit);
+                    }
+                    else
+                    {
+                        damageable.TakeDamage(finalDamage);
+                    }
                 }
             }
 

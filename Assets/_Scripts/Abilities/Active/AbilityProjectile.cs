@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Enemies;
+using ProjectB.Player;
 
 namespace ProjectB.Abilities
 {
@@ -12,11 +14,18 @@ namespace ProjectB.Abilities
         protected float damage;
         protected float speed;
         protected LayerMask enemyLayer;
+        protected HeroRuntimeStats runtimeStats;
         protected bool isReturned;
         protected float spawnTime;
         protected const float MAX_LIFETIME = 8f;
 
-        public virtual void Initialize(float damage, float speed, Transform target, LayerMask enemyLayer, IObjectPool<AbilityProjectile> pool)
+        public virtual void Initialize(
+            float damage,
+            float speed,
+            Transform target,
+            LayerMask enemyLayer,
+            IObjectPool<AbilityProjectile> pool,
+            HeroRuntimeStats runtimeStats = null)
         {
             this.damage = damage;
             this.speed = speed;
@@ -24,6 +33,7 @@ namespace ProjectB.Abilities
             this.targetDamageable = target != null ? target.GetComponent<IDamageable>() : null;
             this.enemyLayer = enemyLayer;
             this.pool = pool;
+            this.runtimeStats = runtimeStats;
             this.isReturned = false;
             this.spawnTime = Time.time;
         }
@@ -62,9 +72,33 @@ namespace ProjectB.Abilities
         {
             if (targetDamageable != null && !targetDamageable.IsDead)
             {
-                targetDamageable.TakeDamage(Mathf.RoundToInt(damage));
+                int finalDamage = RollHitDamage(damage, out bool isCrit);
+                DealDamage(targetDamageable, finalDamage, isCrit);
             }
             ReturnToPool();
+        }
+
+        protected int RollHitDamage(float rawDamage, out bool isCrit)
+        {
+            if (runtimeStats != null)
+            {
+                return runtimeStats.RollDamage(rawDamage, out isCrit);
+            }
+            isCrit = false;
+            return Mathf.RoundToInt(rawDamage);
+        }
+
+        protected static void DealDamage(IDamageable victim, int finalDamage, bool isCrit)
+        {
+            if (victim == null || victim.IsDead || finalDamage <= 0) return;
+            if (victim is EnemyBase enemy)
+            {
+                enemy.TakeDamage(finalDamage, isCrit);
+            }
+            else
+            {
+                victim.TakeDamage(finalDamage);
+            }
         }
 
         public virtual void ReturnToPool()
