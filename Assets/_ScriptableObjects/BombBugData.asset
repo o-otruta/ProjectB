@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d88c9d5496a9f849bb32536ea6269e1, type: 3}
+  m_Name: BombBugData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.ExploderEnemyData
+  hp: 32
+  speed: 3.8
+  contactDamage: 8
+  damageCooldown: 1
+  contactRadius: 1
+  xpDrop: 3
+  coinDropChance: 0.25
+  coinDrop: 1
+  modelPrefab: {fileID: 795682729957671077, guid: 89954bf483ca1bd4e84c7a3bda42eda3, type: 3}
+  triggerDistance: 1.8
+  fuseDuration: 0.75
+  explosionRadius: 2.5
+  explosionDamage: 28
+  friendlyFireMultiplier: 1

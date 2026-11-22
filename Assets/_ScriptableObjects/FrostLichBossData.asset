@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24fed005e429ecc4bab7093f9b59a455, type: 3}
+  m_Name: FrostLichBossData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.BossData
+  hp: 750
+  speed: 2.4
+  contactDamage: 18
+  damageCooldown: 1
+  contactRadius: 1.4
+  xpDrop: 8
+  coinDropChance: 1
+  coinDrop: 5
+  modelPrefab: {fileID: 5109968982087209460, guid: a72fbaf8bbae9fc448e150205b5c5791, type: 3}
+  bossId: frost_lich
+  bossDisplayName: Frost Lich
+  isMiniBoss: 0
+  pullResistance: 0.12
+  minionData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
+  summonCount: 3
+  summonCooldown: 12
+  slamCooldown: 5.5
+  slamTriggerRange: 6.5
+  slamRadius: 4.5
+  slamTelegraphDuration: 1.1
+  slamDamage: 30
+  stopDistance: 9
+  teleportCooldown: 7
+  teleportMinDistance: 7
+  teleportMaxDistance: 12
+  volleyWeaponData: {fileID: 0}
+  volleyProjectileCount: 5
+  volleySpreadAngle: 55
+  volleyCooldown: 3.2
+  frostStopDistance: 7.5
+  spikeCooldown: 5.5
+  spikeTelegraphDuration: 1
+  spikeLineCount: 6
+  spikeLineLength: 10
+  spikeLineHalfWidth: 0.85
+  spikeDamage: 35
+  spikeSlowFactor: 0.55
+  spikeSlowDuration: 2.5
+  blizzardCooldown: 9
+  blizzardTelegraphDuration: 1.15
+  blizzardActiveDuration: 3.2
+  blizzardSafeInnerRadius: 3
+  blizzardOuterRadius: 9
+  blizzardTickInterval: 0.5
+  blizzardTickDamage: 14
+  blizzardSlowFactor: 0.65

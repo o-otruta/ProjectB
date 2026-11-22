@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Enemies.EnemyData
   hp: 18
   speed: 3
-  contactDamage: 10
+  contactDamage: 8
   damageCooldown: 1
   contactRadius: 1
   xpDrop: 1

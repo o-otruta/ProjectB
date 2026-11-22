@@ -274,8 +274,9 @@ namespace ProjectB.EditorScripts
             {
                 GameObject[] roots = scene.GetRootGameObjects();
 
-                // 1. Wire GoblinData into WaveManager.enemyTypes
+                // 1. Ensure GoblinData is present in WaveConfig.enemySchedule
                 var goblin = AssetDatabase.LoadAssetAtPath<ShootingEnemyData>("Assets/_ScriptableObjects/GoblinData.asset");
+                var waveConfig = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
                 WaveManager waveMgr = null;
                 Canvas canvas = null;
 
@@ -285,14 +286,17 @@ namespace ProjectB.EditorScripts
                     if (canvas == null) canvas = root.GetComponentInChildren<Canvas>(true);
                 }
 
-                if (waveMgr != null && goblin != null)
+                if (waveConfig != null && goblin != null)
                 {
-                    var wmSo = new SerializedObject(waveMgr);
-                    var enemyTypesProp = wmSo.FindProperty("enemyTypes");
-                    bool found = false;
-                    for (int i = 0; i < enemyTypesProp.arraySize; i++)
+                    if (waveConfig.enemySchedule == null)
                     {
-                        if (enemyTypesProp.GetArrayElementAtIndex(i).objectReferenceValue == goblin)
+                        waveConfig.enemySchedule = new List<EnemyWaveEntry>();
+                    }
+
+                    bool found = false;
+                    for (int i = 0; i < waveConfig.enemySchedule.Count; i++)
+                    {
+                        if (waveConfig.enemySchedule[i] != null && waveConfig.enemySchedule[i].enemy == goblin)
                         {
                             found = true;
                             break;
@@ -301,10 +305,15 @@ namespace ProjectB.EditorScripts
 
                     if (!found)
                     {
-                        int idx = enemyTypesProp.arraySize;
-                        enemyTypesProp.InsertArrayElementAtIndex(idx);
-                        enemyTypesProp.GetArrayElementAtIndex(idx).objectReferenceValue = goblin;
-                        wmSo.ApplyModifiedPropertiesWithoutUndo();
+                        waveConfig.enemySchedule.Add(new EnemyWaveEntry
+                        {
+                            enemy = goblin,
+                            minWave = 3,
+                            maxWave = 0,
+                            spawnWeight = 1f,
+                            packSize = 1
+                        });
+                        EditorUtility.SetDirty(waveConfig);
                     }
                 }
 

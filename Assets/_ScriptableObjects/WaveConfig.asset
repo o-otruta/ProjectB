@@ -20,11 +20,52 @@ MonoBehaviour:
   spawnRadiusMax: 15
   maxEnemiesPerWave: 50
   difficultyPerWave: 0.1
+  enemySchedule:
+  - enemy: {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
+    minWave: 1
+    maxWave: 0
+    spawnWeight: 1.4
+    packSize: 1
+  - enemy: {fileID: 11400000, guid: ce3993e4a6d7430479db4af2e92e918f, type: 2}
+    minWave: 3
+    maxWave: 0
+    spawnWeight: 1
+    packSize: 1
+  - enemy: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
+    minWave: 5
+    maxWave: 0
+    spawnWeight: 0.85
+    packSize: 4
+  - enemy: {fileID: 11400000, guid: cddf28e2f636f834591c8101af197021, type: 2}
+    minWave: 7
+    maxWave: 0
+    spawnWeight: 0.9
+    packSize: 1
+  - enemy: {fileID: 11400000, guid: 25a0c720dfb26e846a0f3ed9c26bf25e, type: 2}
+    minWave: 10
+    maxWave: 0
+    spawnWeight: 0.7
+    packSize: 1
+  - enemy: {fileID: 11400000, guid: 9b87d44779d63944c92a508b97ac792e, type: 2}
+    minWave: 14
+    maxWave: 0
+    spawnWeight: 0.65
+    packSize: 1
   minWaveForElites: 10
   eliteChancePerWave: 0.05
   maxEliteChance: 0.25
   eliteHpMultiplier: 3
   eliteDamageMultiplier: 2
+  berserkerSpeedMultiplier: 1.25
+  juggernautHpMultiplier: 4.5
+  juggernautDamageMultiplier: 1.5
+  juggernautScaleMultiplier: 1.35
+  juggernautPullResistance: 0.2
+  hasteAuraHpMultiplier: 3
+  hasteAuraDamageMultiplier: 1.5
+  hasteAuraRadius: 3.5
+  hasteAuraSpeedBonus: 0.2
+  eliteAuraMaterial: {fileID: 2100000, guid: c24fa672905732648a1a4350fa797227, type: 2}
   miniBossInterval: 5
   miniBossHpMultiplier: 5
   miniBossDamageMultiplier: 2
@@ -35,6 +76,7 @@ MonoBehaviour:
   bosses:
   - {fileID: 11400000, guid: d067f4be42e88eb498506c34a5f9f245, type: 2}
   - {fileID: 11400000, guid: e6e81c5c32537c0498d2e2732a59b77a, type: 2}
+  - {fileID: 11400000, guid: c8e526e1a4e908a4c996093a987b0f8f, type: 2}
   bossXpBurstCount: 12
   bossCoinBurstCount: 15
   maxWaveDuration: 30

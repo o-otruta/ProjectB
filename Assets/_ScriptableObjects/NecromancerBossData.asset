@@ -25,7 +25,7 @@ MonoBehaviour:
   bossDisplayName: Necromancer
   isMiniBoss: 0
   pullResistance: 0.2
-  minionData: {fileID: 11400000, guid: cddf28e2f636f834591c8101af197021, type: 2}
+  minionData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
   summonCount: 3
   summonCooldown: 10
   slamCooldown: 5.5
@@ -41,3 +41,20 @@ MonoBehaviour:
   volleyProjectileCount: 5
   volleySpreadAngle: 55
   volleyCooldown: 3.2
+  frostStopDistance: 7.5
+  spikeCooldown: 5.5
+  spikeTelegraphDuration: 1
+  spikeLineCount: 6
+  spikeLineLength: 10
+  spikeLineHalfWidth: 0.85
+  spikeDamage: 35
+  spikeSlowFactor: 0.55
+  spikeSlowDuration: 2.5
+  blizzardCooldown: 9
+  blizzardTelegraphDuration: 1.15
+  blizzardActiveDuration: 3.2
+  blizzardSafeInnerRadius: 3
+  blizzardOuterRadius: 9
+  blizzardTickInterval: 0.5
+  blizzardTickDamage: 14
+  blizzardSlowFactor: 0.65

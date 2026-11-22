@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3096ede0743ddcf45be3684281c7dddb, type: 3}
+  m_Name: OrcChargerData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.ChargerEnemyData
+  hp: 85
+  speed: 2.4
+  contactDamage: 14
+  damageCooldown: 1
+  contactRadius: 1.2
+  xpDrop: 4
+  coinDropChance: 0.35
+  coinDrop: 2
+  modelPrefab: {fileID: 2488475599238186541, guid: 6595e4d83d3566e4684f74fed3931658, type: 3}
+  chargeTriggerRange: 7
+  chargeWindupDuration: 0.8
+  chargeSpeed: 11
+  chargeDistance: 10
+  chargeDamage: 18
+  chargeHitRadius: 1.15
+  chargeCooldown: 4
+  recoveryDuration: 0.45
