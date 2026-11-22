@@ -24,11 +24,18 @@ namespace ProjectB.Enemies
         private float slowTimer = 0f;
 
         private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
-        private static readonly Color EliteTintColor = new Color(0.68f, 0.12f, 0.92f, 1f);
-        private static readonly Color JuggernautTintColor = new Color(0.95f, 0.68f, 0.18f, 1f);
-        private static readonly Color HasteAuraTintColor = new Color(0.22f, 0.85f, 1f, 1f);
-        private static readonly Color MiniBossTintColor = new Color(1f, 0.42f, 0.12f);
-        private static readonly Color HitFlashColor = new Color(1f, 0.92f, 0.85f);
+        private static readonly int HitFlashPropertyId = Shader.PropertyToID("_HitFlash");
+        private static readonly int RimColorPropertyId = Shader.PropertyToID("_RimColor");
+        private static readonly int RimPowerPropertyId = Shader.PropertyToID("_RimPower");
+        private static readonly Color EliteTintColor = new Color(0.92f, 0.76f, 1.00f, 1f);
+        private static readonly Color JuggernautTintColor = new Color(1.00f, 0.90f, 0.72f, 1f);
+        private static readonly Color HasteAuraTintColor = new Color(0.76f, 0.96f, 1.00f, 1f);
+        private static readonly Color MiniBossTintColor = new Color(1.00f, 0.84f, 0.68f, 1f);
+        private static readonly Color EliteRimColor = new Color(0.95f, 0.20f, 1.00f, 1f);
+        private static readonly Color JuggernautRimColor = new Color(1.00f, 0.78f, 0.14f, 1f);
+        private static readonly Color HasteAuraRimColor = new Color(0.18f, 0.94f, 1.00f, 1f);
+        private static readonly Color MiniBossRimColor = new Color(1.00f, 0.45f, 0.10f, 1f);
+        private static readonly Color DefaultBossRimColor = new Color(1.00f, 0.72f, 0.22f, 0.85f);
         private const float HIT_FLASH_DURATION = 0.08f;
         private const float HASTE_PULSE_INTERVAL = 0.25f;
         private const float HASTE_BUFF_DURATION = 0.45f;
@@ -43,6 +50,7 @@ namespace ProjectB.Enemies
         private bool baseScaleCaptured;
         private bool isElite;
         private EliteArchetype eliteArchetype;
+        protected bool hasBossRim;
         protected float eliteSpeedMultiplier = 1f;
         protected float externalHasteMultiplier = 1f;
         private float externalHasteTimer = 0f;
@@ -61,6 +69,7 @@ namespace ProjectB.Enemies
         public bool IsMiniBoss => isMiniBoss;
         public virtual bool IsBoss => false;
         public virtual string BossId => activeBossId;
+        public bool IsHitFlashing => hitFlashTimer > 0f;
         public int CurrentHp => currentHp;
         public int MaxHp => maxHp;
         public float PullResistance => pullResistance;
@@ -132,7 +141,7 @@ namespace ProjectB.Enemies
 
             if (enemyRenderers == null)
             {
-                enemyRenderers = GetComponentsInChildren<Renderer>(true);
+                CacheEnemyRenderers();
             }
             if (propBlock == null)
             {
@@ -141,6 +150,7 @@ namespace ProjectB.Enemies
 
             isElite = false;
             eliteArchetype = EliteArchetype.None;
+            hasBossRim = false;
             eliteSpeedMultiplier = 1f;
             externalHasteMultiplier = 1f;
             externalHasteTimer = 0f;
@@ -153,6 +163,29 @@ namespace ProjectB.Enemies
             activeBossId = null;
 
             ClearTint();
+        }
+
+        private void CacheEnemyRenderers()
+        {
+            var all = GetComponentsInChildren<MeshRenderer>(true);
+            int validCount = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && !all[i].gameObject.name.Contains("Telegraph"))
+                {
+                    validCount++;
+                }
+            }
+
+            enemyRenderers = new Renderer[validCount];
+            int idx = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && !all[i].gameObject.name.Contains("Telegraph"))
+                {
+                    enemyRenderers[idx++] = all[i];
+                }
+            }
         }
 
         public virtual void MakeElite(float hpMultiplier = 3f, float damageMultiplier = 2f)
@@ -242,8 +275,7 @@ namespace ProjectB.Enemies
             hasteAuraSpeedBonus = Mathf.Max(0f, auraSpeedBonus);
             nextHasteAuraPulseTime = Time.time;
 
-            Color tint = GetEliteTintColor(archetype);
-            ApplyTint(tint);
+            ApplyVisualState(hitFlashTimer > 0f ? Mathf.Clamp01(hitFlashTimer / HIT_FLASH_DURATION) : 0f);
         }
 
         public static Color GetEliteTintColor(EliteArchetype archetype)
@@ -255,6 +287,18 @@ namespace ProjectB.Enemies
                 _ => EliteTintColor
             };
         }
+
+        public static Color GetEliteRimColor(EliteArchetype archetype)
+        {
+            return archetype switch
+            {
+                EliteArchetype.Juggernaut => JuggernautRimColor,
+                EliteArchetype.HasteAura => HasteAuraRimColor,
+                _ => EliteRimColor
+            };
+        }
+
+        protected virtual Color GetBossRimColor() => DefaultBossRimColor;
 
         public virtual void MakeMiniBoss(float hpMultiplier = 5f, float damageMultiplier = 2f, float scaleMultiplier = 1.85f, string displayName = null)
         {
@@ -274,8 +318,58 @@ namespace ProjectB.Enemies
                 ? displayName
                 : $"Mini-Boss: {(enemyData != null ? enemyData.name.Replace("Data", "") : "Brute")}";
 
-            ApplyTint(MiniBossTintColor);
+            ApplyVisualState(hitFlashTimer > 0f ? Mathf.Clamp01(hitFlashTimer / HIT_FLASH_DURATION) : 0f);
             eventBus?.Publish(new BossSpawnedEvent(activeBossId, label, currentHp, maxHp, isMiniBoss: true));
+        }
+
+        protected void ApplyVisualState(float hitFlashAmount)
+        {
+            if (enemyRenderers == null || enemyRenderers.Length == 0) return;
+
+            float clampedFlash = Mathf.Clamp01(hitFlashAmount);
+            if (!isElite && !isMiniBoss && !hasBossRim && clampedFlash <= 0.001f)
+            {
+                ClearTint();
+                return;
+            }
+
+            if (propBlock == null) propBlock = new MaterialPropertyBlock();
+            propBlock.Clear();
+
+            Color baseTint = Color.white;
+            Color rimColor = Color.clear;
+            float rimPower = 2.6f;
+
+            if (isMiniBoss)
+            {
+                baseTint = MiniBossTintColor;
+                rimColor = MiniBossRimColor;
+                rimPower = 2.1f;
+            }
+            else if (hasBossRim)
+            {
+                rimColor = GetBossRimColor();
+                rimPower = 2.2f;
+            }
+            else if (isElite)
+            {
+                baseTint = GetEliteTintColor(eliteArchetype);
+                rimColor = GetEliteRimColor(eliteArchetype);
+                rimPower = 2.1f;
+            }
+
+            propBlock.SetColor(BaseColorPropertyId, baseTint);
+            propBlock.SetColor(RimColorPropertyId, rimColor);
+            propBlock.SetFloat(RimPowerPropertyId, rimPower);
+            propBlock.SetFloat(HitFlashPropertyId, clampedFlash);
+
+            for (int i = 0; i < enemyRenderers.Length; i++)
+            {
+                if (enemyRenderers[i] != null)
+                {
+                    enemyRenderers[i].SetPropertyBlock(propBlock);
+                }
+            }
         }
 
         protected void ApplyTint(Color color)
@@ -348,22 +442,15 @@ namespace ProjectB.Enemies
                 hitFlashTimer = 0f;
                 RestoreBaseTint();
             }
+            else
+            {
+                ApplyVisualState(Mathf.Clamp01(hitFlashTimer / HIT_FLASH_DURATION));
+            }
         }
 
         protected virtual void RestoreBaseTint()
         {
-            if (isMiniBoss)
-            {
-                ApplyTint(MiniBossTintColor);
-            }
-            else if (isElite)
-            {
-                ApplyTint(GetEliteTintColor(eliteArchetype));
-            }
-            else
-            {
-                ClearTint();
-            }
+            ApplyVisualState(0f);
         }
 
         private void UpdateSlowTimer()
@@ -547,7 +634,7 @@ namespace ProjectB.Enemies
             else
             {
                 hitFlashTimer = HIT_FLASH_DURATION;
-                ApplyTint(HitFlashColor);
+                ApplyVisualState(1f);
             }
         }
 

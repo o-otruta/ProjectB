@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Combat;
 using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.Enemies;
 
 namespace ProjectB.Abilities
@@ -221,6 +222,7 @@ namespace ProjectB.Abilities
 
             DrawBoltVisual();
             DrawFrostArcVisual();
+            eventBus?.Publish(new AbilitySfxEvent(SfxType.LightningZap, 0.62f));
             return chainTargets.Count;
         }
 

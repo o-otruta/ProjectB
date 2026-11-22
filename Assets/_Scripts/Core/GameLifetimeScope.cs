@@ -54,6 +54,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<BossHealthBarUI>();
             builder.RegisterComponentInHierarchy<UltimateButtonUI>();
             builder.RegisterComponentInHierarchy<SecretCompassIndicatorUI>();
+            builder.RegisterComponentInHierarchy<DamageVignetteUI>();
             builder.RegisterComponentInHierarchy<DebugCheatMenu>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             builder.RegisterComponentInHierarchy<PauseMenuUI>();

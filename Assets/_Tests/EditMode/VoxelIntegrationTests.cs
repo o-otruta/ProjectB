@@ -57,14 +57,23 @@ namespace ProjectB.Tests.EditMode
         public void VoxelMaterials_All36ExistWithInstancingAndUrpLitProperties()
         {
             Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
+            Shader voxelLit = Shader.Find("ProjectB/VoxelLit");
             Assert.IsNotNull(urpLit);
+            Assert.IsNotNull(voxelLit);
+
+            var characterMaterials = new HashSet<string>
+            {
+                "Knight_Mat", "Mage_Mat", "Mage_Glow_Mat", "Goblin_Mat",
+                "Golem_Mat", "Golem_Glow_Mat", "Necromancer_Mat", "Necromancer_Glow_Mat"
+            };
 
             foreach (string matName in ExpectedMaterialAssets)
             {
                 string path = $"Assets/_Materials/Voxels/{matName}.mat";
                 Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
                 Assert.IsNotNull(mat, $"Missing material: {path}");
-                Assert.AreEqual(urpLit, mat.shader, $"{matName} must use URP Lit");
+                Shader expectedShader = characterMaterials.Contains(matName) ? voxelLit : urpLit;
+                Assert.AreEqual(expectedShader, mat.shader, $"{matName} must use {expectedShader.name}");
                 Assert.IsTrue(mat.enableInstancing, $"{matName} must have enableInstancing = true");
                 Assert.IsTrue(mat.HasProperty("_BaseColor"), $"{matName} must have _BaseColor");
                 Assert.AreEqual(Color.white, mat.GetColor("_BaseColor"), $"{matName} _BaseColor must be white");

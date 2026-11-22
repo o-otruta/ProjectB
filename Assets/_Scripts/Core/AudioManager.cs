@@ -26,9 +26,13 @@ namespace ProjectB.Core
         private AudioSource[] sfxSources;
         private int nextSfxIndex;
         private MusicType currentMusic = MusicType.None;
+        private float musicDuckMultiplier = 1f;
 
         public float MusicVolume => saveManager?.Data != null ? Mathf.Clamp01(saveManager.Data.musicVolume) : 1f;
         public float SfxVolume => saveManager?.Data != null ? Mathf.Clamp01(saveManager.Data.sfxVolume) : 1f;
+        public bool IsMusicDucked => musicDuckMultiplier < 0.99f;
+        public MusicType CurrentMusic => currentMusic;
+        public float EffectiveMusicVolume => MusicVolume * (catalog != null ? catalog.musicBaseVolume : 0.5f) * musicDuckMultiplier;
 
         [Inject]
         public AudioManager(SaveManager saveManager)
@@ -153,6 +157,12 @@ namespace ProjectB.Core
             ApplyVolumes();
         }
 
+        public void SetMusicDucked(bool ducked)
+        {
+            musicDuckMultiplier = ducked ? 0.5f : 1f;
+            ApplyVolumes();
+        }
+
         public void SaveSettings()
         {
             saveManager?.Save();
@@ -162,8 +172,7 @@ namespace ProjectB.Core
         {
             if (musicSource != null)
             {
-                float baseVol = catalog != null ? catalog.musicBaseVolume : 0.5f;
-                musicSource.volume = MusicVolume * baseVol;
+                musicSource.volume = EffectiveMusicVolume;
             }
         }
 

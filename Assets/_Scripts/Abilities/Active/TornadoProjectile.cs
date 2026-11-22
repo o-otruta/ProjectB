@@ -71,9 +71,10 @@ namespace ProjectB.Abilities
             RunStatistics runStatistics = null,
             string sourceId = "VoxelTornado",
             Action<Vector3, float> onDestabilize = null,
-            float visualScale = 1f)
+            float visualScale = 1f,
+            GameObject visualPrefab = null)
         {
-            EnsureVisual(tornadoMaterial);
+            EnsureVisual(tornadoMaterial, visualPrefab);
 
             originPos = new Vector3(startPos.x, 0f, startPos.z);
             forwardDir = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
@@ -114,14 +115,34 @@ namespace ProjectB.Abilities
             nextTickTime = Time.time + this.tickInterval;
         }
 
-        public void PrewarmVisual(Material tornadoMat)
+        public void PrewarmVisual(Material tornadoMat, GameObject visualPrefab = null)
         {
-            EnsureVisual(tornadoMat);
+            EnsureVisual(tornadoMat, visualPrefab);
         }
 
-        private void EnsureVisual(Material tornadoMat)
+        private void EnsureVisual(Material tornadoMat, GameObject visualPrefab = null)
         {
             if (visualSpiral != null) return;
+
+            if (visualPrefab != null)
+            {
+                var inst = Instantiate(visualPrefab, transform, false);
+                inst.name = "VoxelSpiral";
+                inst.transform.localPosition = Vector3.zero;
+                inst.transform.localRotation = Quaternion.identity;
+                inst.transform.localScale = Vector3.one;
+                visualSpiral = inst.transform;
+                var renderers = inst.GetComponentsInChildren<MeshRenderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i] != null)
+                    {
+                        renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        renderers[i].receiveShadows = false;
+                    }
+                }
+                return;
+            }
 
             var spiralGo = new GameObject("VoxelSpiral");
             spiralGo.transform.SetParent(transform, false);

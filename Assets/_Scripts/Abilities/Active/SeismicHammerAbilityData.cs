@@ -6,6 +6,7 @@ namespace ProjectB.Abilities
     public class SeismicHammerAbilityData : ActiveAbilityData
     {
         [Header("Seismic Hammer Specs")]
+        public GameObject waveVisualPrefab;
         public Material waveMaterial;
         public float slamRadius = 4.5f;
         [Range(0.05f, 1f)] public float slowFactor = 0.2f;

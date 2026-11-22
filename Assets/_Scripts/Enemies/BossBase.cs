@@ -39,7 +39,9 @@ namespace ProjectB.Enemies
             getSafePositionNearTarget = safePositionProvider;
             activeBossId = data != null ? data.bossId : "boss";
             isMiniBoss = data != null && data.isMiniBoss;
+            hasBossRim = true;
             pullResistance = data != null ? Mathf.Clamp01(data.pullResistance) : 0.15f;
+            ApplyVisualState(0f);
 
             float summonCd = data != null && data.summonCooldown > 0f ? data.summonCooldown : 10f;
             nextSummonTime = Time.time + summonCd * 0.6f;

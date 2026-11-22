@@ -10,6 +10,9 @@ namespace ProjectB.Player
 {
     public class HeroHealth : MonoBehaviour, IDamageable
     {
+        private static readonly int HitFlashPropertyId = Shader.PropertyToID("_HitFlash");
+        private const float HERO_HIT_FLASH_DURATION = 0.14f;
+
         [SerializeField] private HeroData heroData;
         [SerializeField] [Min(0f)] private float postHitInvulnerabilityDuration = 0.18f;
         
@@ -24,6 +27,9 @@ namespace ProjectB.Player
         private bool isGodMode;
         private float reviveInvulnerabilityTimer;
         private float postHitInvulnerabilityTimer;
+        private float hitFlashTimer;
+        private Renderer[] heroRenderers;
+        private MaterialPropertyBlock hitFlashPropBlock;
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
         private SelectedHeroService selectedHeroService;
@@ -31,6 +37,7 @@ namespace ProjectB.Player
         public bool IsDead => isDead;
         public bool IsInvulnerable => isInvulnerable || isGodMode || reviveInvulnerabilityTimer > 0f || postHitInvulnerabilityTimer > 0f;
         public bool IsPostHitInvulnerable => postHitInvulnerabilityTimer > 0f;
+        public bool IsHitFlashing => hitFlashTimer > 0f;
         public float PostHitInvulnerabilityDuration => postHitInvulnerabilityDuration;
         public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
@@ -65,7 +72,69 @@ namespace ProjectB.Player
 
             currentMaxHp = runtimeStats != null ? runtimeStats.GetMaxHp(baseMaxHp) : baseMaxHp;
             currentHp = currentMaxHp;
+            RefreshRenderers();
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
+        }
+
+        public void RefreshRenderers()
+        {
+            Transform visuals = transform.Find("Visuals");
+            Transform searchRoot = visuals != null ? visuals : transform;
+            var meshRenderers = searchRoot.GetComponentsInChildren<MeshRenderer>(true);
+
+            int validCount = 0;
+            for (int i = 0; i < meshRenderers.Length; i++)
+            {
+                if (meshRenderers[i] != null && IsHeroBodyRenderer(meshRenderers[i]))
+                {
+                    validCount++;
+                }
+            }
+
+            heroRenderers = new Renderer[validCount];
+            int idx = 0;
+            for (int i = 0; i < meshRenderers.Length; i++)
+            {
+                if (meshRenderers[i] != null && IsHeroBodyRenderer(meshRenderers[i]))
+                {
+                    heroRenderers[idx++] = meshRenderers[i];
+                }
+            }
+        }
+
+        private static bool IsHeroBodyRenderer(MeshRenderer mr)
+        {
+            string name = mr.gameObject.name;
+            return !name.Contains("ShieldVisual") && !name.Contains("Telegraph");
+        }
+
+        private void ApplyHitFlash(float amount)
+        {
+            if (heroRenderers == null || heroRenderers.Length == 0) return;
+
+            float clamped = Mathf.Clamp01(amount);
+            if (clamped <= 0.001f)
+            {
+                for (int i = 0; i < heroRenderers.Length; i++)
+                {
+                    if (heroRenderers[i] != null)
+                    {
+                        heroRenderers[i].SetPropertyBlock(null);
+                    }
+                }
+                return;
+            }
+
+            if (hitFlashPropBlock == null) hitFlashPropBlock = new MaterialPropertyBlock();
+            hitFlashPropBlock.Clear();
+            hitFlashPropBlock.SetFloat(HitFlashPropertyId, clamped);
+            for (int i = 0; i < heroRenderers.Length; i++)
+            {
+                if (heroRenderers[i] != null)
+                {
+                    heroRenderers[i].SetPropertyBlock(hitFlashPropBlock);
+                }
+            }
         }
 
         public void SetInvulnerable(bool invulnerable)
@@ -99,6 +168,12 @@ namespace ProjectB.Player
             {
                 postHitInvulnerabilityTimer = Mathf.Max(0f, postHitInvulnerabilityTimer - deltaTime);
             }
+
+            if (hitFlashTimer > 0f)
+            {
+                hitFlashTimer = Mathf.Max(0f, hitFlashTimer - deltaTime);
+                ApplyHitFlash(hitFlashTimer > 0f ? Mathf.Clamp01(hitFlashTimer / HERO_HIT_FLASH_DURATION) : 0f);
+            }
         }
 
         public void Revive(float invulnerabilityDuration = 3f)
@@ -106,6 +181,8 @@ namespace ProjectB.Player
             isDead = false;
             currentHp = currentMaxHp;
             postHitInvulnerabilityTimer = 0f;
+            hitFlashTimer = 0f;
+            ApplyHitFlash(0f);
             reviveInvulnerabilityTimer = Mathf.Max(0f, invulnerabilityDuration);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
@@ -125,6 +202,16 @@ namespace ProjectB.Player
                 postHitInvulnerabilityTimer = Mathf.Max(postHitInvulnerabilityTimer, postHitInvulnerabilityDuration);
             }
 
+            if (heroRenderers == null)
+            {
+                RefreshRenderers();
+            }
+            if (currentHp > 0)
+            {
+                hitFlashTimer = HERO_HIT_FLASH_DURATION;
+                ApplyHitFlash(1f);
+            }
+
             OnDamageTaken?.Invoke(finalDamage);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
             
@@ -141,6 +228,8 @@ namespace ProjectB.Player
             isInvulnerable = false;
             postHitInvulnerabilityTimer = 0f;
             reviveInvulnerabilityTimer = 0f;
+            hitFlashTimer = 0f;
+            ApplyHitFlash(0f);
             DevLog.Log("[HeroHealth] Hero has died. Game Over!");
             OnDied?.Invoke();
             eventBus?.Publish(new HeroDiedEvent());

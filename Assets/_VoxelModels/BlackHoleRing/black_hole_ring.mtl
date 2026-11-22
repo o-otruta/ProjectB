@@ -1,0 +1,17 @@
+# ProjectB Voxel Model (Blender)
+
+newmtl palette
+illum 1
+Ka 0.000 0.000 0.000
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+map_Kd black_hole_ring.png
+
+newmtl palette_glow
+illum 1
+Ka 0.000 0.000 0.000
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+Ke 1.000 1.000 1.000
+map_Kd black_hole_ring.png
+map_Ke black_hole_ring.png

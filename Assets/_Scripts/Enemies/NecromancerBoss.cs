@@ -23,6 +23,8 @@ namespace ProjectB.Enemies
         private float castPoseEndTime;
         private bool isMoving;
 
+        protected override Color GetBossRimColor() => new Color(0.74f, 0.24f, 1.0f, 0.9f);
+
         public override void InitializeBoss(
             BossData data,
             Transform heroTarget,

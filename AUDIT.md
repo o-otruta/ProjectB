@@ -263,24 +263,24 @@
 ---
 
 ### Спринт 9: Визуальный и аудио-прорыв — Шейдер `VoxelLit`, Воксельные модели Спринта 3 и Боевой Juice (P1)
-- [ ] **9.1. Мобильный шейдер `Assets/_Shaders/VoxelLit.shader`:**
+- [x] **9.1. Мобильный шейдер `Assets/_Shaders/VoxelLit.shader`:**
   - Написать URP HLSL-шейдер (`SRP Batcher` + `GPU Instancing` compatible, Forward + ShadowCaster) с:
     - `_HitFlash` (`0..1` per-instance через `MaterialPropertyBlock` — настоящий ослепительно-белый хит-флеш!);
     - `_RimColor` + `_RimPower` (чёткая цветная подсветка силуэта 3 архетипов Элит и Боссов без наземных кругов!);
     - `_HeightAO` (мягкое затемнение у основания модели в стиле MagicaVoxel).
   - Перевести материалы врагов и героев в `Assets/_Materials/Voxels/` на `ProjectB/VoxelLit`, подключить `_HitFlash` в [EnemyBase.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Enemies/EnemyBase.cs) и [HeroHealth.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Player/HeroHealth.cs).
-- [ ] **9.2. Воксельные 3D-модели вместо всех runtime `CreatePrimitive`:**
+- [x] **9.2. Воксельные 3D-модели вместо всех runtime `CreatePrimitive`:**
   - Смоделировать в Blender (`ArtSources/Blender/`) и экспортировать в `Assets/_VoxelModels/` (с `enableInstancing: 1`):
     - `DragonWhelp` (покадровые `.obj` с машущими крыльями для `DragonFollower`);
     - `GuardianShield` (воксельный щит с золотой окантовкой);
     - `PoisonFlask` (колба с неоновым зельем) + воксельные пузыри для `PoisonPuddle`;
     - `VoxelTornado` (цельная воксельная воронка) + воксельный купол Рыцаря `AegisShield` (вместо сферы в `Hero.prefab`);
     - Воксельные рунические кольца для `IceAura` (`y = 0.03`) и `BlackHole` (`y = 0.06`, `shadowCastingMode = Off` — 0 Z-fighting).
-- [ ] **9.3. HUD Juice, Multi-POI Compass и расширение Audio:**
+- [x] **9.3. HUD Juice, Multi-POI Compass и расширение Audio:**
   - Красная пульсирующая виньетка урона на HUD + микро **Hit-Stop** (`0.03s` через `WaitForSecondsRealtime` с защитой от конфликта с `Paused`/`LevelUp`) на смерти босса и взрыве бочки.
   - Расширить [SecretCompassIndicatorUI.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/UI/SecretCompassIndicatorUI.cs) до **Multi-POI Compass** (до 3 одновременных стрелок без GC: Секрет — фиолетовая, `ChallengeShrine` — алая, `VacuumMagnetPickup` — голубая, `GoldGoblin` — золотая).
   - Добавить 10 новых синтезированных `.wav` SFX в [AudioCatalog.asset](file:///d:/UnityProjects/ProjectB/Assets/Resources/AudioCatalog.asset) (`Explosion`, `LightningZap`, `CritHit`, `SynergyFanfare`, `PoisonSplash`, `ArrowWhoosh`, `IceShatter`, `BossDeath`, `ShrineStart`, `ComboMilestone`) + трек `BossMusic` и приглушение музыки (`-50%`) на паузе/левелапе в [AudioManager.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Core/AudioManager.cs).
-- [ ] **9.4. Тесты Спринта 9:** `Sprint9VisualsAndAudioTests.cs` (валидация `VoxelLit` + instancing, Y-офсеты аур, замена примитивов, Multi-POI компас, проверка всех AudioClip).
+- [x] **9.4. Тесты Спринта 9:** `Sprint9VisualsAndAudioTests.cs` (валидация `VoxelLit` + instancing, Y-офсеты аур, замена примитивов, Multi-POI компас, проверка всех AudioClip).
 
 ---
 

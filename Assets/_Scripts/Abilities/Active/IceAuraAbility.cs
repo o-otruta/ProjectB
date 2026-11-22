@@ -5,6 +5,8 @@ namespace ProjectB.Abilities
 {
     public class IceAuraAbility : ActiveAbility
     {
+        public const float VISUAL_Y_OFFSET = 0.03f;
+
         private IceAuraAbilityData IceData => Data as IceAuraAbilityData;
 
         private float currentDamage;
@@ -15,6 +17,9 @@ namespace ProjectB.Abilities
         private float nextTickTime;
         private Collider[] hitBuffer = new Collider[128];
         private GameObject visualAura;
+        private bool usesCustomVisualPrefab;
+
+        public Transform VisualTransform => visualAura != null ? visualAura.transform : null;
 
         public override void SimulateFrameTick()
         {
@@ -35,32 +40,60 @@ namespace ProjectB.Abilities
 
         private void CreateVisual()
         {
-            visualAura = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            visualAura.name = "IceAura_Visual";
-            visualAura.transform.SetParent(transform);
-            visualAura.transform.localPosition = Vector3.zero;
-            
+            if (IceData != null && IceData.visualPrefab != null)
+            {
+                visualAura = Instantiate(IceData.visualPrefab, transform, false);
+                visualAura.name = "IceAura_Visual";
+                usesCustomVisualPrefab = true;
+            }
+            else
+            {
+                visualAura = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                visualAura.name = "IceAura_Visual";
+                visualAura.transform.SetParent(transform, false);
+                usesCustomVisualPrefab = false;
+
+                var col = visualAura.GetComponent<Collider>();
+                if (col != null)
+                {
+                    if (Application.isPlaying) Destroy(col);
+                    else DestroyImmediate(col);
+                }
+
+                var renderer = visualAura.GetComponent<Renderer>();
+                if (renderer != null && IceData != null && IceData.auraMaterial != null)
+                {
+                    renderer.sharedMaterial = IceData.auraMaterial;
+                }
+            }
+
+            var renderers = visualAura.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                {
+                    renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    renderers[i].receiveShadows = false;
+                }
+            }
+
+            UpdateVisualVerticalOffset();
             UpdateVisualSize();
+        }
 
-            var col = visualAura.GetComponent<Collider>();
-            if (col != null)
-            {
-                if (Application.isPlaying) Destroy(col);
-                else DestroyImmediate(col);
-            }
-
-            var renderer = visualAura.GetComponent<Renderer>();
-            if (renderer != null && IceData.auraMaterial != null)
-            {
-                renderer.sharedMaterial = IceData.auraMaterial;
-            }
+        private void UpdateVisualVerticalOffset()
+        {
+            if (visualAura == null) return;
+            visualAura.transform.localPosition = new Vector3(0f, VISUAL_Y_OFFSET - transform.position.y, 0f);
         }
 
         private void UpdateVisualSize()
         {
             if (visualAura != null)
             {
-                visualAura.transform.localScale = new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
+                visualAura.transform.localScale = usesCustomVisualPrefab
+                    ? new Vector3(currentRadius, 1f, currentRadius)
+                    : new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
             }
         }
 
@@ -98,6 +131,12 @@ namespace ProjectB.Abilities
         private void Update()
         {
             if (Data == null || Time.deltaTime <= 0f) return;
+
+            UpdateVisualVerticalOffset();
+            if (visualAura != null)
+            {
+                visualAura.transform.Rotate(Vector3.up, 18f * Time.deltaTime, Space.Self);
+            }
 
             if (Time.time >= nextTickTime)
             {

@@ -6,6 +6,7 @@ namespace ProjectB.Abilities
     public class VoxelTornadoAbilityData : ActiveAbilityData
     {
         [Header("Voxel Tornado Specs")]
+        public GameObject tornadoVisualPrefab;
         public Material tornadoMaterial;
         public float vortexRadius = 2.2f;
         public float duration = 4f;

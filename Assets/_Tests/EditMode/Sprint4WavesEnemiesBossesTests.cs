@@ -113,9 +113,9 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsTrue(File.Exists(blendPath), $"Missing Blender source file: {blendPath}");
             }
 
-            // 2. Verify 8 new voxel materials (URP Lit + GPU Instancing + textures)
-            Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
-            Assert.IsNotNull(urpLit);
+            // 2. Verify 8 new voxel materials (ProjectB/VoxelLit + GPU Instancing + textures)
+            Shader voxelLit = Shader.Find("ProjectB/VoxelLit");
+            Assert.IsNotNull(voxelLit);
             string[] voxelPrefixes = { "Skeleton", "BombSlime", "OrcCharger", "FrostLich" };
             foreach (string prefix in voxelPrefixes)
             {
@@ -123,8 +123,8 @@ namespace ProjectB.Tests.EditMode
                 Material glowMat = AssetDatabase.LoadAssetAtPath<Material>($"Assets/_Materials/Voxels/{prefix}_Glow_Mat.mat");
                 Assert.IsNotNull(baseMat, $"Missing {prefix}_Mat.mat");
                 Assert.IsNotNull(glowMat, $"Missing {prefix}_Glow_Mat.mat");
-                Assert.AreEqual(urpLit, baseMat.shader);
-                Assert.AreEqual(urpLit, glowMat.shader);
+                Assert.AreEqual(voxelLit, baseMat.shader);
+                Assert.AreEqual(voxelLit, glowMat.shader);
                 Assert.IsTrue(baseMat.enableInstancing);
                 Assert.IsTrue(glowMat.enableInstancing);
                 Assert.IsNotNull(baseMat.GetTexture("_BaseMap"));

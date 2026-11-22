@@ -25,7 +25,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  shieldPrefab: {fileID: 0}
+  shieldPrefab: {fileID: 7874939630444423013, guid: 7330197762c78524299c478008c9fccc, type: 3}
   shieldMaterial: {fileID: 2100000, guid: 8732c816b5230a34d8c426524b519226, type: 2}
   shieldCount: 2
   orbitSpeed: 150

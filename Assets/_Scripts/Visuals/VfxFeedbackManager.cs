@@ -34,11 +34,17 @@ namespace ProjectB.Visuals
         private CameraController cameraController;
         private HeroHealth heroHealth;
         private HeroUltimate heroUltimate;
+        private GameManager gameManager;
 
         private Camera mainCamera;
         private IObjectPool<DamageNumberItem> damagePool;
         private ParticleSystem burstParticles;
         private bool isSubscribed;
+        private readonly WaitForSecondsRealtime hitStopWait = new WaitForSecondsRealtime(0.03f);
+        private Coroutine hitStopCoroutine;
+        private bool isHitStopActive;
+
+        public bool IsHitStopActive => isHitStopActive;
 
         public const int MAX_ACTIVE_DAMAGE_NUMBERS = 80;
         private readonly System.Collections.Generic.List<DamageNumberItem> activeDamageNumbers =
@@ -115,13 +121,15 @@ namespace ProjectB.Visuals
             AudioManager audioManager = null,
             CameraController cameraController = null,
             HeroHealth heroHealth = null,
-            HeroUltimate heroUltimate = null)
+            HeroUltimate heroUltimate = null,
+            GameManager gameManager = null)
         {
             this.eventBus = eventBus;
             this.audioManager = audioManager;
             this.cameraController = cameraController;
             this.heroHealth = heroHealth;
             this.heroUltimate = heroUltimate;
+            this.gameManager = gameManager;
         }
 
         private void Start()
@@ -153,10 +161,64 @@ namespace ProjectB.Visuals
             Subscribe();
         }
 
+        private void OnDisable()
+        {
+            CancelHitStopIfNeeded();
+        }
+
         private void OnDestroy()
         {
+            CancelHitStopIfNeeded();
             Unsubscribe();
             activeDamageNumbers.Clear();
+        }
+
+        public bool TryTriggerHitStop(float duration = 0.03f)
+        {
+            if (!Application.isPlaying || isHitStopActive || duration <= 0f || Time.timeScale <= 0.01f)
+            {
+                return false;
+            }
+
+            if (gameManager != null && gameManager.CurrentState != GameState.Playing)
+            {
+                return false;
+            }
+
+            hitStopCoroutine = StartCoroutine(HitStopCoroutine(duration));
+            return true;
+        }
+
+        private System.Collections.IEnumerator HitStopCoroutine(float duration)
+        {
+            isHitStopActive = true;
+            Time.timeScale = 0f;
+            hitStopWait.waitTime = duration;
+            hitStopWait.Reset();
+            yield return hitStopWait;
+            isHitStopActive = false;
+            hitStopCoroutine = null;
+
+            if (gameManager == null || gameManager.CurrentState == GameState.Playing)
+            {
+                Time.timeScale = 1f;
+            }
+        }
+
+        private void CancelHitStopIfNeeded()
+        {
+            if (!isHitStopActive) return;
+
+            if (hitStopCoroutine != null)
+            {
+                StopCoroutine(hitStopCoroutine);
+                hitStopCoroutine = null;
+            }
+            isHitStopActive = false;
+            if (gameManager == null || gameManager.CurrentState == GameState.Playing)
+            {
+                Time.timeScale = 1f;
+            }
         }
 
         private void InitializeDamagePool()
@@ -346,6 +408,8 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<AbilityOverdriveEvent>(OnAbilityOverdrive);
                 eventBus.Subscribe<ComboMilestoneEvent>(OnComboMilestone);
                 eventBus.Subscribe<SynergyReactionVfxEvent>(OnSynergyReactionVfx);
+                eventBus.Subscribe<BossDefeatedEvent>(OnBossDefeated);
+                eventBus.Subscribe<AbilitySfxEvent>(OnAbilitySfx);
             }
 
             if (heroHealth != null)
@@ -388,6 +452,8 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<AbilityOverdriveEvent>(OnAbilityOverdrive);
                 eventBus.Unsubscribe<ComboMilestoneEvent>(OnComboMilestone);
                 eventBus.Unsubscribe<SynergyReactionVfxEvent>(OnSynergyReactionVfx);
+                eventBus.Unsubscribe<BossDefeatedEvent>(OnBossDefeated);
+                eventBus.Unsubscribe<AbilitySfxEvent>(OnAbilitySfx);
             }
 
             if (heroHealth != null)
@@ -418,7 +484,7 @@ namespace ProjectB.Visuals
                 }
             }
 
-            audioManager?.PlaySfx(SfxType.Hit, volumeScale: evt.IsCrit ? 0.8f : 0.65f, randomizePitch: true);
+            audioManager?.PlaySfx(evt.IsCrit ? SfxType.CritHit : SfxType.Hit, volumeScale: evt.IsCrit ? 0.85f : 0.65f, randomizePitch: true);
         }
 
         private void OnEnemyDied(EnemyDiedEvent evt)
@@ -429,15 +495,20 @@ namespace ProjectB.Visuals
                 : (evt.WasElite ? GetEliteDeathColor(evt.EliteArchetype) : DeathColorNormal);
             EmitBurst(evt.Position + Vector3.up * 0.6f, col, count, evt.WasBoss ? 8f : 5.2f, evt.WasBoss ? 0.45f : 0.28f);
 
-            audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: evt.WasBoss ? 1.0f : 0.75f, randomizePitch: true);
-
             if (evt.WasBoss)
             {
+                audioManager?.PlaySfx(SfxType.BossDeath, volumeScale: 1.0f, randomizePitch: false);
                 cameraController?.Shake(0.45f, 0.35f);
+                TryTriggerHitStop(0.03f);
             }
             else if (evt.WasMiniBoss)
             {
+                audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: 0.9f, randomizePitch: true);
                 cameraController?.Shake(0.26f, 0.2f);
+            }
+            else
+            {
+                audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: 0.75f, randomizePitch: true);
             }
         }
 
@@ -493,7 +564,24 @@ namespace ProjectB.Visuals
         private void OnBossSpawned(BossSpawnedEvent evt)
         {
             audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: evt.IsMiniBoss ? 0.75f : 1.0f, randomizePitch: false);
+            if (!evt.IsMiniBoss)
+            {
+                audioManager?.PlayMusic(MusicType.Boss);
+            }
             cameraController?.Shake(evt.IsMiniBoss ? 0.22f : 0.42f, evt.IsMiniBoss ? 0.2f : 0.35f);
+        }
+
+        private void OnBossDefeated(BossDefeatedEvent evt)
+        {
+            if (!evt.IsMiniBoss)
+            {
+                audioManager?.PlayMusic(MusicType.Gameplay);
+            }
+        }
+
+        private void OnAbilitySfx(AbilitySfxEvent evt)
+        {
+            audioManager?.PlaySfx(evt.SfxType, volumeScale: evt.VolumeScale, randomizePitch: true);
         }
 
         private void OnSecretItemCollected(SecretItemCollectedEvent evt)
@@ -527,6 +615,7 @@ namespace ProjectB.Visuals
                 centerCount: 4,
                 speed: 4.5f,
                 size: 0.3f);
+            audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.55f, randomizePitch: true);
             cameraController?.Shake(0.08f, 0.08f);
         }
 
@@ -542,7 +631,7 @@ namespace ProjectB.Visuals
                 speed: 6.5f,
                 size: 0.4f);
             cameraController?.Shake(0.28f, 0.18f);
-            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.65f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.78f, randomizePitch: true);
         }
 
         private void OnSynergyActivated(SynergyActivatedEvent evt)
@@ -564,8 +653,7 @@ namespace ProjectB.Visuals
                 item?.ShowText(heroPos, evt.DisplayName, SynergyGoldColor, 1.45f, 1.8f, mainCamera, damagePool);
             }
 
-            audioManager?.PlaySfx(SfxType.LevelUp, volumeScale: 0.95f, randomizePitch: false);
-            audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.85f, randomizePitch: false);
+            audioManager?.PlaySfx(SfxType.SynergyFanfare, volumeScale: 0.95f, randomizePitch: false);
             cameraController?.Shake(0.24f, 0.16f);
         }
 
@@ -580,7 +668,7 @@ namespace ProjectB.Visuals
                 centerCount: 8,
                 speed: 6.0f,
                 size: 0.38f);
-            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.6f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.72f, randomizePitch: true);
             cameraController?.Shake(0.22f, 0.16f);
         }
 
@@ -595,7 +683,7 @@ namespace ProjectB.Visuals
                 centerCount: 8,
                 speed: 5.5f,
                 size: 0.34f);
-            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.52f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.62f, randomizePitch: true);
             cameraController?.Shake(0.18f, 0.14f);
         }
 
@@ -610,7 +698,7 @@ namespace ProjectB.Visuals
                 centerCount: 10,
                 speed: 6.2f,
                 size: 0.36f);
-            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.62f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.IceShatter, volumeScale: 0.8f, randomizePitch: true);
             cameraController?.Shake(evt.IsBlizzard ? 0.22f : 0.18f, 0.15f);
         }
 
@@ -649,7 +737,7 @@ namespace ProjectB.Visuals
                 centerCount: 0,
                 speed: 4.2f,
                 size: 0.22f);
-            audioManager?.PlaySfx(SfxType.Hit, volumeScale: 0.75f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.ArrowWhoosh, volumeScale: 0.85f, randomizePitch: true);
             cameraController?.Shake(0.14f, 0.1f);
         }
 
@@ -683,9 +771,10 @@ namespace ProjectB.Visuals
                 centerCount: 12,
                 speed: 7.5f,
                 size: 0.42f);
-            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.85f, randomizePitch: true);
-            audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: 0.9f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.95f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: 0.85f, randomizePitch: true);
             cameraController?.Shake(0.32f, 0.24f);
+            TryTriggerHitStop(0.03f);
         }
 
         private void OnVacuumMagnetCollected(VacuumMagnetCollectedEvent evt)
@@ -767,7 +856,7 @@ namespace ProjectB.Visuals
                 item?.ShowText(heroPos, CachedComboMilestoneLabels[evt.MilestoneTier], ComboTextColor, 1.3f, 1.45f, mainCamera, damagePool);
             }
 
-            audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.78f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.ComboMilestone, volumeScale: 0.85f, randomizePitch: false);
         }
 
         private void OnSynergyReactionVfx(SynergyReactionVfxEvent evt)
@@ -776,22 +865,27 @@ namespace ProjectB.Visuals
             {
                 case SynergyReactionVfxType.ToxicInfernoIgnite:
                     EmitExplosionRing(evt.Position + Vector3.up * 0.35f, Mathf.Max(1.5f, evt.Radius), FireballPrimaryColor, XpSparkColor, 20, 8, 5.4f, 0.32f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.65f, randomizePitch: true);
                     break;
 
                 case SynergyReactionVfxType.SteamBlastNova:
                     EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(2f, evt.Radius), SteamWhiteColor, FrostPrimaryColor, 22, 8, 6.2f, 0.34f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.65f, randomizePitch: true);
                     break;
 
                 case SynergyReactionVfxType.ThunderstormShatter:
                     EmitBurst(evt.Position + Vector3.up * 0.6f, FrostPrimaryColor, 12, 4.8f, 0.24f);
+                    audioManager?.PlaySfx(SfxType.IceShatter, volumeScale: 0.6f, randomizePitch: true);
                     break;
 
                 case SynergyReactionVfxType.AegisPhalanxWave:
                     EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(1.4f, evt.Radius), SynergyGoldColor, ShieldUltColor, 16, 4, 4.8f, 0.26f);
+                    audioManager?.PlaySfx(SfxType.CritHit, volumeScale: 0.55f, randomizePitch: true);
                     break;
 
                 case SynergyReactionVfxType.CataclysmShards:
                     EmitExplosionRing(evt.Position + Vector3.up * 0.6f, Mathf.Max(1.6f, evt.Radius), SynergyPurpleColor, SoulNovaPrimaryColor, 18, 6, 5.8f, 0.3f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.65f, randomizePitch: true);
                     break;
 
                 case SynergyReactionVfxType.DragonBurn:
@@ -800,6 +894,7 @@ namespace ProjectB.Visuals
 
                 case SynergyReactionVfxType.BladeStormVolley:
                     EmitExplosionRing(evt.Position + Vector3.up * 0.6f, Mathf.Max(1.5f, evt.Radius), ShieldUltColor, SteamWhiteColor, 14, 0, 4.8f, 0.22f);
+                    audioManager?.PlaySfx(SfxType.ArrowWhoosh, volumeScale: 0.55f, randomizePitch: true);
                     break;
             }
         }
@@ -826,7 +921,7 @@ namespace ProjectB.Visuals
                             : $"CHALLENGE! Defeat {evt.TotalElites} Elites!";
                         item?.ShowText(evt.Position, startMsg, ShrineStartColor, 1.35f, 1.8f, mainCamera, damagePool);
                     }
-                    audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.85f, randomizePitch: false);
+                    audioManager?.PlaySfx(SfxType.ShrineStart, volumeScale: 0.9f, randomizePitch: false);
                     cameraController?.Shake(0.26f, 0.2f);
                     break;
 

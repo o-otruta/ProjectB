@@ -53,9 +53,10 @@ namespace ProjectB.Abilities
             Material puddleMaterial,
             IObjectPool<PoisonPuddle> pool,
             RunStatistics runStatistics = null,
-            string damageSourceId = "PoisonAlchemist")
+            string damageSourceId = "PoisonAlchemist",
+            GameObject puddleVisualPrefab = null)
         {
-            EnsureVisual(puddleMaterial);
+            EnsureVisual(puddleMaterial, puddleVisualPrefab);
 
             this.radius = Mathf.Max(0.5f, radius);
             this.tickInterval = Mathf.Max(0.15f, tickInterval);
@@ -89,9 +90,9 @@ namespace ProjectB.Abilities
             nextTickTime = now + this.tickInterval;
         }
 
-        public void PrewarmVisual(Material puddleMaterial)
+        public void PrewarmVisual(Material puddleMaterial, GameObject puddleVisualPrefab = null)
         {
-            EnsureVisual(puddleMaterial);
+            EnsureVisual(puddleMaterial, puddleVisualPrefab);
         }
 
         private void OnDisable()
@@ -104,16 +105,37 @@ namespace ProjectB.Abilities
             activePuddles.Remove(this);
         }
 
-        private void EnsureVisual(Material puddleMaterial)
+        private void EnsureVisual(Material puddleMaterial, GameObject puddleVisualPrefab = null)
         {
             if (visualRoot != null) return;
+
+            napalmPropBlock = new MaterialPropertyBlock();
+
+            if (puddleVisualPrefab != null)
+            {
+                var inst = Instantiate(puddleVisualPrefab, transform, false);
+                inst.name = "VoxelPuddleVisual";
+                inst.transform.localPosition = Vector3.zero;
+                inst.transform.localRotation = Quaternion.identity;
+                inst.transform.localScale = Vector3.one;
+                visualRoot = inst.transform;
+                tileRenderers = inst.GetComponentsInChildren<MeshRenderer>(true);
+                for (int i = 0; i < tileRenderers.Length; i++)
+                {
+                    if (tileRenderers[i] != null)
+                    {
+                        tileRenderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        tileRenderers[i].receiveShadows = false;
+                    }
+                }
+                return;
+            }
 
             var rootGo = new GameObject("VoxelPuddleVisual");
             rootGo.transform.SetParent(transform, false);
             visualRoot = rootGo.transform;
 
             tileRenderers = new MeshRenderer[5];
-            napalmPropBlock = new MaterialPropertyBlock();
 
             tileRenderers[0] = CreateVoxelTile(visualRoot, new Vector3(0f, 0f, 0f), new Vector3(1.4f, 0.06f, 1.4f), puddleMaterial);
             tileRenderers[1] = CreateVoxelTile(visualRoot, new Vector3(0.55f, 0.01f, 0.35f), new Vector3(0.65f, 0.08f, 0.65f), puddleMaterial);

@@ -46,6 +46,27 @@ namespace ProjectB.Abilities
         {
             if (waveRingVisual != null) return;
 
+            if (HammerData != null && HammerData.waveVisualPrefab != null)
+            {
+                var inst = Instantiate(HammerData.waveVisualPrefab, transform, false);
+                inst.name = "SeismicShockwave_Visual";
+                inst.transform.localPosition = Vector3.zero;
+                inst.transform.localRotation = Quaternion.identity;
+                inst.transform.localScale = Vector3.one;
+                waveRingVisual = inst.transform;
+                var renderers = inst.GetComponentsInChildren<MeshRenderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i] != null)
+                    {
+                        renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        renderers[i].receiveShadows = false;
+                    }
+                }
+                waveRingVisual.gameObject.SetActive(false);
+                return;
+            }
+
             var ringGo = new GameObject("SeismicShockwave_Visual");
             ringGo.transform.SetParent(transform, false);
             waveRingVisual = ringGo.transform;

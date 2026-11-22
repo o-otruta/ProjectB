@@ -26,7 +26,8 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  flaskPrefab: {fileID: 0}
+  flaskPrefab: {fileID: 5506721554718077780, guid: a27e30a9cffad20418035cde53c847f6, type: 3}
+  puddleVisualPrefab: {fileID: 1791973771547388602, guid: d13db66c3149bc34ab7344a57e3dec73, type: 3}
   puddleMaterial: {fileID: 2100000, guid: 8fa8addc82e7b674cb9ab9d4c6c09e9d, type: 2}
   puddleRadius: 2.5
   puddleDuration: 4

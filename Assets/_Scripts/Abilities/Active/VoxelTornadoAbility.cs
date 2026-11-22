@@ -65,7 +65,9 @@ namespace ProjectB.Abilities
                     var go = new GameObject("VoxelTornado");
                     go.transform.SetParent(tornadoContainer, false);
                     var proj = go.AddComponent<TornadoProjectile>();
-                    proj.PrewarmVisual(TornadoData != null ? TornadoData.tornadoMaterial : null);
+                    proj.PrewarmVisual(
+                        TornadoData != null ? TornadoData.tornadoMaterial : null,
+                        TornadoData != null ? TornadoData.tornadoVisualPrefab : null);
                     return proj;
                 },
                 actionOnGet: t => { if (t != null) t.gameObject.SetActive(true); },
@@ -245,7 +247,8 @@ namespace ProjectB.Abilities
                     runStatistics,
                     cachedAbilityId,
                     cachedDestabilizeCallback,
-                    VisualScaleMultiplier);
+                    VisualScaleMultiplier,
+                    TornadoData.tornadoVisualPrefab);
                 lastSpawnedTornado = tornado;
                 spawned++;
             }

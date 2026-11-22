@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Core.Events;
+using ProjectB.Data;
 
 namespace ProjectB.Abilities
 {
@@ -126,7 +128,9 @@ namespace ProjectB.Abilities
             var go = new GameObject("PoisonPuddle");
             go.transform.SetParent(zoneContainer, false);
             var puddle = go.AddComponent<PoisonPuddle>();
-            puddle.PrewarmVisual(FlaskData != null ? FlaskData.puddleMaterial : null);
+            puddle.PrewarmVisual(
+                FlaskData != null ? FlaskData.puddleMaterial : null,
+                FlaskData != null ? FlaskData.puddleVisualPrefab : null);
             return puddle;
         }
 
@@ -233,7 +237,9 @@ namespace ProjectB.Abilities
                 FlaskData.puddleMaterial,
                 puddlePool,
                 runStatistics,
-                cachedAbilityId);
+                cachedAbilityId,
+                FlaskData.puddleVisualPrefab);
+            eventBus?.Publish(new AbilitySfxEvent(SfxType.PoisonSplash, 0.65f));
             return puddle;
         }
 

@@ -7,6 +7,7 @@ namespace ProjectB.Abilities
     {
         [Header("Mini Dragon Specs")]
         public GameObject followerPrefab;
+        public GameObject flamePrefab;
         public Material dragonMaterial;
         public Material flameMaterial;
         public int dragonCount = 1;

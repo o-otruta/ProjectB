@@ -66,6 +66,8 @@ namespace ProjectB.Enemies
         public Vector3[] SpikeRayDirections => spikeRayDirections;
         public Vector3 SpikeOrigin => spikeOrigin;
 
+        protected override Color GetBossRimColor() => new Color(0.28f, 0.92f, 1.0f, 0.9f);
+
         public override void InitializeBoss(
             BossData data,
             Transform heroTarget,

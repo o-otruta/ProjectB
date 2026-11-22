@@ -26,6 +26,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
+  tornadoVisualPrefab: {fileID: 2340146576919248453, guid: 45a9d0e0928aa0a4b834404c5911b1bf, type: 3}
   tornadoMaterial: {fileID: 2100000, guid: d7e16965caa5939479d37797b5dd9be5, type: 2}
   vortexRadius: 2.2
   duration: 4

@@ -7,6 +7,7 @@ namespace ProjectB.Abilities
     {
         [Header("Poison Flask Specs")]
         public GameObject flaskPrefab;
+        public GameObject puddleVisualPrefab;
         public Material puddleMaterial;
         public float puddleRadius = 2.5f;
         public float puddleDuration = 4f;

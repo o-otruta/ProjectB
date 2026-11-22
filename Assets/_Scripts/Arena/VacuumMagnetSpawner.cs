@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
@@ -22,12 +23,14 @@ namespace ProjectB.Arena
         private GameEventBus eventBus;
         private WaveManager waveManager;
 
+        private readonly List<VacuumMagnetPickup> activePickups = new List<VacuumMagnetPickup>(8);
         private IObjectPool<VacuumMagnetPickup> pickupPool;
         private Transform poolContainer;
         private int pickupsLayer;
         private System.Action<VacuumMagnetPickup> cachedPickupCollectedHandler;
 
         public float PullSpeed => pullSpeed;
+        public IReadOnlyList<VacuumMagnetPickup> ActivePickups => activePickups;
 
         [Inject]
         public void Construct(
@@ -147,6 +150,10 @@ namespace ProjectB.Arena
             pickup.transform.position = position;
             Transform heroTransform = heroHealth != null ? heroHealth.transform : null;
             pickup.Initialize(heroTransform, cachedPickupCollectedHandler, pickupPool);
+            if (!activePickups.Contains(pickup))
+            {
+                activePickups.Add(pickup);
+            }
             return pickup;
         }
 
@@ -160,6 +167,7 @@ namespace ProjectB.Arena
 
         private void HandlePickupCollected(VacuumMagnetPickup pickup)
         {
+            activePickups.Remove(pickup);
             int xpCount = xpManager != null ? xpManager.MagnetizeAll(pullSpeed) : 0;
             int coinCount = coinManager != null ? coinManager.MagnetizeAll(pullSpeed) : 0;
             Vector3 pos = pickup != null ? pickup.transform.position : Vector3.zero;
@@ -168,6 +176,7 @@ namespace ProjectB.Arena
 
         private void OnDestroy()
         {
+            activePickups.Clear();
             pickupPool?.Clear();
             if (poolContainer != null)
             {

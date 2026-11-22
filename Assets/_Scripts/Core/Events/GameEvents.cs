@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectB.Data;
 using ProjectB.Data.Enemies;
 using ProjectB.Abilities;
 
@@ -487,6 +488,21 @@ namespace ProjectB.Core.Events
             ComboCount = comboCount;
             MilestoneTier = milestoneTier;
             RewardBonusPercent = rewardBonusPercent;
+        }
+    }
+
+    /// <summary>
+    /// Универсальный запрос на проигрывание SFX от способностей и реакций без прямой зависимости от AudioManager.
+    /// </summary>
+    public struct AbilitySfxEvent
+    {
+        public SfxType SfxType;
+        public float VolumeScale;
+
+        public AbilitySfxEvent(SfxType sfxType, float volumeScale = 1f)
+        {
+            SfxType = sfxType;
+            VolumeScale = volumeScale;
         }
     }
 }

@@ -35,6 +35,7 @@ namespace ProjectB.Core
         private VirtualJoystick virtualJoystick;
         private AdManager adManager;
         private RunComboTracker comboTracker;
+        private AudioManager audioManager;
 
         private bool hasRevivedThisRun;
         private bool hasDoubledCoinsThisRun;
@@ -54,7 +55,8 @@ namespace ProjectB.Core
             GameEventBus eventBus,
             VirtualJoystick virtualJoystick = null,
             AdManager adManager = null,
-            RunComboTracker comboTracker = null)
+            RunComboTracker comboTracker = null,
+            AudioManager audioManager = null)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
@@ -65,6 +67,7 @@ namespace ProjectB.Core
             this.virtualJoystick = virtualJoystick;
             this.adManager = adManager;
             this.comboTracker = comboTracker;
+            this.audioManager = audioManager;
         }
 
         private GameState currentState;
@@ -94,6 +97,7 @@ namespace ProjectB.Core
         {
             currentState = GameState.Playing;
             Time.timeScale = 1f;
+            audioManager?.SetMusicDucked(false);
 
             achievementManager?.ClearRunUnlocks();
 
@@ -127,6 +131,7 @@ namespace ProjectB.Core
 
             currentState = GameState.GameOver;
             Time.timeScale = 0f;
+            audioManager?.SetMusicDucked(true);
             virtualJoystick?.ResetJoystick();
 
             int wave = waveManager != null ? waveManager.CurrentWave : 1;
@@ -202,6 +207,7 @@ namespace ProjectB.Core
 
         public void AbandonRunAndGoToMenu()
         {
+            audioManager?.SetMusicDucked(false);
             SaveAbandonedRunProgress();
             if (Application.isPlaying)
             {
@@ -220,6 +226,7 @@ namespace ProjectB.Core
 
             currentState = GameState.Paused;
             Time.timeScale = 0f;
+            audioManager?.SetMusicDucked(true);
             virtualJoystick?.ResetJoystick();
             OnPauseStateChanged?.Invoke(true);
             return true;
@@ -231,6 +238,7 @@ namespace ProjectB.Core
 
             currentState = GameState.Playing;
             Time.timeScale = 1f;
+            audioManager?.SetMusicDucked(false);
             OnPauseStateChanged?.Invoke(false);
             return true;
         }
@@ -241,6 +249,7 @@ namespace ProjectB.Core
             
             currentState = GameState.LevelUp;
             Time.timeScale = 0f;
+            audioManager?.SetMusicDucked(true);
             virtualJoystick?.ResetJoystick();
             return true;
         }
@@ -251,22 +260,26 @@ namespace ProjectB.Core
 
             currentState = GameState.Playing;
             Time.timeScale = 1f;
+            audioManager?.SetMusicDucked(false);
         }
 
         public void RestartGame()
         {
+            audioManager?.SetMusicDucked(false);
             saveManager?.SaveIfDirty();
             LoadSceneAfterInterstitial(SceneManager.GetActiveScene().name);
         }
 
         public void GoToMenu()
         {
+            audioManager?.SetMusicDucked(false);
             saveManager?.SaveIfDirty();
             LoadSceneAfterInterstitial("MainMenu");
         }
 
         private void LoadSceneAfterInterstitial(string sceneName)
         {
+            audioManager?.SetMusicDucked(false);
             if (adManager != null)
             {
                 adManager.TryShowInterstitialBetweenRuns(() =>
@@ -291,6 +304,7 @@ namespace ProjectB.Core
                 hasRevivedThisRun = true;
                 currentState = GameState.Playing;
                 Time.timeScale = 1f;
+                audioManager?.SetMusicDucked(false);
                 heroHealth?.Revive(adManager != null ? adManager.ReviveInvulnerabilitySeconds : 3f);
                 waveManager?.ResumeAfterRevive();
                 OnHeroRevived?.Invoke();

@@ -29,4 +29,5 @@ MonoBehaviour:
   minPullDistance: 2.5
   pullForce: 3
   tickRate: 0.3
+  visualPrefab: {fileID: 2548083478503816829, guid: 17321ef724eccf640be90d81fe1bf613, type: 3}
   auraMaterial: {fileID: 2100000, guid: 85a74f48d4168e842b8b9681cfbe538c, type: 2}

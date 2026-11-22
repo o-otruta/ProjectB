@@ -64,6 +64,7 @@ namespace ProjectB.Player
                 modelInstance.transform.localRotation = Quaternion.identity;
                 modelInstance.transform.localScale = Vector3.one;
                 meshAnimator = modelInstance.GetComponentInChildren<VoxelMeshAnimator>();
+                hp?.RefreshRenderers();
             }
 
             if (meshAnimator == null)

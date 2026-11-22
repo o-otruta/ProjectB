@@ -29,4 +29,5 @@ MonoBehaviour:
   slowFactor: 0.5
   slowDuration: 1
   tickRate: 0.5
+  visualPrefab: {fileID: 2231687514565561124, guid: 7f3a795b0b216d84da778aedaa050afe, type: 3}
   auraMaterial: {fileID: 2100000, guid: 99a02e94344ef6f458cffb812ec73cb2, type: 2}

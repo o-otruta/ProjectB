@@ -6,6 +6,8 @@ namespace ProjectB.Abilities
 {
     public class BlackHoleAbility : ActiveAbility
     {
+        public const float VISUAL_Y_OFFSET = 0.06f;
+
         private BlackHoleAbilityData HoleData => Data as BlackHoleAbilityData;
 
         private const float SCAN_INTERVAL = 0.1f;
@@ -21,9 +23,11 @@ namespace ProjectB.Abilities
         private Collider[] hitBuffer = new Collider[128];
         private readonly System.Collections.Generic.List<EnemyBase> capturedEnemies = new System.Collections.Generic.List<EnemyBase>(128);
         private GameObject visualHole;
+        private bool usesCustomVisualPrefab;
 
         public float CurrentRadius => currentRadius;
         public Vector3 Center => transform.position;
+        public Transform VisualTransform => visualHole != null ? visualHole.transform : null;
 
         public override void SimulateFrameTick()
         {
@@ -55,32 +59,60 @@ namespace ProjectB.Abilities
 
         private void CreateVisual()
         {
-            visualHole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            visualHole.name = "BlackHole_Visual";
-            visualHole.transform.SetParent(transform);
-            visualHole.transform.localPosition = Vector3.zero;
-            
+            if (HoleData != null && HoleData.visualPrefab != null)
+            {
+                visualHole = Instantiate(HoleData.visualPrefab, transform, false);
+                visualHole.name = "BlackHole_Visual";
+                usesCustomVisualPrefab = true;
+            }
+            else
+            {
+                visualHole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                visualHole.name = "BlackHole_Visual";
+                visualHole.transform.SetParent(transform, false);
+                usesCustomVisualPrefab = false;
+
+                var col = visualHole.GetComponent<Collider>();
+                if (col != null)
+                {
+                    if (Application.isPlaying) Destroy(col);
+                    else DestroyImmediate(col);
+                }
+
+                var renderer = visualHole.GetComponent<Renderer>();
+                if (renderer != null && HoleData != null && HoleData.auraMaterial != null)
+                {
+                    renderer.sharedMaterial = HoleData.auraMaterial;
+                }
+            }
+
+            var renderers = visualHole.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                {
+                    renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    renderers[i].receiveShadows = false;
+                }
+            }
+
+            UpdateVisualVerticalOffset();
             UpdateVisualSize();
+        }
 
-            var col = visualHole.GetComponent<Collider>();
-            if (col != null)
-            {
-                if (Application.isPlaying) Destroy(col);
-                else DestroyImmediate(col);
-            }
-
-            var renderer = visualHole.GetComponent<Renderer>();
-            if (renderer != null && HoleData.auraMaterial != null)
-            {
-                renderer.sharedMaterial = HoleData.auraMaterial;
-            }
+        private void UpdateVisualVerticalOffset()
+        {
+            if (visualHole == null) return;
+            visualHole.transform.localPosition = new Vector3(0f, VISUAL_Y_OFFSET - transform.position.y, 0f);
         }
 
         private void UpdateVisualSize()
         {
             if (visualHole != null)
             {
-                visualHole.transform.localScale = new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
+                visualHole.transform.localScale = usesCustomVisualPrefab
+                    ? new Vector3(currentRadius, 1f, currentRadius)
+                    : new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
             }
         }
 
@@ -133,6 +165,7 @@ namespace ProjectB.Abilities
 
             if (visualHole != null)
             {
+                UpdateVisualVerticalOffset();
                 visualHole.transform.Rotate(Vector3.up * 45f * Time.deltaTime);
             }
         }

@@ -1,8 +1,8 @@
 ﻿<Solution>
-  <Project Path="ProjectB.Data.csproj" />
   <Project Path="ProjectB.Runtime.csproj" />
+  <Project Path="ProjectB.Data.csproj" />
   <Project Path="ProjectB.Editor.csproj" />
-  <Project Path="ProjectB.Tests.EditMode.csproj" />
-  <Project Path="ProjectB.Meta.csproj" />
   <Project Path="ProjectB.Tests.PlayMode.csproj" />
+  <Project Path="ProjectB.Meta.csproj" />
+  <Project Path="ProjectB.Tests.EditMode.csproj" />
 </Solution>

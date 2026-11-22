@@ -26,6 +26,8 @@ namespace ProjectB.Enemies
         private float nextSlamTime;
         private float slamImpactResetTime;
 
+        protected override Color GetBossRimColor() => new Color(1.0f, 0.68f, 0.16f, 0.9f);
+
         private void SetBodyMesh(Mesh mesh)
         {
             if (bodyMeshFilter != null && mesh != null)

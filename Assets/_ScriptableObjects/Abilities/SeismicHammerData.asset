@@ -26,6 +26,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
+  waveVisualPrefab: {fileID: 810527555523278840, guid: d7c2811049334754e8d53403ddbd0dde, type: 3}
   waveMaterial: {fileID: 2100000, guid: 29492675a675b404cb6ade94a21667cf, type: 2}
   slamRadius: 4.5
   slowFactor: 0.2

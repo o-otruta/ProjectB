@@ -99,6 +99,23 @@ namespace ProjectB.Abilities
 
         private DragonFlameProjectile CreateFlameInstance()
         {
+            if (DragonData != null && DragonData.flamePrefab != null)
+            {
+                GameObject flameObj = Instantiate(DragonData.flamePrefab, dragonContainer);
+                flameObj.name = "DragonFlame";
+                var renderers = flameObj.GetComponentsInChildren<MeshRenderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i] != null)
+                    {
+                        renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        renderers[i].receiveShadows = false;
+                    }
+                }
+                var existing = flameObj.GetComponent<DragonFlameProjectile>();
+                return existing != null ? existing : flameObj.AddComponent<DragonFlameProjectile>();
+            }
+
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = "DragonFlame";
             cube.transform.SetParent(dragonContainer, false);

@@ -13,14 +13,25 @@ namespace ProjectB.Data
         ShieldUlt = 6,
         BossSpawn = 7,
         SecretPickup = 8,
-        UiClick = 9
+        UiClick = 9,
+        Explosion = 10,
+        LightningZap = 11,
+        CritHit = 12,
+        SynergyFanfare = 13,
+        PoisonSplash = 14,
+        ArrowWhoosh = 15,
+        IceShatter = 16,
+        BossDeath = 17,
+        ShrineStart = 18,
+        ComboMilestone = 19
     }
 
     public enum MusicType
     {
         None = 0,
         Menu = 1,
-        Gameplay = 2
+        Gameplay = 2,
+        Boss = 3
     }
 
     [CreateAssetMenu(fileName = "AudioCatalog", menuName = "ProjectB/Data/Audio Catalog")]
@@ -37,10 +48,21 @@ namespace ProjectB.Data
         public AudioClip bossSpawnClip;
         public AudioClip secretPickupClip;
         public AudioClip uiClickClip;
+        public AudioClip explosionClip;
+        public AudioClip lightningZapClip;
+        public AudioClip critHitClip;
+        public AudioClip synergyFanfareClip;
+        public AudioClip poisonSplashClip;
+        public AudioClip arrowWhooshClip;
+        public AudioClip iceShatterClip;
+        public AudioClip bossDeathClip;
+        public AudioClip shrineStartClip;
+        public AudioClip comboMilestoneClip;
 
         [Header("Music")]
         public AudioClip menuMusicClip;
         public AudioClip gameplayMusicClip;
+        public AudioClip bossMusicClip;
 
         [Header("Base Mix Levels")]
         [Range(0f, 1f)] public float musicBaseVolume = 0.45f;
@@ -60,6 +82,16 @@ namespace ProjectB.Data
                 SfxType.BossSpawn => bossSpawnClip,
                 SfxType.SecretPickup => secretPickupClip,
                 SfxType.UiClick => uiClickClip,
+                SfxType.Explosion => explosionClip,
+                SfxType.LightningZap => lightningZapClip,
+                SfxType.CritHit => critHitClip,
+                SfxType.SynergyFanfare => synergyFanfareClip,
+                SfxType.PoisonSplash => poisonSplashClip,
+                SfxType.ArrowWhoosh => arrowWhooshClip,
+                SfxType.IceShatter => iceShatterClip,
+                SfxType.BossDeath => bossDeathClip,
+                SfxType.ShrineStart => shrineStartClip,
+                SfxType.ComboMilestone => comboMilestoneClip,
                 _ => null
             };
         }
@@ -70,6 +102,7 @@ namespace ProjectB.Data
             {
                 MusicType.Menu => menuMusicClip,
                 MusicType.Gameplay => gameplayMusicClip,
+                MusicType.Boss => bossMusicClip,
                 _ => null
             };
         }

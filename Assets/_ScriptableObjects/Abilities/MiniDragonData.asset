@@ -26,7 +26,8 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 256
-  followerPrefab: {fileID: 0}
+  followerPrefab: {fileID: 1100375059022030343, guid: 85c9e42e27985e146b73b77724db7fb7, type: 3}
+  flamePrefab: {fileID: 4650062083406133578, guid: c43a45df5103bd543b2a08e8b01fb82b, type: 3}
   dragonMaterial: {fileID: 2100000, guid: f1a720a4ce00b7b419b9dd1c198de479, type: 2}
   flameMaterial: {fileID: 2100000, guid: 29492675a675b404cb6ade94a21667cf, type: 2}
   dragonCount: 1
