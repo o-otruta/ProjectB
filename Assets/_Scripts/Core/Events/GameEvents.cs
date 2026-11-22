@@ -423,5 +423,71 @@ namespace ProjectB.Core.Events
             Radius = radius;
         }
     }
+
+    public enum SynergyReactionVfxType
+    {
+        ToxicInfernoIgnite = 0,
+        SteamBlastNova = 1,
+        ThunderstormShatter = 2,
+        AegisPhalanxWave = 3,
+        CataclysmShards = 4,
+        DragonBurn = 5,
+        BladeStormVolley = 6
+    }
+
+    /// <summary>
+    /// Визуальный и аудио-отклик сработавшей реактивной синергии.
+    /// </summary>
+    public struct SynergyReactionVfxEvent
+    {
+        public SynergyReactionVfxType ReactionType;
+        public Vector3 Position;
+        public float Radius;
+
+        public SynergyReactionVfxEvent(SynergyReactionVfxType reactionType, Vector3 position, float radius)
+        {
+            ReactionType = reactionType;
+            Position = position;
+            Radius = radius;
+        }
+    }
+
+    /// <summary>
+    /// Способность достигла порога Overdrive (каждые 10 уровней: Lv 10, Lv 20, Lv 30...).
+    /// </summary>
+    public struct AbilityOverdriveEvent
+    {
+        public string AbilityId;
+        public string AbilityName;
+        public int Level;
+        public int Tier;
+        public string TierLabel;
+
+        public AbilityOverdriveEvent(string abilityId, string abilityName, int level, int tier, string tierLabel)
+        {
+            AbilityId = abilityId;
+            AbilityName = abilityName;
+            Level = level;
+            Tier = tier;
+            TierLabel = tierLabel;
+        }
+    }
+
+    /// <summary>
+    /// Достигнут рубеж комбо-убийств (x15, x30, x50, x100).
+    /// </summary>
+    public struct ComboMilestoneEvent
+    {
+        public int ComboCount;
+        public int MilestoneTier;
+        public float RewardBonusPercent;
+
+        public ComboMilestoneEvent(int comboCount, int milestoneTier, float rewardBonusPercent)
+        {
+            ComboCount = comboCount;
+            MilestoneTier = milestoneTier;
+            RewardBonusPercent = rewardBonusPercent;
+        }
+    }
 }
 

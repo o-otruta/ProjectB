@@ -19,6 +19,7 @@ namespace ProjectB.Enemies
         private readonly GameEventBus _eventBus;
         private readonly WaveManager _waveManager;
         private readonly VacuumMagnetSpawner _vacuumMagnetSpawner;
+        private readonly RunComboTracker _comboTracker;
 
         [Inject]
         public EnemyDeathHandler(
@@ -28,7 +29,8 @@ namespace ProjectB.Enemies
             AchievementManager achievementManager,
             GameEventBus eventBus,
             WaveManager waveManager = null,
-            VacuumMagnetSpawner vacuumMagnetSpawner = null)
+            VacuumMagnetSpawner vacuumMagnetSpawner = null,
+            RunComboTracker comboTracker = null)
         {
             _xpManager = xpManager;
             _coinManager = coinManager;
@@ -37,6 +39,7 @@ namespace ProjectB.Enemies
             _eventBus = eventBus;
             _waveManager = waveManager;
             _vacuumMagnetSpawner = vacuumMagnetSpawner;
+            _comboTracker = comboTracker;
         }
 
         public void Start()
@@ -105,6 +108,8 @@ namespace ProjectB.Enemies
             {
                 _runStatistics.AddKill();
             }
+
+            _comboTracker?.RegisterKill();
 
             if (_achievementManager != null)
             {

@@ -110,29 +110,14 @@ namespace ProjectB.LevelUp
         {
             if (card == null) return;
 
-            if (heroAbilities != null && card.abilityBonuses != null)
+            if (heroAbilities != null)
             {
-                for (int i = 0; i < card.abilityBonuses.Count; i++)
-                {
-                    var bonus = card.abilityBonuses[i];
-                    if (!string.IsNullOrEmpty(bonus.targetAbilityId) && heroAbilities.HasAbility(bonus.targetAbilityId))
-                    {
-                        heroAbilities.UpgradeAbility(bonus.targetAbilityId, bonus.modifierType, bonus.value);
-                    }
-                }
+                heroAbilities.TryActivateSynergyById(card.synergyId, card.cardName);
             }
-
-            if (card.globalDamageBonusPercent > 0f)
+            else
             {
-                runtimeStats?.AddGlobalDamagePercent(card.globalDamageBonusPercent);
+                eventBus?.Publish(new SynergyActivatedEvent(card.synergyId, card.cardName));
             }
-
-            if (card.armorBonus > 0f)
-            {
-                runtimeStats?.AddArmor(card.armorBonus);
-            }
-
-            eventBus?.Publish(new SynergyActivatedEvent(card.synergyId, card.cardName));
         }
     }
 }

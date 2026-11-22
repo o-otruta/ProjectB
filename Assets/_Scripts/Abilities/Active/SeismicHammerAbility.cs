@@ -100,6 +100,19 @@ namespace ProjectB.Abilities
             }
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentRadius *= 1.2f;
+            }
+            else if (tier == 2)
+            {
+                currentCooldown = Mathf.Max(0.8f, currentCooldown * 0.8f);
+                currentRadius *= 1.15f;
+            }
+        }
+
         private void Update()
         {
             if (Data == null || Time.deltaTime <= 0f) return;

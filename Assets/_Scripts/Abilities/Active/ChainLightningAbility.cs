@@ -1,11 +1,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core.Events;
+using ProjectB.Enemies;
 
 namespace ProjectB.Abilities
 {
     public class ChainLightningAbility : ActiveAbility
     {
+        private const float THUNDERSTORM_DEEP_SLOW_FACTOR = 0.10f;
+        private const float THUNDERSTORM_DEEP_SLOW_DURATION = 0.65f;
+        private const float THUNDERSTORM_ARC_RADIUS = 4.2f;
+        private const int THUNDERSTORM_EXTRA_ARCS = 2;
+
         private ChainLightningAbilityData LightningData => Data as ChainLightningAbilityData;
 
         private float currentDamage;
@@ -16,11 +23,18 @@ namespace ProjectB.Abilities
 
         private float nextFireTime;
         private float boltHideTime;
+        private float frostHideTime;
         private LineRenderer lineRenderer;
+        private LineRenderer frostArcLineRenderer;
 
         private readonly Collider[] hitBuffer = new Collider[128];
+        private readonly Collider[] frostHitBuffer = new Collider[48];
         private readonly List<Transform> chainTargets = new List<Transform>(16);
+        private readonly Transform[] frostPicked = new Transform[THUNDERSTORM_EXTRA_ARCS];
+        private readonly IDamageable[] frostPickedDamageables = new IDamageable[THUNDERSTORM_EXTRA_ARCS];
         private Vector3[] boltPoints = new Vector3[64];
+        private Vector3[] frostArcPoints = new Vector3[48];
+        private int frostArcPointCount;
 
         public override void SimulateFrameTick()
         {
@@ -45,27 +59,51 @@ namespace ProjectB.Abilities
 
         private void EnsureLineRenderer()
         {
-            if (lineRenderer != null) return;
-
-            var lrGo = new GameObject("ChainLightning_Bolt");
-            lrGo.transform.SetParent(transform, false);
-            lineRenderer = lrGo.AddComponent<LineRenderer>();
-            lineRenderer.useWorldSpace = true;
-            lineRenderer.startWidth = 0.22f;
-            lineRenderer.endWidth = 0.12f;
-            lineRenderer.numCornerVertices = 2;
-            lineRenderer.numCapVertices = 2;
-            lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            lineRenderer.receiveShadows = false;
-            lineRenderer.startColor = new Color(0.75f, 0.96f, 1f, 1f);
-            lineRenderer.endColor = new Color(0.28f, 0.72f, 1f, 0.95f);
-
-            if (LightningData != null && LightningData.lineMaterial != null)
+            if (lineRenderer == null)
             {
-                lineRenderer.sharedMaterial = LightningData.lineMaterial;
+                var lrGo = new GameObject("ChainLightning_Bolt");
+                lrGo.transform.SetParent(transform, false);
+                lineRenderer = lrGo.AddComponent<LineRenderer>();
+                lineRenderer.useWorldSpace = true;
+                lineRenderer.startWidth = 0.22f * VisualScaleMultiplier;
+                lineRenderer.endWidth = 0.12f * VisualScaleMultiplier;
+                lineRenderer.numCornerVertices = 2;
+                lineRenderer.numCapVertices = 2;
+                lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                lineRenderer.receiveShadows = false;
+                lineRenderer.startColor = new Color(0.75f, 0.96f, 1f, 1f);
+                lineRenderer.endColor = new Color(0.28f, 0.72f, 1f, 0.95f);
+
+                if (LightningData != null && LightningData.lineMaterial != null)
+                {
+                    lineRenderer.sharedMaterial = LightningData.lineMaterial;
+                }
+
+                lineRenderer.enabled = false;
             }
 
-            lineRenderer.enabled = false;
+            if (frostArcLineRenderer == null)
+            {
+                var frostGo = new GameObject("ChainLightning_FrostArc");
+                frostGo.transform.SetParent(transform, false);
+                frostArcLineRenderer = frostGo.AddComponent<LineRenderer>();
+                frostArcLineRenderer.useWorldSpace = true;
+                frostArcLineRenderer.startWidth = 0.18f * VisualScaleMultiplier;
+                frostArcLineRenderer.endWidth = 0.08f * VisualScaleMultiplier;
+                frostArcLineRenderer.numCornerVertices = 1;
+                frostArcLineRenderer.numCapVertices = 1;
+                frostArcLineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                frostArcLineRenderer.receiveShadows = false;
+                frostArcLineRenderer.startColor = new Color(0.72f, 0.98f, 1f, 1f);
+                frostArcLineRenderer.endColor = new Color(0.45f, 0.88f, 1f, 0.9f);
+
+                if (LightningData != null && LightningData.lineMaterial != null)
+                {
+                    frostArcLineRenderer.sharedMaterial = LightningData.lineMaterial;
+                }
+
+                frostArcLineRenderer.enabled = false;
+            }
         }
 
         public override void ApplyModifier(ModifierType type, float value)
@@ -91,6 +129,35 @@ namespace ProjectB.Abilities
             }
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentSearchRadius *= 1.2f;
+                currentBounceRadius *= 1.2f;
+                UpdateBoltWidths();
+            }
+            else if (tier == 2)
+            {
+                currentBounceCount += 2;
+                UpdateBoltWidths();
+            }
+        }
+
+        private void UpdateBoltWidths()
+        {
+            if (lineRenderer != null)
+            {
+                lineRenderer.startWidth = 0.22f * VisualScaleMultiplier;
+                lineRenderer.endWidth = 0.12f * VisualScaleMultiplier;
+            }
+            if (frostArcLineRenderer != null)
+            {
+                frostArcLineRenderer.startWidth = 0.18f * VisualScaleMultiplier;
+                frostArcLineRenderer.endWidth = 0.08f * VisualScaleMultiplier;
+            }
+        }
+
         private void Update()
         {
             if (Data == null || Time.deltaTime <= 0f) return;
@@ -99,6 +166,12 @@ namespace ProjectB.Abilities
             {
                 boltHideTime = 0f;
                 if (lineRenderer != null) lineRenderer.enabled = false;
+            }
+
+            if (frostHideTime > 0f && Time.time >= frostHideTime)
+            {
+                frostHideTime = 0f;
+                if (frostArcLineRenderer != null) frostArcLineRenderer.enabled = false;
             }
 
             if (Time.time >= nextFireTime)
@@ -113,14 +186,21 @@ namespace ProjectB.Abilities
             if (LightningData == null) return 0;
 
             chainTargets.Clear();
+            frostArcPointCount = 0;
             LayerMask mask = LightningData.targetLayer;
+            bool hasThunderstorm = HasSynergy(SynergyIds.Thunderstorm);
 
             Transform firstTarget = FindClosestTarget(transform.position, currentSearchRadius, mask, excludeSelected: false, out IDamageable firstDamageable);
             if (firstTarget == null) return 0;
 
             chainTargets.Add(firstTarget);
+            bool firstWasSlowed = firstDamageable is EnemyBase firstEnemy && firstEnemy.IsSlowed;
             int firstDmg = RollScaledDamage(currentDamage, out bool firstCrit);
             DealDamage(firstDamageable, firstDmg, firstCrit);
+            if (hasThunderstorm && firstWasSlowed)
+            {
+                TriggerThunderstormOverload(firstTarget, firstDamageable as EnemyBase, mask);
+            }
 
             Transform lastTarget = firstTarget;
             for (int b = 0; b < currentBounceCount; b++)
@@ -129,13 +209,109 @@ namespace ProjectB.Abilities
                 if (nextTarget == null) break;
 
                 chainTargets.Add(nextTarget);
+                bool nextWasSlowed = nextDamageable is EnemyBase nextEnemy && nextEnemy.IsSlowed;
                 int bounceDmg = RollScaledDamage(currentDamage, out bool bounceCrit);
                 DealDamage(nextDamageable, bounceDmg, bounceCrit);
+                if (hasThunderstorm && nextWasSlowed)
+                {
+                    TriggerThunderstormOverload(nextTarget, nextDamageable as EnemyBase, mask);
+                }
                 lastTarget = nextTarget;
             }
 
             DrawBoltVisual();
+            DrawFrostArcVisual();
             return chainTargets.Count;
+        }
+
+        private void TriggerThunderstormOverload(Transform sourceTarget, EnemyBase sourceEnemy, LayerMask mask)
+        {
+            if (sourceTarget == null) return;
+
+            Vector3 origin = sourceTarget.position;
+            if (sourceEnemy != null && !sourceEnemy.IsDead)
+            {
+                sourceEnemy.ApplySlow(THUNDERSTORM_DEEP_SLOW_FACTOR, THUNDERSTORM_DEEP_SLOW_DURATION);
+            }
+
+            for (int i = 0; i < THUNDERSTORM_EXTRA_ARCS; i++)
+            {
+                frostPicked[i] = null;
+                frostPickedDamageables[i] = null;
+            }
+
+            int found = Physics.OverlapSphereNonAlloc(origin, THUNDERSTORM_ARC_RADIUS, frostHitBuffer, mask);
+            int pickedCount = 0;
+
+            for (int pick = 0; pick < THUNDERSTORM_EXTRA_ARCS; pick++)
+            {
+                Transform best = null;
+                IDamageable bestDmg = null;
+                float bestSqr = float.MaxValue;
+
+                for (int i = 0; i < found; i++)
+                {
+                    Collider col = frostHitBuffer[i];
+                    if (col == null) continue;
+                    Transform cand = col.transform;
+                    if (cand == sourceTarget) continue;
+
+                    bool alreadyPicked = false;
+                    for (int p = 0; p < pickedCount; p++)
+                    {
+                        if (frostPicked[p] == cand)
+                        {
+                            alreadyPicked = true;
+                            break;
+                        }
+                    }
+                    if (alreadyPicked) continue;
+
+                    if (!col.TryGetComponent<IDamageable>(out var damageable) ||
+                        !CombatTargetFilter.IsValidAutoAimTarget(col, damageable, mask))
+                    {
+                        continue;
+                    }
+
+                    float sqr = (cand.position - origin).sqrMagnitude;
+                    if (sqr < bestSqr)
+                    {
+                        bestSqr = sqr;
+                        best = cand;
+                        bestDmg = damageable;
+                    }
+                }
+
+                if (best == null) break;
+                frostPicked[pickedCount] = best;
+                frostPickedDamageables[pickedCount] = bestDmg;
+                pickedCount++;
+            }
+
+            Vector3 originVisual = origin + Vector3.up * 0.7f;
+            for (int i = 0; i < pickedCount; i++)
+            {
+                Transform neighbor = frostPicked[i];
+                IDamageable neighborDmg = frostPickedDamageables[i];
+                if (neighbor == null || neighborDmg == null) continue;
+
+                int arcDmg = RollScaledDamage(currentDamage * 0.75f, out bool arcCrit);
+                DealDamage(neighborDmg, arcDmg, arcCrit, SynergyIds.Thunderstorm);
+
+                if (neighborDmg is EnemyBase neighborEnemy && !neighborEnemy.IsDead)
+                {
+                    neighborEnemy.ApplySlow(0.35f, THUNDERSTORM_DEEP_SLOW_DURATION);
+                }
+
+                if (frostArcPointCount + 3 <= frostArcPoints.Length)
+                {
+                    frostArcPoints[frostArcPointCount++] = originVisual;
+                    frostArcPoints[frostArcPointCount++] = neighbor.position + Vector3.up * 0.7f;
+                    frostArcPoints[frostArcPointCount++] = originVisual;
+                }
+            }
+
+            eventBus?.Publish(new SynergyReactionVfxEvent(SynergyReactionVfxType.ThunderstormShatter, origin, THUNDERSTORM_ARC_RADIUS));
         }
 
         private Transform FindClosestTarget(
@@ -225,6 +401,26 @@ namespace ProjectB.Abilities
             lineRenderer.enabled = true;
             float duration = LightningData != null ? LightningData.boltVisualDuration : 0.16f;
             boltHideTime = Time.time + Mathf.Max(0.05f, duration);
+        }
+
+        private void DrawFrostArcVisual()
+        {
+            if (frostArcLineRenderer == null) return;
+            if (frostArcPointCount <= 0)
+            {
+                frostArcLineRenderer.enabled = false;
+                return;
+            }
+
+            frostArcLineRenderer.positionCount = frostArcPointCount;
+            for (int i = 0; i < frostArcPointCount; i++)
+            {
+                frostArcLineRenderer.SetPosition(i, frostArcPoints[i]);
+            }
+
+            frostArcLineRenderer.enabled = true;
+            float duration = LightningData != null ? LightningData.boltVisualDuration : 0.16f;
+            frostHideTime = Time.time + Mathf.Max(0.08f, duration * 1.25f);
         }
     }
 }

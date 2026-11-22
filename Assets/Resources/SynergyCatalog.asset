@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 933309967b9c7f449807ae624ee9bca8, type: 3}
+  m_Name: SynergyCatalog
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCatalog
+  synergies:
+  - {fileID: 11400000, guid: cb3e10fd0e9e41946bc370c2d3a79475, type: 2}
+  - {fileID: 11400000, guid: d6e014313b8309c459d5ab811f8ce6ee, type: 2}
+  - {fileID: 11400000, guid: 93a5fb953bd65174e863c0ff0256ea9a, type: 2}
+  - {fileID: 11400000, guid: 5934e66735b42244abc995f501d74276, type: 2}
+  - {fileID: 11400000, guid: 4fc5451e6b2e5624c84e9d227e1251a3, type: 2}
+  - {fileID: 11400000, guid: fd09ee0fc06b06341826c83a81ab830d, type: 2}
+  - {fileID: 11400000, guid: ff3f5908be74e9843bec74d539cc864f, type: 2}
+  - {fileID: 11400000, guid: 32e37a26a8d683d4bb1942efae6fb26e, type: 2}

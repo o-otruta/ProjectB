@@ -170,7 +170,19 @@ namespace ProjectB.LevelUp
                 case AbilityModifierCardData modCard:
                     badgeColor = new Color(0.16f, 0.56f, 0.88f, 1f);
                     int cur = heroAbilities != null ? heroAbilities.GetAbilityLevel(modCard.targetAbilityId) : 0;
-                    return cur > 0 ? $"Lv {cur} -> Lv {cur + 1}" : "UPGRADE";
+                    if (cur > 0)
+                    {
+                        int next = cur + 1;
+                        if (next % ActiveAbility.OVERDRIVE_LEVEL_INTERVAL == 0 &&
+                            heroAbilities.GetActiveAbilityById(modCard.targetAbilityId) != null)
+                        {
+                            badgeColor = new Color(0.95f, 0.72f, 0.14f, 1f);
+                            string tierLabel = ActiveAbility.GetOverdriveTierLabel(ActiveAbility.CalculateOverdriveTier(next));
+                            return $"Lv {cur} -> Lv {next} {tierLabel}";
+                        }
+                        return $"Lv {cur} -> Lv {next}";
+                    }
+                    return "UPGRADE";
 
                 case SynergyCardData:
                     badgeColor = new Color(0.92f, 0.68f, 0.12f, 1f);

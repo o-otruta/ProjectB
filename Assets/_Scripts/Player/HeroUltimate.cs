@@ -41,6 +41,7 @@ namespace ProjectB.Player
         private SelectedHeroService selectedHeroService;
         private GameEventBus eventBus;
         private HeroRuntimeStats runtimeStats;
+        private RunStatistics runStatistics;
 
         private HeroData activeHeroData;
         private HeroUltimateType activeUltimateType;
@@ -81,13 +82,15 @@ namespace ProjectB.Player
             GameManager gameManager = null,
             SelectedHeroService selectedHeroService = null,
             GameEventBus eventBus = null,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            RunStatistics runStatistics = null)
         {
             this.heroHealth = heroHealth;
             this.gameManager = gameManager;
             this.selectedHeroService = selectedHeroService;
             this.eventBus = eventBus;
             this.runtimeStats = runtimeStats;
+            this.runStatistics = runStatistics;
         }
 
         private void Awake()
@@ -292,6 +295,7 @@ namespace ProjectB.Player
                         if (damageable is EnemyBase enemyDmg)
                         {
                             enemyDmg.TakeDamage(finalDamage, isCrit);
+                            runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
                         }
                         else
                         {
@@ -415,6 +419,7 @@ namespace ProjectB.Player
                     if (damageable is EnemyBase enemy)
                     {
                         enemy.TakeDamage(finalDamage, isCrit);
+                        runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
                     }
                     else
                     {
@@ -527,6 +532,7 @@ namespace ProjectB.Player
                     if (damageable is EnemyBase enemy)
                     {
                         enemy.TakeDamage(finalDamage, isCrit);
+                        runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
                     }
                     else
                     {
@@ -668,6 +674,7 @@ namespace ProjectB.Player
                     if (damageable is EnemyBase enemy)
                     {
                         enemy.TakeDamage(finalDamage, isCrit);
+                        runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
                     }
                     else
                     {

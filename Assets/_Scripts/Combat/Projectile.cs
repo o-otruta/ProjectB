@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
+using ProjectB.Core;
+using ProjectB.Data;
 using ProjectB.Data.Combat;
 using ProjectB.Enemies;
 using ProjectB.Player;
@@ -18,6 +20,7 @@ namespace ProjectB.Combat
         private LayerMask enemyLayer;
         private HeroRuntimeStats runtimeStats;
         private HeroHealth ownerHealth;
+        private RunStatistics runStatistics;
         private bool isReturned;
         private float damageMultiplier = 1f;
         private float spawnTime;
@@ -29,7 +32,8 @@ namespace ProjectB.Combat
             float damageMultiplier = 1f,
             LayerMask enemyLayer = default,
             HeroRuntimeStats runtimeStats = null,
-            HeroHealth ownerHealth = null)
+            HeroHealth ownerHealth = null,
+            RunStatistics runStatistics = null)
         {
             data = weaponData;
             target = targetTransform;
@@ -38,6 +42,7 @@ namespace ProjectB.Combat
             this.enemyLayer = enemyLayer;
             this.runtimeStats = runtimeStats;
             this.ownerHealth = ownerHealth;
+            this.runStatistics = runStatistics;
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
             spawnTime = Time.time;
@@ -145,12 +150,13 @@ namespace ProjectB.Combat
             return Mathf.RoundToInt(rawDamage);
         }
 
-        private static void DealDamage(IDamageable victim, int damage, bool isCrit)
+        private void DealDamage(IDamageable victim, int damage, bool isCrit)
         {
             if (victim == null || victim.IsDead || damage <= 0) return;
             if (victim is EnemyBase enemy)
             {
                 enemy.TakeDamage(damage, isCrit);
+                runStatistics?.RecordDamage(DamageSourceIds.Weapon, damage);
             }
             else
             {

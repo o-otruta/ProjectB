@@ -32,6 +32,7 @@ namespace ProjectB.Arena
         private HeroHealth _heroHealth;
         private HeroEconomy _heroEconomy;
         private HeroExperience _heroExperience;
+        private RunStatistics _runStatistics;
         private WaveManager _waveManager;
         private GameManager _gameManager;
 
@@ -50,13 +51,15 @@ namespace ProjectB.Arena
             GameEventBus eventBus = null,
             HeroHealth heroHealth = null,
             HeroEconomy heroEconomy = null,
-            HeroExperience heroExperience = null)
+            HeroExperience heroExperience = null,
+            RunStatistics runStatistics = null)
         {
             _resolver = resolver;
             _eventBus = eventBus;
             _heroHealth = heroHealth;
             _heroEconomy = heroEconomy;
             _heroExperience = heroExperience;
+            _runStatistics = runStatistics;
         }
 
         private void ResolveDeferredDependencies()
@@ -447,7 +450,7 @@ namespace ProjectB.Arena
             GameObject go = Instantiate(_config.ExplosiveBarrelPrefab, position, Quaternion.Euler(0f, Range(0f, 360f), 0f), parent);
             var barrel = go.GetComponent<ExplosiveBarrel>();
             if (barrel == null) barrel = go.AddComponent<ExplosiveBarrel>();
-            barrel.Initialize(_heroHealth, _eventBus);
+            barrel.Initialize(_heroHealth, _eventBus, _runStatistics);
             _spawnedBarrels.Add(barrel);
             return barrel;
         }

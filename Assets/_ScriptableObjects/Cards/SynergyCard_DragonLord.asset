@@ -13,18 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_DragonLord
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Dragon Lord'
-  description: 'Dragon Whelp + Battle Fury: Summons +1 Dragon Whelp, +10 Dragon Damage,
-    and +25% Global Damage.'
+  description: 'Dragon Whelp + Battle Fury: Dragon Whelps breathe Fury flames that
+    pierce 3 enemies and leave burning embers underneath hit targets.'
   icon: {fileID: 21300000, guid: 1a6a9475851ec334889d1dc6fe335acf, type: 3}
   rarity: 3
   isConsumable: 1
   synergyId: dragon_lord
-  abilityBonuses:
-  - targetAbilityId: MiniDragon
-    modifierType: 0
-    value: 1
-  - targetAbilityId: MiniDragon
-    modifierType: 1
-    value: 10
-  globalDamageBonusPercent: 25
+  abilityBonuses: []
+  globalDamageBonusPercent: 0
   armorBonus: 0

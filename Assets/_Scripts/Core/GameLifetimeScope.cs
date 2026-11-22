@@ -22,6 +22,7 @@ namespace ProjectB.Core
         {
             // Register Core Systems
             builder.Register<RunStatistics>(Lifetime.Scoped);
+            builder.Register<RunComboTracker>(Lifetime.Scoped);
             builder.Register<GameEventBus>(Lifetime.Scoped);
             builder.Register<HeroRuntimeStats>(Lifetime.Scoped);
             builder.Register<UpgradeApplier>(Lifetime.Scoped);
@@ -48,6 +49,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<XpBarUI>();
             builder.RegisterComponentInHierarchy<WaveHudUI>();
             builder.RegisterComponentInHierarchy<CoinHudUI>();
+            builder.RegisterComponentInHierarchy<ComboHudUI>();
             builder.RegisterComponentInHierarchy<AbilityHudUI>();
             builder.RegisterComponentInHierarchy<BossHealthBarUI>();
             builder.RegisterComponentInHierarchy<UltimateButtonUI>();

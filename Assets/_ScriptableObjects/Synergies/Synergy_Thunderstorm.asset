@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyData
   id: thunder_storm
   synergyName: Thunderstorm
+  description: 'Chain Lightning + Ice Aura: Striking slowed enemies triggers a 90%
+    deep freeze (0.65s) and fires 2 extra icy lightning arcs.'
+  icon: {fileID: 21300000, guid: 2717d45e80020bb49b06f30223b3b611, type: 3}
+  rarity: 3
   requiredAbilityIds:
   - ChainLightning
   - IceAura

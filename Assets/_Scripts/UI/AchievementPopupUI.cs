@@ -118,25 +118,14 @@ namespace ProjectB.UI
 
         private static string FormatSubtitle(AchievementData data)
         {
-            switch (data.rewardType)
+            if (data == null) return "Achievement Unlocked!";
+            if (data.rewardType == AchievementRewardType.GiveCoins)
             {
-                case AchievementRewardType.UnlockAbility:
-                    return !string.IsNullOrEmpty(data.rewardId)
-                        ? $"Unlocked: {data.rewardId}"
-                        : "New Ability Unlocked!";
-                case AchievementRewardType.UnlockHero:
-                    return !string.IsNullOrEmpty(data.rewardId)
-                        ? $"Hero Unlocked: {data.rewardId}"
-                        : "New Hero Unlocked!";
-                case AchievementRewardType.GiveCoins:
-                    return $"Achievement Unlocked! +{data.rewardValue} Coins";
-                case AchievementRewardType.UnlockActiveSlot:
-                    return $"+{Mathf.Max(1, data.rewardValue)} Active Slot Unlocked!";
-                case AchievementRewardType.UnlockPassiveSlot:
-                    return $"+{Mathf.Max(1, data.rewardValue)} Passive Slot Unlocked!";
-                default:
-                    return "Achievement Unlocked!";
+                return $"Achievement Unlocked! +{data.rewardValue} Coins";
             }
+
+            string formatted = RewardDisplayFormatter.FormatReward(data);
+            return !string.IsNullOrEmpty(formatted) ? formatted : "Achievement Unlocked!";
         }
     }
 }

@@ -13,24 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_SteamBlast
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Steam Blast'
-  description: 'Fireball + Ice Aura: Fireball gains +2 projectiles & +15 damage;
-    Ice Aura gains +2.0 radius & +10 damage.'
+  description: 'Fireball + Ice Aura: Hitting any slowed enemy with Fireball triggers
+    a 4.2m Steam Nova dealing 1.8x bonus AoE damage and knockback.'
   icon: {fileID: 21300000, guid: f0ecb864c6f59d54791bff6b25c11b9f, type: 3}
   rarity: 3
   isConsumable: 1
   synergyId: steam_blast
-  abilityBonuses:
-  - targetAbilityId: Fireball
-    modifierType: 0
-    value: 2
-  - targetAbilityId: Fireball
-    modifierType: 1
-    value: 15
-  - targetAbilityId: IceAura
-    modifierType: 3
-    value: 2
-  - targetAbilityId: IceAura
-    modifierType: 1
-    value: 10
+  abilityBonuses: []
   globalDamageBonusPercent: 0
   armorBonus: 0

@@ -13,7 +13,7 @@ namespace ProjectB.Abilities
             Level = 1;
         }
 
-        public void IncrementLevel()
+        public virtual void IncrementLevel()
         {
             Level++;
         }

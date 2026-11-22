@@ -65,6 +65,18 @@ namespace ProjectB.UI
             if (levelText != null)
             {
                 levelText.text = $"Lv{level}";
+                if (data.type == AbilityType.Active && level >= 20)
+                {
+                    levelText.color = new Color(0.42f, 0.96f, 1f, 1f);
+                }
+                else if (data.type == AbilityType.Active && level >= 10)
+                {
+                    levelText.color = new Color(1f, 0.86f, 0.24f, 1f);
+                }
+                else
+                {
+                    levelText.color = Color.white;
+                }
             }
         }
 

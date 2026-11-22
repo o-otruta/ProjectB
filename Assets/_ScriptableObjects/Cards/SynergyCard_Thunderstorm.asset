@@ -13,24 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_Thunderstorm
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Thunderstorm'
-  description: 'Chain Lightning + Ice Aura: +3 Bounces & +12 Damage to Chain Lightning;
-    +1.5m Radius & +20% Slow to Ice Aura.'
+  description: 'Chain Lightning + Ice Aura: Striking slowed enemies triggers a 90%
+    deep freeze (0.65s) and fires 2 extra icy lightning arcs.'
   icon: {fileID: 21300000, guid: 2717d45e80020bb49b06f30223b3b611, type: 3}
   rarity: 3
   isConsumable: 1
   synergyId: thunder_storm
-  abilityBonuses:
-  - targetAbilityId: ChainLightning
-    modifierType: 0
-    value: 3
-  - targetAbilityId: ChainLightning
-    modifierType: 1
-    value: 12
-  - targetAbilityId: IceAura
-    modifierType: 3
-    value: 1.5
-  - targetAbilityId: IceAura
-    modifierType: 8
-    value: 0.2
+  abilityBonuses: []
   globalDamageBonusPercent: 0
   armorBonus: 0

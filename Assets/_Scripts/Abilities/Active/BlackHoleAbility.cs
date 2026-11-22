@@ -22,6 +22,9 @@ namespace ProjectB.Abilities
         private readonly System.Collections.Generic.List<EnemyBase> capturedEnemies = new System.Collections.Generic.List<EnemyBase>(128);
         private GameObject visualHole;
 
+        public float CurrentRadius => currentRadius;
+        public Vector3 Center => transform.position;
+
         public override void SimulateFrameTick()
         {
             Update();
@@ -59,7 +62,12 @@ namespace ProjectB.Abilities
             
             UpdateVisualSize();
 
-            Destroy(visualHole.GetComponent<CapsuleCollider>());
+            var col = visualHole.GetComponent<Collider>();
+            if (col != null)
+            {
+                if (Application.isPlaying) Destroy(col);
+                else DestroyImmediate(col);
+            }
 
             var renderer = visualHole.GetComponent<Renderer>();
             if (renderer != null && HoleData.auraMaterial != null)
@@ -86,6 +94,22 @@ namespace ProjectB.Abilities
                     UpdateVisualSize();
                     break;
                 case ModifierType.Speed: currentPullForce += value; break;
+            }
+        }
+
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentRadius *= 1.2f;
+                currentPullForce *= 1.2f;
+                UpdateVisualSize();
+            }
+            else if (tier == 2)
+            {
+                currentRadius *= 1.15f;
+                currentPullForce *= 1.2f;
+                UpdateVisualSize();
             }
         }
 
@@ -160,7 +184,7 @@ namespace ProjectB.Abilities
                 if (applyDamage)
                 {
                     int dmg = RollScaledDamage(currentDamage, out bool isCrit);
-                    enemy.TakeDamage(dmg, isCrit);
+                    DealDamage(enemy, dmg, isCrit);
                 }
             }
         }

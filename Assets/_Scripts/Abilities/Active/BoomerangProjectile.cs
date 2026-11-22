@@ -1,6 +1,9 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core;
+using ProjectB.Enemies;
 using ProjectB.Player;
 
 namespace ProjectB.Abilities
@@ -14,9 +17,10 @@ namespace ProjectB.Abilities
         private Vector3 targetPosition;
         private bool returning;
         private Transform returnTarget;
+        private Action onHitEnemyCallback;
 
-        private HashSet<EntityId> damagedEnemies = new HashSet<EntityId>(32);
-        private Collider[] overlapHits = new Collider[64];
+        private readonly HashSet<EntityId> damagedEnemies = new HashSet<EntityId>(32);
+        private readonly Collider[] overlapHits = new Collider[64];
         private float hitRadius = 1f;
 
         public void InitializeBoomerang(
@@ -28,7 +32,11 @@ namespace ProjectB.Abilities
             Transform returnTarget,
             LayerMask enemyLayer,
             UnityEngine.Pool.IObjectPool<AbilityProjectile> pool,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            Action onHitEnemyCallback = null,
+            RunStatistics runStatistics = null,
+            string sourceId = "Boomerang",
+            float visualScale = 1f)
         {
             this.damage = damage;
             this.speed = speed;
@@ -38,6 +46,9 @@ namespace ProjectB.Abilities
             this.enemyLayer = enemyLayer;
             this.pool = pool;
             this.runtimeStats = runtimeStats;
+            this.onHitEnemyCallback = onHitEnemyCallback;
+            this.runStatistics = runStatistics;
+            this.sourceId = !string.IsNullOrEmpty(sourceId) ? sourceId : "Boomerang";
             this.isReturned = false;
             this.spawnTime = Time.time;
 
@@ -46,8 +57,8 @@ namespace ProjectB.Abilities
             returning = false;
             currentPierces = 0;
             damagedEnemies.Clear();
-            
-            transform.localScale = Vector3.one;
+
+            transform.localScale = Vector3.one * Mathf.Max(0.5f, visualScale);
         }
 
         protected override void Update()
@@ -77,7 +88,7 @@ namespace ProjectB.Abilities
                 {
                     returning = true;
                     currentPierces = 0;
-                    damagedEnemies.Clear(); 
+                    damagedEnemies.Clear();
                 }
             }
             else
@@ -98,13 +109,18 @@ namespace ProjectB.Abilities
                 if (currentPierces >= pierceCount) break;
 
                 var hitCol = overlapHits[i];
-                if (hitCol.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
+                if (hitCol != null && hitCol.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
                     EntityId id = hitCol.gameObject.GetEntityId();
                     if (!damagedEnemies.Contains(id))
                     {
                         int finalDamage = RollHitDamage(damage, out bool isCrit);
                         DealDamage(damageable, finalDamage, isCrit);
+                        if (damageable is EnemyBase)
+                        {
+                            runStatistics?.RecordDamage(sourceId, finalDamage);
+                            onHitEnemyCallback?.Invoke();
+                        }
                         damagedEnemies.Add(id);
                         currentPierces++;
                     }

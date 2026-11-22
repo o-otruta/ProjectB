@@ -34,6 +34,7 @@ namespace ProjectB.Core
         private GameEventBus eventBus;
         private VirtualJoystick virtualJoystick;
         private AdManager adManager;
+        private RunComboTracker comboTracker;
 
         private bool hasRevivedThisRun;
         private bool hasDoubledCoinsThisRun;
@@ -52,7 +53,8 @@ namespace ProjectB.Core
             AchievementManager achievementManager, 
             GameEventBus eventBus,
             VirtualJoystick virtualJoystick = null,
-            AdManager adManager = null)
+            AdManager adManager = null,
+            RunComboTracker comboTracker = null)
         {
             this.heroHealth = heroHealth;
             this.waveManager = waveManager;
@@ -62,6 +64,7 @@ namespace ProjectB.Core
             this.eventBus = eventBus;
             this.virtualJoystick = virtualJoystick;
             this.adManager = adManager;
+            this.comboTracker = comboTracker;
         }
 
         private GameState currentState;
@@ -102,9 +105,10 @@ namespace ProjectB.Core
 
         private void Update()
         {
-            if (currentState == GameState.Playing && runStatistics != null)
+            if (currentState == GameState.Playing)
             {
-                runStatistics.UpdatePlayTime(Time.deltaTime);
+                runStatistics?.UpdatePlayTime(Time.deltaTime);
+                comboTracker?.Tick(Time.deltaTime);
             }
         }
 

@@ -55,6 +55,14 @@ namespace ProjectB.Visuals
             "SHRINE: 5/6",
             "SHRINE: 6/6"
         };
+        private static readonly string[] CachedComboMilestoneLabels =
+        {
+            string.Empty,
+            "COMBO x15! +10%",
+            "COMBO x30! +15%",
+            "COMBO x50! +20%",
+            "COMBO x100! +30%"
+        };
         private const string CachedShrineStartText = "CHALLENGE! Defeat 6 Elites!";
         private const string CachedShrineCompleteText = "SHRINE CLEARED! +100 Coins";
 
@@ -95,6 +103,11 @@ namespace ProjectB.Visuals
         private static readonly Color VacuumSecondaryColor = new Color(1f, 0.35f, 0.85f, 1f);
         private static readonly Color ShrineStartColor = new Color(1f, 0.24f, 0.36f, 1f);
         private static readonly Color ShrineCompleteColor = new Color(1f, 0.86f, 0.24f, 1f);
+        private static readonly Color OverdriveGoldColor = new Color(1f, 0.85f, 0.2f, 1f);
+        private static readonly Color AwakenedCyanColor = new Color(0.35f, 0.96f, 1f, 1f);
+        private static readonly Color MythicMagentaColor = new Color(0.95f, 0.36f, 1f, 1f);
+        private static readonly Color SteamWhiteColor = new Color(0.92f, 0.98f, 1f, 1f);
+        private static readonly Color ComboTextColor = new Color(1f, 0.68f, 0.16f, 1f);
 
         [Inject]
         public void Construct(
@@ -330,6 +343,9 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
                 eventBus.Subscribe<ChallengeShrineEvent>(OnChallengeShrine);
                 eventBus.Subscribe<ShieldShockwaveEvent>(OnShieldShockwave);
+                eventBus.Subscribe<AbilityOverdriveEvent>(OnAbilityOverdrive);
+                eventBus.Subscribe<ComboMilestoneEvent>(OnComboMilestone);
+                eventBus.Subscribe<SynergyReactionVfxEvent>(OnSynergyReactionVfx);
             }
 
             if (heroHealth != null)
@@ -369,6 +385,9 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
                 eventBus.Unsubscribe<ChallengeShrineEvent>(OnChallengeShrine);
                 eventBus.Unsubscribe<ShieldShockwaveEvent>(OnShieldShockwave);
+                eventBus.Unsubscribe<AbilityOverdriveEvent>(OnAbilityOverdrive);
+                eventBus.Unsubscribe<ComboMilestoneEvent>(OnComboMilestone);
+                eventBus.Unsubscribe<SynergyReactionVfxEvent>(OnSynergyReactionVfx);
             }
 
             if (heroHealth != null)
@@ -703,6 +722,86 @@ namespace ProjectB.Visuals
                 speed: 6.2f,
                 size: 0.32f);
             cameraController?.Shake(0.18f, 0.12f);
+        }
+
+        private void OnAbilityOverdrive(AbilityOverdriveEvent evt)
+        {
+            Vector3 heroPos = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            Color primary = evt.Tier == 1
+                ? OverdriveGoldColor
+                : (evt.Tier == 2 ? AwakenedCyanColor : MythicMagentaColor);
+
+            EmitExplosionRing(
+                heroPos + Vector3.up * 0.9f,
+                2.6f,
+                primary,
+                SynergyGoldColor,
+                ringCount: 24,
+                centerCount: 10,
+                speed: 6.4f,
+                size: 0.34f);
+
+            if (damagePool != null && !string.IsNullOrEmpty(evt.TierLabel))
+            {
+                string label = !string.IsNullOrEmpty(evt.AbilityName)
+                    ? $"{evt.AbilityName.ToUpperInvariant()} {evt.TierLabel}"
+                    : evt.TierLabel;
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(heroPos, label, primary, 1.45f, 1.8f, mainCamera, damagePool);
+            }
+
+            audioManager?.PlaySfx(SfxType.LevelUp, volumeScale: 0.95f, randomizePitch: false);
+            cameraController?.Shake(0.24f, 0.16f);
+        }
+
+        private void OnComboMilestone(ComboMilestoneEvent evt)
+        {
+            Vector3 heroPos = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            EmitBurst(heroPos + Vector3.up * 1.1f, ComboTextColor, 14, 5.2f, 0.24f);
+
+            if (damagePool != null &&
+                evt.MilestoneTier > 0 &&
+                evt.MilestoneTier < CachedComboMilestoneLabels.Length)
+            {
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(heroPos, CachedComboMilestoneLabels[evt.MilestoneTier], ComboTextColor, 1.3f, 1.45f, mainCamera, damagePool);
+            }
+
+            audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.78f, randomizePitch: true);
+        }
+
+        private void OnSynergyReactionVfx(SynergyReactionVfxEvent evt)
+        {
+            switch (evt.ReactionType)
+            {
+                case SynergyReactionVfxType.ToxicInfernoIgnite:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.35f, Mathf.Max(1.5f, evt.Radius), FireballPrimaryColor, XpSparkColor, 20, 8, 5.4f, 0.32f);
+                    break;
+
+                case SynergyReactionVfxType.SteamBlastNova:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(2f, evt.Radius), SteamWhiteColor, FrostPrimaryColor, 22, 8, 6.2f, 0.34f);
+                    break;
+
+                case SynergyReactionVfxType.ThunderstormShatter:
+                    EmitBurst(evt.Position + Vector3.up * 0.6f, FrostPrimaryColor, 12, 4.8f, 0.24f);
+                    break;
+
+                case SynergyReactionVfxType.AegisPhalanxWave:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(1.4f, evt.Radius), SynergyGoldColor, ShieldUltColor, 16, 4, 4.8f, 0.26f);
+                    break;
+
+                case SynergyReactionVfxType.CataclysmShards:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.6f, Mathf.Max(1.6f, evt.Radius), SynergyPurpleColor, SoulNovaPrimaryColor, 18, 6, 5.8f, 0.3f);
+                    break;
+
+                case SynergyReactionVfxType.DragonBurn:
+                    EmitBurst(evt.Position + Vector3.up * 0.2f, FireballPrimaryColor, 6, 3.2f, 0.2f);
+                    break;
+
+                case SynergyReactionVfxType.BladeStormVolley:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.6f, Mathf.Max(1.5f, evt.Radius), ShieldUltColor, SteamWhiteColor, 14, 0, 4.8f, 0.22f);
+                    break;
+            }
         }
 
         private void OnChallengeShrine(ChallengeShrineEvent evt)

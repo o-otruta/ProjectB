@@ -11,14 +11,16 @@ namespace ProjectB.LevelUp
     {
         private HeroRuntimeStats runtimeStats;
         private GameEventBus eventBus;
+        private RunComboTracker comboTracker;
         private float baseMagnetRadius;
         private float xpMultiplier = 1f;
 
         [Inject]
-        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus)
+        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus, RunComboTracker comboTracker = null)
         {
             this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
+            this.comboTracker = comboTracker;
         }
         [Header("Settings")]
         [Tooltip("Базовое значение XP для 1 уровня")]
@@ -152,7 +154,8 @@ namespace ProjectB.LevelUp
 
         public void AddExperience(int amount)
         {
-            int gained = Mathf.RoundToInt(amount * xpMultiplier);
+            float comboMult = comboTracker != null ? comboTracker.RewardMultiplier : 1f;
+            int gained = Mathf.RoundToInt(amount * xpMultiplier * comboMult);
             CurrentXP += gained;
             if (gained > 0)
             {

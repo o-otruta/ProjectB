@@ -121,7 +121,12 @@ namespace ProjectB.Abilities
             float damage,
             LayerMask enemyLayer,
             HeroRuntimeStats runtimeStats,
-            IObjectPool<DragonFlameProjectile> flamePool)
+            IObjectPool<DragonFlameProjectile> flamePool,
+            int pierceCount = 1,
+            System.Action<Vector3, float> onFuryHit = null,
+            ProjectB.Core.RunStatistics runStatistics = null,
+            string sourceId = "MiniDragon",
+            float visualScale = 1f)
         {
             if (target == null || flamePool == null) return 0;
 
@@ -150,7 +155,19 @@ namespace ProjectB.Abilities
                 }
 
                 Vector3 spawnPos = new Vector3(origin.x, 0.75f, origin.z);
-                flame.Initialize(spawnPos, dir, speed, damage, enemyLayer, runtimeStats, flamePool);
+                flame.Initialize(
+                    spawnPos,
+                    dir,
+                    speed,
+                    damage,
+                    enemyLayer,
+                    runtimeStats,
+                    flamePool,
+                    pierceCount,
+                    onFuryHit,
+                    runStatistics,
+                    sourceId,
+                    visualScale);
                 fired++;
             }
 

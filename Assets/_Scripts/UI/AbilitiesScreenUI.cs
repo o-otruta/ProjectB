@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Abilities;
 using ProjectB.Data;
+using ProjectB.LevelUp;
 using ProjectB.Meta;
 
 namespace ProjectB.UI
@@ -12,6 +14,7 @@ namespace ProjectB.UI
     public class AbilitiesScreenUI : MonoBehaviour
     {
         [SerializeField] private AbilityCatalog abilityCatalog;
+        [SerializeField] private SynergyCatalog synergyCatalog;
         [SerializeField] private Transform contentContainer;
         [SerializeField] private AbilityCollectionItemUI itemPrefab;
         [SerializeField] private TextMeshProUGUI headerText;
@@ -19,17 +22,20 @@ namespace ProjectB.UI
         private SaveManager saveManager;
         private AchievementManager achievementManager;
         private AbilitySlotService abilitySlotService;
+        private ISynergyUnlockProvider synergyUnlockProvider;
         private readonly List<AbilityCollectionItemUI> spawnedItems = new List<AbilityCollectionItemUI>();
 
         [Inject]
         public void Construct(
             SaveManager saveManager,
             AchievementManager achievementManager = null,
-            AbilitySlotService abilitySlotService = null)
+            AbilitySlotService abilitySlotService = null,
+            ISynergyUnlockProvider synergyUnlockProvider = null)
         {
             this.saveManager = saveManager;
             this.achievementManager = achievementManager;
             this.abilitySlotService = abilitySlotService;
+            this.synergyUnlockProvider = synergyUnlockProvider;
 
             if (isActiveAndEnabled)
             {
@@ -63,6 +69,10 @@ namespace ProjectB.UI
             }
             spawnedItems.Clear();
 
+            SynergyCatalog resolvedSynergies = synergyCatalog != null
+                ? synergyCatalog
+                : Resources.Load<SynergyCatalog>("SynergyCatalog");
+
             int unlockedCount = 0;
             int totalCount = 0;
 
@@ -77,18 +87,81 @@ namespace ProjectB.UI
                 if (isUnlocked) unlockedCount++;
 
                 string requirementText = isUnlocked ? string.Empty : FindUnlockRequirement(data.id);
+                string synergyHint = BuildAbilitySynergyHint(data.id, resolvedSynergies);
 
                 var item = Instantiate(itemPrefab, contentContainer);
-                item.Setup(data, isUnlocked, requirementText);
+                item.Setup(data, isUnlocked, requirementText, synergyHint);
                 spawnedItems.Add(item);
+            }
+
+            int synergyCount = 0;
+            if (resolvedSynergies != null && resolvedSynergies.synergies != null)
+            {
+                for (int i = 0; i < resolvedSynergies.synergies.Count; i++)
+                {
+                    SynergyData syn = resolvedSynergies.synergies[i];
+                    if (syn == null) continue;
+
+                    synergyCount++;
+                    bool synUnlocked = synergyUnlockProvider == null || synergyUnlockProvider.IsSynergyUnlocked(syn.id);
+                    string pairLabel = FormatSynergyPairLabel(syn);
+
+                    var item = Instantiate(itemPrefab, contentContainer);
+                    item.SetupSynergy(syn, pairLabel, synUnlocked);
+                    spawnedItems.Add(item);
+                }
             }
 
             if (headerText != null)
             {
                 int act = abilitySlotService != null ? abilitySlotService.MaxActiveSlots : AbilitySlotService.BASE_ACTIVE_SLOTS;
                 int pas = abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : AbilitySlotService.BASE_PASSIVE_SLOTS;
-                headerText.text = $"Abilities ({unlockedCount}/{totalCount})  •  Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}A {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}P";
+                headerText.text = synergyCount > 0
+                    ? $"Abilities ({unlockedCount}/{totalCount})  •  {synergyCount} Synergies  •  Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}A {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}P"
+                    : $"Abilities ({unlockedCount}/{totalCount})  •  Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}A {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}P";
             }
+        }
+
+        private string BuildAbilitySynergyHint(string abilityId, SynergyCatalog catalog)
+        {
+            if (string.IsNullOrEmpty(abilityId) || catalog == null || catalog.synergies == null) return string.Empty;
+
+            StringBuilder sb = null;
+            for (int i = 0; i < catalog.synergies.Count; i++)
+            {
+                SynergyData syn = catalog.synergies[i];
+                if (syn == null || syn.requiredAbilityIds == null || !syn.requiredAbilityIds.Contains(abilityId)) continue;
+
+                string partnerNames = string.Empty;
+                for (int r = 0; r < syn.requiredAbilityIds.Count; r++)
+                {
+                    string reqId = syn.requiredAbilityIds[r];
+                    if (reqId == abilityId) continue;
+
+                    string partnerName = RewardDisplayFormatter.ResolveAbilityName(reqId, abilityCatalog);
+                    partnerNames = string.IsNullOrEmpty(partnerNames) ? partnerName : $"{partnerNames} + {partnerName}";
+                }
+
+                if (sb == null) sb = new StringBuilder("Synergy: ");
+                else sb.Append("; ");
+
+                sb.Append('+').Append(partnerNames).Append(" -> ").Append(syn.synergyName);
+            }
+
+            return sb != null ? sb.ToString() : string.Empty;
+        }
+
+        private string FormatSynergyPairLabel(SynergyData syn)
+        {
+            if (syn == null || syn.requiredAbilityIds == null || syn.requiredAbilityIds.Count == 0) return string.Empty;
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < syn.requiredAbilityIds.Count; i++)
+            {
+                if (i > 0) sb.Append(" + ");
+                sb.Append(RewardDisplayFormatter.ResolveAbilityName(syn.requiredAbilityIds[i], abilityCatalog));
+            }
+            return sb.ToString();
         }
 
         private bool IsAbilityUnlocked(AbilityData data)

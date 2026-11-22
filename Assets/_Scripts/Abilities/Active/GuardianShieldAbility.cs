@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core.Events;
 using ProjectB.Enemies;
 
 namespace ProjectB.Abilities
@@ -10,12 +11,15 @@ namespace ProjectB.Abilities
         private GuardianShieldAbilityData ShieldData => Data as GuardianShieldAbilityData;
 
         private const float SCAN_INTERVAL = 0.08f;
+        private const float PHALANX_WAVE_RADIUS = 2.4f;
+        private const float PHALANX_COOLDOWN = 0.15f;
         private static int cachedObstacleMask = -1;
 
         private readonly List<Transform> shields = new List<Transform>();
         private readonly Dictionary<EntityId, float> enemyHitCooldowns = new Dictionary<EntityId, float>(128);
         private readonly List<EntityId> keysToRemove = new List<EntityId>(128);
         private readonly Collider[] hitBuffer = new Collider[64];
+        private readonly Collider[] phalanxHitBuffer = new Collider[48];
 
         private int currentCount;
         private float currentDamage;
@@ -26,6 +30,7 @@ namespace ProjectB.Abilities
         private float currentAngle;
         private float nextScanTime;
         private float nextCleanupTime;
+        private float nextPhalanxTime;
 
         private static int ObstacleMask
         {
@@ -78,6 +83,22 @@ namespace ProjectB.Abilities
             }
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentOrbitSpeed *= 1.2f;
+                currentKnockback *= 1.2f;
+                UpdateShieldScales();
+            }
+            else if (tier == 2)
+            {
+                currentCount += 1;
+                SpawnShields();
+                UpdateShieldScales();
+            }
+        }
+
         private void SpawnShields()
         {
             while (shields.Count > currentCount)
@@ -101,10 +122,23 @@ namespace ProjectB.Abilities
                 }
 
                 obj.name = $"GuardianShield_{i}";
+                obj.transform.localScale = Vector3.one * VisualScaleMultiplier;
                 shields.Add(obj.transform);
             }
 
             RecalculatePositions();
+        }
+
+        private void UpdateShieldScales()
+        {
+            Vector3 scale = Vector3.one * VisualScaleMultiplier;
+            for (int i = 0; i < shields.Count; i++)
+            {
+                if (shields[i] != null)
+                {
+                    shields[i].localScale = scale;
+                }
+            }
         }
 
         private static GameObject CreateVoxelShieldVisual(Material shieldMat)
@@ -181,10 +215,11 @@ namespace ProjectB.Abilities
         {
             if (ShieldData == null) return;
 
-            float hitRadius = Mathf.Max(0.3f, ShieldData.shieldHitRadius);
+            float hitRadius = Mathf.Max(0.3f, ShieldData.shieldHitRadius * VisualScaleMultiplier);
             float cooldown = GetEffectiveCooldown(ShieldData.hitCooldownPerEnemy, 0.15f);
             float now = Time.time;
             int obstacleMask = ObstacleMask;
+            bool hasAegisPhalanx = HasSynergy(SynergyIds.AegisPhalanx);
 
             for (int s = 0; s < shields.Count; s++)
             {
@@ -235,11 +270,42 @@ namespace ProjectB.Abilities
                             if (safeDist > 0.01f)
                             {
                                 enemy.ApplyPull(pushDir * safeDist);
+
+                                if (hasAegisPhalanx && now >= nextPhalanxTime)
+                                {
+                                    nextPhalanxTime = now + PHALANX_COOLDOWN;
+                                    TriggerAegisPhalanxWave(shield.position);
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+
+        private void TriggerAegisPhalanxWave(Vector3 shieldPosition)
+        {
+            Vector3 waveCenter = shieldPosition;
+            OrbitalCompanionAbility orbital = heroAbilities != null
+                ? heroAbilities.GetActiveAbility<OrbitalCompanionAbility>()
+                : null;
+            if (orbital != null && orbital.TryGetClosestInstancePosition(shieldPosition, out Vector3 swordPosition))
+            {
+                waveCenter = (shieldPosition + swordPosition) * 0.5f;
+            }
+
+            int hits = Physics.OverlapSphereNonAlloc(waveCenter, PHALANX_WAVE_RADIUS, phalanxHitBuffer, ShieldData.targetLayer);
+            for (int i = 0; i < hits; i++)
+            {
+                Collider col = phalanxHitBuffer[i];
+                if (col == null) continue;
+                if (!col.TryGetComponent<IDamageable>(out var target) || target.IsDead) continue;
+
+                int waveDmg = RollScaledDamage(currentDamage * 1.35f, out bool isCrit);
+                DealDamage(target, waveDmg, isCrit, SynergyIds.AegisPhalanx);
+            }
+
+            eventBus?.Publish(new SynergyReactionVfxEvent(SynergyReactionVfxType.AegisPhalanxWave, waveCenter, PHALANX_WAVE_RADIUS));
         }
 
         private void CleanupCooldowns()

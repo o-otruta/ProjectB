@@ -8,9 +8,12 @@ namespace ProjectB.LevelUp
     {
         public string id;
         public string synergyName;
-        [Tooltip("All ability IDs the hero must own for this synergy card to appear")]
+        [TextArea] public string description;
+        public Sprite icon;
+        public CardRarity rarity = CardRarity.Legendary;
+        [Tooltip("All ability IDs the hero must own for this synergy to auto-activate")]
         public List<string> requiredAbilityIds = new List<string>();
-        [Tooltip("Special synergy card unlocked into the LevelUp offer pool when all required abilities are equipped")]
+        [Tooltip("Legacy card reference kept for asset compatibility; synergies now auto-activate without LevelUp cards")]
         public SynergyCardData rewardCard;
     }
 }

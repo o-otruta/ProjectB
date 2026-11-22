@@ -37,31 +37,8 @@ namespace ProjectB.UI
             
             if (descriptionText != null)
             {
-                switch (achievement.rewardType)
-                {
-                    case AchievementRewardType.GiveCoins:
-                        descriptionText.text = $"+{achievement.rewardValue} Coins";
-                        break;
-                    case AchievementRewardType.UnlockAbility:
-                        descriptionText.text = !string.IsNullOrEmpty(achievement.rewardId)
-                            ? $"Ability Unlocked: {achievement.rewardId}"
-                            : "New Ability Unlocked!";
-                        break;
-                    case AchievementRewardType.UnlockHero:
-                        descriptionText.text = !string.IsNullOrEmpty(achievement.rewardId)
-                            ? $"Hero Unlocked: {achievement.rewardId}"
-                            : "New Hero Unlocked!";
-                        break;
-                    case AchievementRewardType.UnlockActiveSlot:
-                        descriptionText.text = $"+{Mathf.Max(1, achievement.rewardValue)} Active Ability Slot";
-                        break;
-                    case AchievementRewardType.UnlockPassiveSlot:
-                        descriptionText.text = $"+{Mathf.Max(1, achievement.rewardValue)} Passive Ability Slot";
-                        break;
-                    default:
-                        descriptionText.text = "Reward Unlocked!";
-                        break;
-                }
+                string formatted = RewardDisplayFormatter.FormatReward(achievement);
+                descriptionText.text = !string.IsNullOrEmpty(formatted) ? formatted : "Reward Unlocked!";
             }
 
             if (rewardIconImage != null)

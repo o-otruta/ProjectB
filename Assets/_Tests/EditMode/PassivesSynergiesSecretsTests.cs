@@ -65,12 +65,13 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void SynergyCard_AppearsOnlyWhenBothRequiredAbilitiesEquipped_AndDisappearsAfterClaim()
+        public void Synergy_AutoActivatesWhenBothRequiredAbilitiesEquipped_AndDoesNotAppearInLevelUpCards()
         {
             var stats = new HeroRuntimeStats();
+            var bus = new GameEventBus();
             var heroGo = Track(new GameObject("TestHero"));
             var heroAbilities = heroGo.AddComponent<HeroAbilities>();
-            heroAbilities.Construct(stats, new GameEventBus(), null, null);
+            heroAbilities.Construct(stats, bus, null, null);
 
             var ab1 = Track(ScriptableObject.CreateInstance<StatPassiveAbilityData>());
             ab1.id = "Fireball";
@@ -86,37 +87,39 @@ namespace ProjectB.Tests.EditMode
             synergyCard.synergyId = "steam_blast";
             synergyCard.cardName = "Steam Blast";
             synergyCard.rarity = CardRarity.Legendary;
-            synergyCard.globalDamageBonusPercent = 25f;
 
             var synergy = Track(ScriptableObject.CreateInstance<SynergyData>());
             synergy.id = "steam_blast";
+            synergy.synergyName = "Steam Blast";
             synergy.requiredAbilityIds = new List<string> { "Fireball", "IceAura" };
             synergy.rewardCard = synergyCard;
 
-            var applier = new UpgradeApplier(null, stats, heroAbilities);
+            heroAbilities.SetAvailableSynergies(new List<SynergyData> { synergy });
+
+            var applier = new UpgradeApplier(null, stats, heroAbilities, bus);
             var mgrGo = Track(new GameObject("TestUpgradeMgr"));
             var mgr = mgrGo.AddComponent<UpgradeManager>();
-            mgr.cardPool = new List<CardData>();
+            mgr.cardPool = new List<CardData> { synergyCard };
             mgr.synergies = new List<SynergyData> { synergy };
             mgr.Construct(null, null, null, heroAbilities, applier, null);
             mgr.InitializeRunPool();
 
-            // Neither ability equipped -> no synergy card
+            // Neither ability equipped -> synergy inactive and not offered as a LevelUp card
+            Assert.IsFalse(heroAbilities.HasSynergy("steam_blast"));
             Assert.AreEqual(0, mgr.GetRandomCards(5).Count);
 
-            // Only 1 ability equipped -> still no synergy card
+            // Only 1 ability equipped -> still inactive
             heroAbilities.AddAbility(ab1);
+            Assert.IsFalse(heroAbilities.HasSynergy("steam_blast"));
             Assert.AreEqual(0, mgr.GetRandomCards(5).Count);
 
-            // Both abilities equipped -> synergy card appears!
+            // Both abilities equipped -> synergy auto-activates with zero level inflation or flat stat-pack
             heroAbilities.AddAbility(ab2);
-            var offered = mgr.GetRandomCards(5);
-            Assert.AreEqual(1, offered.Count);
-            Assert.AreSame(synergyCard, offered[0]);
-
-            // Applying synergy grants its stat bonuses
-            applier.ApplyCard(synergyCard, mgr);
-            Assert.AreEqual(1.30f, stats.GlobalDamageMultiplier, 0.001f); // 1.0 + 0.05 + 0.25
+            Assert.IsTrue(heroAbilities.HasSynergy("steam_blast"));
+            Assert.AreEqual(1, heroAbilities.GetAbilityLevel("Fireball"));
+            Assert.AreEqual(1, heroAbilities.GetAbilityLevel("IceAura"));
+            Assert.AreEqual(1.05f, stats.GlobalDamageMultiplier, 0.001f);
+            Assert.AreEqual(0, mgr.GetRandomCards(5).Count);
         }
 
         [Test]

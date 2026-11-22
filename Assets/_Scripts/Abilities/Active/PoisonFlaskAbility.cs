@@ -153,6 +153,19 @@ namespace ProjectB.Abilities
             }
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentPuddleRadius *= 1.2f;
+                currentThrowRange *= 1.15f;
+            }
+            else if (tier == 2)
+            {
+                currentFlaskCount += 1;
+            }
+        }
+
         private void Update()
         {
             if (Data == null || flaskPool == null || Time.deltaTime <= 0f) return;
@@ -189,6 +202,7 @@ namespace ProjectB.Abilities
                     landingPos += new Vector3(jitter.x, 0f, jitter.y);
                 }
 
+                flask.transform.localScale = Vector3.one * VisualScaleMultiplier;
                 flask.Initialize(origin, landingPos, flight, cachedLandCallback, flaskPool);
             }
 
@@ -217,7 +231,9 @@ namespace ProjectB.Abilities
                 FlaskData.targetLayer,
                 runtimeStats,
                 FlaskData.puddleMaterial,
-                puddlePool);
+                puddlePool,
+                runStatistics,
+                cachedAbilityId);
             return puddle;
         }
 

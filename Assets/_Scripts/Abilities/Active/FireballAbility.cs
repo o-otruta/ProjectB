@@ -24,6 +24,19 @@ namespace ProjectB.Abilities
             }
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentExplosionRadius *= 1.2f;
+                currentSpeed *= 1.2f;
+            }
+            else if (tier == 2)
+            {
+                currentCount += 1;
+            }
+        }
+
         protected override AbilityProjectile CreateProjectilePrefab()
         {
             GameObject obj;
@@ -36,7 +49,12 @@ namespace ProjectB.Abilities
                 obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 obj.transform.SetParent(projectileContainer);
                 obj.transform.localScale = Vector3.one * 0.5f;
-                Destroy(obj.GetComponent<SphereCollider>());
+                var col = obj.GetComponent<Collider>();
+                if (col != null)
+                {
+                    if (Application.isPlaying) Destroy(col);
+                    else DestroyImmediate(col);
+                }
             }
             var p = obj.GetComponent<FireballProjectile>();
             if (p == null) p = obj.AddComponent<FireballProjectile>();
@@ -60,7 +78,19 @@ namespace ProjectB.Abilities
                 offset.y = 0;
                 p.transform.position = transform.position + offset;
                 
-                p.InitializeFireball(GetScaledDamage(currentDamage), currentSpeed, currentExplosionRadius, chosenTarget, ProjectileData.targetLayer, projectilePool, eventBus, runtimeStats);
+                p.InitializeFireball(
+                    GetScaledDamage(currentDamage),
+                    currentSpeed,
+                    currentExplosionRadius,
+                    chosenTarget,
+                    ProjectileData.targetLayer,
+                    projectilePool,
+                    eventBus,
+                    runtimeStats,
+                    heroAbilities,
+                    runStatistics,
+                    cachedAbilityId,
+                    VisualScaleMultiplier);
             }
         }
     }

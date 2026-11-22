@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyData
   id: cataclysm_vortex
   synergyName: Cataclysm Vortex
+  description: 'Black Hole + Arcane Tornado: Tornadoes passing through Black Hole
+    (or expiring) destabilize into 6 explosive gravity shards.'
+  icon: {fileID: 21300000, guid: 21f020ae2de5d4e49b56e20676acdd88, type: 3}
+  rarity: 3
   requiredAbilityIds:
   - BlackHole
   - VoxelTornado

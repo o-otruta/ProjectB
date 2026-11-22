@@ -65,6 +65,8 @@ namespace ProjectB.Enemies
         public int MaxHp => maxHp;
         public float PullResistance => pullResistance;
         public float EffectiveMoveSpeed => enemyData != null ? enemyData.speed * slowFactor * eliteSpeedMultiplier * externalHasteMultiplier : 0f;
+        public bool IsSlowed => slowTimer > 0f && slowFactor < 0.999f;
+        public float CurrentSlowFactor => slowTimer > 0f ? slowFactor : 1f;
         public bool HasExternalSpeedBuff => externalHasteTimer > 0f && externalHasteMultiplier > 1.001f;
 
         public event System.Action<EnemyBase> OnDied;

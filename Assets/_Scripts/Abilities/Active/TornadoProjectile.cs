@@ -1,6 +1,8 @@
+using System;
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Enemies;
 using ProjectB.Player;
 
@@ -24,12 +26,19 @@ namespace ProjectB.Abilities
         private float damage;
         private LayerMask enemyLayer;
         private HeroRuntimeStats runtimeStats;
+        private HeroAbilities heroAbilities;
+        private RunStatistics runStatistics;
+        private string sourceId;
+        private Action<Vector3, float> onDestabilize;
         private IObjectPool<TornadoProjectile> pool;
 
         private float elapsed;
         private float nextTickTime;
         private bool isReturned;
+        private bool hasDestabilized;
         private Transform visualSpiral;
+
+        public bool HasDestabilized => hasDestabilized;
 
         private static int ObstacleMask
         {
@@ -57,7 +66,12 @@ namespace ProjectB.Abilities
             LayerMask enemyLayer,
             HeroRuntimeStats runtimeStats,
             Material tornadoMaterial,
-            IObjectPool<TornadoProjectile> pool)
+            IObjectPool<TornadoProjectile> pool,
+            HeroAbilities heroAbilities = null,
+            RunStatistics runStatistics = null,
+            string sourceId = "VoxelTornado",
+            Action<Vector3, float> onDestabilize = null,
+            float visualScale = 1f)
         {
             EnsureVisual(tornadoMaterial);
 
@@ -78,16 +92,21 @@ namespace ProjectB.Abilities
             this.damage = damage;
             this.enemyLayer = enemyLayer;
             this.runtimeStats = runtimeStats;
+            this.heroAbilities = heroAbilities;
+            this.runStatistics = runStatistics;
+            this.sourceId = !string.IsNullOrEmpty(sourceId) ? sourceId : "VoxelTornado";
+            this.onDestabilize = onDestabilize;
             this.pool = pool;
 
             elapsed = 0f;
             isReturned = false;
+            hasDestabilized = false;
             transform.position = originPos;
 
             if (visualSpiral != null)
             {
-                float radiusScale = Mathf.Max(0.6f, this.vortexRadius * 0.45f);
-                visualSpiral.localScale = new Vector3(radiusScale, 1f, radiusScale);
+                float radiusScale = Mathf.Max(0.6f, this.vortexRadius * 0.45f) * Mathf.Max(0.5f, visualScale);
+                visualSpiral.localScale = new Vector3(radiusScale, Mathf.Max(0.5f, visualScale), radiusScale);
             }
 
             nextTickTime = Time.time;
@@ -143,12 +162,20 @@ namespace ProjectB.Abilities
 
         private void Update()
         {
-            if (isReturned || Time.deltaTime <= 0f) return;
+            StepSimulation(Time.deltaTime);
+        }
 
-            float dt = Time.deltaTime;
+        public void StepSimulation(float dt)
+        {
+            if (isReturned || dt <= 0f) return;
+
             elapsed += dt;
             if (elapsed >= duration)
             {
+                if (!hasDestabilized && heroAbilities != null && heroAbilities.HasSynergy(SynergyIds.CataclysmVortex))
+                {
+                    TriggerDestabilize();
+                }
                 ReturnToPool();
                 return;
             }
@@ -161,12 +188,37 @@ namespace ProjectB.Abilities
                 visualSpiral.Rotate(Vector3.up, 540f * dt);
             }
 
+            if (elapsed >= 0.35f && !hasDestabilized && heroAbilities != null && heroAbilities.HasSynergy(SynergyIds.CataclysmVortex))
+            {
+                BlackHoleAbility blackHole = heroAbilities.GetActiveAbility<BlackHoleAbility>();
+                if (blackHole != null)
+                {
+                    Vector3 delta = blackHole.Center - transform.position;
+                    delta.y = 0f;
+                    float touchRadius = blackHole.CurrentRadius + vortexRadius * 0.35f;
+                    if (delta.sqrMagnitude <= touchRadius * touchRadius)
+                    {
+                        TriggerDestabilize();
+                        ReturnToPool();
+                        return;
+                    }
+                }
+            }
+
             bool applyDamage = Time.time >= nextTickTime;
             ApplyVortexStep(dt, applyDamage);
             if (applyDamage)
             {
                 nextTickTime = Time.time + tickInterval;
             }
+        }
+
+        public bool TriggerDestabilize()
+        {
+            if (hasDestabilized || onDestabilize == null) return false;
+            hasDestabilized = true;
+            onDestabilize.Invoke(transform.position, damage);
+            return true;
         }
 
         public void ApplyVortexStep(float dt, bool applyDamage)
@@ -208,6 +260,7 @@ namespace ProjectB.Abilities
                     if (damageable is EnemyBase dmgEnemy)
                     {
                         dmgEnemy.TakeDamage(finalDmg, isCrit);
+                        runStatistics?.RecordDamage(sourceId, finalDmg);
                     }
                     else
                     {

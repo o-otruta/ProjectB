@@ -1,11 +1,16 @@
+using System;
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Abilities
 {
     public class VoxelTornadoAbility : ActiveAbility
     {
+        private const int CATACLYSM_SHARD_COUNT = 6;
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+
         private VoxelTornadoAbilityData TornadoData => Data as VoxelTornadoAbilityData;
 
         private float currentDamage;
@@ -17,7 +22,13 @@ namespace ProjectB.Abilities
         private float nextFireTime;
         private Transform tornadoContainer;
         private IObjectPool<TornadoProjectile> tornadoPool;
+        private IObjectPool<GravityShardProjectile> shardPool;
+        private Material shardMaterial;
+        private Action<Vector3, float> cachedDestabilizeCallback;
+        private TornadoProjectile lastSpawnedTornado;
         private readonly Collider[] hitBuffer = new Collider[128];
+
+        public TornadoProjectile LastSpawnedTornado => lastSpawnedTornado;
 
         public override void Initialize(AbilityData data)
         {
@@ -34,6 +45,19 @@ namespace ProjectB.Abilities
 
             tornadoContainer = new GameObject($"Tornadoes_{Data.id}").transform;
             tornadoContainer.SetParent(null);
+            cachedDestabilizeCallback = SpawnGravityShards;
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            if (shader != null)
+            {
+                shardMaterial = new Material(shader);
+                if (shardMaterial.HasProperty(BaseColorId))
+                {
+                    shardMaterial.SetColor(BaseColorId, new Color(0.75f, 0.32f, 1f, 1f));
+                }
+                shardMaterial.color = new Color(0.75f, 0.32f, 1f, 1f);
+                shardMaterial.enableInstancing = true;
+            }
 
             tornadoPool = new ObjectPool<TornadoProjectile>(
                 createFunc: () =>
@@ -58,19 +82,69 @@ namespace ProjectB.Abilities
                 defaultCapacity: 4,
                 maxSize: 20);
 
+            shardPool = new ObjectPool<GravityShardProjectile>(
+                createFunc: CreateGravityShardInstance,
+                actionOnGet: s => { if (s != null) s.gameObject.SetActive(true); },
+                actionOnRelease: s => { if (s != null) s.gameObject.SetActive(false); },
+                actionOnDestroy: s =>
+                {
+                    if (s != null)
+                    {
+                        if (Application.isPlaying) Destroy(s.gameObject);
+                        else DestroyImmediate(s.gameObject);
+                    }
+                },
+                collectionCheck: true,
+                defaultCapacity: 12,
+                maxSize: 48);
+
             if (Application.isPlaying)
             {
                 PrewarmPools(4);
             }
         }
 
+        private GravityShardProjectile CreateGravityShardInstance()
+        {
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = "GravityShard";
+            cube.transform.SetParent(tornadoContainer, false);
+            cube.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
+            var col = cube.GetComponent<Collider>();
+            if (col != null)
+            {
+                if (Application.isPlaying) Destroy(col);
+                else DestroyImmediate(col);
+            }
+
+            var mr = cube.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+                if (shardMaterial != null) mr.sharedMaterial = shardMaterial;
+            }
+
+            return cube.AddComponent<GravityShardProjectile>();
+        }
+
         public override void PrewarmPools(int count = 0)
         {
-            if (tornadoPool == null) return;
             int targetCount = count > 0 ? count : 4;
-            var temp = new TornadoProjectile[targetCount];
-            for (int i = 0; i < targetCount; i++) temp[i] = tornadoPool.Get();
-            for (int i = 0; i < targetCount; i++) if (temp[i] != null) tornadoPool.Release(temp[i]);
+            if (tornadoPool != null)
+            {
+                var temp = new TornadoProjectile[targetCount];
+                for (int i = 0; i < targetCount; i++) temp[i] = tornadoPool.Get();
+                for (int i = 0; i < targetCount; i++) if (temp[i] != null) tornadoPool.Release(temp[i]);
+            }
+
+            if (shardPool != null)
+            {
+                int shardCount = Mathf.Max(6, targetCount * 3);
+                var tempShards = new GravityShardProjectile[shardCount];
+                for (int i = 0; i < shardCount; i++) tempShards[i] = shardPool.Get();
+                for (int i = 0; i < shardCount; i++) if (tempShards[i] != null) shardPool.Release(tempShards[i]);
+            }
         }
 
         public override void SimulateFrameTick()
@@ -98,6 +172,19 @@ namespace ProjectB.Abilities
                 case ModifierType.Cooldown:
                     currentCooldown = Mathf.Max(0.4f, currentCooldown - value);
                     break;
+            }
+        }
+
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentRadius *= 1.2f;
+                currentDuration *= 1.2f;
+            }
+            else if (tier == 2)
+            {
+                currentCount += 1;
             }
         }
 
@@ -153,11 +240,43 @@ namespace ProjectB.Abilities
                     TornadoData.targetLayer,
                     runtimeStats,
                     TornadoData.tornadoMaterial,
-                    tornadoPool);
+                    tornadoPool,
+                    heroAbilities,
+                    runStatistics,
+                    cachedAbilityId,
+                    cachedDestabilizeCallback,
+                    VisualScaleMultiplier);
+                lastSpawnedTornado = tornado;
                 spawned++;
             }
 
             return spawned;
+        }
+
+        private void SpawnGravityShards(Vector3 center, float shardBaseDamage)
+        {
+            if (shardPool == null || TornadoData == null) return;
+
+            float shardDamage = shardBaseDamage * 1.8f;
+            float angleStep = 360f / CATACLYSM_SHARD_COUNT;
+
+            for (int i = 0; i < CATACLYSM_SHARD_COUNT; i++)
+            {
+                GravityShardProjectile shard = shardPool.Get();
+                if (shard == null) continue;
+
+                Vector3 dir = Quaternion.Euler(0f, angleStep * i, 0f) * Vector3.forward;
+                shard.Initialize(
+                    new Vector3(center.x, 0.65f, center.z),
+                    dir,
+                    shardDamage,
+                    TornadoData.targetLayer,
+                    runtimeStats,
+                    runStatistics,
+                    shardPool);
+            }
+
+            eventBus?.Publish(new SynergyReactionVfxEvent(SynergyReactionVfxType.CataclysmShards, center, 3.0f));
         }
 
         private Transform FindClosestTarget(float searchRadius, LayerMask layer)
@@ -193,10 +312,16 @@ namespace ProjectB.Abilities
         private void OnDestroy()
         {
             tornadoPool?.Clear();
+            shardPool?.Clear();
             if (tornadoContainer != null)
             {
                 if (Application.isPlaying) Destroy(tornadoContainer.gameObject);
                 else DestroyImmediate(tornadoContainer.gameObject);
+            }
+            if (shardMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(shardMaterial);
+                else DestroyImmediate(shardMaterial);
             }
         }
     }

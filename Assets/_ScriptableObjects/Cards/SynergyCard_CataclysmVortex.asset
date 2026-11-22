@@ -13,24 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_CataclysmVortex
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Cataclysm Vortex'
-  description: 'Black Hole + Arcane Tornado: +2m Black Hole Radius & +8 Damage; +2
-    Tornadoes & +8 Damage.'
+  description: 'Black Hole + Arcane Tornado: Tornadoes passing through Black Hole
+    (or expiring) destabilize into 6 explosive gravity shards.'
   icon: {fileID: 21300000, guid: 21f020ae2de5d4e49b56e20676acdd88, type: 3}
   rarity: 3
   isConsumable: 1
   synergyId: cataclysm_vortex
-  abilityBonuses:
-  - targetAbilityId: BlackHole
-    modifierType: 3
-    value: 2
-  - targetAbilityId: BlackHole
-    modifierType: 1
-    value: 8
-  - targetAbilityId: VoxelTornado
-    modifierType: 0
-    value: 2
-  - targetAbilityId: VoxelTornado
-    modifierType: 1
-    value: 8
+  abilityBonuses: []
   globalDamageBonusPercent: 0
   armorBonus: 0

@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyData
   id: dragon_lord
   synergyName: Dragon Lord
+  description: 'Dragon Whelp + Battle Fury: Dragon Whelps breathe Fury flames that
+    pierce 3 enemies and leave burning embers underneath hit targets.'
+  icon: {fileID: 21300000, guid: 1a6a9475851ec334889d1dc6fe335acf, type: 3}
+  rarity: 3
   requiredAbilityIds:
   - MiniDragon
   - BattleFury

@@ -50,8 +50,8 @@
 
 1. **Стихийные и тактические реакции (как в *Divinity: Original Sin 2*):**  
    Вместо скучных `+15% урона` синергии физически связывают способности друг с другом: `Fireball` поджигает ядовитую лужу `Poison Flask`, превращая её в бушующий напалм; `Fireball` по врагу в `Ice Aura` создаёт взрыв пара с отбрасыванием; две `Laser Turret` натягивают между собой лазерный забор; `Chain Lightning` по замороженному врагу раскалывает его ледяной шрапнелью. Это мгновенно даёт глубину билдостроения и идеальные «вау»-моменты для видео.
-2. **Осмысленная бесконечная прокачка (Overdrive-пороги Lv 5 / Lv 10):**  
-   Поскольку `maxLevel` отсутствует, достижение вех `Lv 5` и `Lv 10` (и далее) визуально усиливает способность (увеличение модели/эмиссии + разовая веха *OVERDRIVE* / *AWAKENED*), превращая долгий прогресс в зрелищную эволюцию.
+2. **Осмысленная бесконечная прокачка (Overdrive-пороги Lv 10 / Lv 20):**  
+   Поскольку `maxLevel` отсутствует, достижение вех `Lv 10` и `Lv 20` (и далее каждые `+10` уровней) визуально усиливает способность (увеличение модели/эмиссии + разовая веха *OVERDRIVE* / *AWAKENED* / *MYTHIC*), превращая долгий прогресс в зрелищную эволюцию.
 3. **Ритм и драматургия забега (Intro Waves + Wave Events + Combo):**  
    - **Волны знакомства (Intro Waves):** в волне дебюта нового врага примерно **половина волны (`~50%`)** состоит из этого нового архетипа — без всплывающих баннеров и текстовых подсказок, игрок сам замечает и изучает нового врага прямо в бою.
    - **Волновые события (Wave Events):** каждые 3–4 волны — всплеск напряжения (*Swarm Rush*, *Gold Goblin*, *Blood Moon*, *Elite Ambush*) + прыгающий счётчик **Combo (`x30`, `x50`, `x100`)**.
@@ -144,10 +144,10 @@
 
 ### 4.2. Пороги Overdrive для безлимитной прокачки (без `maxLevel`)
 Чтобы бесконечные уровни способностей оставались зрелищными и ощущались как эволюция:
-- **Lv 1–4:** базовый вид способности.
-- **Lv 5 — OVERDRIVE:** `+15%` визуальный масштаб снарядов/моделей + усиленная эмиссия + всплывающий золотой текст `"OVERDRIVE!"` + системный бонус (`+20%` скорости/дальности/радиуса).
-- **Lv 10 — AWAKENED:** `+25%` масштаб + яркий шлейф + `+1` дополнительный снаряд/объект/прыжок + текст `"AWAKENED!"`.
-- **Lv 15+ — MYTHIC (каждые +5 уровней):** мягкий визуальный импульс и рост масштаба урона без взрыва числа частиц на экране.
+- **Lv 1–9:** базовый вид способности.
+- **Lv 10 — OVERDRIVE:** `+15%` визуальный масштаб снарядов/моделей + усиленная эмиссия + всплывающий золотой текст `"OVERDRIVE!"` + системный бонус (`+20%` скорости/дальности/радиуса).
+- **Lv 20 — AWAKENED:** `+25%` масштаб + яркий шлейф + `+1` дополнительный снаряд/объект/прыжок + текст `"AWAKENED!"`.
+- **Lv 30+ — MYTHIC (каждые +10 уровней):** мягкий визуальный импульс и рост масштаба урона без взрыва числа частиц на экране.
 
 ### 4.3. Волны «Знакомства» (Intro Waves), События Волн и Новые Враги / Босс W100
 
@@ -236,8 +236,8 @@
 
 ---
 
-### Спринт 8: Реактивные Синергии (D:OS2-стиль, авто-активация), Overdrive (Lv 5 / Lv 10), Комбо и DPS Breakdown (P0/P1)
-- [ ] **8.1. Полная переработка Синергий в чистые боевые реакции (Раздел 4.1) с заделом под Дерево Созвездий:**
+### Спринт 8: Реактивные Синергии (D:OS2-стиль, авто-активация), Overdrive (Lv 10 / Lv 20 / Lv 30+), Комбо и DPS Breakdown (P0/P1)
+- [x] **8.1. Полная переработка Синергий в чистые боевые реакции (Раздел 4.1) с заделом под Дерево Созвездий:**
   - Создать интерфейс `ISynergyUnlockProvider` (`bool IsSynergyUnlocked(string synergyId)`): по умолчанию в Спринте 8 возвращает `true` (чтобы сразу тестировать и играть со всеми 8 реакциями), а в Спринте 11 реализуется через `TalentTreeManager` (синергии открываются узлами в Дереве Созвездий!).
   - В [HeroAbilities.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/HeroAbilities.cs) добавить реестр активных синергий (`HasSynergy(string id)`) с **автоматической проверкой при добавлении любой способности**: если у героя собраны все `requiredAbilityIds` из `SynergyData` и синергия открыта провайдером — она **мгновенно активируется сама**, публикуя `SynergyActivatedEvent` (яркая вспышка `"SYNERGY: TOXIC INFERNO!"`), **без траты LevelUp и без накрутки уровней**.
   - Убрать стат-пачки (`abilityBonuses` / `UpgradeAbility` цикл) из [UpgradeApplier.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/LevelUp/UpgradeApplier.cs#L109-L136) и перестать подмешивать `SynergyCardData` в пул карточек [UpgradeManager.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/LevelUp/UpgradeManager.cs#L258-L270).
@@ -251,14 +251,14 @@
     7. `dragon_lord`: залпы `MiniDragon` становятся пробивающими (`pierce 3`) и оставляют короткие очаги горения.
     8. `cataclysm_vortex`: `VoxelTornado` в радиусе `BlackHole` (или на финише) выбрасывает 6 гравитационных осколков.
   - Обновить описания в `SynergyData` / коллекции способностей (`AbilitiesScreenUI`) с указанием комбинаций.
-- [ ] **8.2. Пороги Overdrive для безлимитной прокачки (Lv 5 и Lv 10):**
-  - В [ActiveAbility.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/ActiveAbility.cs) добавить хук `OnOverdriveTierReached(int tier)` на `Level == 5` (`OVERDRIVE!`) и `Level == 10` (`AWAKENED!`) — визуальный рост масштаба/эмиссии + системный бонус + событие `AbilityOverdriveEvent` в `VfxFeedbackManager`.
-- [ ] **8.3. Комбо-счётчик убийств (`RunComboTracker` + HUD):**
+- [x] **8.2. Пороги Overdrive для безлимитной прокачки (каждые 10 уровней: Lv 10 / Lv 20 / Lv 30+):**
+  - В [ActiveAbility.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Abilities/ActiveAbility.cs) добавить хук `OnOverdriveTierReached(int tier)` на `Level == 10` (`OVERDRIVE!`), `Level == 20` (`AWAKENED!`) и каждые `+10` далее (`MYTHIC!`) — визуальный рост масштаба/эмиссии + системный бонус + событие `AbilityOverdriveEvent` в `VfxFeedbackManager`.
+- [x] **8.3. Комбо-счётчик убийств (`RunComboTracker` + HUD):**
   - Отслеживать серию убийств (окно `3.0s`), вехи `x15`, `x30`, `x50`, `x100` дают временный бонус `+10..+30%` XP/монет и динамичный счётчик на HUD.
-- [ ] **8.4. `RunDamageTracker` и экран Post-Run DPS Breakdown в `GameOverUI`:**
+- [x] **8.4. `RunDamageTracker` и экран Post-Run DPS Breakdown в `GameOverUI`:**
   - В [RunStatistics.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Core/RunStatistics.cs) добавить Zero-GC трекинг урона по источникам (`weapon`, `ultimate`, `ability.id`, `synergy.id`, `barrel`).
   - На [GameOverUI.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/UI/GameOverUI.cs) добавить секцию **Damage Breakdown** (топ источников: иконка, имя, полоска `%`, общий урон и DPS) и исправить `FormatReward()` (человекочитаемые названия вместо сырых `rewardId`).
-- [ ] **8.5. Тесты Спринта 8:** `Sprint8SynergiesAndDpsTests.cs` (отсутствие накрутки уровней, срабатывание `Toxic Inferno`, `Steam Blast`, `Overcharged Grid`, `Thunderstorm`, Overdrive Lv 5/10, комбо-окно, расчёт DPS Breakdown).
+- [x] **8.5. Тесты Спринта 8:** `Sprint8SynergiesAndDpsTests.cs` (отсутствие накрутки уровней, срабатывание `Toxic Inferno`, `Steam Blast`, `Overcharged Grid`, `Thunderstorm`, Overdrive каждые 10 уровней Lv 10 / Lv 20 / Lv 30+, комбо-окно, расчёт DPS Breakdown).
 
 ---
 

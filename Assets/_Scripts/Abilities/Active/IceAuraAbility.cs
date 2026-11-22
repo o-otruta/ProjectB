@@ -42,7 +42,12 @@ namespace ProjectB.Abilities
             
             UpdateVisualSize();
 
-            Destroy(visualAura.GetComponent<CapsuleCollider>());
+            var col = visualAura.GetComponent<Collider>();
+            if (col != null)
+            {
+                if (Application.isPlaying) Destroy(col);
+                else DestroyImmediate(col);
+            }
 
             var renderer = visualAura.GetComponent<Renderer>();
             if (renderer != null && IceData.auraMaterial != null)
@@ -75,6 +80,21 @@ namespace ProjectB.Abilities
             }
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentRadius *= 1.2f;
+                UpdateVisualSize();
+            }
+            else if (tier == 2)
+            {
+                currentRadius *= 1.15f;
+                currentSlowFactor = Mathf.Max(0.1f, currentSlowFactor - 0.1f);
+                UpdateVisualSize();
+            }
+        }
+
         private void Update()
         {
             if (Data == null || Time.deltaTime <= 0f) return;
@@ -93,6 +113,7 @@ namespace ProjectB.Abilities
             for (int i = 0; i < targetsFound; i++)
             {
                 var col = hitBuffer[i];
+                if (col == null) continue;
                 if (col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
                     int scaledDamage = RollScaledDamage(currentDamage, out bool isCrit);

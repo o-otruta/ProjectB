@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.LevelUp;
 using ProjectB.Meta;
 using ProjectB.Player;
 
@@ -14,22 +17,34 @@ namespace ProjectB.Abilities
         public const int MAX_ACTIVE_SLOTS = AbilitySlotService.MAX_ACTIVE_SLOTS;
         public const int MAX_PASSIVE_SLOTS = AbilitySlotService.MAX_PASSIVE_SLOTS;
 
-        private List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
-        private List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
+        [Header("Reactive Synergies")]
+        [SerializeField] private List<SynergyData> availableSynergies = new List<SynergyData>();
+
+        private readonly List<ActiveAbility> activeAbilities = new List<ActiveAbility>();
+        private readonly List<PassiveAbility> passiveAbilities = new List<PassiveAbility>();
+        private readonly HashSet<string> activeSynergyIds = new HashSet<string>(StringComparer.Ordinal);
+        private readonly List<SynergyData> activeSynergies = new List<SynergyData>(8);
 
         private HeroRuntimeStats runtimeStats;
         private HeroHealth heroHealth;
         private GameEventBus eventBus;
         private AchievementManager achievementManager;
         private AbilitySlotService abilitySlotService;
+        private RunStatistics runStatistics;
+        private ISynergyUnlockProvider synergyUnlockProvider;
+        private bool hasExplicitSynergyList;
+        private SynergyCatalog cachedCatalogFallback;
 
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
+        public IReadOnlyList<SynergyData> ActiveSynergies => activeSynergies;
+        public int ActiveSynergyCount => activeSynergyIds.Count;
         public int TotalAbilitiesCount => activeAbilities.Count + passiveAbilities.Count;
         public int UnlockedActiveSlots => abilitySlotService != null ? abilitySlotService.MaxActiveSlots : DEFAULT_ACTIVE_SLOTS;
         public int UnlockedPassiveSlots => abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : DEFAULT_PASSIVE_SLOTS;
 
-        public event System.Action OnAbilitiesUpdated;
+        public event Action OnAbilitiesUpdated;
+        public event Action<SynergyData> OnSynergyActivated;
 
         [Inject]
         public void Construct(
@@ -37,7 +52,9 @@ namespace ProjectB.Abilities
             GameEventBus eventBus,
             AchievementManager achievementManager = null,
             HeroHealth heroHealth = null,
-            AbilitySlotService abilitySlotService = null)
+            AbilitySlotService abilitySlotService = null,
+            RunStatistics runStatistics = null,
+            ISynergyUnlockProvider synergyUnlockProvider = null)
         {
             if (this.abilitySlotService != null)
             {
@@ -49,6 +66,16 @@ namespace ProjectB.Abilities
             this.achievementManager = achievementManager;
             this.heroHealth = heroHealth != null ? heroHealth : GetComponent<HeroHealth>();
             this.abilitySlotService = abilitySlotService;
+            this.runStatistics = runStatistics;
+            this.synergyUnlockProvider = synergyUnlockProvider;
+
+            for (int i = 0; i < activeAbilities.Count; i++)
+            {
+                if (activeAbilities[i] != null)
+                {
+                    activeAbilities[i].SetRunStatistics(runStatistics);
+                }
+            }
 
             if (this.abilitySlotService != null)
             {
@@ -62,6 +89,75 @@ namespace ProjectB.Abilities
             {
                 abilitySlotService.OnSlotCapacityChanged -= OnAbilitiesChanged;
             }
+        }
+
+        public void SetSynergyUnlockProvider(ISynergyUnlockProvider provider)
+        {
+            synergyUnlockProvider = provider;
+            EvaluateAutoSynergies();
+        }
+
+        public void SetAvailableSynergies(IReadOnlyList<SynergyData> synergies)
+        {
+            hasExplicitSynergyList = true;
+            if (availableSynergies == null)
+            {
+                availableSynergies = new List<SynergyData>();
+            }
+            else
+            {
+                availableSynergies.Clear();
+            }
+
+            if (synergies != null)
+            {
+                for (int i = 0; i < synergies.Count; i++)
+                {
+                    if (synergies[i] != null && !availableSynergies.Contains(synergies[i]))
+                    {
+                        availableSynergies.Add(synergies[i]);
+                    }
+                }
+            }
+
+            EvaluateAutoSynergies();
+        }
+
+        public bool IsSynergyUnlocked(string synergyId)
+        {
+            if (string.IsNullOrEmpty(synergyId)) return false;
+            return synergyUnlockProvider == null || synergyUnlockProvider.IsSynergyUnlocked(synergyId);
+        }
+
+        public bool HasSynergy(string synergyId)
+        {
+            return !string.IsNullOrEmpty(synergyId) && activeSynergyIds.Contains(synergyId);
+        }
+
+        public T GetActiveAbility<T>() where T : ActiveAbility
+        {
+            for (int i = 0; i < activeAbilities.Count; i++)
+            {
+                if (activeAbilities[i] is T typed)
+                {
+                    return typed;
+                }
+            }
+            return null;
+        }
+
+        public ActiveAbility GetActiveAbilityById(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            for (int i = 0; i < activeAbilities.Count; i++)
+            {
+                ActiveAbility ability = activeAbilities[i];
+                if (ability != null && ability.Data != null && ability.Data.id == id)
+                {
+                    return ability;
+                }
+            }
+            return null;
         }
 
         public bool AddAbility(AbilityData data)
@@ -79,6 +175,8 @@ namespace ProjectB.Abilities
                     {
                         ability.SetRuntimeStats(runtimeStats);
                         ability.SetEventBus(eventBus);
+                        ability.SetHeroAbilities(this);
+                        ability.SetRunStatistics(runStatistics);
                         ability.Initialize(data);
                         activeAbilities.Add(ability);
                         added = true;
@@ -106,9 +204,122 @@ namespace ProjectB.Abilities
                 OnAbilitiesChanged();
                 achievementManager?.OnAbilitiesCollectedInRun(TotalAbilitiesCount);
                 eventBus?.Publish(new AbilityUnlockedEvent(data.id, data.type));
+                EvaluateAutoSynergies();
             }
 
             return added;
+        }
+
+        public void EvaluateAutoSynergies()
+        {
+            IReadOnlyList<SynergyData> candidates = ResolveSynergyPool();
+            if (candidates == null || candidates.Count == 0) return;
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                SynergyData syn = candidates[i];
+                if (syn == null || string.IsNullOrEmpty(syn.id)) continue;
+                if (activeSynergyIds.Contains(syn.id)) continue;
+                if (!IsSynergyUnlocked(syn.id)) continue;
+                if (!AreRequiredAbilitiesEquipped(syn)) continue;
+
+                ActivateSynergyInternal(syn, syn.id, syn.synergyName);
+            }
+        }
+
+        public bool TryActivateSynergyById(string synergyId, string fallbackDisplayName = null)
+        {
+            if (string.IsNullOrEmpty(synergyId)) return false;
+            if (activeSynergyIds.Contains(synergyId)) return false;
+            if (!IsSynergyUnlocked(synergyId)) return false;
+
+            SynergyData matched = FindSynergyInPool(synergyId);
+            string displayName = matched != null && !string.IsNullOrEmpty(matched.synergyName)
+                ? matched.synergyName
+                : (!string.IsNullOrEmpty(fallbackDisplayName) ? fallbackDisplayName : synergyId);
+
+            ActivateSynergyInternal(matched, synergyId, displayName);
+            return true;
+        }
+
+        private void ActivateSynergyInternal(SynergyData syn, string synergyId, string displayName)
+        {
+            activeSynergyIds.Add(synergyId);
+            if (syn != null && !activeSynergies.Contains(syn))
+            {
+                activeSynergies.Add(syn);
+            }
+
+            for (int i = 0; i < activeAbilities.Count; i++)
+            {
+                if (activeAbilities[i] != null)
+                {
+                    activeAbilities[i].OnSynergyActivated(synergyId);
+                }
+            }
+
+            if (syn != null)
+            {
+                OnSynergyActivated?.Invoke(syn);
+            }
+
+            string bannerName = !string.IsNullOrEmpty(displayName) ? displayName : synergyId;
+            string formattedBanner = bannerName.StartsWith("SYNERGY:", StringComparison.OrdinalIgnoreCase)
+                ? bannerName.ToUpperInvariant()
+                : $"SYNERGY: {bannerName.ToUpperInvariant()}!";
+            eventBus?.Publish(new SynergyActivatedEvent(synergyId, formattedBanner));
+        }
+
+        private bool AreRequiredAbilitiesEquipped(SynergyData syn)
+        {
+            if (syn.requiredAbilityIds == null || syn.requiredAbilityIds.Count == 0) return false;
+
+            for (int i = 0; i < syn.requiredAbilityIds.Count; i++)
+            {
+                string reqId = syn.requiredAbilityIds[i];
+                if (string.IsNullOrEmpty(reqId) || !HasAbility(reqId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private IReadOnlyList<SynergyData> ResolveSynergyPool()
+        {
+            if (hasExplicitSynergyList)
+            {
+                return availableSynergies;
+            }
+
+            if (availableSynergies != null && availableSynergies.Count > 0)
+            {
+                return availableSynergies;
+            }
+
+            if (cachedCatalogFallback == null)
+            {
+                cachedCatalogFallback = Resources.Load<SynergyCatalog>("SynergyCatalog");
+            }
+
+            return cachedCatalogFallback != null ? cachedCatalogFallback.synergies : availableSynergies;
+        }
+
+        private SynergyData FindSynergyInPool(string synergyId)
+        {
+            IReadOnlyList<SynergyData> pool = ResolveSynergyPool();
+            if (pool == null) return null;
+
+            for (int i = 0; i < pool.Count; i++)
+            {
+                SynergyData syn = pool[i];
+                if (syn != null && syn.id == synergyId)
+                {
+                    return syn;
+                }
+            }
+
+            return null;
         }
 
         public void UpgradeAbility(string id, ModifierType type, float value)

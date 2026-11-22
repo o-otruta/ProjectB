@@ -529,7 +529,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void FiveNewSynergies_UnlockWithPairsAndPublishSynergyActivatedEvent()
+        public void FiveNewSynergies_AutoActivateWithPairsAndPublishSynergyActivatedEvent()
         {
             var stats = new HeroRuntimeStats();
             var bus = new GameEventBus();
@@ -550,11 +550,7 @@ namespace ProjectB.Tests.EditMode
             var heroAbilities = heroGo.AddComponent<HeroAbilities>();
             heroAbilities.Construct(stats, bus, null, null, slotService);
 
-            var applier = new UpgradeApplier(null, stats, heroAbilities, bus);
-            var mgrGo = Track(new GameObject("SynergyUpgradeMgr"));
-            var mgr = mgrGo.AddComponent<UpgradeManager>();
-            mgr.cardPool = new List<CardData>();
-            mgr.synergies = new List<SynergyData>
+            var synergies = new List<SynergyData>
             {
                 AssetDatabase.LoadAssetAtPath<SynergyData>("Assets/_ScriptableObjects/Synergies/Synergy_Thunderstorm.asset"),
                 AssetDatabase.LoadAssetAtPath<SynergyData>("Assets/_ScriptableObjects/Synergies/Synergy_ToxicInferno.asset"),
@@ -563,30 +559,37 @@ namespace ProjectB.Tests.EditMode
                 AssetDatabase.LoadAssetAtPath<SynergyData>("Assets/_ScriptableObjects/Synergies/Synergy_CataclysmVortex.asset"),
             };
 
-            foreach (var syn in mgr.synergies)
+            foreach (var syn in synergies)
             {
                 Assert.IsNotNull(syn);
                 Assert.IsNotNull(syn.rewardCard);
                 Assert.IsNotNull(syn.rewardCard.icon);
             }
 
+            heroAbilities.SetAvailableSynergies(synergies);
+
+            var applier = new UpgradeApplier(null, stats, heroAbilities, bus);
+            var mgrGo = Track(new GameObject("SynergyUpgradeMgr"));
+            var mgr = mgrGo.AddComponent<UpgradeManager>();
+            mgr.cardPool = new List<CardData>();
+            mgr.synergies = synergies;
             mgr.Construct(null, null, null, heroAbilities, applier, saveManager);
             mgr.InitializeRunPool();
 
             var sword = AssetDatabase.LoadAssetAtPath<AbilityData>("Assets/_ScriptableObjects/Abilities/OrbitalSmallSwordData.asset");
             var guardian = AssetDatabase.LoadAssetAtPath<AbilityData>("Assets/_ScriptableObjects/Abilities/GuardianShieldData.asset");
             Assert.IsTrue(heroAbilities.AddAbility(sword));
-            Assert.AreEqual(0, mgr.GetRandomCards(5).Count);
+            Assert.AreEqual(0, synergyEvents);
+            Assert.IsFalse(heroAbilities.HasSynergy("aegis_phalanx"));
 
             Assert.IsTrue(heroAbilities.AddAbility(guardian));
-            var offered = mgr.GetRandomCards(5);
-            Assert.AreEqual(1, offered.Count);
-            Assert.AreEqual("aegis_phalanx", ((SynergyCardData)offered[0]).synergyId);
-
-            applier.ApplyCard(offered[0], mgr);
             Assert.AreEqual(1, synergyEvents);
             Assert.AreEqual("aegis_phalanx", lastSynergyId);
-            Assert.AreEqual(15f, stats.Armor, 0.001f);
+            Assert.IsTrue(heroAbilities.HasSynergy("aegis_phalanx"));
+            Assert.AreEqual(1, heroAbilities.GetAbilityLevel("orbital_small_sword"));
+            Assert.AreEqual(1, heroAbilities.GetAbilityLevel("GuardianShield"));
+            Assert.AreEqual(0f, stats.Armor, 0.001f);
+            Assert.AreEqual(0, mgr.GetRandomCards(5).Count, "Synergies must not appear in LevelUp card pool");
         }
 
         [Test]

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Abilities
 {
@@ -20,6 +22,8 @@ namespace ProjectB.Abilities
         private float nextFireTime;
         private Transform dragonContainer;
         private IObjectPool<DragonFlameProjectile> flamePool;
+        private IObjectPool<DragonBurnZone> burnZonePool;
+        private Action<Vector3, float> cachedSpawnBurnZone;
 
         public int ActiveDragonCount => followers.Count;
 
@@ -37,6 +41,7 @@ namespace ProjectB.Abilities
 
             dragonContainer = new GameObject($"Dragons_{Data.id}").transform;
             dragonContainer.SetParent(null);
+            cachedSpawnBurnZone = SpawnBurnZone;
 
             InitializePool();
             SyncFollowers();
@@ -53,6 +58,15 @@ namespace ProjectB.Abilities
                 defaultCapacity: 9,
                 maxSize: 60);
 
+            burnZonePool = new ObjectPool<DragonBurnZone>(
+                createFunc: CreateBurnZoneInstance,
+                actionOnGet: z => { if (z != null) z.gameObject.SetActive(true); },
+                actionOnRelease: z => { if (z != null) z.gameObject.SetActive(false); },
+                actionOnDestroy: z => { if (z != null) SafeDestroy(z.gameObject); },
+                collectionCheck: true,
+                defaultCapacity: 8,
+                maxSize: 32);
+
             if (Application.isPlaying)
             {
                 PrewarmPools(9);
@@ -61,11 +75,21 @@ namespace ProjectB.Abilities
 
         public override void PrewarmPools(int count = 0)
         {
-            if (flamePool == null) return;
             int targetCount = count > 0 ? count : 9;
-            var temp = new DragonFlameProjectile[targetCount];
-            for (int i = 0; i < targetCount; i++) temp[i] = flamePool.Get();
-            for (int i = 0; i < targetCount; i++) if (temp[i] != null) flamePool.Release(temp[i]);
+            if (flamePool != null)
+            {
+                var temp = new DragonFlameProjectile[targetCount];
+                for (int i = 0; i < targetCount; i++) temp[i] = flamePool.Get();
+                for (int i = 0; i < targetCount; i++) if (temp[i] != null) flamePool.Release(temp[i]);
+            }
+
+            if (burnZonePool != null)
+            {
+                int burnCount = Mathf.Min(8, targetCount);
+                var tempZones = new DragonBurnZone[burnCount];
+                for (int i = 0; i < burnCount; i++) tempZones[i] = burnZonePool.Get();
+                for (int i = 0; i < burnCount; i++) if (tempZones[i] != null) burnZonePool.Release(tempZones[i]);
+            }
         }
 
         public override void SimulateFrameTick()
@@ -95,6 +119,33 @@ namespace ProjectB.Abilities
             return cube.AddComponent<DragonFlameProjectile>();
         }
 
+        private DragonBurnZone CreateBurnZoneInstance()
+        {
+            var go = new GameObject("DragonBurnZone");
+            go.transform.SetParent(dragonContainer, false);
+            var zone = go.AddComponent<DragonBurnZone>();
+            zone.PrewarmVisual(DragonData != null ? DragonData.flameMaterial : null);
+            return zone;
+        }
+
+        private void SpawnBurnZone(Vector3 position, float tickDamage)
+        {
+            if (burnZonePool == null || DragonData == null) return;
+            DragonBurnZone zone = burnZonePool.Get();
+            if (zone == null) return;
+
+            zone.Initialize(
+                position,
+                tickDamage,
+                DragonData.targetLayer,
+                runtimeStats,
+                runStatistics,
+                DragonData.flameMaterial,
+                burnZonePool);
+
+            eventBus?.Publish(new SynergyReactionVfxEvent(SynergyReactionVfxType.DragonBurn, position, 1.35f));
+        }
+
         public override void ApplyModifier(ModifierType type, float value)
         {
             switch (type)
@@ -112,6 +163,21 @@ namespace ProjectB.Abilities
                 case ModifierType.Radius:
                     currentSearchRadius += value;
                     break;
+            }
+        }
+
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentSearchRadius *= 1.2f;
+                UpdateFollowerScales();
+            }
+            else if (tier == 2)
+            {
+                currentDragonCount += 1;
+                SyncFollowers();
+                UpdateFollowerScales();
             }
         }
 
@@ -148,6 +214,7 @@ namespace ProjectB.Abilities
 
                 Vector3 offset = ComputeFollowOffset(i, currentDragonCount, followDist);
                 follower.Initialize(transform, offset, smooth, i * 1.4f, mat);
+                follower.transform.localScale = Vector3.one * VisualScaleMultiplier;
                 followers.Add(follower);
             }
 
@@ -156,6 +223,18 @@ namespace ProjectB.Abilities
                 if (followers[i] != null)
                 {
                     followers[i].SetOffset(ComputeFollowOffset(i, followers.Count, followDist));
+                }
+            }
+        }
+
+        private void UpdateFollowerScales()
+        {
+            Vector3 scale = Vector3.one * VisualScaleMultiplier;
+            for (int i = 0; i < followers.Count; i++)
+            {
+                if (followers[i] != null)
+                {
+                    followers[i].transform.localScale = scale;
                 }
             }
         }
@@ -189,6 +268,10 @@ namespace ProjectB.Abilities
         {
             if (DragonData == null || flamePool == null || followers.Count == 0) return 0;
 
+            bool isDragonLord = HasSynergy(SynergyIds.DragonLord);
+            int pierce = isDragonLord ? 3 : 1;
+            Action<Vector3, float> furyCallback = isDragonLord ? cachedSpawnBurnZone : null;
+
             int totalFired = 0;
             for (int i = 0; i < followers.Count; i++)
             {
@@ -210,7 +293,12 @@ namespace ProjectB.Abilities
                     GetScaledDamage(currentDamage),
                     DragonData.targetLayer,
                     runtimeStats,
-                    flamePool);
+                    flamePool,
+                    pierce,
+                    furyCallback,
+                    runStatistics,
+                    cachedAbilityId,
+                    VisualScaleMultiplier);
             }
 
             return totalFired;
@@ -249,13 +337,14 @@ namespace ProjectB.Abilities
         {
             followers.Clear();
             flamePool?.Clear();
+            burnZonePool?.Clear();
             if (dragonContainer != null)
             {
                 SafeDestroy(dragonContainer.gameObject);
             }
         }
 
-        private static void SafeDestroy(Object obj)
+        private static void SafeDestroy(UnityEngine.Object obj)
         {
             if (obj == null) return;
             if (Application.isPlaying) Destroy(obj);

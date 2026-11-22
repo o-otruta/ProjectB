@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Enemies;
 using ProjectB.Player;
 using ProjectB.Visuals;
@@ -9,6 +11,9 @@ namespace ProjectB.Abilities
 {
     public class LaserTurret : MonoBehaviour
     {
+        private static readonly List<LaserTurret> activeTurrets = new List<LaserTurret>(16);
+        public static IReadOnlyList<LaserTurret> ActiveTurrets => activeTurrets;
+
         [Header("References")]
         [SerializeField] private LineRenderer lineRenderer;
         [SerializeField] private Transform firePoint;
@@ -23,7 +28,11 @@ namespace ProjectB.Abilities
         private LayerMask enemyLayer;
         private IObjectPool<LaserTurret> pool;
         private HeroRuntimeStats runtimeStats;
+        private RunStatistics runStatistics;
+        private string damageSourceId;
         private bool isReturned;
+        private Vector3 baseScale = Vector3.one;
+        private bool baseScaleCaptured;
 
         private const float TARGET_SCAN_INTERVAL = 0.2f;
 
@@ -31,7 +40,21 @@ namespace ProjectB.Abilities
         private float nextScanTime;
         private Transform currentTarget;
         private IDamageable currentTargetDamageable;
-        private Collider[] hitBuffer = new Collider[128];
+        private readonly Collider[] hitBuffer = new Collider[128];
+
+        private void Awake()
+        {
+            CaptureBaseScale();
+        }
+
+        private void CaptureBaseScale()
+        {
+            if (!baseScaleCaptured)
+            {
+                baseScale = transform.localScale;
+                baseScaleCaptured = true;
+            }
+        }
 
         public void Initialize(
             float searchRadius,
@@ -39,14 +62,22 @@ namespace ProjectB.Abilities
             float lifetime,
             LayerMask enemyLayer,
             IObjectPool<LaserTurret> pool,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            RunStatistics runStatistics = null,
+            string damageSourceId = "LaserTurret",
+            float visualScale = 1f)
         {
+            CaptureBaseScale();
+            transform.localScale = baseScale * Mathf.Max(0.5f, visualScale);
+
             this.searchRadius = searchRadius;
             this.dps = dps;
             this.lifetime = lifetime;
             this.enemyLayer = enemyLayer;
             this.pool = pool;
             this.runtimeStats = runtimeStats;
+            this.runStatistics = runStatistics;
+            this.damageSourceId = !string.IsNullOrEmpty(damageSourceId) ? damageSourceId : "LaserTurret";
             this.isReturned = false;
 
             spawnTime = Time.time;
@@ -54,6 +85,11 @@ namespace ProjectB.Abilities
             currentTarget = null;
             currentTargetDamageable = null;
             accumulatedDamage = 0f;
+
+            if (!activeTurrets.Contains(this))
+            {
+                activeTurrets.Add(this);
+            }
 
             if (lineRenderer == null)
             {
@@ -78,11 +114,17 @@ namespace ProjectB.Abilities
 
         private void OnDisable()
         {
+            activeTurrets.Remove(this);
             currentTarget = null;
             currentTargetDamageable = null;
             accumulatedDamage = 0f;
             if (lineRenderer != null) lineRenderer.enabled = false;
             meshAnimator?.Stop();
+        }
+
+        private void OnDestroy()
+        {
+            activeTurrets.Remove(this);
         }
 
         private void Update()
@@ -131,6 +173,7 @@ namespace ProjectB.Abilities
                         if (currentTargetDamageable is EnemyBase enemy)
                         {
                             enemy.TakeDamage(finalDmg, isCrit);
+                            runStatistics?.RecordDamage(damageSourceId, finalDmg);
                         }
                         else
                         {
@@ -206,6 +249,7 @@ namespace ProjectB.Abilities
         {
             if (isReturned) return;
             isReturned = true;
+            activeTurrets.Remove(this);
 
             currentTarget = null;
             currentTargetDamageable = null;

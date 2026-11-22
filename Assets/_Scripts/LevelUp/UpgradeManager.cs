@@ -89,6 +89,7 @@ namespace ProjectB.LevelUp
             {
                 var card = cardPool[i];
                 if (card == null) continue;
+                if (card is SynergyCardData) continue;
 
                 if (card is AbilityCardData abilityCard)
                 {
@@ -222,11 +223,12 @@ namespace ProjectB.LevelUp
 
             // Filter out invalid, locked, already acquired, or slot-capped abilities and orphan modifiers.
             // Abilities have no maxLevel cap, so modifiers remain eligible at any level.
+            // Reactive synergies auto-activate in HeroAbilities and never enter LevelUp cards.
             if (dynamicPool != null)
             {
                 foreach (var card in dynamicPool)
                 {
-                    if (card == null) continue;
+                    if (card == null || card is SynergyCardData) continue;
 
                     if (card is AbilityCardData abilityCard)
                     {
@@ -252,19 +254,6 @@ namespace ProjectB.LevelUp
                     }
                     
                     validPool.Add(card);
-                }
-            }
-
-            // Evaluate ability synergies and inject unlocked synergy cards into validPool
-            if (synergies != null && heroAbilities != null)
-            {
-                for (int i = 0; i < synergies.Count; i++)
-                {
-                    var synergy = synergies[i];
-                    if (IsSynergyReady(synergy) && !validPool.Contains(synergy.rewardCard))
-                    {
-                        validPool.Add(synergy.rewardCard);
-                    }
                 }
             }
 

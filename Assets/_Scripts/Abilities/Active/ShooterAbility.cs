@@ -13,6 +13,19 @@ namespace ProjectB.Abilities
             currentRange = ProjectileData.searchRadius;
         }
 
+        protected override void OnOverdriveTierReached(int tier)
+        {
+            if (tier == 1)
+            {
+                currentSpeed *= 1.2f;
+                currentRange *= 1.2f;
+            }
+            else if (tier == 2)
+            {
+                currentCount += 1;
+            }
+        }
+
         protected override AbilityProjectile CreateProjectilePrefab()
         {
             GameObject obj;
@@ -25,7 +38,12 @@ namespace ProjectB.Abilities
                 obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 obj.transform.SetParent(projectileContainer);
                 obj.transform.localScale = Vector3.one * 0.3f;
-                Destroy(obj.GetComponent<SphereCollider>());
+                var col = obj.GetComponent<Collider>();
+                if (col != null)
+                {
+                    if (Application.isPlaying) Destroy(col);
+                    else DestroyImmediate(col);
+                }
             }
             var p = obj.GetComponent<AbilityProjectile>();
             if (p == null) p = obj.AddComponent<AbilityProjectile>();
@@ -50,6 +68,7 @@ namespace ProjectB.Abilities
                 p.transform.position = transform.position + offset;
                 
                 p.Initialize(GetScaledDamage(currentDamage), currentSpeed, chosenTarget, ProjectileData.targetLayer, projectilePool, runtimeStats);
+                p.ConfigureCombatContext(runStatistics, cachedAbilityId, HasSynergy(SynergyIds.OverchargedGrid), VisualScaleMultiplier);
             }
         }
     }

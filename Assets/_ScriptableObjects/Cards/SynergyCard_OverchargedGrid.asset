@@ -13,21 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_OverchargedGrid
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Overcharged Grid'
-  description: 'Laser Turret + Shooter: +15 Laser DPS, +3s Turret duration, +2 Shooter
-    projectiles & +20% Global Damage.'
+  description: 'Laser Turret + Shooter: Active turrets link via high-voltage laser
+    fences (<=12m), while passing Shooter projectiles gain +2 pierce.'
   icon: {fileID: 21300000, guid: ae7141ec383168a45a7dde0d30229781, type: 3}
   rarity: 3
   isConsumable: 1
   synergyId: overcharged_grid
-  abilityBonuses:
-  - targetAbilityId: LaserTurret
-    modifierType: 1
-    value: 15
-  - targetAbilityId: LaserTurret
-    modifierType: 6
-    value: 3
-  - targetAbilityId: Shooter
-    modifierType: 0
-    value: 2
-  globalDamageBonusPercent: 20
+  abilityBonuses: []
+  globalDamageBonusPercent: 0
   armorBonus: 0

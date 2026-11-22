@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyData
   id: aegis_phalanx
   synergyName: Aegis Phalanx
+  description: 'Orbital Sword + Guardian Shields: Knocking enemies back with Guardian
+    Shields unleashes a 2.4m Phalanx shockwave toward the nearest sword.'
+  icon: {fileID: 21300000, guid: e171b90ba46afb740849bdee7969a45b, type: 3}
+  rarity: 2
   requiredAbilityIds:
   - orbital_small_sword
   - GuardianShield

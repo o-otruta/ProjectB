@@ -1,6 +1,8 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.Enemies;
 using ProjectB.Player;
 
@@ -30,6 +32,7 @@ namespace ProjectB.Arena
 
         private HeroHealth heroHealth;
         private GameEventBus eventBus;
+        private RunStatistics runStatistics;
         private Collider cachedCollider;
         private int currentHp;
         private bool isDetonated;
@@ -45,10 +48,11 @@ namespace ProjectB.Arena
             currentHp = Mathf.Max(1, maxHp);
         }
 
-        public void Initialize(HeroHealth heroHealth, GameEventBus eventBus)
+        public void Initialize(HeroHealth heroHealth, GameEventBus eventBus, RunStatistics runStatistics = null)
         {
             this.heroHealth = heroHealth;
             this.eventBus = eventBus;
+            this.runStatistics = runStatistics;
             currentHp = Mathf.Max(1, maxHp);
             isDetonated = false;
 
@@ -161,6 +165,7 @@ namespace ProjectB.Arena
                 else if (target is EnemyBase enemy)
                 {
                     enemy.TakeDamage(explosionDamage, isCrit: false);
+                    runStatistics?.RecordDamage(DamageSourceIds.Barrel, explosionDamage);
                     enemiesHit++;
                 }
                 else

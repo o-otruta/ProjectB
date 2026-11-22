@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Data.Combat;
 using ProjectB.Meta;
@@ -18,13 +19,19 @@ namespace ProjectB.Combat
         private Transform projectilesRoot;
         private HeroRuntimeStats runtimeStats;
         private SelectedHeroService selectedHeroService;
+        private RunStatistics runStatistics;
 
         [Inject]
-        public void Construct(HeroHealth heroHealth, HeroRuntimeStats runtimeStats, SelectedHeroService selectedHeroService = null)
+        public void Construct(
+            HeroHealth heroHealth,
+            HeroRuntimeStats runtimeStats,
+            SelectedHeroService selectedHeroService = null,
+            RunStatistics runStatistics = null)
         {
             hp = heroHealth;
             this.runtimeStats = runtimeStats;
             this.selectedHeroService = selectedHeroService;
+            this.runStatistics = runStatistics;
         }
 
         private void Start()
@@ -92,7 +99,7 @@ namespace ProjectB.Combat
         public void AddWeapon(WeaponData data)
         {
             if (data == null) return;
-            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier, runtimeStats, hp);
+            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier, runtimeStats, hp, runStatistics);
             activeWeapons.Add(controller);
         }
 

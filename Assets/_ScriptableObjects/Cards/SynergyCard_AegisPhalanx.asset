@@ -13,24 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_AegisPhalanx
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Aegis Phalanx'
-  description: "Orbital Sword + Guardian Shields: +2 Swords, +2 Shields, +60\xB0/s
-    Spin Speed, and +15 Armor."
+  description: 'Orbital Sword + Guardian Shields: Knocking enemies back with Guardian
+    Shields unleashes a 2.4m Phalanx shockwave toward the nearest sword.'
   icon: {fileID: 21300000, guid: e171b90ba46afb740849bdee7969a45b, type: 3}
   rarity: 2
   isConsumable: 1
   synergyId: aegis_phalanx
-  abilityBonuses:
-  - targetAbilityId: orbital_small_sword
-    modifierType: 0
-    value: 2
-  - targetAbilityId: orbital_small_sword
-    modifierType: 2
-    value: 60
-  - targetAbilityId: GuardianShield
-    modifierType: 0
-    value: 2
-  - targetAbilityId: GuardianShield
-    modifierType: 2
-    value: 60
+  abilityBonuses: []
   globalDamageBonusPercent: 0
-  armorBonus: 15
+  armorBonus: 0

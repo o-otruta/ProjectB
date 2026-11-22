@@ -13,24 +13,12 @@ MonoBehaviour:
   m_Name: SynergyCard_BladeStorm
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.SynergyCardData
   cardName: 'Synergy: Blade Storm'
-  description: 'Orbital Sword + Boomerang: +2 Orbital Swords (+15 dmg) and +2 Boomerangs
-    (+12 dmg).'
+  description: 'Orbital Sword + Boomerang: Orbital swords launch piercing spectral
+    blades every 2.8s and on every 3rd Boomerang hit.'
   icon: {fileID: 21300000, guid: c6d8ce9261281f64aa1cd9256c91f8ca, type: 3}
   rarity: 2
   isConsumable: 1
   synergyId: blade_storm
-  abilityBonuses:
-  - targetAbilityId: orbital_small_sword
-    modifierType: 0
-    value: 2
-  - targetAbilityId: orbital_small_sword
-    modifierType: 1
-    value: 15
-  - targetAbilityId: Boomerang
-    modifierType: 0
-    value: 2
-  - targetAbilityId: Boomerang
-    modifierType: 1
-    value: 12
+  abilityBonuses: []
   globalDamageBonusPercent: 0
   armorBonus: 0
