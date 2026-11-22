@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
   m_Name: IceAuraCard
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Ice Aura
   description: Slows and damages nearby enemies around you.
   icon: {fileID: 21300000, guid: af3a716bd6ec2a4459869403a52bc276, type: 3}

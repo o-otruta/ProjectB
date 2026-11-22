@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3ce90689d01ad9d4181e1fa729b182a4, type: 3}
   m_Name: FireballMod_Damage
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Fireball: +5 Damage'
   description: Increases Fireball damage by 5.
   icon: {fileID: 21300000, guid: faef7f96e2887c24a8c9bf58b132b3cc, type: 3}

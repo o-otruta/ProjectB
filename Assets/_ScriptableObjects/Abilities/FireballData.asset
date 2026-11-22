@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0207de29facde9546824b02d9091717e, type: 3}
   m_Name: FireballData
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.FireballAbilityData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.FireballAbilityData
   id: Fireball
   abilityName: Fireball
   description: Launches explosive fireballs that deal area damage.

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e9cf36bdf1b8054092df6fd9a7899a6, type: 3}
   m_Name: xp_bonus
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.MetaUpgradeData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.MetaUpgradeData
   id: xp_bonus
   displayName: XP Bonus
   description: Increases XP gained.

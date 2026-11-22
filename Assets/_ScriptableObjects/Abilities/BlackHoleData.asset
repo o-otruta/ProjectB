@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbfe1e47f1ffa0f4fb6241a948c40ad1, type: 3}
   m_Name: BlackHoleData
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.BlackHoleAbilityData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.BlackHoleAbilityData
   id: BlackHole
   abilityName: Black Hole
   description: Pulls enemies inward and deals periodic damage.

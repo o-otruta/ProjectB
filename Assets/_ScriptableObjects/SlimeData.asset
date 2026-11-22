@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c2754e271f3e7945b33da44921444cc, type: 3}
   m_Name: SlimeData
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Enemies.EnemyData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.EnemyData
   hp: 18
   speed: 3
   contactDamage: 8

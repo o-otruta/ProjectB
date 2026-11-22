@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3ce90689d01ad9d4181e1fa729b182a4, type: 3}
   m_Name: LaserTurretMod_Damage
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityModifierCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Laser Turret: +5 DPS'
   description: Increases Laser Turret DPS by 5.
   icon: {fileID: 21300000, guid: 4a30430a05472d845b0b347c3a2fd9a3, type: 3}

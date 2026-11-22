@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 
@@ -79,7 +80,7 @@ namespace ProjectB.UI
             }
             else
             {
-                Debug.Log($"[UpgradeItemUI] Purchase failed for {upgradeData.id}. Not enough coins or max level.");
+                DevLog.Log($"[UpgradeItemUI] Purchase failed for {upgradeData.id}. Not enough coins or max level.");
             }
         }
         private void OnDestroy()

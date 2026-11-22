@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ProjectB.Core;
 
 namespace ProjectB.Meta
 {
@@ -68,7 +69,7 @@ namespace ProjectB.Meta
                 Data = new SaveData();
             }
             
-            Debug.Log("[SaveManager] Data Loaded.");
+            DevLog.Log("[SaveManager] Data Loaded.");
             OnDataChanged?.Invoke();
         }
 
@@ -115,7 +116,7 @@ namespace ProjectB.Meta
         {
             Data = new SaveData();
             Save();
-            Debug.Log("[SaveManager] Save Data Reset.");
+            DevLog.Log("[SaveManager] Save Data Reset.");
         }
 
         private void MigrateIfNeeded()

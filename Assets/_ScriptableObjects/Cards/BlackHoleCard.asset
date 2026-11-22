@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
   m_Name: BlackHoleCard
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Black Hole
   description: Pulls enemies inward and deals periodic damage.
   icon: {fileID: 21300000, guid: 3d86cb956a5d30d4c92255c330087ec6, type: 3}

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 741ca51b14a7b9049bb0c962ff7af037, type: 3}
   m_Name: LaserTurretData
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.LaserTurretAbilityData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.LaserTurretAbilityData
   id: LaserTurret
   abilityName: Laser Turret
   description: Deploys a stationary turret that fires a continuous laser beam.

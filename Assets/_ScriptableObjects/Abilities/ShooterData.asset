@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09f9b07fcde6d7841ba7d326d8236249, type: 3}
   m_Name: ShooterData
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.ShooterAbilityData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.ShooterAbilityData
   id: Shooter
   abilityName: Shooter
   description: Periodically fires homing projectiles at nearby enemies.

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e7c7b0988a3f9044a16edc4c06d9a5d, type: 3}
   m_Name: ShooterCard
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.AbilityCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Shooter
   description: Periodically fires homing projectiles at nearby enemies.
   icon: {fileID: 21300000, guid: bdacd3cc4d09fdf43a1c524d4868db62, type: 3}

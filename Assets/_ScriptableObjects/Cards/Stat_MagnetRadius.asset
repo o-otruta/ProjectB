@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 934d1bde4098947418e01b9fee7582e0, type: 3}
   m_Name: Stat_MagnetRadius
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatUpgradeCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.StatUpgradeCardData
   cardName: Magnet Range
   description: Increases pickup magnet radius by 1.5.
   icon: {fileID: 21300000, guid: bff30ea7e2f1eda4181921f957c6061b, type: 3}

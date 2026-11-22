@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a7f155caa5edb354ea8f7d9096b7f8c3, type: 3}
   m_Name: OrbitalSmallSwordData
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Abilities.OrbitalCompanionAbilityData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.OrbitalCompanionAbilityData
   id: orbital_small_sword
   abilityName: Orbital Sword
   description: Summons swords that orbit around you and slice enemies.

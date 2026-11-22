@@ -132,14 +132,14 @@ namespace ProjectB.UI
         public void StartGame()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            Debug.Log("[MainMenuUI] Start Game clicked!");
+            DevLog.Log("[MainMenuUI] Start Game clicked!");
             SceneManager.LoadScene("Gameplay");
         }
 
         public void OnPlayClicked()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            Debug.Log("[MainMenuUI] Play tab clicked");
+            DevLog.Log("[MainMenuUI] Play tab clicked");
             CloseAllPanels();
             SelectTab(2);
             if (playScreenPanel != null)
@@ -151,7 +151,7 @@ namespace ProjectB.UI
         public void OnUpgradesClicked()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            Debug.Log("[MainMenuUI] Upgrades clicked");
+            DevLog.Log("[MainMenuUI] Upgrades clicked");
             CloseAllPanels();
             SelectTab(0);
             if (metaUpgradeUI != null)
@@ -182,7 +182,7 @@ namespace ProjectB.UI
         public void OnAchievementsClicked()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            Debug.Log("[MainMenuUI] Achievements clicked");
+            DevLog.Log("[MainMenuUI] Achievements clicked");
             CloseAllPanels();
             SelectTab(3);
             achievementManager?.ClearRunUnlocks();
@@ -196,7 +196,7 @@ namespace ProjectB.UI
         public void OnBonusClicked()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            Debug.Log("[MainMenuUI] Bonus clicked");
+            DevLog.Log("[MainMenuUI] Bonus clicked");
             CloseAllPanels();
             SelectTab(4);
             if (dailyBonusScreenUI != null)

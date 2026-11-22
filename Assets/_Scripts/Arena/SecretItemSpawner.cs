@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
@@ -135,7 +136,7 @@ namespace ProjectB.Arena
             Transform heroTransform = heroHealth != null ? heroHealth.transform : null;
             instance.Initialize(heroTransform, HandleItemCollected);
             activeItem = instance;
-            Debug.Log($"[SecretItemSpawner] Spawned secret item '{instance.DisplayName}' at {position}");
+            DevLog.Log($"[SecretItemSpawner] Spawned secret item '{instance.DisplayName}' at {position}");
             return instance;
         }
 
@@ -171,7 +172,7 @@ namespace ProjectB.Arena
             string rewardSummary = ApplySecretReward(item.ItemType);
             achievementManager?.OnSecretItemFound(item.ItemId);
             eventBus?.Publish(new SecretItemCollectedEvent(item.ItemId, item.DisplayName, rewardSummary));
-            Debug.Log($"[SecretItemSpawner] Collected '{item.DisplayName}': {rewardSummary}");
+            DevLog.Log($"[SecretItemSpawner] Collected '{item.DisplayName}': {rewardSummary}");
         }
 
         public string ApplySecretReward(SecretItemType type)

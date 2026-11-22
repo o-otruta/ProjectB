@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ProjectB.Core;
 using ProjectB.Data;
 
 namespace ProjectB.Ads
@@ -23,14 +24,14 @@ namespace ProjectB.Ads
         public void ShowRewarded(string placement, Action<bool> onComplete)
         {
             RewardedShowCalls++;
-            Debug.Log($"[MockAdProvider] Showing Rewarded ({placement})");
+            DevLog.Log($"[MockAdProvider] Showing Rewarded ({placement})");
             onComplete?.Invoke(IsRewardedReady && SimulateRewardGranted);
         }
 
         public void ShowInterstitial(string placement, Action onClosed)
         {
             InterstitialShowCalls++;
-            Debug.Log($"[MockAdProvider] Showing Interstitial ({placement})");
+            DevLog.Log($"[MockAdProvider] Showing Interstitial ({placement})");
             onClosed?.Invoke();
         }
     }

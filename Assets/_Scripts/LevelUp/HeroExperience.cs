@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Player;
 
@@ -178,7 +179,7 @@ namespace ProjectB.LevelUp
             CurrentLevel++;
             CalculateXPToNextLevel();
             
-            Debug.Log($"[HeroExperience] Level Up! Now level {CurrentLevel}");
+            DevLog.Log($"[HeroExperience] Level Up! Now level {CurrentLevel}");
             
             OnLevelUp?.Invoke(CurrentLevel);
             eventBus?.Publish(new HeroLeveledUpEvent(CurrentLevel));

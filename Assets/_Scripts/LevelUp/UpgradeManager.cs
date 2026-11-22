@@ -450,7 +450,7 @@ namespace ProjectB.LevelUp
             if (selectedCard.isConsumable)
             {
                 dynamicPool.Remove(selectedCard);
-                Debug.Log($"[UpgradeManager] Removed consumable card {selectedCard.cardName} from pool.");
+                DevLog.Log($"[UpgradeManager] Removed consumable card {selectedCard.cardName} from pool.");
             }
             
             ApplyCardEffect(selectedCard);
@@ -459,7 +459,7 @@ namespace ProjectB.LevelUp
 
         private void ApplyCardEffect(CardData card)
         {
-            Debug.Log($"[UpgradeManager] Applying card: {card.cardName}");
+            DevLog.Log($"[UpgradeManager] Applying card: {card.cardName}");
             if (upgradeApplier != null)
             {
                 upgradeApplier.ApplyCard(card, this);

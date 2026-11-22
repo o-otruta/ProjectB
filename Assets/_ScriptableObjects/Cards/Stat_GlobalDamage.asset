@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 934d1bde4098947418e01b9fee7582e0, type: 3}
   m_Name: Stat_GlobalDamage
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.StatUpgradeCardData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.StatUpgradeCardData
   cardName: Damage Up
   description: Increases all damage by 10%.
   icon: {fileID: 21300000, guid: 1736809e1c1fae74289e72a55fa1a1a5, type: 3}

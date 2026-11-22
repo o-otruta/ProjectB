@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectB.Core;
 using ProjectB.Data;
 
 namespace ProjectB.Meta
@@ -35,7 +36,7 @@ namespace ProjectB.Meta
                 }
             }
             
-            Debug.Log($"[MetaUpgradeManager] Loaded {upgradeDataMap.Count} meta upgrades.");
+            DevLog.Log($"[MetaUpgradeManager] Loaded {upgradeDataMap.Count} meta upgrades.");
         }
 
         public IReadOnlyCollection<MetaUpgradeData> GetAllUpgrades()

@@ -11,9 +11,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20ada558541fa324d8c5a998d73667d1, type: 3}
   m_Name: EnemyShooterWeapon
-  m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Data.Combat.WeaponData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Combat.WeaponData
   damage: 5
   attackCooldown: 2
   range: 8
   projectileSpeed: 6
+  splashRadius: 0
+  lifestealChance: 0
+  lifestealAmount: 0
   projectilePrefab: {fileID: 5801039045769942572, guid: ea83e9a22127bbd4f85ae04b8087380d, type: 3}
