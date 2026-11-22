@@ -14,6 +14,9 @@ namespace ProjectB.LevelUp
         
         private bool isMagnetized;
 
+        public bool IsMagnetized => isMagnetized;
+        public float CurrentMagnetSpeed => magnetSpeed;
+
         public void Initialize(Transform hero, int amount, IObjectPool<CoinPickup> coinPool, HeroEconomy economy = null)
         {
             heroTarget = hero;
@@ -41,7 +44,11 @@ namespace ProjectB.LevelUp
 
         public void Magnetize(float speed)
         {
-            if (isMagnetized) return;
+            if (isMagnetized)
+            {
+                if (speed > magnetSpeed) magnetSpeed = speed;
+                return;
+            }
             isMagnetized = true;
             magnetSpeed = speed;
             enabled = true;

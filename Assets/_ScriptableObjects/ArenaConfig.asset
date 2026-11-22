@@ -31,3 +31,11 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 31cb9ca8b7016f548a0b89031f0ce036, type: 3}
   MinDecorations: 50000
   MaxDecorations: 50000
+  ExplosiveBarrelPrefab: {fileID: 6883574862524412394, guid: aa811282d7af8d643b72496ec14a21b5, type: 3}
+  MinExplosiveBarrels: 8
+  MaxExplosiveBarrels: 12
+  BarrelMinDistanceFromCenter: 12
+  BarrelMaxDistanceFromCenter: 65
+  ChallengeShrinePrefab: {fileID: 1197867940534599887, guid: 1ad295e1878fc8542ac5283e0c761480, type: 3}
+  ShrineMinDistanceFromCenter: 18
+  ShrineMaxDistanceFromCenter: 48

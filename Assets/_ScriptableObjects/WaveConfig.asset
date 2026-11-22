@@ -79,6 +79,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c8e526e1a4e908a4c996093a987b0f8f, type: 2}
   bossXpBurstCount: 12
   bossCoinBurstCount: 15
+  miniBossVacuumDropChance: 0.25
+  bossVacuumDropChance: 1
   maxWaveDuration: 30
   leashDistance: 35
   leashCheckInterval: 2

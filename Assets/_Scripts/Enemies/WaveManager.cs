@@ -481,6 +481,23 @@ namespace ProjectB.Enemies
                 waveConfig.miniBossScale);
         }
 
+        public EnemyBase SpawnChallengeElite(Vector3 position, EliteArchetype? overrideArchetype = null)
+        {
+            if (waveConfig == null) return null;
+
+            EnemyData selectedType = waveConfig.SelectMiniBossEnemyForWave(currentWave, Random.value);
+            if (selectedType == null) return null;
+
+            float difficultyMultiplier = 1f + (currentWave - 1) * waveConfig.difficultyPerWave;
+            EnemyBase enemy = SpawnEnemyInstance(selectedType, position, difficultyMultiplier);
+            if (enemy != null)
+            {
+                EliteArchetype archetype = overrideArchetype ?? PickEliteArchetype(Random.value);
+                enemy.MakeElite(archetype, waveConfig);
+            }
+            return enemy;
+        }
+
         private void SpawnBoss(BossData bossData)
         {
             if (bossData == null) return;

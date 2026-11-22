@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using ProjectB.Arena;
 using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.LevelUp;
@@ -17,6 +18,7 @@ namespace ProjectB.Enemies
         private readonly AchievementManager _achievementManager;
         private readonly GameEventBus _eventBus;
         private readonly WaveManager _waveManager;
+        private readonly VacuumMagnetSpawner _vacuumMagnetSpawner;
 
         [Inject]
         public EnemyDeathHandler(
@@ -25,7 +27,8 @@ namespace ProjectB.Enemies
             RunStatistics runStatistics,
             AchievementManager achievementManager,
             GameEventBus eventBus,
-            WaveManager waveManager = null)
+            WaveManager waveManager = null,
+            VacuumMagnetSpawner vacuumMagnetSpawner = null)
         {
             _xpManager = xpManager;
             _coinManager = coinManager;
@@ -33,6 +36,7 @@ namespace ProjectB.Enemies
             _achievementManager = achievementManager;
             _eventBus = eventBus;
             _waveManager = waveManager;
+            _vacuumMagnetSpawner = vacuumMagnetSpawner;
         }
 
         public void Start()
@@ -86,6 +90,15 @@ namespace ProjectB.Enemies
                         _coinManager.SpawnCoin(evt.Position + new Vector3(rand.x, 0f, rand.y), evt.EnemyData.coinDrop);
                     }
                 }
+            }
+
+            if (evt.WasBoss || evt.WasMiniBoss)
+            {
+                _vacuumMagnetSpawner?.TryDropFromEnemyDeath(
+                    evt.Position,
+                    evt.WasBoss,
+                    evt.WasMiniBoss,
+                    UnityEngine.Random.value);
             }
 
             if (_runStatistics != null)

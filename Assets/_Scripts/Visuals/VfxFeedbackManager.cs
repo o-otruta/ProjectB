@@ -64,6 +64,17 @@ namespace ProjectB.Visuals
         private static readonly Color SynergyPurpleColor = new Color(0.75f, 0.32f, 1f, 1f);
         private static readonly Color SeismicPrimaryColor = new Color(0.92f, 0.58f, 0.16f, 1f);
         private static readonly Color SeismicSecondaryColor = new Color(0.68f, 0.44f, 0.22f, 1f);
+        private static readonly Color ArrowRainPrimaryColor = new Color(0.32f, 0.95f, 0.45f, 1f);
+        private static readonly Color ArrowRainSecondaryColor = new Color(0.95f, 0.88f, 0.28f, 1f);
+        private static readonly Color SoulNovaPrimaryColor = new Color(0.28f, 0.92f, 1f, 1f);
+        private static readonly Color SoulNovaSecondaryColor = new Color(0.62f, 0.34f, 1f, 1f);
+        private static readonly Color SoulHealTextColor = new Color(0.38f, 1f, 0.55f, 1f);
+        private static readonly Color BarrelPrimaryColor = new Color(1f, 0.42f, 0.12f, 1f);
+        private static readonly Color BarrelSecondaryColor = new Color(1f, 0.88f, 0.2f, 1f);
+        private static readonly Color VacuumPrimaryColor = new Color(0.25f, 0.95f, 1f, 1f);
+        private static readonly Color VacuumSecondaryColor = new Color(1f, 0.35f, 0.85f, 1f);
+        private static readonly Color ShrineStartColor = new Color(1f, 0.24f, 0.36f, 1f);
+        private static readonly Color ShrineCompleteColor = new Color(1f, 0.86f, 0.24f, 1f);
 
         [Inject]
         public void Construct(
@@ -211,6 +222,11 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<SeismicSlamEvent>(OnSeismicSlam);
                 eventBus.Subscribe<EnemyExplodedEvent>(OnEnemyExploded);
                 eventBus.Subscribe<FrostLichNovaEvent>(OnFrostLichNova);
+                eventBus.Subscribe<ArrowRainWaveEvent>(OnArrowRainWave);
+                eventBus.Subscribe<SoulNovaCastEvent>(OnSoulNovaCast);
+                eventBus.Subscribe<BarrelExplodedEvent>(OnBarrelExploded);
+                eventBus.Subscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
+                eventBus.Subscribe<ChallengeShrineEvent>(OnChallengeShrine);
             }
 
             if (heroHealth != null)
@@ -244,6 +260,11 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<SeismicSlamEvent>(OnSeismicSlam);
                 eventBus.Unsubscribe<EnemyExplodedEvent>(OnEnemyExploded);
                 eventBus.Unsubscribe<FrostLichNovaEvent>(OnFrostLichNova);
+                eventBus.Unsubscribe<ArrowRainWaveEvent>(OnArrowRainWave);
+                eventBus.Unsubscribe<SoulNovaCastEvent>(OnSoulNovaCast);
+                eventBus.Unsubscribe<BarrelExplodedEvent>(OnBarrelExploded);
+                eventBus.Unsubscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
+                eventBus.Unsubscribe<ChallengeShrineEvent>(OnChallengeShrine);
             }
 
             if (heroHealth != null)
@@ -467,6 +488,157 @@ namespace ProjectB.Visuals
             cameraController?.Shake(evt.IsBlizzard ? 0.22f : 0.18f, 0.15f);
         }
 
+        private void OnArrowRainWave(ArrowRainWaveEvent evt)
+        {
+            if (burstParticles != null)
+            {
+                float radius = Mathf.Max(2f, evt.Radius);
+                var emitParams = new ParticleSystem.EmitParams
+                {
+                    startSize = 0.26f
+                };
+
+                for (int i = 0; i < 18; i++)
+                {
+                    Vector2 offset = Random.insideUnitCircle * radius;
+                    emitParams.position = new Vector3(
+                        evt.Position.x + offset.x,
+                        evt.Position.y + Random.Range(5.5f, 7.2f),
+                        evt.Position.z + offset.y);
+                    emitParams.velocity = new Vector3(
+                        Random.Range(-0.8f, 0.8f),
+                        Random.Range(-19f, -15f),
+                        Random.Range(-0.8f, 0.8f));
+                    emitParams.startColor = (i & 1) == 0 ? ArrowRainPrimaryColor : ArrowRainSecondaryColor;
+                    burstParticles.Emit(emitParams, 1);
+                }
+            }
+
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.2f,
+                Mathf.Max(2f, evt.Radius * 0.65f),
+                ArrowRainPrimaryColor,
+                ArrowRainSecondaryColor,
+                ringCount: 14,
+                centerCount: 0,
+                speed: 4.2f,
+                size: 0.22f);
+            audioManager?.PlaySfx(SfxType.Hit, volumeScale: 0.75f, randomizePitch: true);
+            cameraController?.Shake(0.14f, 0.1f);
+        }
+
+        private void OnSoulNovaCast(SoulNovaCastEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.6f,
+                2.4f,
+                SoulNovaPrimaryColor,
+                SoulNovaSecondaryColor,
+                ringCount: 24,
+                centerCount: 8,
+                speed: 6.5f,
+                size: 0.34f);
+
+            if (evt.HealAmount > 0 && damagePool != null)
+            {
+                var item = damagePool.Get();
+                item.ShowText(evt.Position, $"+{evt.HealAmount} HP", SoulHealTextColor, 1.3f, 1.4f, mainCamera, damagePool);
+            }
+        }
+
+        private void OnBarrelExploded(BarrelExplodedEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.5f,
+                Mathf.Max(1.5f, evt.Radius),
+                BarrelPrimaryColor,
+                BarrelSecondaryColor,
+                ringCount: 26,
+                centerCount: 12,
+                speed: 7.5f,
+                size: 0.42f);
+            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.85f, randomizePitch: true);
+            audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: 0.9f, randomizePitch: true);
+            cameraController?.Shake(0.32f, 0.24f);
+        }
+
+        private void OnVacuumMagnetCollected(VacuumMagnetCollectedEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.7f,
+                2.6f,
+                VacuumPrimaryColor,
+                VacuumSecondaryColor,
+                ringCount: 22,
+                centerCount: 8,
+                speed: 6.0f,
+                size: 0.3f);
+
+            if (damagePool != null)
+            {
+                var item = damagePool.Get();
+                item.ShowText(evt.Position, "VACUUM MAGNET!", VacuumPrimaryColor, 1.35f, 1.6f, mainCamera, damagePool);
+            }
+
+            audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.95f, randomizePitch: false);
+            cameraController?.Shake(0.16f, 0.12f);
+        }
+
+        private void OnChallengeShrine(ChallengeShrineEvent evt)
+        {
+            switch (evt.EventType)
+            {
+                case ShrineEventType.Started:
+                    EmitExplosionRing(
+                        evt.Position + Vector3.up * 0.6f,
+                        3.2f,
+                        ShrineStartColor,
+                        SoulNovaSecondaryColor,
+                        ringCount: 24,
+                        centerCount: 10,
+                        speed: 6.2f,
+                        size: 0.34f);
+                    if (damagePool != null)
+                    {
+                        var item = damagePool.Get();
+                        item.ShowText(evt.Position, $"CHALLENGE! Defeat {evt.TotalElites} Elites!", ShrineStartColor, 1.35f, 1.8f, mainCamera, damagePool);
+                    }
+                    audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.85f, randomizePitch: false);
+                    cameraController?.Shake(0.26f, 0.2f);
+                    break;
+
+                case ShrineEventType.Progress:
+                    EmitBurst(evt.Position + Vector3.up * 0.8f, ShrineStartColor, 8, 4.2f, 0.24f);
+                    if (damagePool != null)
+                    {
+                        int defeated = Mathf.Max(0, evt.TotalElites - evt.RemainingElites);
+                        var item = damagePool.Get();
+                        item.ShowText(evt.Position, $"SHRINE: {defeated}/{evt.TotalElites}", ShrineStartColor, 1.15f, 1.1f, mainCamera, damagePool);
+                    }
+                    break;
+
+                case ShrineEventType.Completed:
+                    EmitExplosionRing(
+                        evt.Position + Vector3.up * 0.8f,
+                        3.6f,
+                        ShrineCompleteColor,
+                        SynergyGoldColor,
+                        ringCount: 28,
+                        centerCount: 12,
+                        speed: 6.8f,
+                        size: 0.38f);
+                    if (damagePool != null)
+                    {
+                        var item = damagePool.Get();
+                        item.ShowText(evt.Position, $"SHRINE CLEARED! +{evt.CoinReward} Coins", ShrineCompleteColor, 1.45f, 2.0f, mainCamera, damagePool);
+                    }
+                    audioManager?.PlaySfx(SfxType.LevelUp, volumeScale: 0.95f, randomizePitch: false);
+                    audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.9f, randomizePitch: false);
+                    cameraController?.Shake(0.3f, 0.22f);
+                    break;
+            }
+        }
+
         private void OnUltimateStateChanged()
         {
             if (heroUltimate != null && heroUltimate.IsActive && heroHealth != null)
@@ -475,7 +647,13 @@ namespace ProjectB.Visuals
                     ? heroUltimate.ActiveHeroData.ultimateType
                     : HeroUltimateType.Shield;
 
-                Color burstColor = ultType == HeroUltimateType.MeteorStrike ? MeteorUltColor : ShieldUltColor;
+                Color burstColor = ultType switch
+                {
+                    HeroUltimateType.MeteorStrike => MeteorUltColor,
+                    HeroUltimateType.ArrowRain => ArrowRainPrimaryColor,
+                    HeroUltimateType.SoulNova => SoulNovaPrimaryColor,
+                    _ => ShieldUltColor
+                };
                 EmitBurst(heroHealth.transform.position + Vector3.up * 1.0f, burstColor, 18, 6.5f, 0.3f);
                 audioManager?.PlaySfx(SfxType.ShieldUlt, volumeScale: 0.9f, randomizePitch: false);
                 cameraController?.Shake(0.18f, 0.14f);

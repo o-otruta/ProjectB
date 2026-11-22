@@ -36,6 +36,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<UpgradeManager>();
             builder.RegisterComponentInHierarchy<ArenaGenerator>();
             builder.RegisterComponentInHierarchy<SecretItemSpawner>();
+            builder.RegisterComponentInHierarchy<VacuumMagnetSpawner>();
             builder.RegisterComponentInHierarchy<VfxFeedbackManager>();
             builder.RegisterComponentInHierarchy<CameraController>();
             

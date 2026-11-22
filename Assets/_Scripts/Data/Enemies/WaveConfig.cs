@@ -144,6 +144,15 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Количество монет, выпадающих с босса")]
         public int bossCoinBurstCount = 15;
 
+        [Header("Vacuum Magnet Drops")]
+        [Range(0f, 1f)]
+        [Tooltip("Шанс выпадения кристалла-пылесоса (Vacuum Magnet) с мини-босса")]
+        public float miniBossVacuumDropChance = 0.25f;
+
+        [Range(0f, 1f)]
+        [Tooltip("Шанс выпадения кристалла-пылесоса (Vacuum Magnet) с босса")]
+        public float bossVacuumDropChance = 1.0f;
+
         [Header("Safety & Wave Flow")]
         [Tooltip("Максимальная длительность волны в секундах. По истечении времени начинается следующая волна; оставшиеся враги не удаляются, а продолжают бой")]
         public float maxWaveDuration = 30f;

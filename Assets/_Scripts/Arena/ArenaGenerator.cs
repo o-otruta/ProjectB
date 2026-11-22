@@ -1,5 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
+using VContainer;
+using ProjectB.Core;
+using ProjectB.Core.Events;
 using ProjectB.Data;
+using ProjectB.Enemies;
+using ProjectB.LevelUp;
+using ProjectB.Player;
 
 namespace ProjectB.Arena
 {
@@ -20,9 +27,52 @@ namespace ProjectB.Arena
         private Material _fallbackFloorMaterial;
         private Material _fallbackWallMaterial;
 
+        private IObjectResolver _resolver;
+        private GameEventBus _eventBus;
+        private HeroHealth _heroHealth;
+        private HeroEconomy _heroEconomy;
+        private HeroExperience _heroExperience;
+        private WaveManager _waveManager;
+        private GameManager _gameManager;
+
+        private readonly List<ExplosiveBarrel> _spawnedBarrels = new List<ExplosiveBarrel>();
+        private Transform _interactablesContainer;
+
         public int CurrentSeed { get; private set; }
         public ArenaConfig Config => _config;
         public float ArenaSize => _config != null ? _config.ArenaSize : 100f;
+        public IReadOnlyList<ExplosiveBarrel> SpawnedBarrels => _spawnedBarrels;
+        public ChallengeShrine ActiveShrine { get; private set; }
+
+        [Inject]
+        public void Construct(
+            IObjectResolver resolver = null,
+            GameEventBus eventBus = null,
+            HeroHealth heroHealth = null,
+            HeroEconomy heroEconomy = null,
+            HeroExperience heroExperience = null)
+        {
+            _resolver = resolver;
+            _eventBus = eventBus;
+            _heroHealth = heroHealth;
+            _heroEconomy = heroEconomy;
+            _heroExperience = heroExperience;
+        }
+
+        private void ResolveDeferredDependencies()
+        {
+            if (_resolver == null) return;
+
+            if (_waveManager == null)
+            {
+                _resolver.TryResolve(out _waveManager);
+            }
+
+            if (_gameManager == null)
+            {
+                _resolver.TryResolve(out _gameManager);
+            }
+        }
 
         private void Start()
         {
@@ -63,10 +113,15 @@ namespace ProjectB.Arena
             GenerateBoundaries();
             GenerateObstacles();
             GenerateDecorations();
+            GenerateInteractables();
         }
 
         public void ClearArena()
         {
+            _spawnedBarrels.Clear();
+            ActiveShrine = null;
+            _interactablesContainer = null;
+
             if (_decorationRenderer != null)
             {
                 _decorationRenderer.Clear();
@@ -288,6 +343,148 @@ namespace ProjectB.Arena
             }
 
             _decorationRenderer.Build(_config.DecorationPrefabs, _config.ArenaSize, count, _rng);
+        }
+
+        private void GenerateInteractables()
+        {
+            float halfArena = _config.ArenaSize * 0.5f;
+            float maxBound = Mathf.Max(8f, halfArena - 4f);
+            int obstacleMask = LayerMask.GetMask("Obstacles");
+
+            var interactablesGo = new GameObject("Interactables");
+            interactablesGo.transform.SetParent(transform, false);
+            _interactablesContainer = interactablesGo.transform;
+
+            if (_config.ExplosiveBarrelPrefab != null && _config.MaxExplosiveBarrels > 0)
+            {
+                int minBarrels = Mathf.Max(0, _config.MinExplosiveBarrels);
+                int maxBarrels = Mathf.Max(minBarrels, _config.MaxExplosiveBarrels);
+                int targetCount = Range(minBarrels, maxBarrels + 1);
+
+                float minR = Mathf.Min(_config.BarrelMinDistanceFromCenter, maxBound * 0.5f);
+                float maxR = Mathf.Clamp(_config.BarrelMaxDistanceFromCenter, minR + 1f, maxBound);
+
+                int maxAttempts = targetCount * 20;
+                int attempts = 0;
+                while (_spawnedBarrels.Count < targetCount && attempts < maxAttempts)
+                {
+                    attempts++;
+                    float angle = Range(0f, Mathf.PI * 2f);
+                    float dist = Range(minR, maxR);
+                    Vector3 candidate = new Vector3(Mathf.Cos(angle) * dist, 0f, Mathf.Sin(angle) * dist);
+                    candidate.x = Mathf.Clamp(candidate.x, -maxBound, maxBound);
+                    candidate.z = Mathf.Clamp(candidate.z, -maxBound, maxBound);
+
+                    if (obstacleMask != 0 && Physics.CheckSphere(candidate + Vector3.up * 0.7f, 1.3f, obstacleMask))
+                    {
+                        continue;
+                    }
+
+                    bool tooCloseToBarrel = false;
+                    for (int i = 0; i < _spawnedBarrels.Count; i++)
+                    {
+                        if (_spawnedBarrels[i] == null) continue;
+                        Vector3 diff = _spawnedBarrels[i].transform.position - candidate;
+                        diff.y = 0f;
+                        if (diff.sqrMagnitude < 36f)
+                        {
+                            tooCloseToBarrel = true;
+                            break;
+                        }
+                    }
+                    if (tooCloseToBarrel) continue;
+
+                    SpawnBarrelAt(candidate);
+                }
+            }
+
+            if (_config.ChallengeShrinePrefab != null)
+            {
+                float minR = Mathf.Min(_config.ShrineMinDistanceFromCenter, maxBound * 0.6f);
+                float maxR = Mathf.Clamp(_config.ShrineMaxDistanceFromCenter, minR + 1f, maxBound);
+
+                Vector3 shrinePos = new Vector3(minR, 0f, 0f);
+                for (int attempt = 0; attempt < 25; attempt++)
+                {
+                    float angle = Range(0f, Mathf.PI * 2f);
+                    float dist = Range(minR, maxR);
+                    Vector3 candidate = new Vector3(Mathf.Cos(angle) * dist, 0f, Mathf.Sin(angle) * dist);
+                    candidate.x = Mathf.Clamp(candidate.x, -maxBound, maxBound);
+                    candidate.z = Mathf.Clamp(candidate.z, -maxBound, maxBound);
+
+                    if (obstacleMask != 0 && Physics.CheckSphere(candidate + Vector3.up * 0.8f, 1.8f, obstacleMask))
+                    {
+                        continue;
+                    }
+
+                    bool overlapsBarrel = false;
+                    for (int i = 0; i < _spawnedBarrels.Count; i++)
+                    {
+                        if (_spawnedBarrels[i] == null) continue;
+                        Vector3 diff = _spawnedBarrels[i].transform.position - candidate;
+                        diff.y = 0f;
+                        if (diff.sqrMagnitude < 25f)
+                        {
+                            overlapsBarrel = true;
+                            break;
+                        }
+                    }
+                    if (!overlapsBarrel)
+                    {
+                        shrinePos = candidate;
+                        break;
+                    }
+                }
+
+                SpawnShrineAt(shrinePos);
+            }
+        }
+
+        private ExplosiveBarrel SpawnBarrelAt(Vector3 position)
+        {
+            if (_config == null || _config.ExplosiveBarrelPrefab == null) return null;
+            Transform parent = _interactablesContainer != null ? _interactablesContainer : transform;
+            GameObject go = Instantiate(_config.ExplosiveBarrelPrefab, position, Quaternion.Euler(0f, Range(0f, 360f), 0f), parent);
+            var barrel = go.GetComponent<ExplosiveBarrel>();
+            if (barrel == null) barrel = go.AddComponent<ExplosiveBarrel>();
+            barrel.Initialize(_heroHealth, _eventBus);
+            _spawnedBarrels.Add(barrel);
+            return barrel;
+        }
+
+        private ChallengeShrine SpawnShrineAt(Vector3 position)
+        {
+            if (_config == null || _config.ChallengeShrinePrefab == null) return null;
+            ResolveDeferredDependencies();
+            Transform parent = _interactablesContainer != null ? _interactablesContainer : transform;
+            GameObject go = Instantiate(_config.ChallengeShrinePrefab, position, Quaternion.identity, parent);
+            var shrine = go.GetComponent<ChallengeShrine>();
+            if (shrine == null) shrine = go.AddComponent<ChallengeShrine>();
+            shrine.Initialize(_heroHealth, _heroEconomy, _heroExperience, _waveManager, _gameManager, _eventBus);
+            ActiveShrine = shrine;
+            return shrine;
+        }
+
+        public ExplosiveBarrel SpawnBarrelNearHero(float distance = 4.5f)
+        {
+            if (_heroHealth == null || _config == null || _config.ExplosiveBarrelPrefab == null) return null;
+            Vector3 pos = _heroHealth.transform.position + new Vector3(distance, 0f, 0f);
+            pos.y = 0f;
+            float maxBound = Mathf.Max(5f, ArenaSize * 0.5f - 3f);
+            pos.x = Mathf.Clamp(pos.x, -maxBound, maxBound);
+            pos.z = Mathf.Clamp(pos.z, -maxBound, maxBound);
+            return SpawnBarrelAt(pos);
+        }
+
+        public ChallengeShrine SpawnShrineNearHero(float distance = 5.5f)
+        {
+            if (_heroHealth == null || _config == null || _config.ChallengeShrinePrefab == null) return null;
+            Vector3 pos = _heroHealth.transform.position + new Vector3(-distance, 0f, 0f);
+            pos.y = 0f;
+            float maxBound = Mathf.Max(5f, ArenaSize * 0.5f - 3f);
+            pos.x = Mathf.Clamp(pos.x, -maxBound, maxBound);
+            pos.z = Mathf.Clamp(pos.z, -maxBound, maxBound);
+            return SpawnShrineAt(pos);
         }
     }
 }

@@ -307,5 +307,106 @@ namespace ProjectB.Core.Events
             IsBlizzard = isBlizzard;
         }
     }
+
+    /// <summary>
+    /// Волна стрел ультимейта Рейнджера (Arrow Rain).
+    /// </summary>
+    public struct ArrowRainWaveEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+        public int WaveIndex;
+
+        public ArrowRainWaveEvent(Vector3 position, float radius, int waveIndex)
+        {
+            Position = position;
+            Radius = radius;
+            WaveIndex = waveIndex;
+        }
+    }
+
+    /// <summary>
+    /// Выброс кольца спектральных черепов ультимейта Некроманта (Soul Nova).
+    /// </summary>
+    public struct SoulNovaCastEvent
+    {
+        public Vector3 Position;
+        public float Range;
+        public int HealAmount;
+
+        public SoulNovaCastEvent(Vector3 position, float range, int healAmount)
+        {
+            Position = position;
+            Range = range;
+            HealAmount = healAmount;
+        }
+    }
+
+    /// <summary>
+    /// Взрыв воксельной бочки на арене (ExplosiveBarrel).
+    /// </summary>
+    public struct BarrelExplodedEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+        public int EnemiesHit;
+
+        public BarrelExplodedEvent(Vector3 position, float radius, int enemiesHit)
+        {
+            Position = position;
+            Radius = radius;
+            EnemiesHit = enemiesHit;
+        }
+    }
+
+    /// <summary>
+    /// Подбор кристалла-пылесоса (Vacuum Magnet), притянувшего все пикапы на арене.
+    /// </summary>
+    public struct VacuumMagnetCollectedEvent
+    {
+        public Vector3 Position;
+        public int XpMagnetized;
+        public int CoinsMagnetized;
+
+        public VacuumMagnetCollectedEvent(Vector3 position, int xpMagnetized, int coinsMagnetized)
+        {
+            Position = position;
+            XpMagnetized = xpMagnetized;
+            CoinsMagnetized = coinsMagnetized;
+        }
+    }
+
+    public enum ShrineEventType
+    {
+        Started = 0,
+        Progress = 1,
+        Completed = 2
+    }
+
+    /// <summary>
+    /// Событие прогресса или завершения Алтаря Испытания (ChallengeShrine).
+    /// </summary>
+    public struct ChallengeShrineEvent
+    {
+        public ShrineEventType EventType;
+        public Vector3 Position;
+        public int RemainingElites;
+        public int TotalElites;
+        public int CoinReward;
+
+        public ChallengeShrineEvent(
+            ShrineEventType eventType,
+            Vector3 position,
+            int remainingElites,
+            int totalElites,
+            int coinReward)
+        {
+            EventType = eventType;
+            Position = position;
+            RemainingElites = remainingElites;
+            TotalElites = totalElites;
+            CoinReward = coinReward;
+        }
+    }
 }
 

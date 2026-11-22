@@ -33,6 +33,8 @@ namespace ProjectB.UI
         private HeroAbilities heroAbilities;
         private UpgradeManager upgradeManager;
         private UpgradeApplier upgradeApplier;
+        private ArenaGenerator arenaGenerator;
+        private VacuumMagnetSpawner vacuumMagnetSpawner;
 
         [Inject]
         public void Construct(
@@ -46,7 +48,9 @@ namespace ProjectB.UI
             SaveManager saveManager = null,
             HeroAbilities heroAbilities = null,
             UpgradeManager upgradeManager = null,
-            UpgradeApplier upgradeApplier = null)
+            UpgradeApplier upgradeApplier = null,
+            ArenaGenerator arenaGenerator = null,
+            VacuumMagnetSpawner vacuumMagnetSpawner = null)
         {
             this.waveManager = waveManager;
             this.heroHealth = heroHealth;
@@ -59,6 +63,8 @@ namespace ProjectB.UI
             this.heroAbilities = heroAbilities;
             this.upgradeManager = upgradeManager;
             this.upgradeApplier = upgradeApplier;
+            this.arenaGenerator = arenaGenerator;
+            this.vacuumMagnetSpawner = vacuumMagnetSpawner;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -266,7 +272,7 @@ namespace ProjectB.UI
             panelRt.anchorMax = new Vector2(0.5f, 0.5f);
             panelRt.pivot = new Vector2(0.5f, 0.5f);
             panelRt.anchoredPosition = new Vector2(0f, 50f);
-            panelRt.sizeDelta = new Vector2(760f, 920f);
+            panelRt.sizeDelta = new Vector2(760f, 1010f);
 
             var panelImg = menuPanel.GetComponent<Image>();
             panelImg.color = new Color(0.05f, 0.06f, 0.09f, 0.93f);
@@ -395,6 +401,23 @@ namespace ProjectB.UI
 
             var abilityRow = CreateRow(menuPanel.transform, 72f, 14f);
             AddFlexButton(abilityRow.transform, "Grant Abilities...", new Color(0.76f, 0.42f, 0.14f, 1f), OpenAbilityPicker);
+
+            var arenaRow = CreateRow(menuPanel.transform, 72f, 12f);
+            AddFlexButton(arenaRow.transform, "Spawn Barrel", new Color(0.78f, 0.24f, 0.18f, 1f), () =>
+            {
+                arenaGenerator?.SpawnBarrelNearHero(4.5f);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(arenaRow.transform, "Spawn Magnet", new Color(0.18f, 0.64f, 0.82f, 1f), () =>
+            {
+                vacuumMagnetSpawner?.SpawnNearHero(3.5f);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(arenaRow.transform, "Spawn Shrine", new Color(0.56f, 0.22f, 0.78f, 1f), () =>
+            {
+                arenaGenerator?.SpawnShrineNearHero(5.5f);
+                menuPanel.SetActive(false);
+            });
 
             menuPanel.SetActive(false);
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
@@ -13,6 +14,11 @@ namespace ProjectB.LevelUp
         private IObjectPool<XpCrystal> xpPool;
         private Material fallbackMaterial;
         private int pickupsLayer;
+
+        private readonly HashSet<XpCrystal> activeCrystals = new HashSet<XpCrystal>();
+        private readonly List<XpCrystal> magnetizeBuffer = new List<XpCrystal>(128);
+
+        public int ActiveCount => activeCrystals.Count;
 
         [Inject]
         public void Construct(ProjectB.Player.HeroHealth heroHealth, HeroExperience heroExperience)
@@ -63,9 +69,30 @@ namespace ProjectB.LevelUp
                     
                     return crystal;
                 },
-                actionOnGet: c => c.gameObject.SetActive(true),
-                actionOnRelease: c => c.gameObject.SetActive(false),
-                actionOnDestroy: c => Destroy(c.gameObject),
+                actionOnGet: c =>
+                {
+                    if (c != null)
+                    {
+                        c.gameObject.SetActive(true);
+                        activeCrystals.Add(c);
+                    }
+                },
+                actionOnRelease: c =>
+                {
+                    if (c != null)
+                    {
+                        activeCrystals.Remove(c);
+                        c.gameObject.SetActive(false);
+                    }
+                },
+                actionOnDestroy: c =>
+                {
+                    if (c != null)
+                    {
+                        activeCrystals.Remove(c);
+                        Destroy(c.gameObject);
+                    }
+                },
                 collectionCheck: false,
                 defaultCapacity: 100,
                 maxSize: 1000
@@ -74,15 +101,45 @@ namespace ProjectB.LevelUp
 
         public void SpawnXp(Vector3 position, int amount)
         {
-            if (heroTarget == null) return;
+            if (heroTarget == null || xpPool == null) return;
             
             XpCrystal crystal = xpPool.Get();
+            if (crystal == null) return;
             
             // Немного приподнимаем кристалл над землей
             position.y = 0.25f;
             crystal.transform.position = position;
             
             crystal.Initialize(heroTarget, amount, xpPool, heroExperience);
+            activeCrystals.Add(crystal);
+        }
+
+        public int MagnetizeAll(float speed = 28f)
+        {
+            if (activeCrystals.Count == 0) return 0;
+
+            magnetizeBuffer.Clear();
+            foreach (var crystal in activeCrystals)
+            {
+                magnetizeBuffer.Add(crystal);
+            }
+
+            int magnetized = 0;
+            for (int i = 0; i < magnetizeBuffer.Count; i++)
+            {
+                var crystal = magnetizeBuffer[i];
+                if (crystal == null || !crystal.gameObject.activeInHierarchy)
+                {
+                    activeCrystals.Remove(crystal);
+                    continue;
+                }
+
+                crystal.Magnetize(speed);
+                magnetized++;
+            }
+
+            magnetizeBuffer.Clear();
+            return magnetized;
         }
 
         private void OnDestroy()
