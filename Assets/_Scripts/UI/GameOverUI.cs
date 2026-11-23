@@ -28,6 +28,7 @@ namespace ProjectB.UI
         [Header("Damage Breakdown Section")]
         [SerializeField] private GameObject damageBreakdownSection;
         [SerializeField] private Transform damageBreakdownContainer;
+        [SerializeField, Min(1)] private int maxBreakdownRows = 12;
         [SerializeField] private AbilityCatalog abilityCatalog;
         [SerializeField] private SynergyCatalog synergyCatalog;
         [SerializeField] private HeroCatalog heroCatalog;
@@ -48,7 +49,7 @@ namespace ProjectB.UI
         private SelectedHeroService selectedHeroService;
         private readonly List<GameObject> spawnedAchievementRows = new List<GameObject>();
         private readonly List<GameObject> spawnedBreakdownRows = new List<GameObject>();
-        private readonly List<DamageSourceEntry> breakdownBuffer = new List<DamageSourceEntry>(8);
+        private readonly List<DamageSourceEntry> breakdownBuffer = new List<DamageSourceEntry>(16);
 
         [Inject]
         public void Construct(
@@ -141,7 +142,7 @@ namespace ProjectB.UI
             breakdownBuffer.Clear();
             if (runStatistics != null && runStatistics.TotalDamageDealt > 0)
             {
-                runStatistics.GetTopDamageSources(breakdownBuffer, 6);
+                runStatistics.GetTopDamageSources(breakdownBuffer, maxBreakdownRows);
             }
 
             bool hasData = breakdownBuffer.Count > 0;
@@ -172,6 +173,18 @@ namespace ProjectB.UI
                 row.transform.SetParent(damageBreakdownContainer, false);
                 spawnedBreakdownRows.Add(row);
             }
+
+            ResetScrollToTop(damageBreakdownContainer);
+        }
+
+        private static void ResetScrollToTop(Transform content)
+        {
+            var scrollRect = content != null ? content.GetComponentInParent<ScrollRect>(true) : null;
+            if (scrollRect == null) return;
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)content);
+            scrollRect.StopMovement();
+            scrollRect.verticalNormalizedPosition = 1f;
         }
 
         private static void ResolveSourceMetadata(
@@ -254,6 +267,7 @@ namespace ProjectB.UI
             var le = row.GetComponent<LayoutElement>();
             le.minHeight = 52f;
             le.preferredHeight = 52f;
+            ((RectTransform)row.transform).sizeDelta = new Vector2(0f, 52f);
 
             var bg = row.GetComponent<Image>();
             bg.color = new Color(0.11f, 0.13f, 0.18f, 0.92f);

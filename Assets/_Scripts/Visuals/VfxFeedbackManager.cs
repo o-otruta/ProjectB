@@ -38,6 +38,7 @@ namespace ProjectB.Visuals
 
         private Camera mainCamera;
         private IObjectPool<DamageNumberItem> damagePool;
+        private Canvas damageNumbersCanvas;
         private ParticleSystem burstParticles;
         private bool isSubscribed;
         private readonly WaitForSecondsRealtime hitStopWait = new WaitForSecondsRealtime(0.03f);
@@ -175,6 +176,18 @@ namespace ProjectB.Visuals
             Subscribe();
         }
 
+        private void LateUpdate()
+        {
+            if (damageNumbersCanvas == null) return;
+
+            // Hide floating numbers while any modal UI (pause / level-up / game over) is open.
+            bool shouldShow = gameManager == null || gameManager.CurrentState == GameState.Playing;
+            if (damageNumbersCanvas.enabled != shouldShow)
+            {
+                damageNumbersCanvas.enabled = shouldShow;
+            }
+        }
+
         private void OnDisable()
         {
             CancelHitStopIfNeeded();
@@ -244,7 +257,9 @@ namespace ProjectB.Visuals
 
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 5;
+            // Below the main UI canvas (order 0) so HUD, pause, level-up and game-over panels always cover the numbers.
+            canvas.sortingOrder = -10;
+            damageNumbersCanvas = canvas;
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

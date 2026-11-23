@@ -478,29 +478,79 @@ namespace ProjectB.EditorScripts
                 TextAlignmentOptions.Center,
                 defaultFont);
 
-            Transform containerTf = breakdownGo.transform.Find("Container");
+            // ScrollView -> Viewport (RectMask2D) -> Container: rows never spill over the sections below.
+            Transform scrollTf = breakdownGo.transform.Find("ScrollView");
+            GameObject scrollGo = scrollTf != null
+                ? scrollTf.gameObject
+                : new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
+            if (scrollTf == null)
+            {
+                scrollGo.transform.SetParent(breakdownGo.transform, false);
+            }
+
+            var scrollRt = (RectTransform)scrollGo.transform;
+            scrollRt.anchorMin = Vector2.zero;
+            scrollRt.anchorMax = Vector2.one;
+            scrollRt.offsetMin = new Vector2(14f, 12f);
+            scrollRt.offsetMax = new Vector2(-14f, -48f);
+
+            Transform viewportTf = scrollGo.transform.Find("Viewport");
+            GameObject viewportGo = viewportTf != null
+                ? viewportTf.gameObject
+                : new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+            if (viewportTf == null)
+            {
+                viewportGo.transform.SetParent(scrollGo.transform, false);
+            }
+
+            var viewportRt = (RectTransform)viewportGo.transform;
+            viewportRt.anchorMin = Vector2.zero;
+            viewportRt.anchorMax = Vector2.one;
+            viewportRt.offsetMin = Vector2.zero;
+            viewportRt.offsetMax = Vector2.zero;
+            var viewportImg = EnsureComponent<Image>(viewportGo);
+            viewportImg.color = new Color(0f, 0f, 0f, 0f); // transparent, but receives drag raycasts
+            viewportImg.raycastTarget = true;
+            EnsureComponent<RectMask2D>(viewportGo);
+
+            // Migrate a legacy Container that sat directly under the section.
+            Transform containerTf = viewportGo.transform.Find("Container");
+            if (containerTf == null)
+            {
+                containerTf = breakdownGo.transform.Find("Container");
+            }
             GameObject containerGo = containerTf != null
                 ? containerTf.gameObject
                 : new GameObject("Container", typeof(RectTransform), typeof(VerticalLayoutGroup));
-            if (containerTf == null)
-            {
-                containerGo.transform.SetParent(breakdownGo.transform, false);
-            }
+            containerGo.transform.SetParent(viewportGo.transform, false);
 
             var contRt = (RectTransform)containerGo.transform;
-            contRt.anchorMin = new Vector2(0f, 0f);
+            contRt.anchorMin = new Vector2(0f, 1f);
             contRt.anchorMax = new Vector2(1f, 1f);
-            contRt.offsetMin = new Vector2(14f, 12f);
-            contRt.offsetMax = new Vector2(-14f, -48f);
+            contRt.pivot = new Vector2(0.5f, 1f);
+            contRt.anchoredPosition = Vector2.zero;
+            contRt.sizeDelta = Vector2.zero;
 
             var vlg = EnsureComponent<VerticalLayoutGroup>(containerGo);
             vlg.spacing = 6f;
             vlg.padding = new RectOffset(4, 4, 4, 4);
             vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.childControlWidth = true;
-            vlg.childControlHeight = false;
+            vlg.childControlHeight = true; // respect LayoutElement.preferredHeight of each row
             vlg.childForceExpandWidth = true;
             vlg.childForceExpandHeight = false;
+
+            var fitter = EnsureComponent<ContentSizeFitter>(containerGo);
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scrollRect = EnsureComponent<ScrollRect>(scrollGo);
+            scrollRect.viewport = viewportRt;
+            scrollRect.content = contRt;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            scrollRect.scrollSensitivity = 20f;
 
             // Compact RunAchievementsSection and stack action buttons cleanly
             SetAnchoredRect(gameOverTf.Find("RunAchievementsSection"), new Vector2(0f, -25f), new Vector2(880f, 180f));
