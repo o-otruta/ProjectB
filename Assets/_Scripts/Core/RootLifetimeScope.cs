@@ -32,8 +32,18 @@ namespace ProjectB.Core
             builder.Register<AudioManager>(Lifetime.Singleton);
             builder.Register<AdManager>(Lifetime.Singleton);
 
+            // Sprint 14.1: adaptive foundation — layout mode (Portrait/Landscape), input mode and build-profile orientation.
+            builder.RegisterEntryPoint<LayoutModeService>().AsSelf();
+            builder.Register<InputModeService>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<OrientationPolicyService>().AsSelf();
+
             // Eagerly construct the tree so it registers its slot bonuses with AbilitySlotService before any UI reads them.
-            builder.RegisterBuildCallback(container => container.Resolve<TalentTreeManager>());
+            builder.RegisterBuildCallback(container =>
+            {
+                container.Resolve<TalentTreeManager>();
+                // Start tracking the active device from the very first frame, before any UI asks for it.
+                container.Resolve<InputModeService>();
+            });
         }
 
         private void OnApplicationPause(bool pauseStatus)

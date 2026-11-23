@@ -264,7 +264,9 @@ namespace ProjectB.Visuals
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080f, 1920f);
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight = 0f;
+            // Sprint 14.1: same Portrait/Landscape reference + short-side match as the scene canvases.
+            canvasGo.AddComponent<ProjectB.UI.AdaptiveCanvasScaler>();
 
             damagePool = new ObjectPool<DamageNumberItem>(
                 createFunc: () =>
