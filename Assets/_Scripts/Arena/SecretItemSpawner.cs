@@ -37,6 +37,7 @@ namespace ProjectB.Arena
         private UpgradeManager upgradeManager;
         private AchievementManager achievementManager;
         private GameEventBus eventBus;
+        private HeroRuntimeStats runtimeStats;
 
         private bool hasSpawnedThisRun;
         private int obstacleMask;
@@ -53,8 +54,10 @@ namespace ProjectB.Arena
             HeroExperience heroExperience,
             UpgradeManager upgradeManager,
             AchievementManager achievementManager = null,
-            GameEventBus eventBus = null)
+            GameEventBus eventBus = null,
+            HeroRuntimeStats runtimeStats = null)
         {
+            this.runtimeStats = runtimeStats;
             this.arenaGenerator = arenaGenerator;
             this.heroHealth = heroHealth;
             this.heroEconomy = heroEconomy;
@@ -180,8 +183,9 @@ namespace ProjectB.Arena
             switch (type)
             {
                 case SecretItemType.TreasureChest:
-                    heroEconomy?.AddCoin(chestCoinReward);
-                    return $"+{chestCoinReward} Coins";
+                    int chestCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(chestCoinReward) : chestCoinReward;
+                    heroEconomy?.AddCoin(chestCoins);
+                    return $"+{chestCoins} Coins";
 
                 case SecretItemType.AncientScroll:
                     heroExperience?.ForceLevelUp();
@@ -193,8 +197,9 @@ namespace ProjectB.Arena
                     {
                         return $"Unlocked: {granted.abilityName}";
                     }
-                    heroEconomy?.AddCoin(crystalFallbackCoins);
-                    return $"+{crystalFallbackCoins} Coins";
+                    int crystalCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(crystalFallbackCoins) : crystalFallbackCoins;
+                    heroEconomy?.AddCoin(crystalCoins);
+                    return $"+{crystalCoins} Coins";
 
                 default:
                     return string.Empty;

@@ -8,6 +8,8 @@ namespace ProjectB.Data
         MaxAbilityLevel,
         CollectAbilitiesInRun,
         NoDamageWaves,
-        FindSecretItem
+        FindSecretItem,
+        ClearShrines = 7,
+        ReachCombo = 8
     }
 }

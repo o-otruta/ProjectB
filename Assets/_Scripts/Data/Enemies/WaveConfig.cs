@@ -183,6 +183,14 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Шанс выпадения кристалла-пылесоса (Vacuum Magnet) с босса")]
         public float bossVacuumDropChance = 1.0f;
 
+        [Header("Boss Shards — Constellation currency (Sprint 11)")]
+        [Min(0)] [Tooltip("Boss Shards granted for defeating a mini-boss")]
+        public int miniBossShardReward = 1;
+        [Min(0)] [Tooltip("Boss Shards granted for defeating a boss (Golem/Necromancer/Lich/Demon Lord)")]
+        public int bossShardReward = 5;
+        [Min(0)] [Tooltip("Boss Shards granted for clearing a Challenge Shrine")]
+        public int shrineShardReward = 2;
+
         [Header("Safety & Wave Flow")]
         [Tooltip("Максимальная длительность волны в секундах. По истечении времени начинается следующая волна; оставшиеся враги не удаляются, а продолжают бой")]
         public float maxWaveDuration = 30f;

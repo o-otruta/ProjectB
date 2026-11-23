@@ -41,6 +41,7 @@ namespace ProjectB.Core
         private bool hasDoubledCoinsThisRun;
         private bool hasCountedRunInTotals;
         private int recordedCoinsThisRun;
+        private int recordedShardsThisRun;
         private int recordedKillsThisRun;
         private float recordedPlayTimeThisRun;
         private int lastShownRunCoins;
@@ -161,10 +162,12 @@ namespace ProjectB.Core
                         waveReached = wave,
                         enemiesKilled = runStatistics.EnemiesKilled,
                         coinsEarned = coins,
-                        playTime = runStatistics.PlayTime
+                        playTime = runStatistics.PlayTime,
+                        bossShardsEarned = runStatistics.BossShardsEarned
                     };
 
                     saveManager.RecordRunResult(result);
+                    recordedShardsThisRun = runStatistics.BossShardsEarned;
                     recordedCoinsThisRun = coins;
                     recordedKillsThisRun = runStatistics.EnemiesKilled;
                     recordedPlayTimeThisRun = runStatistics.PlayTime;
@@ -180,7 +183,10 @@ namespace ProjectB.Core
                 int deltaKills = Mathf.Max(0, runStatistics.EnemiesKilled - recordedKillsThisRun);
                 float deltaTime = Mathf.Max(0f, runStatistics.PlayTime - recordedPlayTimeThisRun);
 
+                int deltaShards = Mathf.Max(0, runStatistics.BossShardsEarned - recordedShardsThisRun);
                 if (deltaCoins > 0) saveManager.AddCoins(deltaCoins, saveImmediately: false);
+                if (deltaShards > 0) saveManager.AddBossShards(deltaShards, saveImmediately: false);
+                recordedShardsThisRun = runStatistics.BossShardsEarned;
                 saveManager.Data.totalKills += deltaKills;
                 saveManager.Data.totalPlayTime += deltaTime;
                 if (wave > saveManager.Data.bestWave) saveManager.Data.bestWave = wave;

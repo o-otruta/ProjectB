@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fury_syn_ricochet_barrage
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fury_syn_ricochet_barrage
+  displayName: Ricochet Barrage
+  description: 'Unlocks the reactive synergy <b>Ricochet Barrage</b> (BuzzsawChakram
+    + CriticalLens). Auto-activates in a run once both abilities are equipped.
+
+    Every
+    critical hit of a Buzzsaw Chakram spawns a shrapnel mini-disc (2 ricochets) and
+    speeds up the main disc.'
+  icon: {fileID: 21300000, guid: 530d0500e29a6844d8fa291d0e845a14, type: 3}
+  nodeType: 2
+  constellation: 1
+  position: {x: -392.1401, y: 603.8428}
+  prerequisiteIds:
+  - fury_r2
+  shardCost: 3
+  coinCost: 0
+  effects: []
+  synergyId: ricochet_barrage

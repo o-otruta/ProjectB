@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fortune_syn_phantom_legion
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fortune_syn_phantom_legion
+  displayName: Phantom Legion
+  description: 'Unlocks the reactive synergy <b>Phantom Legion</b> (ShadowDecoy +
+    MiniDragon). Auto-activates in a run once both abilities are equipped.
+
+    When
+    a Shadow Decoy detonates it explodes into a ring of 8 dragon fireballs flying
+    in every direction.'
+  icon: {fileID: 21300000, guid: d32aa398bdfa8b046b77957760b31685, type: 3}
+  nodeType: 2
+  constellation: 3
+  position: {x: 719.0133, y: 37.6818}
+  prerequisiteIds:
+  - fortune_r2
+  shardCost: 3
+  coinCost: 0
+  effects: []
+  synergyId: phantom_legion

@@ -51,7 +51,16 @@ namespace ProjectB.Meta
         public int runsSinceLastInterstitial;
         public bool adsRemoved;
 
+        // --- Дерево Созвездий (Sprint 11, saveVersion 2) ---
+        // Валюта Boss Shards: мини-боссы (+1), боссы (+5), Алтари (+2)
+        public int bossShards;
+        // Суммарно заработано осколков за всё время (статистика)
+        public int totalBossShardsEarned;
+        // ID открытых узлов Дерева Созвездий
+        public List<string> unlockedTalentIds = new List<string>();
+
         // --- Версионирование ---
-        public int saveVersion = 1;
+        public const int CURRENT_SAVE_VERSION = 2;
+        public int saveVersion = CURRENT_SAVE_VERSION;
     }
 }

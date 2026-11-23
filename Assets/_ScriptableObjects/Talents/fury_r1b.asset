@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fury_r1b
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fury_r1b
+  displayName: +5% Damage
+  description: 'Permanently +5% damage for weapon and abilities. (Inner ring: also
+    purchasable with coins.)'
+  icon: {fileID: 21300000, guid: e10ca7822aede6943861299e68eeedb4, type: 3}
+  nodeType: 1
+  constellation: 1
+  position: {x: -62.11657, y: 231.82219}
+  prerequisiteIds: []
+  shardCost: 1
+  coinCost: 150
+  effects:
+  - type: 20
+    value: 5
+  synergyId: 

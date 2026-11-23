@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Core;
 
@@ -52,10 +53,6 @@ namespace ProjectB.Meta
                     {
                         Debug.LogWarning("[SaveManager] Loaded JSON was parsed as null. Creating new SaveData.");
                         Data = new SaveData();
-                    }
-                    else
-                    {
-                        MigrateIfNeeded();
                     }
                 }
                 catch (Exception e)
@@ -119,11 +116,42 @@ namespace ProjectB.Meta
             DevLog.Log("[SaveManager] Save Data Reset.");
         }
 
-        private void MigrateIfNeeded()
+        // --- Boss Shards & Constellation ---
+
+        public int BossShards => Data != null ? Mathf.Max(0, Data.bossShards) : 0;
+
+        public void AddBossShards(int amount, bool saveImmediately = true)
         {
-            // Здесь будет логика миграции при изменении saveVersion
-            // Например:
-            // if (Data.saveVersion == 1) { /* миграция на v2 */ Data.saveVersion = 2; }
+            if (amount <= 0 || Data == null) return;
+            Data.bossShards += amount;
+            Data.totalBossShardsEarned += amount;
+            CommitChange(saveImmediately);
+        }
+
+        public bool SpendBossShards(int amount, bool saveImmediately = true)
+        {
+            if (Data == null || amount < 0 || Data.bossShards < amount) return false;
+            if (amount == 0) return true;
+            Data.bossShards -= amount;
+            CommitChange(saveImmediately);
+            return true;
+        }
+
+        public bool IsTalentUnlocked(string talentId)
+        {
+            if (string.IsNullOrEmpty(talentId) || Data?.unlockedTalentIds == null) return false;
+            return Data.unlockedTalentIds.Contains(talentId);
+        }
+
+        public void UnlockTalent(string talentId, bool saveImmediately = true)
+        {
+            if (string.IsNullOrEmpty(talentId) || Data == null) return;
+            if (Data.unlockedTalentIds == null) Data.unlockedTalentIds = new List<string>();
+            if (!Data.unlockedTalentIds.Contains(talentId))
+            {
+                Data.unlockedTalentIds.Add(talentId);
+                CommitChange(saveImmediately);
+            }
         }
 
         // --- Удобные методы ---
@@ -150,6 +178,11 @@ namespace ProjectB.Meta
             if (result.coinsEarned > 0)
             {
                 Data.coins += result.coinsEarned;
+            }
+            if (result.bossShardsEarned > 0)
+            {
+                Data.bossShards += result.bossShardsEarned;
+                Data.totalBossShardsEarned += result.bossShardsEarned;
             }
             Data.totalKills += result.enemiesKilled;
             Data.totalPlayTime += result.playTime;

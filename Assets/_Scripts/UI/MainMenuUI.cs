@@ -20,6 +20,7 @@ namespace ProjectB.UI
         [SerializeField] private SettingsPopupUI settingsPopupUI;
         [SerializeField] private BottomTabUI[] tabs;
         [SerializeField] private GameObject playScreenPanel;
+        [SerializeField] private ConstellationTreeUI constellationTreeUI;
 
         private SaveManager saveManager;
         private DailyBonusManager bonusManager;
@@ -118,6 +119,24 @@ namespace ProjectB.UI
             if (metaUpgradeUI != null) metaUpgradeUI.Hide();
             if (dailyBonusScreenUI != null) dailyBonusScreenUI.gameObject.SetActive(false);
             if (playScreenPanel != null) playScreenPanel.SetActive(false);
+            if (constellationTreeUI != null) constellationTreeUI.Hide();
+        }
+
+        /// <summary>Opens the Radial Constellation Tree (from the Upgrades tab).</summary>
+        public void OnConstellationClicked()
+        {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            CloseAllPanels();
+            SelectTab(0);
+            if (constellationTreeUI != null)
+            {
+                constellationTreeUI.SetMainMenu(this);
+                constellationTreeUI.Show();
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenuUI] ConstellationTreeUI reference is missing!");
+            }
         }
 
         private void SelectTab(int index)

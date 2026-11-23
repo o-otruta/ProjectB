@@ -10,5 +10,11 @@ namespace ProjectB.Abilities
         public const string AegisPhalanx = "aegis_phalanx";
         public const string DragonLord = "dragon_lord";
         public const string CataclysmVortex = "cataclysm_vortex";
+
+        // Sprint 11
+        public const string ShatterNova = "shatter_nova";
+        public const string RicochetBarrage = "ricochet_barrage";
+        public const string SolarEclipse = "solar_eclipse";
+        public const string PhantomLegion = "phantom_legion";
     }
 }

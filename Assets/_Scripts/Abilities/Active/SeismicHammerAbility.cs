@@ -19,6 +19,7 @@ namespace ProjectB.Abilities
         private float currentDamage;
         private float currentCooldown;
         private float currentRadius;
+        public float EffectiveRadius => ScaleArea(currentRadius);
         private float currentSlowFactor;
         private float currentSlowDuration;
 
@@ -134,6 +135,61 @@ namespace ProjectB.Abilities
             }
         }
 
+        public const float SHATTER_NOVA_DAMAGE_MULTIPLIER = 2.5f;
+        public const int SHATTER_NOVA_SHARDS = 4;
+        public const float SHATTER_NOVA_SHARD_RADIUS = 3.2f;
+        public const float SHATTER_NOVA_SHARD_DAMAGE_FACTOR = 0.6f;
+        private readonly Collider[] shatterBuffer = new Collider[32];
+        private readonly ProjectB.Enemies.EnemyBase[] shardTargets = new ProjectB.Enemies.EnemyBase[SHATTER_NOVA_SHARDS];
+
+        public int ShatterNovaCount { get; private set; }
+
+        /// <summary>
+        /// Shatter Nova reaction (Glacial Shatter + Seismic Hammer): a slam on a frozen enemy deals 2.5x damage,
+        /// consumes the freeze and bursts the target into 4 ice shards that strike the nearest neighbours.
+        /// Returns the number of neighbours hit by shards.
+        /// </summary>
+        public int TriggerShatterNova(ProjectB.Enemies.EnemyBase frozenEnemy, LayerMask layer)
+        {
+            if (frozenEnemy == null || frozenEnemy.IsDead) return 0;
+
+            Vector3 pos = frozenEnemy.transform.position;
+            frozenEnemy.ClearFreeze();
+            int novaDamage = RollScaledDamage(currentDamage * SHATTER_NOVA_DAMAGE_MULTIPLIER, out bool novaCrit);
+            DealDamage(frozenEnemy, novaDamage, novaCrit, SynergyIds.ShatterNova, isAoE: true, sourcePosition: pos);
+            ShatterNovaCount++;
+
+            int found = Physics.OverlapSphereNonAlloc(pos, ScaleArea(SHATTER_NOVA_SHARD_RADIUS), shatterBuffer, layer);
+            int picked = 0;
+            for (int s = 0; s < SHATTER_NOVA_SHARDS; s++)
+            {
+                ProjectB.Enemies.EnemyBase best = null;
+                float bestSqr = float.MaxValue;
+                for (int i = 0; i < found; i++)
+                {
+                    if (shatterBuffer[i] == null || !shatterBuffer[i].TryGetComponent<ProjectB.Enemies.EnemyBase>(out var e)) continue;
+                    if (e == frozenEnemy || e.IsDead) continue;
+                    bool used = false;
+                    for (int u = 0; u < picked; u++) if (shardTargets[u] == e) { used = true; break; }
+                    if (used) continue;
+                    float d = (e.transform.position - pos).sqrMagnitude;
+                    if (d < bestSqr) { bestSqr = d; best = e; }
+                }
+                if (best == null) break;
+                shardTargets[picked++] = best;
+            }
+
+            for (int i = 0; i < picked; i++)
+            {
+                int dmg = RollScaledDamage(currentDamage * SHATTER_NOVA_SHARD_DAMAGE_FACTOR, out bool crit);
+                DealDamage(shardTargets[i], dmg, crit, SynergyIds.ShatterNova, isAoE: true, sourcePosition: pos);
+                shardTargets[i] = null;
+            }
+
+            eventBus?.Publish(new SynergyReactionVfxEvent(SynergyReactionVfxType.ShatterNova, pos, SHATTER_NOVA_SHARD_RADIUS));
+            return picked;
+        }
+
         private void Update()
         {
             if (Data == null || Time.deltaTime <= 0f) return;
@@ -153,7 +209,7 @@ namespace ProjectB.Abilities
 
             waveElapsed += Time.deltaTime;
             float t = Mathf.Clamp01(waveElapsed / WAVE_ANIM_DURATION);
-            float scale = Mathf.Lerp(0.35f, currentRadius, 1f - (1f - t) * (1f - t));
+            float scale = Mathf.Lerp(0.35f, EffectiveRadius, 1f - (1f - t) * (1f - t));
             waveRingVisual.localScale = new Vector3(scale, 1f - t * 0.55f, scale);
 
             if (t >= 1f)
@@ -167,7 +223,7 @@ namespace ProjectB.Abilities
         {
             if (HammerData == null) return 0;
 
-            int found = Physics.OverlapSphereNonAlloc(transform.position, currentRadius, hitBuffer, HammerData.targetLayer);
+            int found = Physics.OverlapSphereNonAlloc(transform.position, EffectiveRadius, hitBuffer, HammerData.targetLayer);
             int enemiesHit = 0;
 
             for (int i = 0; i < found; i++)
@@ -177,8 +233,15 @@ namespace ProjectB.Abilities
 
                 if (col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
-                    int dmg = RollScaledDamage(currentDamage, out bool isCrit);
-                    DealDamage(damageable, dmg, isCrit, isAoE: true);
+                    if (damageable is ProjectB.Enemies.EnemyBase frozenEnemy && frozenEnemy.IsFrozen && HasSynergy(SynergyIds.ShatterNova))
+                    {
+                        TriggerShatterNova(frozenEnemy, HammerData.targetLayer);
+                    }
+                    else
+                    {
+                        int dmg = RollScaledDamage(currentDamage, out bool isCrit);
+                        DealDamage(damageable, dmg, isCrit, isAoE: true);
+                    }
                     enemiesHit++;
                 }
 
@@ -195,7 +258,7 @@ namespace ProjectB.Abilities
                 waveElapsed = 0f;
             }
 
-            eventBus?.Publish(new SeismicSlamEvent(transform.position, currentRadius));
+            eventBus?.Publish(new SeismicSlamEvent(transform.position, EffectiveRadius));
             return enemiesHit;
         }
     }

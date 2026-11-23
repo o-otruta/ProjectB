@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890c0932c2d833549b578d5ebf8126c0, type: 3}
+  m_Name: SkyfallSpireData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.SkyfallSpireAbilityData
+  id: SkyfallSpire
+  abilityName: Skyfall Spire
+  description: Drops a pillar of fire onto the densest group of enemies (3.2m blast).
+  icon: {fileID: 21300000, guid: e60207470ae520944a5ca12c644ea6c4, type: 3}
+  type: 0
+  rarity: 2
+  unlockedByDefault: 0
+  baseDamage: 70
+  baseCooldown: 4.2
+  baseArea: 1
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  spirePrefab: {fileID: 8460182763559122230, guid: 5be4e3a66134c7647878dfd99d9779fc, type: 3}
+  telegraphPrefab: {fileID: 2604247858286502104, guid: 3e06a905c7ea14144bac4c6a61f877f7, type: 3}
+  strikeCount: 1
+  strikeRadius: 3.2
+  telegraphDelay: 0.7
+  searchRadius: 12
+  clusterRadius: 3
+  spireDropHeight: 11
+  eclipseLeadTime: 0.3
+  eclipsePullRadiusMultiplier: 2.2
+  eclipsePullStrength: 0.75
+  eclipseDamageMultiplier: 1.35
+  eclipseBlindSlow: 0.55
+  eclipseBlindDuration: 1.6

@@ -6,6 +6,7 @@ namespace ProjectB.Meta
         public int enemiesKilled;
         public int coinsEarned;
         public float playTime;
+        public int bossShardsEarned;
         
         // Можно добавить больше статистики позже
         public int abilitiesCollected;

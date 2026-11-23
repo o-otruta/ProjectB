@@ -15,7 +15,17 @@ namespace ProjectB.Player
 
         [SerializeField] private HeroData heroData;
         [SerializeField] [Min(0f)] private float postHitInvulnerabilityDuration = 0.18f;
-        
+
+        [Header("Keystone: Second Wind (Constellation Tree)")]
+        [SerializeField] [Range(0.05f, 1f)] private float secondWindHpPercent = 0.3f;
+        [SerializeField] [Min(0f)] private float secondWindInvulnerability = 2.5f;
+        [SerializeField] [Min(0f)] private float secondWindKnockbackRadius = 5f;
+        [SerializeField] [Min(0f)] private float secondWindKnockbackDistance = 3f;
+
+        private static readonly Collider[] secondWindBuffer = new Collider[96];
+        private bool secondWindUsed;
+        private float regenAccumulator;
+
         public event System.Action<int, int> OnHealthChanged;
         public event System.Action<int> OnDamageTaken;
         public event System.Action OnDied;
@@ -38,7 +48,11 @@ namespace ProjectB.Player
         public bool IsInvulnerable => isInvulnerable || isGodMode || reviveInvulnerabilityTimer > 0f || postHitInvulnerabilityTimer > 0f;
         public bool IsPostHitInvulnerable => postHitInvulnerabilityTimer > 0f;
         public bool IsHitFlashing => hitFlashTimer > 0f;
-        public float PostHitInvulnerabilityDuration => postHitInvulnerabilityDuration;
+        public float PostHitInvulnerabilityDuration => postHitInvulnerabilityDuration + (runtimeStats != null ? runtimeStats.BonusIFrameSeconds : 0f);
+        public bool HasSecondWindAvailable => runtimeStats != null && runtimeStats.HasSecondWind && !secondWindUsed;
+        public bool SecondWindUsed => secondWindUsed;
+        public float SecondWindHpPercent => secondWindHpPercent;
+        public float SecondWindInvulnerability => secondWindInvulnerability;
         public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
@@ -152,6 +166,27 @@ namespace ProjectB.Player
             if (Time.deltaTime > 0f)
             {
                 TickInvulnerability(Time.deltaTime);
+                TickPassiveRegen(Time.deltaTime);
+            }
+        }
+
+        /// <summary>Hero passive regeneration (Paladin: +2 HP/s). Zero-GC.</summary>
+        public void TickPassiveRegen(float deltaTime)
+        {
+            float regen = runtimeStats != null ? runtimeStats.HeroPassiveRegenPerSecond : 0f;
+            if (regen <= 0f || deltaTime <= 0f || isDead) return;
+            if (currentHp >= currentMaxHp)
+            {
+                regenAccumulator = 0f;
+                return;
+            }
+
+            regenAccumulator += regen * deltaTime;
+            if (regenAccumulator >= 1f)
+            {
+                int amount = Mathf.FloorToInt(regenAccumulator);
+                regenAccumulator -= amount;
+                Heal(amount);
             }
         }
 
@@ -197,9 +232,17 @@ namespace ProjectB.Player
             currentHp -= finalDamage;
             if (currentHp < 0) currentHp = 0;
 
-            if (currentHp > 0 && postHitInvulnerabilityDuration > 0f)
+            if (currentHp <= 0 && TryTriggerSecondWind())
             {
-                postHitInvulnerabilityTimer = Mathf.Max(postHitInvulnerabilityTimer, postHitInvulnerabilityDuration);
+                OnDamageTaken?.Invoke(finalDamage);
+                OnHealthChanged?.Invoke(currentHp, currentMaxHp);
+                return;
+            }
+
+            float iFrames = PostHitInvulnerabilityDuration;
+            if (currentHp > 0 && iFrames > 0f)
+            {
+                postHitInvulnerabilityTimer = Mathf.Max(postHitInvulnerabilityTimer, iFrames);
             }
 
             if (heroRenderers == null)
@@ -219,6 +262,47 @@ namespace ProjectB.Player
             {
                 Die();
             }
+        }
+
+        /// <summary>
+        /// Keystone "Second Wind": once per run survive a lethal hit with 30% HP, 2.5s invulnerability and a knockback wave.
+        /// </summary>
+        private bool TryTriggerSecondWind()
+        {
+            if (!HasSecondWindAvailable) return false;
+
+            secondWindUsed = true;
+            currentHp = Mathf.Max(1, Mathf.RoundToInt(currentMaxHp * secondWindHpPercent));
+            reviveInvulnerabilityTimer = Mathf.Max(reviveInvulnerabilityTimer, secondWindInvulnerability);
+            postHitInvulnerabilityTimer = 0f;
+            hitFlashTimer = HERO_HIT_FLASH_DURATION;
+            ApplyHitFlash(1f);
+
+            int pushed = PushEnemiesAway(transform.position, secondWindKnockbackRadius, secondWindKnockbackDistance);
+            eventBus?.Publish(new SecondWindTriggeredEvent(transform.position, secondWindKnockbackRadius, pushed));
+            return true;
+        }
+
+        private static int PushEnemiesAway(Vector3 center, float radius, float distance)
+        {
+            if (radius <= 0f || distance <= 0f) return 0;
+            int mask = LayerMask.GetMask("Enemy", "Enemies");
+            if (mask == 0) mask = 1 << 8;
+
+            int hits = Physics.OverlapSphereNonAlloc(center, radius, secondWindBuffer, mask);
+            int pushed = 0;
+            for (int i = 0; i < hits; i++)
+            {
+                Collider col = secondWindBuffer[i];
+                if (col == null || !col.TryGetComponent<ProjectB.Enemies.EnemyBase>(out var enemy) || enemy.IsDead) continue;
+
+                Vector3 dir = enemy.transform.position - center;
+                dir.y = 0f;
+                if (dir.sqrMagnitude < 0.0001f) dir = Vector3.forward;
+                enemy.ApplyPull(dir.normalized * distance);
+                pushed++;
+            }
+            return pushed;
         }
 
         private void Die()
@@ -248,8 +332,9 @@ namespace ProjectB.Player
 
         public void Heal(int amount)
         {
-            if (isDead) return;
-            currentHp = Mathf.Min(currentHp + amount, currentMaxHp);
+            if (isDead || amount <= 0) return;
+            int finalAmount = runtimeStats != null ? runtimeStats.GetHealAmount(amount) : amount;
+            currentHp = Mathf.Min(currentHp + finalAmount, currentMaxHp);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
 

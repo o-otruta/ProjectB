@@ -24,3 +24,4 @@ MonoBehaviour:
   moveSpeedBonus: 0
   effectType: 3
   baseValue: 2
+  killsPerTrigger: 8

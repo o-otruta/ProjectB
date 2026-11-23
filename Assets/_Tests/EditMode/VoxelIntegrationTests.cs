@@ -64,7 +64,9 @@ namespace ProjectB.Tests.EditMode
             var characterMaterials = new HashSet<string>
             {
                 "Knight_Mat", "Mage_Mat", "Mage_Glow_Mat", "Goblin_Mat",
-                "Golem_Mat", "Golem_Glow_Mat", "Necromancer_Mat", "Necromancer_Glow_Mat"
+                "Golem_Mat", "Golem_Glow_Mat", "Necromancer_Mat", "Necromancer_Glow_Mat",
+                // Sprint 11: pickups use VoxelLit for the _PICKUP_MOTION bob & spin
+                "XpCrystal_Glow_Mat", "CoinPickup_Mat", "CoinPickup_Glow_Mat"
             };
 
             foreach (string matName in ExpectedMaterialAssets)

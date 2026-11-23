@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fury_syn_toxic_inferno
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fury_syn_toxic_inferno
+  displayName: Toxic Inferno
+  description: 'Unlocks the reactive synergy <b>Toxic Inferno</b> (PoisonAlchemist
+    + Fireball). Auto-activates in a run once both abilities are equipped.
+
+    Poison
+    Flask + Fireball: Fireball blasts ignite Poison Puddles into exploding napalm
+    fields dealing 1.6x detonation and 2x burn damage.'
+  icon: {fileID: 21300000, guid: 3cc53a02737a3b449b69310dd5697dd3, type: 3}
+  nodeType: 2
+  constellation: 1
+  position: {x: 392.1401, y: 603.8428}
+  prerequisiteIds:
+  - fury_r2
+  shardCost: 3
+  coinCost: 0
+  effects: []
+  synergyId: toxic_inferno

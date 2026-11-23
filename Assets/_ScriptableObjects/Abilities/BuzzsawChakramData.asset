@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c04d2b8d99b767a4bb8d63be545e9ee7, type: 3}
+  m_Name: BuzzsawChakramData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.BuzzsawChakramAbilityData
+  id: BuzzsawChakram
+  abilityName: Buzzsaw Chakram
+  description: Hurls a ricocheting voxel disc that bounces between 3 enemies.
+  icon: {fileID: 21300000, guid: dcd60445a17fcdd4d99bddd667ca94d1, type: 3}
+  type: 0
+  rarity: 1
+  unlockedByDefault: 1
+  baseDamage: 16
+  baseCooldown: 1.8
+  baseArea: 1
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  discPrefab: {fileID: 1841830078155419077, guid: 56d70ee1dc94418429e4e7113e262296, type: 3}
+  discCount: 1
+  ricochets: 3
+  ricochetRange: 5.5
+  discSpeed: 15
+  searchRadius: 9
+  hitRadius: 0.55
+  miniDiscRicochets: 2
+  miniDiscDamageFactor: 0.5
+  miniDiscScale: 0.6
+  critSpeedBoost: 1.15

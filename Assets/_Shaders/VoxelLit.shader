@@ -16,6 +16,12 @@ Shader "ProjectB/VoxelLit"
         _HeightAO("Height AO Strength", Range(0.0, 0.8)) = 0.25
         _HeightAORange("Height AO Range", Range(0.05, 3.0)) = 0.75
 
+        [Header(Pickup Motion (XP Crystals and Coins))]
+        [Toggle(_PICKUP_MOTION)] _PickupMotion("Enable Pickup Bob & Spin", Float) = 0
+        _BobAmplitude("Bob Amplitude (object units)", Range(0.0, 0.5)) = 0.1
+        _BobSpeed("Bob Speed (rad/s)", Range(0.0, 10.0)) = 2.6
+        _SpinSpeed("Spin Speed (deg/s)", Range(-360.0, 360.0)) = 90
+
         [HideInInspector] _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
         [HideInInspector] _MainTex("Legacy BaseMap", 2D) = "white" {}
         [HideInInspector] _Color("Legacy Color", Color) = (1, 1, 1, 1)
@@ -46,6 +52,9 @@ Shader "ProjectB/VoxelLit"
             half _HeightAO;
             half _HeightAORange;
             half _Cutoff;
+            float _BobAmplitude;
+            float _BobSpeed;
+            float _SpinSpeed;
         #if !defined(UNITY_INSTANCING_ENABLED)
             half4 _BaseColor;
             half4 _RimColor;
@@ -71,6 +80,23 @@ Shader "ProjectB/VoxelLit"
         #define VOXEL_RIM_POWER   _RimPower
         #define VOXEL_HIT_FLASH   _HitFlash
         #endif
+
+        // Pickup motion: zero-CPU vertical bob + spin around the object's Y axis, so collectible
+        // XP crystals / coins read as interactive against static background props.
+        // Phase is derived from the object's world origin so neighbouring pickups never move in sync.
+        void ApplyPickupMotion(inout float3 positionOS, inout float3 normalOS)
+        {
+        #if defined(_PICKUP_MOTION)
+            float3 originWS = float3(UNITY_MATRIX_M._m03, UNITY_MATRIX_M._m13, UNITY_MATRIX_M._m23);
+            float phase = originWS.x * 1.37 + originWS.z * 0.91;
+            float angle = _Time.y * radians(_SpinSpeed) + phase;
+            float s, c;
+            sincos(angle, s, c);
+            positionOS.xz = float2(positionOS.x * c - positionOS.z * s, positionOS.x * s + positionOS.z * c);
+            normalOS.xz = float2(normalOS.x * c - normalOS.z * s, normalOS.x * s + normalOS.z * c);
+            positionOS.y += (sin(_Time.y * _BobSpeed + phase) * 0.5 + 0.5) * _BobAmplitude;
+        #endif
+        }
         ENDHLSL
 
         Pass
@@ -91,6 +117,7 @@ Shader "ProjectB/VoxelLit"
             #pragma fragment VoxelLitFragment
 
             #pragma shader_feature_local_fragment _EMISSION
+            #pragma shader_feature_local_vertex _PICKUP_MOTION
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
@@ -132,8 +159,12 @@ Shader "ProjectB/VoxelLit"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                VertexPositionInputs posInputs = GetVertexPositionInputs(input.positionOS.xyz);
-                VertexNormalInputs normInputs = GetVertexNormalInputs(input.normalOS);
+                float3 positionOS = input.positionOS.xyz;
+                float3 normalOS = input.normalOS;
+                ApplyPickupMotion(positionOS, normalOS);
+
+                VertexPositionInputs posInputs = GetVertexPositionInputs(positionOS);
+                VertexNormalInputs normInputs = GetVertexNormalInputs(normalOS);
 
                 output.positionCS = posInputs.positionCS;
                 output.positionWS = posInputs.positionWS;
@@ -238,6 +269,7 @@ Shader "ProjectB/VoxelLit"
 
             #pragma multi_compile_instancing
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma shader_feature_local_vertex _PICKUP_MOTION
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
@@ -263,8 +295,12 @@ Shader "ProjectB/VoxelLit"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
 
-                float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
-                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 positionOS = input.positionOS.xyz;
+                float3 normalOS = input.normalOS;
+                ApplyPickupMotion(positionOS, normalOS);
+
+                float3 positionWS = TransformObjectToWorld(positionOS);
+                float3 normalWS = TransformObjectToWorldNormal(normalOS);
 
                 #if _CASTING_PUNCTUAL_LIGHT_SHADOW
                 float3 lightDirectionWS = normalize(_LightPosition - positionWS);
@@ -303,6 +339,7 @@ Shader "ProjectB/VoxelLit"
             #pragma fragment VoxelDepthFragment
 
             #pragma multi_compile_instancing
+            #pragma shader_feature_local_vertex _PICKUP_MOTION
 
             struct Attributes
             {
@@ -323,7 +360,10 @@ Shader "ProjectB/VoxelLit"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                float3 positionOS = input.positionOS.xyz;
+                float3 normalOS = float3(0, 1, 0);
+                ApplyPickupMotion(positionOS, normalOS);
+                output.positionCS = TransformObjectToHClip(positionOS);
                 return output;
             }
 

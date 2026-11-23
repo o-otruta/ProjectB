@@ -116,6 +116,18 @@ namespace ProjectB.Visuals
         private static readonly Color ComboTextColor = new Color(1f, 0.68f, 0.16f, 1f);
         private static readonly Color BlockedDamageColor = new Color(0.68f, 0.78f, 0.88f, 1f);
         private static readonly Color DemonEnrageColor = new Color(1f, 0.18f, 0.14f, 1f);
+        private static readonly Color BossShardColor = new Color(0.78f, 0.55f, 1f, 1f);
+        private static readonly Color HolyGoldColor = new Color(1f, 0.9f, 0.45f, 1f);
+        private static readonly Color DecoyShadowColor = new Color(0.55f, 0.3f, 0.95f, 1f);
+        private static readonly Color EngineerOrangeColor = new Color(1f, 0.62f, 0.18f, 1f);
+        private static readonly string[] CachedShardLabels = BuildShardLabels();
+
+        private static string[] BuildShardLabels()
+        {
+            var labels = new string[11];
+            for (int i = 0; i < labels.Length; i++) labels[i] = i == 1 ? "+1 BOSS SHARD" : $"+{i} BOSS SHARDS";
+            return labels;
+        }
 
         [Inject]
         public void Construct(
@@ -416,6 +428,9 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<WaveEventEndedEvent>(OnWaveEventEnded);
                 eventBus.Subscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
                 eventBus.Subscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
+                eventBus.Subscribe<AbilityVfxEvent>(OnAbilityVfx);
+                eventBus.Subscribe<BossShardsGainedEvent>(OnBossShardsGained);
+                eventBus.Subscribe<SecondWindTriggeredEvent>(OnSecondWind);
             }
 
             if (heroHealth != null)
@@ -464,6 +479,9 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<WaveEventEndedEvent>(OnWaveEventEnded);
                 eventBus.Unsubscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
                 eventBus.Unsubscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
+                eventBus.Unsubscribe<AbilityVfxEvent>(OnAbilityVfx);
+                eventBus.Unsubscribe<BossShardsGainedEvent>(OnBossShardsGained);
+                eventBus.Unsubscribe<SecondWindTriggeredEvent>(OnSecondWind);
             }
 
             if (heroHealth != null)
@@ -619,6 +637,82 @@ namespace ProjectB.Visuals
         private void OnEnemySummonHeal(EnemySummonHealEvent evt)
         {
             EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(1.5f, evt.Radius * 0.5f), SoulNovaSecondaryColor, SoulNovaPrimaryColor, 16, 4, 4.4f, 0.24f);
+        }
+
+        private void OnAbilityVfx(AbilityVfxEvent evt)
+        {
+            Vector3 p = evt.Position;
+            switch (evt.VfxType)
+            {
+                case AbilityVfxType.SkyfallTelegraph:
+                    EmitBurst(p + Vector3.up * 0.2f, MeteorPrimaryColor, 6, 2.2f, 0.18f);
+                    break;
+                case AbilityVfxType.SkyfallStrike:
+                    EmitExplosionRing(p + Vector3.up * 0.4f, Mathf.Max(1.5f, evt.Radius), MeteorPrimaryColor, FireballSecondaryColor, 22, 10, 6.4f, 0.34f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.7f, randomizePitch: true);
+                    cameraController?.Shake(0.16f, 0.1f);
+                    break;
+                case AbilityVfxType.GlacialFreeze:
+                    EmitExplosionRing(p + Vector3.up * 0.3f, Mathf.Max(1.5f, evt.Radius), FrostPrimaryColor, FrostSecondaryColor, 20, 4, 6.8f, 0.24f);
+                    audioManager?.PlaySfx(SfxType.IceShatter, volumeScale: 0.45f, randomizePitch: true);
+                    break;
+                case AbilityVfxType.GlacialShatter:
+                    EmitBurst(p + Vector3.up * 0.6f, FrostSecondaryColor, 8, 4.2f, 0.2f);
+                    audioManager?.PlaySfx(SfxType.IceShatter, volumeScale: 0.35f, randomizePitch: true);
+                    break;
+                case AbilityVfxType.DecoyDeploy:
+                    EmitBurst(p + Vector3.up * 0.8f, DecoyShadowColor, 12, 3.6f, 0.24f);
+                    break;
+                case AbilityVfxType.DecoyDetonate:
+                    EmitExplosionRing(p + Vector3.up * 0.6f, Mathf.Max(1.5f, evt.Radius), DecoyShadowColor, SoulNovaPrimaryColor, 20, 8, 6.0f, 0.3f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.6f, randomizePitch: true);
+                    break;
+                case AbilityVfxType.ChakramRicochet:
+                    EmitBurst(p + Vector3.up * 0.5f, SteamWhiteColor, 3, 3.0f, 0.12f);
+                    break;
+                case AbilityVfxType.ConsecrationCast:
+                    EmitExplosionRing(p + Vector3.up * 0.3f, Mathf.Max(2f, evt.Radius), HolyGoldColor, LevelUpColor, 26, 8, 6.0f, 0.32f);
+                    audioManager?.PlaySfx(SfxType.ShieldUlt, volumeScale: 0.9f, randomizePitch: false);
+                    cameraController?.Shake(0.18f, 0.12f);
+                    break;
+                case AbilityVfxType.ConsecrationPulse:
+                    EmitBurst(p + Vector3.up * 0.25f, HolyGoldColor, 6, 3.2f, 0.18f);
+                    break;
+                case AbilityVfxType.TurretDrop:
+                    EmitExplosionRing(p + Vector3.up * 0.4f, Mathf.Max(1.5f, evt.Radius), EngineerOrangeColor, SteamWhiteColor, 18, 6, 6.0f, 0.3f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.55f, randomizePitch: true);
+                    cameraController?.Shake(0.14f, 0.1f);
+                    break;
+                case AbilityVfxType.VampiricHeal:
+                    EmitBurst(p + Vector3.up * 1.0f, CrimsonHealColor, 6, 2.6f, 0.16f);
+                    break;
+            }
+        }
+
+        private static readonly Color CrimsonHealColor = new Color(1f, 0.25f, 0.38f, 1f);
+
+        private void OnBossShardsGained(BossShardsGainedEvent evt)
+        {
+            EmitBurst(evt.Position + Vector3.up * 1.2f, BossShardColor, 16, 5.0f, 0.26f);
+            if (damagePool != null && evt.Amount > 0)
+            {
+                string label = evt.Amount < CachedShardLabels.Length ? CachedShardLabels[evt.Amount] : CachedShardLabels[CachedShardLabels.Length - 1];
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.Position, label, BossShardColor, 1.35f, 1.7f, mainCamera, damagePool);
+            }
+            audioManager?.PlaySfx(SfxType.SecretPickup, volumeScale: 0.8f, randomizePitch: false);
+        }
+
+        private void OnSecondWind(SecondWindTriggeredEvent evt)
+        {
+            EmitExplosionRing(evt.Position + Vector3.up * 0.8f, Mathf.Max(2f, evt.Radius), ShieldUltColor, LevelUpColor, 30, 12, 7.5f, 0.4f);
+            if (damagePool != null)
+            {
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.Position, "SECOND WIND!", ShieldUltColor, 1.6f, 2.0f, mainCamera, damagePool);
+            }
+            audioManager?.PlaySfx(SfxType.SynergyFanfare, volumeScale: 1.0f, randomizePitch: false);
+            cameraController?.Shake(0.35f, 0.25f);
         }
 
         private void OnDemonLordEnraged(DemonLordEnragedEvent evt)
@@ -939,6 +1033,26 @@ namespace ProjectB.Visuals
 
                 case SynergyReactionVfxType.DragonBurn:
                     EmitBurst(evt.Position + Vector3.up * 0.2f, FireballPrimaryColor, 6, 3.2f, 0.2f);
+                    break;
+
+                case SynergyReactionVfxType.ShatterNova:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.6f, Mathf.Max(1.5f, evt.Radius), FrostPrimaryColor, SteamWhiteColor, 20, 8, 6.4f, 0.3f);
+                    audioManager?.PlaySfx(SfxType.IceShatter, volumeScale: 0.7f, randomizePitch: true);
+                    break;
+
+                case SynergyReactionVfxType.RicochetBarrage:
+                    EmitBurst(evt.Position + Vector3.up * 0.6f, SynergyGoldColor, 10, 4.6f, 0.2f);
+                    audioManager?.PlaySfx(SfxType.CritHit, volumeScale: 0.5f, randomizePitch: true);
+                    break;
+
+                case SynergyReactionVfxType.SolarEclipse:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(2f, evt.Radius), SynergyPurpleColor, FireballSecondaryColor, 24, 6, 5.0f, 0.3f);
+                    audioManager?.PlaySfx(SfxType.SynergyFanfare, volumeScale: 0.5f, randomizePitch: true);
+                    break;
+
+                case SynergyReactionVfxType.PhantomLegion:
+                    EmitExplosionRing(evt.Position + Vector3.up * 0.7f, Mathf.Max(1.5f, evt.Radius), FireballPrimaryColor, DecoyShadowColor, 18, 6, 6.0f, 0.3f);
+                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.6f, randomizePitch: true);
                     break;
 
                 case SynergyReactionVfxType.BladeStormVolley:

@@ -12,7 +12,11 @@ namespace ProjectB.Abilities
         MaxHpFlat = 5,
         CooldownReductionPercent = 6,
         CritChancePercent = 7,
-        CoinBonusPercent = 8
+        CoinBonusPercent = 8,
+        /// <summary>+value% GlobalAreaMultiplier (Area Tome).</summary>
+        AreaPercent = 9,
+        /// <summary>Heal value HP every killsPerTrigger kills (Vampiric Fang).</summary>
+        HealOnKills = 10
     }
 
     [CreateAssetMenu(fileName = "NewStatPassiveAbility", menuName = "ProjectB/Abilities/Stat Passive Ability")]
@@ -21,6 +25,9 @@ namespace ProjectB.Abilities
         [Header("Stat Passive Effect")]
         public PassiveEffectType effectType = PassiveEffectType.DamagePercent;
         public float baseValue = 15f;
+
+        [Tooltip("HealOnKills: number of kills required per heal trigger")]
+        [Min(1)] public int killsPerTrigger = 8;
 
         public override AbilityBase CreateAbility(Transform parent)
         {

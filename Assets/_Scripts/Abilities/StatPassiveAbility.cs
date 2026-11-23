@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Abilities
 {
@@ -7,8 +8,13 @@ namespace ProjectB.Abilities
         private StatPassiveAbilityData statData;
         private float regenPerSecond;
         private float regenAccumulator;
+        private int healPerTrigger;
+        private int killsSinceHeal;
+        private bool subscribedToKills;
 
         public float CurrentRegenPerSecond => regenPerSecond;
+        public int HealPerTrigger => healPerTrigger;
+        public int KillsPerTrigger => statData != null ? Mathf.Max(1, statData.killsPerTrigger) : 8;
 
         public override void Initialize(AbilityData data)
         {
@@ -16,6 +22,8 @@ namespace ProjectB.Abilities
             statData = data as StatPassiveAbilityData;
             regenPerSecond = 0f;
             regenAccumulator = 0f;
+            healPerTrigger = 0;
+            killsSinceHeal = 0;
 
             if (statData != null)
             {
@@ -75,7 +83,54 @@ namespace ProjectB.Abilities
                 case PassiveEffectType.CoinBonusPercent:
                     runtimeStats?.AddCoinBonusPercent(value);
                     break;
+                case PassiveEffectType.AreaPercent:
+                    runtimeStats?.AddAreaPercent(value);
+                    break;
+                case PassiveEffectType.HealOnKills:
+                    healPerTrigger = Mathf.Max(0, healPerTrigger + Mathf.RoundToInt(value));
+                    EnsureKillSubscription();
+                    break;
             }
+        }
+
+        private void EnsureKillSubscription()
+        {
+            if (subscribedToKills || eventBus == null) return;
+            eventBus.Subscribe<EnemyDiedEvent>(HandleEnemyDied);
+            subscribedToKills = true;
+        }
+
+        private void HandleEnemyDied(EnemyDiedEvent evt)
+        {
+            RegisterKill();
+        }
+
+        /// <summary>Counts a kill for Vampiric Fang; heals every <see cref="KillsPerTrigger"/> kills. Returns HP healed.</summary>
+        public int RegisterKill()
+        {
+            if (healPerTrigger <= 0 || heroHealth == null || heroHealth.IsDead) return 0;
+
+            killsSinceHeal++;
+            if (killsSinceHeal < KillsPerTrigger) return 0;
+
+            killsSinceHeal = 0;
+            int before = heroHealth.CurrentHp;
+            heroHealth.Heal(healPerTrigger);
+            int healed = heroHealth.CurrentHp - before;
+            if (healed > 0)
+            {
+                eventBus?.Publish(new AbilityVfxEvent(AbilityVfxType.VampiricHeal, heroHealth.transform.position, 1f));
+            }
+            return healed;
+        }
+
+        private void OnDestroy()
+        {
+            if (subscribedToKills && eventBus != null)
+            {
+                eventBus.Unsubscribe<EnemyDiedEvent>(HandleEnemyDied);
+            }
+            subscribedToKills = false;
         }
 
         private void Update()

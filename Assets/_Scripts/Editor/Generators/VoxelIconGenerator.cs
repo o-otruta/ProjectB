@@ -106,6 +106,16 @@ namespace ProjectB.EditorScripts
                     string key = ResolveStatTemplateKey(statCard.statType);
                     sprite = GetOrCreateSprite($"card_stat_{statCard.statType}", framed: true, spriteCache, key, GetRarityFrameColor(statCard.rarity));
                 }
+                else if (card is WeaponUpgradeCardData weaponCard)
+                {
+                    string key = weaponCard.upgradeType switch
+                    {
+                        WeaponUpgradeType.Multishot => "shooter",
+                        WeaponUpgradeType.FireRate => "swift_boots",
+                        _ => "battle_fury"
+                    };
+                    sprite = GetOrCreateSprite($"card_weapon_{weaponCard.upgradeType}", framed: true, spriteCache, key, GetRarityFrameColor(weaponCard.rarity));
+                }
                 else if (card is SynergyCardData synCard)
                 {
                     string key = ResolveSynergyTemplateKey(synCard.synergyId);
@@ -131,6 +141,8 @@ namespace ProjectB.EditorScripts
                     "mage" => "hero_mage",
                     "ranger" => "hero_ranger",
                     "necromancer" => "hero_necromancer",
+                    "paladin" => "hero_paladin",
+                    "engineer" => "hero_engineer",
                     _ => "hero_knight"
                 };
                 string ultKey = hero.ultimateType switch
@@ -138,6 +150,8 @@ namespace ProjectB.EditorScripts
                     HeroUltimateType.MeteorStrike => "ult_meteor",
                     HeroUltimateType.ArrowRain => "ult_arrow_rain",
                     HeroUltimateType.SoulNova => "ult_soul_nova",
+                    HeroUltimateType.Consecration => "ult_consecration",
+                    HeroUltimateType.TurretDrop => "laser_turret",
                     _ => "ult_shield"
                 };
                 Color32 frameCol = hero.id switch
@@ -145,6 +159,8 @@ namespace ProjectB.EditorScripts
                     "mage" => Purple,
                     "ranger" => Green,
                     "necromancer" => Cyan,
+                    "paladin" => Gold,
+                    "engineer" => FireOrange,
                     _ => IceBlue
                 };
                 Color32 ultFrameCol = hero.ultimateType switch
@@ -152,6 +168,8 @@ namespace ProjectB.EditorScripts
                     HeroUltimateType.MeteorStrike => FireOrange,
                     HeroUltimateType.ArrowRain => Green,
                     HeroUltimateType.SoulNova => Cyan,
+                    HeroUltimateType.Consecration => Gold,
+                    HeroUltimateType.TurretDrop => FireOrange,
                     _ => IceBlue
                 };
 
@@ -227,6 +245,31 @@ namespace ProjectB.EditorScripts
                     dailyBonus.rewards[i] = reward;
                 }
                 EditorUtility.SetDirty(dailyBonus);
+            }
+
+            // 7. Constellation Talent Nodes (Sprint 11)
+            foreach (string guid in AssetDatabase.FindAssets("t:TalentNodeData", new[] { "Assets/_ScriptableObjects/Talents" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var node = AssetDatabase.LoadAssetAtPath<TalentNodeData>(path);
+                if (node == null) continue;
+
+                string key = ResolveTalentTemplateKey(node);
+                Color32 frameCol = node.nodeType switch
+                {
+                    TalentNodeType.Synergy => Cyan,
+                    TalentNodeType.Keystone => FireOrange,
+                    TalentNodeType.Origin => Purple,
+                    _ => node.constellation switch
+                    {
+                        TalentConstellation.Fury => Crimson,
+                        TalentConstellation.Bastion => IceBlue,
+                        TalentConstellation.Fortune => Gold,
+                        _ => Purple
+                    }
+                };
+                node.icon = GetOrCreateSprite($"talent_{node.id}", framed: true, spriteCache, key, frameCol);
+                EditorUtility.SetDirty(node);
             }
 
             AssetDatabase.SaveAssets();
@@ -598,7 +641,47 @@ namespace ProjectB.EditorScripts
                 "CriticalLens" => "critical_lens",
                 "TitanHeart" => "titan_heart",
                 "GoldenIdol" => "golden_idol",
+                "BuzzsawChakram" => "buzzsaw_chakram",
+                "SkyfallSpire" => "skyfall_spire",
+                "GlacialShatter" => "glacial_shatter",
+                "ShadowDecoy" => "shadow_decoy",
+                "VampiricFang" => "vampiric_fang",
+                "AreaTome" => "area_tome",
                 _ => "fallback_star"
+            };
+        }
+
+        private static string ResolveTalentTemplateKey(TalentNodeData node)
+        {
+            if (node.nodeType == TalentNodeType.Origin) return "boss_shard";
+            if (node.nodeType == TalentNodeType.Synergy) return ResolveSynergyTemplateKey(node.synergyId);
+            if (node.nodeType == TalentNodeType.Keystone)
+            {
+                if (node.GetEffectValue(TalentEffectType.SecondWind) > 0f) return "ult_shield";
+                if (node.GetEffectValue(TalentEffectType.BonusPassiveSlots) > 0f) return "golden_idol";
+                return "slot_active";
+            }
+
+            TalentEffectType primary = node.effects != null && node.effects.Count > 0 ? node.effects[0].type : TalentEffectType.None;
+            return primary switch
+            {
+                TalentEffectType.CritChancePercent => "critical_lens",
+                TalentEffectType.GlobalDamagePercent => "battle_fury",
+                TalentEffectType.GlobalAreaPercent => "area_tome",
+                TalentEffectType.BossDamagePercent => "boss_golem",
+                TalentEffectType.CooldownReductionPercent => "chrono_tome",
+                TalentEffectType.ArmorFlat => "iron_skin",
+                TalentEffectType.HealingPercent => "vitality_regen",
+                TalentEffectType.IFrameSeconds => "guardian_shield",
+                TalentEffectType.UltimateCooldownPercent => "ult_meteor",
+                TalentEffectType.CoinGainPercent => "coin_stack",
+                TalentEffectType.FreeRerolls => "tome_arsenal",
+                TalentEffectType.BarrelRespawnBonus => "ult_meteor",
+                TalentEffectType.SecretAndShrineRewardPercent => "secret_chest",
+                TalentEffectType.MaxHpPercent => "titan_heart",
+                TalentEffectType.MoveSpeedPercent => "swift_boots",
+                TalentEffectType.XpGainPercent => "secret_crystal",
+                _ => "boss_shard"
             };
         }
 
@@ -627,6 +710,10 @@ namespace ProjectB.EditorScripts
                 "aegis_phalanx" => "synergy_aegis_phalanx",
                 "dragon_lord" => "synergy_dragon_lord",
                 "cataclysm_vortex" => "synergy_cataclysm_vortex",
+                "shatter_nova" => "glacial_shatter",
+                "ricochet_barrage" => "buzzsaw_chakram",
+                "solar_eclipse" => "skyfall_spire",
+                "phantom_legion" => "shadow_decoy",
                 _ => "fallback_star"
             };
         }
@@ -646,6 +733,8 @@ namespace ProjectB.EditorScripts
                 {
                     "ranger" => "hero_ranger",
                     "necromancer" => "hero_necromancer",
+                    "paladin" => "hero_paladin",
+                    "engineer" => "hero_engineer",
                     _ => "hero_mage"
                 };
             }
@@ -1688,6 +1777,196 @@ namespace ProjectB.EditorScripts
                     "................",
                     "................",
                     "................",
+                    "................"
+                },
+                ["buzzsaw_chakram"] = new[]
+                {
+                    "................",
+                    "......K..K......",
+                    ".....KSKKSK.....",
+                    "...KKSSSSSSKK...",
+                    "..KSSSDDDDSSSK..",
+                    "..KSSDYYYYDSSK..",
+                    ".KSSDYKKKKYDSSK.",
+                    "..KSDYKOOKYDSK..",
+                    "..KSDYKOOKYDSK..",
+                    ".KSSDYKKKKYDSSK.",
+                    "..KSSDYYYYDSSK..",
+                    "..KSSSDDDDSSSK..",
+                    "...KKSSSSSSKK...",
+                    ".....KSKKSK.....",
+                    "......K..K......",
+                    "................"
+                },
+                ["skyfall_spire"] = new[]
+                {
+                    "......KKKK......",
+                    ".....KOHHOK.....",
+                    ".....KOHHOK.....",
+                    "....KROHHORK....",
+                    "....KROHHORK....",
+                    ".....KOHHOK.....",
+                    ".....KOHHOK.....",
+                    "......KOOK......",
+                    "......KOOK......",
+                    ".......KK.......",
+                    "................",
+                    "...KK......KK...",
+                    "..KRRK.KK.KRRK..",
+                    ".KROORKOOKROORK.",
+                    "..KKKKKKKKKKKK..",
+                    "................"
+                },
+                ["glacial_shatter"] = new[]
+                {
+                    "................",
+                    ".......KK.......",
+                    "......KWIK......",
+                    ".KK..KWIIJK..KK.",
+                    ".KIK.KIIIJK.KIK.",
+                    "..KIKKIIIJKKIK..",
+                    "...KIIWIIJJIK...",
+                    "..KKIWWIIJJJKK..",
+                    ".KIIIWIIIIJJJIK.",
+                    "..KKIIIJJJJJKK..",
+                    "...KIJJIIJJIK...",
+                    "..KIKKJJJJKKIK..",
+                    ".KIK.KJJJJK.KIK.",
+                    ".KK..KJJJJK..KK.",
+                    "......KJJK......",
+                    ".......KK......."
+                },
+                ["shadow_decoy"] = new[]
+                {
+                    "................",
+                    "......KKKK......",
+                    ".....KQPPQK.....",
+                    "....KQPPPPQK....",
+                    "....KPKKKKPK....",
+                    "....KPKWKWKK....",
+                    "....KPKKKKPK....",
+                    "...KQPPPPPPQK...",
+                    "..KQPPQPPQPPQK..",
+                    "..KQPPQPPQPPQK..",
+                    "..KQPPPQQPPPQK..",
+                    ".KQPPPPQQPPPPQK.",
+                    ".KQPPPPPPPPPPQK.",
+                    ".KQQPPQQQQPPQQK.",
+                    ".KKKKKKKKKKKKKK.",
+                    "................"
+                },
+                ["vampiric_fang"] = new[]
+                {
+                    "................",
+                    "..KKKKKKKKKKKK..",
+                    ".KWWWWWWWWWWWWK.",
+                    ".KWSSWWWWWWSSWK.",
+                    "..KWWKKKKKKWWK..",
+                    "..KWWK....KWWK..",
+                    "...KWWK..KWWK...",
+                    "...KWWK..KWWK...",
+                    "....KWK..KWK....",
+                    "....KCK..KCK....",
+                    ".....K....K.....",
+                    "......KK........",
+                    ".....KCCK.......",
+                    "....KCCMCK......",
+                    ".....KMMK.......",
+                    "......KK........"
+                },
+                ["area_tome"] = new[]
+                {
+                    "................",
+                    "...KKKKKKKKKK...",
+                    "..KYYYYYYYYYYK..",
+                    "..KYKKKKKKKKYK..",
+                    "..KYKIIIIIIKYK..",
+                    "..KYKIKKKKIKYK..",
+                    "..KYKIKWWKIKYK..",
+                    "..KYKIKWWKIKYK..",
+                    "..KYKIKKKKIKYK..",
+                    "..KYKIIIIIIKYK..",
+                    "..KYKKKKKKKKYK..",
+                    "..KYYYYYYYYYYK..",
+                    "..KJJJJJJJJJJK..",
+                    "..KWWWWWWWWWWK..",
+                    "...KKKKKKKKKK...",
+                    "................"
+                },
+                ["hero_paladin"] = new[]
+                {
+                    ".......KK.......",
+                    "......KHGK......",
+                    ".......KGK......",
+                    "....KKKKKKKK....",
+                    "...KSSSSSSSSK...",
+                    "...KSWWSSWWSK...",
+                    "...KSSSSSSSSK...",
+                    "...KKKKGGKKKK...",
+                    "...KSDKGGKDSK...",
+                    "...KSSKGGKSSK...",
+                    "...KSSSGGSSSK...",
+                    "....KSSGGSSK....",
+                    ".....KSSSSK.....",
+                    "..KKKKKKKKKKKK..",
+                    ".KGGGGGGGGGGGGK.",
+                    ".KKKKKKKKKKKKKK."
+                },
+                ["hero_engineer"] = new[]
+                {
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KHGGGGHK....",
+                    "...KGGGYYGGGK...",
+                    "..KKKKKKKKKKKK..",
+                    "..KGGGGGGGGGGK..",
+                    "...KBBBBBBBBK...",
+                    "...KKKKKKKKKK...",
+                    "...KYYKBBKYYK...",
+                    "...KYWKBBKYWK...",
+                    "...KKKKBBKKKK...",
+                    "....KBBBBBBK....",
+                    "....KBBKKBBK....",
+                    ".....KBBBBK.....",
+                    "...KKOOOOOOKK...",
+                    "..KOOOOOOOOOOK.."
+                },
+                ["ult_consecration"] = new[]
+                {
+                    ".....KKKKKK.....",
+                    "...KKHHHHHHKK...",
+                    "..KHHAAKKAAHHK..",
+                    ".KHAA.KGGK.AAHK.",
+                    ".KHA..KGGK..AHK.",
+                    "KHA.KKKGGKKK.AHK",
+                    "KHA.KGGGGGGK.AHK",
+                    "KHA.KGGGGGGK.AHK",
+                    "KHA.KKKGGKKK.AHK",
+                    "KHA...KGGK...AHK",
+                    ".KHA..KGGK..AHK.",
+                    ".KHAA.KGGK.AAHK.",
+                    "..KHHAAKKAAHHK..",
+                    "...KKHHHHHHKK...",
+                    ".....KKKKKK.....",
+                    "................"
+                },
+                ["boss_shard"] = new[]
+                {
+                    "................",
+                    ".......KK.......",
+                    "......KWPK......",
+                    ".....KWPPQK.....",
+                    "....KWPPPQQK....",
+                    "....KWPPPQQK....",
+                    "...KWPPPPQQQK...",
+                    "...KWPPPPQQQK...",
+                    "...KPPPPQQQQK...",
+                    "....KPPPQQQK....",
+                    "....KPPPQQQK....",
+                    ".....KPPQQK.....",
+                    ".....KPPQQK.....",
+                    "......KPQK......",
+                    ".......KK.......",
                     "................"
                 },
                 ["fallback_star"] = new[]

@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectB.Player;
 using ProjectB.Abilities;
 using ProjectB.Core.Events;
+using ProjectB.Combat;
 
 namespace ProjectB.LevelUp
 {
@@ -11,13 +12,16 @@ namespace ProjectB.LevelUp
         private readonly HeroRuntimeStats runtimeStats;
         private readonly HeroAbilities heroAbilities;
         private readonly GameEventBus eventBus;
+        private readonly HeroCombat heroCombat;
 
         public UpgradeApplier(
             HeroHealth heroHealth,
             HeroRuntimeStats runtimeStats,
             HeroAbilities heroAbilities,
-            GameEventBus eventBus = null)
+            GameEventBus eventBus = null,
+            HeroCombat heroCombat = null)
         {
+            this.heroCombat = heroCombat;
             this.heroHealth = heroHealth;
             this.runtimeStats = runtimeStats;
             this.heroAbilities = heroAbilities;
@@ -38,6 +42,9 @@ namespace ProjectB.LevelUp
                     break;
                 case AbilityModifierCardData modifierCard:
                     ApplyModifierCard(modifierCard);
+                    break;
+                case WeaponUpgradeCardData weaponCard:
+                    ApplyWeaponUpgrade(weaponCard);
                     break;
                 case SynergyCardData synergyCard:
                     ApplySynergyCard(synergyCard);
@@ -75,6 +82,19 @@ namespace ProjectB.LevelUp
                 default:
                     Debug.LogWarning($"[UpgradeApplier] Unknown StatType: {card.statType} with value {card.value}");
                     break;
+            }
+        }
+
+        private void ApplyWeaponUpgrade(WeaponUpgradeCardData card)
+        {
+            if (card == null) return;
+            if (heroCombat != null)
+            {
+                heroCombat.ApplyWeaponUpgrade(card.upgradeType, card.value);
+            }
+            else
+            {
+                Debug.LogWarning("[UpgradeApplier] HeroCombat missing; weapon upgrade card ignored.");
             }
         }
 

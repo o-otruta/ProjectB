@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Player;
+using ProjectB.Core.Events;
 
 namespace ProjectB.Abilities
 {
@@ -9,6 +10,12 @@ namespace ProjectB.Abilities
 
         protected HeroRuntimeStats runtimeStats;
         protected HeroHealth heroHealth;
+        protected GameEventBus eventBus;
+
+        public void SetEventBus(GameEventBus bus)
+        {
+            eventBus = bus;
+        }
 
         public void SetContext(HeroRuntimeStats stats, HeroHealth health)
         {

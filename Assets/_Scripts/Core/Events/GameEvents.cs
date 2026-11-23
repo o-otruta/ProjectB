@@ -435,7 +435,11 @@ namespace ProjectB.Core.Events
         AegisPhalanxWave = 3,
         CataclysmShards = 4,
         DragonBurn = 5,
-        BladeStormVolley = 6
+        BladeStormVolley = 6,
+        ShatterNova = 7,
+        RicochetBarrage = 8,
+        SolarEclipse = 9,
+        PhantomLegion = 10
     }
 
     /// <summary>
@@ -573,5 +577,70 @@ namespace ProjectB.Core.Events
             Position = position;
         }
     }
-}
 
+    /// <summary>
+    /// Sprint 11: Boss Shards awarded during a run (mini-boss +1, boss +5, shrine +2).
+    /// </summary>
+    public struct BossShardsGainedEvent
+    {
+        public Vector3 Position;
+        public int Amount;
+        public int RunTotal;
+
+        public BossShardsGainedEvent(Vector3 position, int amount, int runTotal)
+        {
+            Position = position;
+            Amount = amount;
+            RunTotal = runTotal;
+        }
+    }
+
+    /// <summary>
+    /// Sprint 11: Keystone "Second Wind" saved the hero from a lethal hit.
+    /// </summary>
+    public struct SecondWindTriggeredEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+        public int PushedEnemies;
+
+        public SecondWindTriggeredEvent(Vector3 position, float radius, int pushedEnemies)
+        {
+            Position = position;
+            Radius = radius;
+            PushedEnemies = pushedEnemies;
+        }
+    }
+
+    public enum AbilityVfxType
+    {
+        SkyfallTelegraph = 0,
+        SkyfallStrike = 1,
+        GlacialFreeze = 2,
+        GlacialShatter = 3,
+        DecoyDeploy = 4,
+        DecoyDetonate = 5,
+        ChakramRicochet = 6,
+        ConsecrationCast = 7,
+        ConsecrationPulse = 8,
+        TurretDrop = 9,
+        VampiricHeal = 10
+    }
+
+    /// <summary>
+    /// Sprint 11: generic visual/audio feedback for the new abilities and ultimates.
+    /// </summary>
+    public struct AbilityVfxEvent
+    {
+        public AbilityVfxType VfxType;
+        public Vector3 Position;
+        public float Radius;
+
+        public AbilityVfxEvent(AbilityVfxType vfxType, Vector3 position, float radius)
+        {
+            VfxType = vfxType;
+            Position = position;
+            Radius = radius;
+        }
+    }
+}

@@ -11,6 +11,7 @@ namespace ProjectB.Abilities
 
         private float currentDamage;
         private float currentRadius;
+        public float EffectiveRadius => ScaleArea(currentRadius);
         private float currentSlowFactor;
         private float currentSlowDuration;
         
@@ -92,8 +93,8 @@ namespace ProjectB.Abilities
             if (visualAura != null)
             {
                 visualAura.transform.localScale = usesCustomVisualPrefab
-                    ? new Vector3(currentRadius, 1f, currentRadius)
-                    : new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
+                    ? new Vector3(EffectiveRadius, 1f, EffectiveRadius)
+                    : new Vector3(EffectiveRadius * 2f, 0.01f, EffectiveRadius * 2f);
             }
         }
 
@@ -128,8 +129,16 @@ namespace ProjectB.Abilities
             }
         }
 
+        private float lastAreaMultiplier = 1f;
+
         private void Update()
         {
+            if (!Mathf.Approximately(lastAreaMultiplier, AreaMultiplier))
+            {
+                lastAreaMultiplier = AreaMultiplier;
+                UpdateVisualSize();
+            }
+
             if (Data == null || Time.deltaTime <= 0f) return;
 
             UpdateVisualVerticalOffset();
@@ -147,7 +156,7 @@ namespace ProjectB.Abilities
 
         private void ApplyAuraTick()
         {
-            int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, currentRadius, hitBuffer, IceData.targetLayer);
+            int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, EffectiveRadius, hitBuffer, IceData.targetLayer);
             
             for (int i = 0; i < targetsFound; i++)
             {

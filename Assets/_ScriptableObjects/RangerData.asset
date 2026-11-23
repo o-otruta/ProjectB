@@ -25,6 +25,7 @@ MonoBehaviour:
   visualModelPrefab: {fileID: 1028195260883705984, guid: 1730f7e3f0e3df142823caf6b8643c1e, type: 3}
   passiveType: 3
   passiveValue: 25
+  passiveSecondaryValue: 0
   passiveName: Windrunner
   passiveDescription: '+25% Move Speed
 
@@ -55,3 +56,16 @@ MonoBehaviour:
   soulNovaSpeed: 16
   soulNovaHitRadius: 0.42
   soulNovaHealPercent: 0.35
+  consecrationRadius: 5.5
+  consecrationTickInterval: 0.5
+  consecrationDamagePerTick: 18
+  consecrationHealPerTick: 3
+  consecrationVisualPrefab: {fileID: 0}
+  turretDropCount: 3
+  turretDropRadius: 2.6
+  turretSearchRadius: 11
+  turretDps: 34
+  turretLifetime: 9
+  turretDropShockwaveRadius: 4
+  turretDropShockwaveDamage: 45
+  turretDropPrefab: {fileID: 0}

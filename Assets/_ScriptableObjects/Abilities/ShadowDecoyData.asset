@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f554ba389971e364298bc91b65061a59, type: 3}
+  m_Name: ShadowDecoyData
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Abilities.ShadowDecoyAbilityData
+  id: ShadowDecoy
+  abilityName: Shadow Decoy
+  description: Deploys a hologram that taunts nearby enemies and explodes after 3.5s.
+  icon: {fileID: 21300000, guid: ba03807f116a76e4086c4a6eb9633c56, type: 3}
+  type: 0
+  rarity: 2
+  unlockedByDefault: 0
+  baseDamage: 55
+  baseCooldown: 7
+  baseArea: 1
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  decoyPrefab: {fileID: 4246622013234904661, guid: dabac269add1f1b42983c88f88e622b8, type: 3}
+  decoyCount: 1
+  decoyLifetime: 3.5
+  tauntRadius: 7
+  tauntPulseInterval: 0.4
+  explosionRadius: 3.5
+  deployDistance: 2.5
+  phantomFireballPrefab: {fileID: 2398638180161464805, guid: 1de21e33f66bc9c48b978d2042722423, type: 3}
+  phantomFireballCount: 8
+  phantomFireballDamageFactor: 0.6
+  phantomFireballSpeed: 12
+  phantomFireballLifetime: 1.1
+  phantomFireballRadius: 1.6

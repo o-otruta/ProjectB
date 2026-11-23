@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: bastion_syn_shatter_nova
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: bastion_syn_shatter_nova
+  displayName: Shatter Nova
+  description: 'Unlocks the reactive synergy <b>Shatter Nova</b> (GlacialShatter
+    + EarthquakeSlam). Auto-activates in a run once both abilities are equipped.
+
+    Seismic
+    Hammer slams on frozen enemies deal 2.5x damage and burst them into 4 ice shards
+    that strike neighbours.'
+  icon: {fileID: 21300000, guid: f991ad4aba7c5c34e8087db51b0bd150, type: 3}
+  nodeType: 2
+  constellation: 2
+  position: {x: -326.8733, y: -641.52466}
+  prerequisiteIds:
+  - bastion_r2
+  shardCost: 3
+  coinCost: 0
+  effects: []
+  synergyId: shatter_nova

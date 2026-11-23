@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: bastion_r4a
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: bastion_r4a
+  displayName: +0.15s I-Frames
+  description: Invulnerability after taking a hit lasts 0.15s longer.
+  icon: {fileID: 21300000, guid: f86031c2c154c06448009b7d33ddd7a7, type: 3}
+  nodeType: 1
+  constellation: 2
+  position: {x: -860.67426, y: -263.1346}
+  prerequisiteIds:
+  - bastion_syn_steam_blast
+  - bastion_syn_thunder_storm
+  shardCost: 4
+  coinCost: 0
+  effects:
+  - type: 7
+    value: 0.15
+  synergyId: 

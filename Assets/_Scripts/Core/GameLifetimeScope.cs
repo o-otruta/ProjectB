@@ -28,6 +28,7 @@ namespace ProjectB.Core
             builder.Register<UpgradeApplier>(Lifetime.Scoped);
             builder.Register<EnemyProjectilePool>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
+            builder.RegisterEntryPoint<MetaRunRewardsHandler>().AsSelf();
 
             // Register Managers & Environment
             builder.RegisterComponentInHierarchy<GameManager>();

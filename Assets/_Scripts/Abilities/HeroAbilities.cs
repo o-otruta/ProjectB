@@ -192,6 +192,7 @@ namespace ProjectB.Abilities
                     {
                         var health = heroHealth != null ? heroHealth : GetComponent<HeroHealth>();
                         ability.SetContext(runtimeStats, health);
+                        ability.SetEventBus(eventBus);
                         ability.Initialize(data);
                         passiveAbilities.Add(ability);
                         added = true;

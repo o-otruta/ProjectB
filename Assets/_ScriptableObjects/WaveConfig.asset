@@ -124,6 +124,9 @@ MonoBehaviour:
   bossCoinBurstCount: 15
   miniBossVacuumDropChance: 0.25
   bossVacuumDropChance: 1
+  miniBossShardReward: 1
+  bossShardReward: 5
+  shrineShardReward: 2
   maxWaveDuration: 30
   leashDistance: 35
   leashCheckInterval: 2

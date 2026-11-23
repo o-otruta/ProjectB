@@ -116,7 +116,19 @@ namespace ProjectB.Core
         public int EnemiesKilled { get; private set; }
         public float PlayTime { get; private set; }
         public int BestCombo { get; private set; }
+        public int BossShardsEarned { get; private set; }
+        public int ShrinesCleared { get; private set; }
         public RunDamageTracker DamageTracker { get; } = new RunDamageTracker();
+
+        public void AddBossShards(int amount)
+        {
+            if (amount > 0) BossShardsEarned += amount;
+        }
+
+        public void AddShrineCleared()
+        {
+            ShrinesCleared++;
+        }
         public long TotalDamageDealt => DamageTracker.TotalDamage;
 
         public RunStatistics()
@@ -167,6 +179,8 @@ namespace ProjectB.Core
             EnemiesKilled = 0;
             PlayTime = 0f;
             BestCombo = 0;
+            BossShardsEarned = 0;
+            ShrinesCleared = 0;
             DamageTracker.Reset();
         }
     }

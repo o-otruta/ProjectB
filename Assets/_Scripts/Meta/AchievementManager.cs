@@ -201,5 +201,15 @@ namespace ProjectB.Meta
         {
             AddProgressByType(AchievementConditionType.FindSecretItem, 1, secretItemId);
         }
+
+        public void OnShrineCleared()
+        {
+            AddProgressByType(AchievementConditionType.ClearShrines, 1);
+        }
+
+        public void OnComboReached(int combo)
+        {
+            SetProgressByType(AchievementConditionType.ReachCombo, combo);
+        }
     }
 }

@@ -29,6 +29,8 @@ namespace ProjectB.LevelUp
         private HeroAbilities heroAbilities;
         private UpgradeApplier upgradeApplier;
         private SaveManager saveManager;
+        private HeroRuntimeStats runtimeStats;
+        private ProjectB.Combat.HeroCombat heroCombat;
         
         private int pendingLevelUps = 0;
         private int freeRerollsRemaining = 0;
@@ -42,8 +44,12 @@ namespace ProjectB.LevelUp
             HeroExperience heroExp,
             HeroAbilities heroAbilities,
             UpgradeApplier upgradeApplier,
-            SaveManager saveManager)
+            SaveManager saveManager,
+            HeroRuntimeStats runtimeStats = null,
+            ProjectB.Combat.HeroCombat heroCombat = null)
         {
+            this.runtimeStats = runtimeStats;
+            this.heroCombat = heroCombat;
             this.gameManager = gameManager;
             this.cardUI = cardUI;
             this.heroExp = heroExp;
@@ -82,7 +88,7 @@ namespace ProjectB.LevelUp
         {
             dynamicPool.Clear();
             claimedSynergyIds.Clear();
-            freeRerollsRemaining = Mathf.Max(0, freeRerollsPerRun);
+            freeRerollsRemaining = Mathf.Max(0, freeRerollsPerRun) + (runtimeStats != null ? runtimeStats.FreeRerollBonus : 0);
             if (cardPool == null) return;
 
             for (int i = 0; i < cardPool.Count; i++)
@@ -250,6 +256,12 @@ namespace ProjectB.LevelUp
                             continue;
 
                         if (heroAbilities != null && !heroAbilities.HasAbility(modifierCard.targetAbilityId))
+                            continue;
+                    }
+                    else if (card is WeaponUpgradeCardData weaponCard)
+                    {
+                        if (weaponCard.maxStacks > 0 && heroCombat != null &&
+                            heroCombat.GetWeaponUpgradeStacks(weaponCard.upgradeType) >= weaponCard.maxStacks)
                             continue;
                     }
                     

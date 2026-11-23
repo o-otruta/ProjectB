@@ -128,6 +128,11 @@ namespace ProjectB.Abilities
             return rawDamage * multiplier * OverdriveDamageMultiplier;
         }
 
+        /// <summary>Global radius/area multiplier (Area Tome, Engineer passive, Constellation nodes).</summary>
+        public float AreaMultiplier => runtimeStats != null ? runtimeStats.GlobalAreaMultiplier : 1f;
+
+        protected float ScaleArea(float baseRadius) => baseRadius * AreaMultiplier;
+
         protected float GetEffectiveCooldown(float baseCooldown, float minCooldown = 0.1f)
         {
             return runtimeStats != null

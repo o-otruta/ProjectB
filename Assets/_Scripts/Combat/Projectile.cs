@@ -24,6 +24,12 @@ namespace ProjectB.Combat
         private bool isReturned;
         private float damageMultiplier = 1f;
         private float spawnTime;
+        private int remainingPierces;
+        private readonly EntityId[] hitHistory = new EntityId[8];
+        private int hitHistoryCount;
+
+        public int RemainingPierces => remainingPierces;
+        public Transform CurrentTarget => target;
 
         public void Initialize(
             WeaponData weaponData,
@@ -46,6 +52,8 @@ namespace ProjectB.Combat
             isReturned = false;
             this.damageMultiplier = damageMultiplier;
             spawnTime = Time.time;
+            remainingPierces = weaponData != null ? Mathf.Max(0, weaponData.pierceCount) : 0;
+            hitHistoryCount = 0;
 
             if (target != null)
             {
@@ -99,9 +107,19 @@ namespace ProjectB.Combat
             }
         }
 
+        /// <summary>Forces an immediate hit on the current target (used by tests).</summary>
+        public void SimulateHit()
+        {
+            if (!isReturned) HitTarget();
+        }
+
         private void HitTarget()
         {
             float rawDamage = data != null ? data.damage * damageMultiplier : 0f;
+            if (target != null && hitHistoryCount < hitHistory.Length)
+            {
+                hitHistory[hitHistoryCount++] = target.gameObject.GetEntityId();
+            }
 
             if (targetDamageable != null && !targetDamageable.IsDead && rawDamage > 0f)
             {
@@ -113,7 +131,8 @@ namespace ProjectB.Combat
 
             if (data != null && data.splashRadius > 0f && rawDamage > 0f && enemyLayer.value != 0)
             {
-                int hits = Physics.OverlapSphereNonAlloc(transform.position, data.splashRadius, splashHits, enemyLayer);
+                float splash = runtimeStats != null ? runtimeStats.GetScaledArea(data.splashRadius) : data.splashRadius;
+                int hits = Physics.OverlapSphereNonAlloc(transform.position, splash, splashHits, enemyLayer);
                 for (int i = 0; i < hits; i++)
                 {
                     if (splashHits[i] != null &&
@@ -127,7 +146,52 @@ namespace ProjectB.Combat
                 }
             }
 
+            if (remainingPierces > 0 && TryRetargetForPierce())
+            {
+                remainingPierces--;
+                return;
+            }
+
             ReturnToPool();
+        }
+
+        private bool TryRetargetForPierce()
+        {
+            if (data == null || enemyLayer.value == 0) return false;
+
+            int hits = Physics.OverlapSphereNonAlloc(transform.position, data.pierceRetargetRadius, splashHits, enemyLayer);
+            Transform best = null;
+            IDamageable bestDamageable = null;
+            float bestSqr = float.MaxValue;
+
+            for (int i = 0; i < hits; i++)
+            {
+                Collider col = splashHits[i];
+                if (col == null || !col.TryGetComponent<IDamageable>(out var dmg) || dmg.IsDead) continue;
+                if (!CombatTargetFilter.IsValidAutoAimTarget(col, dmg, enemyLayer)) continue;
+
+                EntityId id = col.gameObject.GetEntityId();
+                bool alreadyHit = false;
+                for (int h = 0; h < hitHistoryCount; h++)
+                {
+                    if (hitHistory[h] == id) { alreadyHit = true; break; }
+                }
+                if (alreadyHit) continue;
+
+                float d = (col.transform.position - transform.position).sqrMagnitude;
+                if (d < bestSqr)
+                {
+                    bestSqr = d;
+                    best = col.transform;
+                    bestDamageable = dmg;
+                }
+            }
+
+            if (best == null) return false;
+            target = best;
+            targetDamageable = bestDamageable;
+            spawnTime = Time.time;
+            return true;
         }
 
         private void TryApplyLifesteal()

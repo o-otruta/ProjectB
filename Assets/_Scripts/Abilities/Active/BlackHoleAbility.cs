@@ -25,7 +25,7 @@ namespace ProjectB.Abilities
         private GameObject visualHole;
         private bool usesCustomVisualPrefab;
 
-        public float CurrentRadius => currentRadius;
+        public float CurrentRadius => ScaleArea(currentRadius);
         public Vector3 Center => transform.position;
         public Transform VisualTransform => visualHole != null ? visualHole.transform : null;
 
@@ -111,8 +111,8 @@ namespace ProjectB.Abilities
             if (visualHole != null)
             {
                 visualHole.transform.localScale = usesCustomVisualPrefab
-                    ? new Vector3(currentRadius, 1f, currentRadius)
-                    : new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
+                    ? new Vector3(CurrentRadius, 1f, CurrentRadius)
+                    : new Vector3(CurrentRadius * 2f, 0.01f, CurrentRadius * 2f);
             }
         }
 
@@ -145,8 +145,16 @@ namespace ProjectB.Abilities
             }
         }
 
+        private float lastAreaMultiplier = 1f;
+
         private void Update()
         {
+            if (!Mathf.Approximately(lastAreaMultiplier, AreaMultiplier))
+            {
+                lastAreaMultiplier = AreaMultiplier;
+                UpdateVisualSize();
+            }
+
             if (Data == null || Time.deltaTime <= 0f) return;
 
             if (Time.time >= nextScanTime)
@@ -173,7 +181,7 @@ namespace ProjectB.Abilities
         private void RefreshCapturedEnemies()
         {
             capturedEnemies.Clear();
-            int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, currentRadius, hitBuffer, HoleData.targetLayer);
+            int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, CurrentRadius, hitBuffer, HoleData.targetLayer);
             for (int i = 0; i < targetsFound; i++)
             {
                 var col = hitBuffer[i];

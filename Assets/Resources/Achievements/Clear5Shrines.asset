@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: Clear5Shrines
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: clear_5_shrines
+  title: Shrine Master
+  description: Clear 5 Challenge Shrines (cumulative) to unlock the Engineer hero
+  icon: {fileID: 21300000, guid: adc7206111291924b995acd724aa88f6, type: 3}
+  conditionType: 7
+  targetValue: 5
+  targetId: 
+  rewardType: 2
+  rewardValue: 0
+  rewardId: engineer

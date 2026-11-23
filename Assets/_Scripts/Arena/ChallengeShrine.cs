@@ -260,9 +260,10 @@ namespace ProjectB.Arena
                 beaconBeam.SetActive(false);
             }
 
-            if (coinReward > 0)
+            int finalCoinReward = EffectiveCoinReward;
+            if (finalCoinReward > 0)
             {
-                heroEconomy?.AddCoin(coinReward);
+                heroEconomy?.AddCoin(finalCoinReward);
             }
 
             if (grantLevelUp)
@@ -275,8 +276,18 @@ namespace ProjectB.Arena
                 transform.position,
                 0,
                 totalSpawned,
-                coinReward));
+                finalCoinReward));
         }
+
+        private float rewardMultiplier = 1f;
+
+        /// <summary>Constellation "Secret &amp; Shrine" bonus (e.g. 1.3 = +30% coins).</summary>
+        public void SetRewardMultiplier(float multiplier)
+        {
+            rewardMultiplier = Mathf.Max(0f, multiplier);
+        }
+
+        public int EffectiveCoinReward => coinReward > 0 ? Mathf.Max(1, Mathf.RoundToInt(coinReward * rewardMultiplier)) : 0;
 
         private void ClearTrackedElites()
         {

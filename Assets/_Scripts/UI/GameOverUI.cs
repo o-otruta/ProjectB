@@ -104,7 +104,10 @@ namespace ProjectB.UI
 
             if (coinsText != null)
             {
-                coinsText.text = $"Coins Earned: {coinsEarned}";
+                int shards = runStatistics != null ? runStatistics.BossShardsEarned : 0;
+                coinsText.text = shards > 0
+                    ? $"Coins Earned: {coinsEarned}   <color=#B98CFF>Boss Shards: +{shards}</color>"
+                    : $"Coins Earned: {coinsEarned}";
             }
 
             if (statsText != null)

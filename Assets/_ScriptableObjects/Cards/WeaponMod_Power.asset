@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64a6e99f9592a5042be7d3acaf94b6d0, type: 3}
+  m_Name: WeaponMod_Power
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.WeaponUpgradeCardData
+  cardName: 'Weapon: Overcharge'
+  description: +30% weapon damage
+  icon: {fileID: 21300000, guid: fa49bdc263d5dd04ab1d18fcd46e0d9d, type: 3}
+  rarity: 0
+  isConsumable: 0
+  upgradeType: 2
+  value: 30
+  maxStacks: 0

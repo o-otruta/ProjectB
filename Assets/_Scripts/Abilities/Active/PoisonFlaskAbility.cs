@@ -227,7 +227,7 @@ namespace ProjectB.Abilities
 
             puddle.Initialize(
                 position,
-                currentPuddleRadius,
+                ScaleArea(currentPuddleRadius),
                 currentPuddleDuration,
                 FlaskData.tickInterval,
                 GetScaledDamage(currentDamage),

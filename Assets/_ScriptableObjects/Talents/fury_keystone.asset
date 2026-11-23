@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fury_keystone
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fury_keystone
+  displayName: Overclocked Arsenal
+  description: 'KEYSTONE: +1 Active ability slot and an extra -8% cooldown on everything.'
+  icon: {fileID: 21300000, guid: c43dbbd7a34556c44b8ec404526fe335, type: 3}
+  nodeType: 3
+  constellation: 1
+  position: {x: -0.000044148503, y: 1010}
+  prerequisiteIds:
+  - fury_r4a
+  - fury_r4b
+  shardCost: 8
+  coinCost: 0
+  effects:
+  - type: 13
+    value: 1
+  - type: 4
+    value: 8
+  synergyId: 

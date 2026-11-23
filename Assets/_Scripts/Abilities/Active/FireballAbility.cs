@@ -81,7 +81,7 @@ namespace ProjectB.Abilities
                 p.InitializeFireball(
                     GetScaledDamage(currentDamage),
                     currentSpeed,
-                    currentExplosionRadius,
+                    ScaleArea(currentExplosionRadius),
                     chosenTarget,
                     ProjectileData.targetLayer,
                     projectilePool,

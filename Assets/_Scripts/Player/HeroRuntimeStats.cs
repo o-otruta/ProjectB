@@ -27,16 +27,52 @@ namespace ProjectB.Player
         public float HeroPassiveSpeedMultiplier { get; private set; } = 1f;
         public float HeroPassiveXpMultiplier { get; private set; } = 1f;
         public float HeroPassiveMagnetMultiplier { get; private set; } = 1f;
+        public float HeroPassiveArmor { get; private set; }
+        public float HeroPassiveRegenPerSecond { get; private set; }
+        public float HeroPassiveAreaPercent { get; private set; }
+        public float HeroPassiveCooldownReduction { get; private set; }
 
-        public float XpMultiplier => MetaXpMultiplier * HeroPassiveXpMultiplier;
+        // --- Constellation Tree (Sprint 11) ---
+        public float TalentArmor { get; private set; }
+        public float TalentCooldownReduction { get; private set; }
+        public float TalentAreaPercent { get; private set; }
+        public float TalentHpMultiplier { get; private set; } = 1f;
+        public float TalentSpeedMultiplier { get; private set; } = 1f;
+        public float TalentXpMultiplier { get; private set; } = 1f;
+        public float TalentDamageMultiplier { get; private set; } = 1f;
+        public float HealingMultiplier { get; private set; } = 1f;
+        public float BossDamageMultiplier { get; private set; } = 1f;
+        public float BonusIFrameSeconds { get; private set; }
+        public float UltimateCooldownMultiplier { get; private set; } = 1f;
+        public float SecretRewardMultiplier { get; private set; } = 1f;
+        public int BarrelRespawnBonus { get; private set; }
+        public int FreeRerollBonus { get; private set; }
+        public bool HasSecondWind { get; private set; }
+        public int CrystalCoinBonus { get; private set; }
+
+        public float XpMultiplier => MetaXpMultiplier * HeroPassiveXpMultiplier * TalentXpMultiplier;
 
         public float GlobalDamageMultiplier { get; private set; } = 1f;
-        public float Armor { get; private set; } = 0f;
+
+        private float runArmor;
+        private float runCooldownReduction;
+        private float runAreaPercent;
+        private float appliedTalentCrit;
+        private float appliedTalentCoin;
+
+        /// <summary>Total flat armor: run cards/passives + hero passive + Constellation nodes.</summary>
+        public float Armor => Mathf.Max(0f, runArmor + HeroPassiveArmor + TalentArmor);
+
+        /// <summary>
+        /// Global radius/area multiplier for AoE abilities, weapon splash and ultimates
+        /// (Area Tome passive, Engineer passive, Constellation nodes). 1.0 = no bonus.
+        /// </summary>
+        public float GlobalAreaMultiplier => Mathf.Max(0.25f, 1f + (runAreaPercent + HeroPassiveAreaPercent + TalentAreaPercent) / 100f);
         public float MoveSpeedFlatBonus { get; private set; } = 0f;
         public float MagnetRadiusFlatBonus { get; private set; } = 0f;
         public int MaxHpFlatBonus { get; private set; } = 0;
 
-        public float CooldownReduction { get; private set; } = 0f;
+        public float CooldownReduction => Mathf.Clamp(runCooldownReduction + HeroPassiveCooldownReduction + TalentCooldownReduction, 0f, MAX_COOLDOWN_REDUCTION);
         public float CooldownReductionMultiplier => Mathf.Clamp(1f - CooldownReduction, 0.5f, 1f);
         public float CritChance { get; private set; } = 0f;
         public float CritMultiplier { get; private set; } = BASE_CRIT_MULTIPLIER;
@@ -45,16 +81,19 @@ namespace ProjectB.Player
         /// <summary>
         /// Итоговый множитель урона базового оружия: мета-множитель * пассивка героя * забеговый GlobalDamage.
         /// </summary>
-        public float WeaponDamageMultiplier => MetaWeaponDamageMultiplier * HeroPassiveDamageMultiplier * GlobalDamageMultiplier;
+        public float WeaponDamageMultiplier => MetaWeaponDamageMultiplier * HeroPassiveDamageMultiplier * TalentDamageMultiplier * GlobalDamageMultiplier;
 
         /// <summary>
         /// Итоговый множитель урона всех активных способностей: мета-множитель * пассивка героя * забеговый GlobalDamage.
         /// </summary>
-        public float AbilityDamageMultiplier => MetaAbilityDamageMultiplier * HeroPassiveDamageMultiplier * GlobalDamageMultiplier;
+        public float AbilityDamageMultiplier => MetaAbilityDamageMultiplier * HeroPassiveDamageMultiplier * TalentDamageMultiplier * GlobalDamageMultiplier;
 
         public event Action OnStatsChanged;
 
-        public HeroRuntimeStats(MetaUpgradeManager metaUpgradeManager = null, SelectedHeroService selectedHeroService = null)
+        public HeroRuntimeStats(
+            MetaUpgradeManager metaUpgradeManager = null,
+            SelectedHeroService selectedHeroService = null,
+            TalentTreeManager talentTree = null)
         {
             if (metaUpgradeManager != null)
             {
@@ -83,6 +122,80 @@ namespace ProjectB.Player
             {
                 ApplyHeroPassive(selectedHeroService.GetSelectedHero(), notify: false);
             }
+
+            if (talentTree != null)
+            {
+                ApplyTalentBonuses(talentTree, notify: false);
+            }
+        }
+
+        /// <summary>
+        /// Applies permanent Constellation Tree node effects for the run.
+        /// Idempotent: calling again replaces previously applied talent values instead of stacking them.
+        /// </summary>
+        public void ApplyTalentBonuses(TalentTreeManager talentTree, bool notify = true)
+        {
+            float crit = talentTree != null ? talentTree.GetTotalEffect(TalentEffectType.CritChancePercent) / 100f : 0f;
+            float coin = talentTree != null ? talentTree.GetTotalEffect(TalentEffectType.CoinGainPercent) / 100f : 0f;
+
+            CritChance = Mathf.Clamp01(CritChance - appliedTalentCrit + crit);
+            CoinMultiplier = Mathf.Max(1f, CoinMultiplier - appliedTalentCoin + coin);
+            appliedTalentCrit = crit;
+            appliedTalentCoin = coin;
+
+            if (talentTree == null)
+            {
+                TalentArmor = 0f;
+                TalentCooldownReduction = 0f;
+                TalentAreaPercent = 0f;
+                TalentHpMultiplier = TalentSpeedMultiplier = TalentXpMultiplier = TalentDamageMultiplier = 1f;
+                HealingMultiplier = BossDamageMultiplier = UltimateCooldownMultiplier = SecretRewardMultiplier = 1f;
+                BonusIFrameSeconds = 0f;
+                BarrelRespawnBonus = FreeRerollBonus = CrystalCoinBonus = 0;
+                HasSecondWind = false;
+            }
+            else
+            {
+                TalentArmor = Mathf.Max(0f, talentTree.GetTotalEffect(TalentEffectType.ArmorFlat));
+                TalentCooldownReduction = Mathf.Max(0f, talentTree.GetTotalEffect(TalentEffectType.CooldownReductionPercent) / 100f);
+                TalentAreaPercent = talentTree.GetTotalEffect(TalentEffectType.GlobalAreaPercent);
+                TalentHpMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.MaxHpPercent) / 100f;
+                TalentSpeedMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.MoveSpeedPercent) / 100f;
+                TalentXpMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.XpGainPercent) / 100f;
+                TalentDamageMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.GlobalDamagePercent) / 100f;
+                HealingMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.HealingPercent) / 100f;
+                BossDamageMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.BossDamagePercent) / 100f;
+                BonusIFrameSeconds = Mathf.Max(0f, talentTree.GetTotalEffect(TalentEffectType.IFrameSeconds));
+                UltimateCooldownMultiplier = Mathf.Clamp(1f - talentTree.GetTotalEffect(TalentEffectType.UltimateCooldownPercent) / 100f, 0.4f, 1f);
+                SecretRewardMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.SecretAndShrineRewardPercent) / 100f;
+                BarrelRespawnBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.BarrelRespawnBonus)));
+                FreeRerollBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.FreeRerolls)));
+                CrystalCoinBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.CrystalCoinBonus)));
+                HasSecondWind = talentTree.GetTotalEffect(TalentEffectType.SecondWind) > 0f;
+            }
+
+            if (notify)
+            {
+                OnStatsChanged?.Invoke();
+            }
+        }
+
+        public int ApplySecretRewardMultiplier(int baseReward)
+        {
+            if (baseReward <= 0) return 0;
+            return Mathf.Max(1, Mathf.RoundToInt(baseReward * SecretRewardMultiplier));
+        }
+
+        public int GetHealAmount(int baseAmount)
+        {
+            if (baseAmount <= 0) return 0;
+            return Mathf.Max(1, Mathf.RoundToInt(baseAmount * HealingMultiplier));
+        }
+
+        /// <summary>Scales an authored radius by <see cref="GlobalAreaMultiplier"/>.</summary>
+        public float GetScaledArea(float baseRadius)
+        {
+            return baseRadius * GlobalAreaMultiplier;
         }
 
         public void ApplyHeroPassive(HeroData heroData, bool notify = true)
@@ -92,6 +205,10 @@ namespace ProjectB.Player
             HeroPassiveSpeedMultiplier = 1f;
             HeroPassiveXpMultiplier = 1f;
             HeroPassiveMagnetMultiplier = 1f;
+            HeroPassiveArmor = 0f;
+            HeroPassiveRegenPerSecond = 0f;
+            HeroPassiveAreaPercent = 0f;
+            HeroPassiveCooldownReduction = 0f;
 
             if (heroData != null && heroData.passiveValue > 0f)
             {
@@ -110,6 +227,14 @@ namespace ProjectB.Player
                         float factor = 1f + heroData.passiveValue / 100f;
                         HeroPassiveXpMultiplier = factor;
                         HeroPassiveMagnetMultiplier = factor;
+                        break;
+                    case HeroPassiveType.ArmorAndRegen:
+                        HeroPassiveArmor = heroData.passiveValue;
+                        HeroPassiveRegenPerSecond = Mathf.Max(0f, heroData.passiveSecondaryValue);
+                        break;
+                    case HeroPassiveType.AreaAndCooldown:
+                        HeroPassiveAreaPercent = heroData.passiveValue;
+                        HeroPassiveCooldownReduction = Mathf.Clamp(heroData.passiveSecondaryValue / 100f, 0f, MAX_COOLDOWN_REDUCTION);
                         break;
                     case HeroPassiveType.None:
                     default:
@@ -133,7 +258,7 @@ namespace ProjectB.Player
         public void AddArmor(float amount)
         {
             if (Mathf.Approximately(amount, 0f)) return;
-            Armor = Mathf.Max(0f, Armor + amount);
+            runArmor += amount;
             OnStatsChanged?.Invoke();
         }
 
@@ -161,7 +286,14 @@ namespace ProjectB.Player
         public void AddCooldownReductionPercent(float percent)
         {
             if (Mathf.Approximately(percent, 0f)) return;
-            CooldownReduction = Mathf.Clamp(CooldownReduction + percent / 100f, 0f, MAX_COOLDOWN_REDUCTION);
+            runCooldownReduction = Mathf.Clamp(runCooldownReduction + percent / 100f, 0f, MAX_COOLDOWN_REDUCTION);
+            OnStatsChanged?.Invoke();
+        }
+
+        public void AddAreaPercent(float percent)
+        {
+            if (Mathf.Approximately(percent, 0f)) return;
+            runAreaPercent += percent;
             OnStatsChanged?.Invoke();
         }
 
@@ -212,12 +344,12 @@ namespace ProjectB.Player
 
         public int GetMaxHp(int baseMaxHp)
         {
-            return Mathf.Max(1, Mathf.RoundToInt(baseMaxHp * HeroPassiveHpMultiplier * MetaHpMultiplier) + MaxHpFlatBonus);
+            return Mathf.Max(1, Mathf.RoundToInt(baseMaxHp * HeroPassiveHpMultiplier * MetaHpMultiplier * TalentHpMultiplier) + MaxHpFlatBonus);
         }
 
         public float GetMoveSpeed(float baseSpeed)
         {
-            return Mathf.Max(0.1f, baseSpeed * HeroPassiveSpeedMultiplier * MetaSpeedMultiplier + MoveSpeedFlatBonus);
+            return Mathf.Max(0.1f, baseSpeed * HeroPassiveSpeedMultiplier * MetaSpeedMultiplier * TalentSpeedMultiplier + MoveSpeedFlatBonus);
         }
 
         public float GetMagnetRadius(float baseRadius)

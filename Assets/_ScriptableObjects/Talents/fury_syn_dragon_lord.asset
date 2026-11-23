@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fury_syn_dragon_lord
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fury_syn_dragon_lord
+  displayName: Dragon Lord
+  description: 'Unlocks the reactive synergy <b>Dragon Lord</b> (MiniDragon + BattleFury).
+    Auto-activates in a run once both abilities are equipped.
+
+    Dragon Whelp +
+    Battle Fury: Dragon Whelps breathe Fury flames that pierce 3 enemies and leave
+    burning embers underneath hit targets.'
+  icon: {fileID: 21300000, guid: e907072af886b784aa84979a980f6b7e, type: 3}
+  nodeType: 2
+  constellation: 1
+  position: {x: 137.38252, y: 706.77155}
+  prerequisiteIds:
+  - fury_r2
+  shardCost: 3
+  coinCost: 0
+  effects: []
+  synergyId: dragon_lord

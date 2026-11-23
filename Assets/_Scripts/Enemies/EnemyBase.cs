@@ -65,6 +65,24 @@ namespace ProjectB.Enemies
 
         public static float GlobalEventSpeedMultiplier { get; set; } = 1f;
 
+        /// <summary>
+        /// Constellation "Boss Damage" bonus applied to all damage taken by bosses and mini-bosses (set per run).
+        /// </summary>
+        public static float BossDamageTakenMultiplier { get; set; } = 1f;
+
+        // --- Sprint 11: Freeze & Taunt ---
+        private float frozenTimer;
+        private Transform tauntTarget;
+        private IDamageable tauntDamageable;
+        private float tauntTimer;
+        private Transform heroTargetCache;
+        private IDamageable heroDamageableCache;
+
+        public bool IsFrozen => frozenTimer > 0f && isAlive;
+        public bool IsTaunted => tauntTimer > 0f && tauntTarget != null;
+        public Transform TauntTarget => IsTaunted ? tauntTarget : null;
+        public virtual bool CanBeTaunted => !IsBoss;
+
         public bool IsDead => !isAlive;
         public EnemyData EnemyData => enemyData;
         public bool IsElite => isElite;
@@ -120,6 +138,7 @@ namespace ProjectB.Enemies
             transform.localScale = baseLocalScale;
 
             OnDied = null;
+            ResetTransientStates();
             enemyData = data;
             target = heroTarget;
             pool = enemyPool;
@@ -443,6 +462,7 @@ namespace ProjectB.Enemies
         {
             if (!isAlive || target == null || enemyData == null) return;
             UpdateHitFlash();
+            UpdateFreezeAndTaunt(Time.deltaTime);
             UpdateSlowTimer();
             UpdateSpeedBuffTimer();
             UpdateEliteAura();
@@ -672,6 +692,11 @@ namespace ProjectB.Enemies
         {
             if (!isAlive || amount <= 0) return 0;
 
+            if ((isMiniBoss || IsBoss) && !Mathf.Approximately(BossDamageTakenMultiplier, 1f))
+            {
+                amount = Mathf.Max(1, Mathf.RoundToInt(amount * BossDamageTakenMultiplier));
+            }
+
             int finalAmount = Mathf.Max(1, ModifyIncomingDamage(amount, hasSourcePosition, sourcePosition, isAoE, out bool wasBlocked));
             currentHp = Mathf.Max(0, currentHp - finalAmount);
 
@@ -763,6 +788,89 @@ namespace ProjectB.Enemies
         {
             if (!isAlive || pullResistance <= 0f) return;
             transform.position += pullDelta * pullResistance;
+        }
+
+        /// <summary>
+        /// Freezes the enemy (near-total slow) and marks it <see cref="IsFrozen"/> for shatter reactions.
+        /// Bosses are only heavily slowed.
+        /// </summary>
+        public virtual void ApplyFreeze(float duration, float slowFactorWhileFrozen = 0.05f)
+        {
+            if (!isAlive || duration <= 0f) return;
+            float factor = IsBoss ? Mathf.Max(0.5f, slowFactorWhileFrozen) : Mathf.Clamp(slowFactorWhileFrozen, 0.01f, 1f);
+            ApplySlow(factor, duration);
+            if (duration > frozenTimer) frozenTimer = duration;
+        }
+
+        public void ClearFreeze()
+        {
+            frozenTimer = 0f;
+        }
+
+        /// <summary>
+        /// Forces the enemy to chase (and attack) a decoy instead of the hero for the given duration.
+        /// </summary>
+        public bool ApplyTaunt(Transform decoy, float duration)
+        {
+            if (!isAlive || decoy == null || duration <= 0f || !CanBeTaunted) return false;
+
+            if (tauntTarget == null)
+            {
+                heroTargetCache = target;
+                heroDamageableCache = targetDamageable;
+            }
+
+            tauntTarget = decoy;
+            tauntDamageable = decoy.GetComponent<IDamageable>();
+            tauntTimer = Mathf.Max(tauntTimer, duration);
+            target = decoy;
+            targetDamageable = tauntDamageable;
+            return true;
+        }
+
+        public void ClearTaunt()
+        {
+            if (tauntTarget == null) return;
+            tauntTarget = null;
+            tauntDamageable = null;
+            tauntTimer = 0f;
+            if (heroTargetCache != null)
+            {
+                target = heroTargetCache;
+                targetDamageable = heroDamageableCache;
+            }
+            heroTargetCache = null;
+            heroDamageableCache = null;
+        }
+
+        private void UpdateFreezeAndTaunt(float deltaTime)
+        {
+            if (frozenTimer > 0f)
+            {
+                frozenTimer = Mathf.Max(0f, frozenTimer - deltaTime);
+            }
+
+            if (tauntTarget != null)
+            {
+                tauntTimer -= deltaTime;
+                bool decoyGone = !tauntTarget.gameObject.activeInHierarchy ||
+                                 (tauntDamageable != null && tauntDamageable.IsDead);
+                if (tauntTimer <= 0f || decoyGone)
+                {
+                    ClearTaunt();
+                }
+            }
+        }
+
+        /// <summary>Resets Sprint 11 transient states when reused from the pool.</summary>
+        protected void ResetTransientStates()
+        {
+            frozenTimer = 0f;
+            tauntTarget = null;
+            tauntDamageable = null;
+            tauntTimer = 0f;
+            heroTargetCache = null;
+            heroDamageableCache = null;
         }
     }
 }

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: fortune_r1a
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: fortune_r1a
+  displayName: +20% Coin Gain
+  description: 'Permanently +20% coins collected in runs. (Inner ring: also purchasable
+    with coins.)'
+  icon: {fileID: 21300000, guid: f8dfc0934e6576d44a8c0c46a69b99d8, type: 3}
+  nodeType: 1
+  constellation: 3
+  position: {x: 169.7056, y: -169.70566}
+  prerequisiteIds: []
+  shardCost: 1
+  coinCost: 150
+  effects:
+  - type: 9
+    value: 20
+  synergyId: 

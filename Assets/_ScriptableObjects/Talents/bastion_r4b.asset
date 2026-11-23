@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: bastion_r4b
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: bastion_r4b
+  displayName: +25% Ultimate Recharge
+  description: Your hero ultimate recharges 25% faster.
+  icon: {fileID: 21300000, guid: 148248bb68f33ae47bf342e80bd6856a, type: 3}
+  nodeType: 1
+  constellation: 2
+  position: {x: -658.2184, y: -613.7984}
+  prerequisiteIds:
+  - bastion_syn_aegis_phalanx
+  - bastion_syn_shatter_nova
+  shardCost: 4
+  coinCost: 0
+  effects:
+  - type: 8
+    value: 25
+  synergyId: 

@@ -33,6 +33,7 @@ namespace ProjectB.Arena
         private HeroEconomy _heroEconomy;
         private HeroExperience _heroExperience;
         private RunStatistics _runStatistics;
+        private HeroRuntimeStats _runtimeStats;
         private WaveManager _waveManager;
         private GameManager _gameManager;
 
@@ -56,8 +57,10 @@ namespace ProjectB.Arena
             HeroHealth heroHealth = null,
             HeroEconomy heroEconomy = null,
             HeroExperience heroExperience = null,
-            RunStatistics runStatistics = null)
+            RunStatistics runStatistics = null,
+            HeroRuntimeStats runtimeStats = null)
         {
+            _runtimeStats = runtimeStats;
             _resolver = resolver;
             _eventBus = eventBus;
             _heroHealth = heroHealth;
@@ -574,6 +577,7 @@ namespace ProjectB.Arena
             var shrine = go.GetComponent<ChallengeShrine>();
             if (shrine == null) shrine = go.AddComponent<ChallengeShrine>();
             shrine.Initialize(_heroHealth, _heroEconomy, _heroExperience, _waveManager, _gameManager, _eventBus);
+            shrine.SetRewardMultiplier(_runtimeStats != null ? _runtimeStats.SecretRewardMultiplier : 1f);
             ActiveShrine = shrine;
             return shrine;
         }
@@ -631,7 +635,7 @@ namespace ProjectB.Arena
             {
                 int minB = Mathf.Max(0, _config.DynamicRespawnMinBarrels);
                 int maxB = Mathf.Max(minB, _config.DynamicRespawnMaxBarrels);
-                int targetBarrels = Range(minB, maxB + 1);
+                int targetBarrels = Range(minB, maxB + 1) + (_runtimeStats != null ? _runtimeStats.BarrelRespawnBonus : 0);
 
                 for (int b = 0; b < targetBarrels; b++)
                 {

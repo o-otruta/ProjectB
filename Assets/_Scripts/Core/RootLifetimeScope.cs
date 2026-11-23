@@ -24,9 +24,16 @@ namespace ProjectB.Core
             builder.Register<AchievementManager>(Lifetime.Singleton);
             builder.Register<DailyBonusManager>(Lifetime.Singleton);
             builder.Register<SelectedHeroService>(Lifetime.Singleton);
-            builder.Register<ISynergyUnlockProvider, DefaultSynergyUnlockProvider>(Lifetime.Singleton);
+            // Sprint 11: Constellation Tree gates reactive synergies and grants bonus ability slots.
+            builder.Register<TalentTreeManager>(Lifetime.Singleton)
+                .AsSelf()
+                .As<ISynergyUnlockProvider>()
+                .As<IAbilitySlotBonusProvider>();
             builder.Register<AudioManager>(Lifetime.Singleton);
             builder.Register<AdManager>(Lifetime.Singleton);
+
+            // Eagerly construct the tree so it registers its slot bonuses with AbilitySlotService before any UI reads them.
+            builder.RegisterBuildCallback(container => container.Resolve<TalentTreeManager>());
         }
 
         private void OnApplicationPause(bool pauseStatus)

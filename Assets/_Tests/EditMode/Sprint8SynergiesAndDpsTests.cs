@@ -761,7 +761,7 @@ namespace ProjectB.Tests.EditMode
             // SynergyCatalog & clean SynergyCardData (0 flat bonuses)
             var synCatalog = Resources.Load<SynergyCatalog>("SynergyCatalog");
             Assert.IsNotNull(synCatalog, "Resources/SynergyCatalog.asset must exist");
-            Assert.AreEqual(8, synCatalog.synergies.Count);
+            Assert.GreaterOrEqual(synCatalog.synergies.Count, 8, "8 Sprint 8 reactions (+4 added in Sprint 11)");
             for (int i = 0; i < synCatalog.synergies.Count; i++)
             {
                 SynergyData syn = synCatalog.synergies[i];

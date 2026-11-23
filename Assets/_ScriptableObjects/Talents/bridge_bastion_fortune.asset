@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: bridge_bastion_fortune
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: bridge_bastion_fortune
+  displayName: +6% Max HP
+  description: 'Bridge star: permanently +6% maximum health.'
+  icon: {fileID: 21300000, guid: 648b1c6d26f26ac439298ad18f47cb02, type: 3}
+  nodeType: 1
+  constellation: 0
+  position: {x: 0.000006677933, y: -560}
+  prerequisiteIds:
+  - bastion_r2
+  - fortune_r2
+  shardCost: 2
+  coinCost: 0
+  effects:
+  - type: 17
+    value: 6
+  synergyId: 

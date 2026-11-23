@@ -9,8 +9,8 @@ namespace ProjectB.Meta
     }
 
     /// <summary>
-    /// Default Sprint 8 provider allowing all authored reactive synergies to auto-activate in runs.
-    /// Will be replaced by TalentTreeManager in Sprint 11.
+    /// Permissive provider allowing all authored reactive synergies to auto-activate (tests / debug).
+    /// In the game, TalentTreeManager (Constellation Tree) is registered as the ISynergyUnlockProvider.
     /// </summary>
     public sealed class DefaultSynergyUnlockProvider : ISynergyUnlockProvider
     {

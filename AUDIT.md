@@ -301,16 +301,16 @@
 ---
 
 ### Спринт 11: Радиальное Дерево Созвездий, 2 Новых Героя (`Paladin`, `Engineer`) и Расширение Арсенала (P2)
-- [ ] **11.1. Валюта Boss Shards и Радиальное Дерево Созвездий (`TalentTreeManager` + `ConstellationTreeUI`):**
-  - Обновить [SaveData.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Meta/SaveData.cs) (`saveVersion = 2`: `bossShards`, `unlockedTalentIds` + миграция v1→v2 в `SaveManager`); выдавать Boss Shards с мини-боссов (`+1`), боссов (`+5`) и Алтарей (`+2`).
+- [x] **11.1. Валюта Boss Shards и Радиальное Дерево Созвездий (`TalentTreeManager` + `ConstellationTreeUI`):**
+  - Обновить [SaveData.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Meta/SaveData.cs) (`saveVersion = 2`: `bossShards`, `unlockedTalentIds`; миграция старых сейвов не нужна — по решению автора совместимость с v1 убрана); выдавать Boss Shards с мини-боссов (`+1`), боссов (`+5`) и Алтарей (`+2`).
   - Реализовать `TalentNodeData` (SO), `TalentTreeManager : IAbilitySlotBonusProvider, ISynergyUnlockProvider` (подключается и к [AbilitySlotService.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Meta/AbilitySlotService.cs), и к разблокировке всех 12 реактивных синергий в `HeroAbilities`!), узлы статов + **узлы Синергий** + 3 **Keystone-перка** (*Overclocked Arsenal*, *Second Wind*, *Collector's Greed* из Раздела 4.5).
   - Построить **удобный 360° панорамируемый UI экран Созвездий** (свободный 1-пальцевый drag во все стороны с инерцией + pinch-zoom + кнопки `+`/`−`/`⌖ Центр` + нижняя шторка деталей узла при тапе).
-- [ ] **11.2. 2 новых Героя (`Paladin`, `Engineer`) и Карты Оружия (`WeaponUpgradeCardData`):**
+- [x] **11.2. 2 новых Героя (`Paladin`, `Engineer`) и Карты Оружия (`WeaponUpgradeCardData`):**
   - Воксельные модели `Paladin`, `Engineer`, `HolyHammer`, `ClusterGrenade`; добавить `HeroUltimateType.Consecration` и `HeroUltimateType.TurretDrop`; зарегистрировать в `HeroCatalog.asset`.
   - Реализовать `WeaponUpgradeCardData` (`WeaponMod_Multishot`, `WeaponMod_FireRate`, `WeaponMod_Power`) с поддержкой мультивыстрела в `WeaponController`.
-- [ ] **11.3. 4 новых Активных, 2 Пассивных способности и 4 Реактивных Синергии (Разделы 4.1 и 4.4):**
+- [x] **11.3. 4 новых Активных, 2 Пассивных способности и 4 Реактивных Синергии (Разделы 4.1 и 4.4):**
   - `BuzzsawChakramAbility`, `SkyfallSpireAbility`, `GlacialShatterAbility`, `ShadowDecoyAbility`, пассивки `VampiricFang` и `AreaTome` (`GlobalAreaMultiplier`), плюс 4 чистых реактивных синергии (`Shatter Nova`, `Ricochet Barrage`, `Solar Eclipse`, `Phantom Legion`).
-- [ ] **11.4. Тесты Спринта 11:** `Sprint11ConstellationAndExpansionTests.cs` (миграция SaveData v1→v2, `TalentTreeManager` + `IAbilitySlotBonusProvider`, Keystone `Second Wind`, панорамирование/клампинг координат, новые герои, скиллы и `GlobalAreaMultiplier`).
+- [x] **11.4. Тесты Спринта 11:** `Sprint11ConstellationAndExpansionTests.cs` (SaveData v2: Boss Shards и узлы, `TalentTreeManager` + `IAbilitySlotBonusProvider`, Keystone `Second Wind`, панорамирование/клампинг координат, новые герои, скиллы и `GlobalAreaMultiplier`).
 
 ---
 
