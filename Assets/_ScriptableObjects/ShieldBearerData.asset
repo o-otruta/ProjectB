@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6894ea42b01d264797ac5f83bf7df89, type: 3}
+  m_Name: ShieldBearerData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.ShieldedEnemyData
+  hp: 110
+  speed: 2.3
+  contactDamage: 15
+  damageCooldown: 1
+  contactRadius: 1.15
+  xpDrop: 5
+  coinDropChance: 0.35
+  coinDrop: 2
+  modelPrefab: {fileID: 7388987578087438979, guid: 253182d1e75dde044b43877814fc9015, type: 3}
+  frontalBlockHalfAngle: 60
+  frontalDamageReduction: 0.65

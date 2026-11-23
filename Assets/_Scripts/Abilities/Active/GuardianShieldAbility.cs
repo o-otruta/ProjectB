@@ -238,7 +238,7 @@ namespace ProjectB.Abilities
                     if (enemyHitCooldowns.TryGetValue(enemyId, out float nextTime) && now < nextTime) continue;
 
                     int dmg = RollScaledDamage(currentDamage, out bool isCrit);
-                    DealDamage(damageable, dmg, isCrit);
+                    DealDamage(damageable, dmg, isCrit, sourcePosition: shield.position, isAoE: false);
                     enemyHitCooldowns[enemyId] = now + cooldown;
 
                     if (col.TryGetComponent<EnemyBase>(out var enemy) && !enemy.IsDead && currentKnockback > 0f)
@@ -302,7 +302,7 @@ namespace ProjectB.Abilities
                 if (!col.TryGetComponent<IDamageable>(out var target) || target.IsDead) continue;
 
                 int waveDmg = RollScaledDamage(currentDamage * 1.35f, out bool isCrit);
-                DealDamage(target, waveDmg, isCrit, SynergyIds.AegisPhalanx);
+                DealDamage(target, waveDmg, isCrit, SynergyIds.AegisPhalanx, isAoE: true, sourcePosition: waveCenter);
             }
 
             eventBus?.Publish(new SynergyReactionVfxEvent(SynergyReactionVfxType.AegisPhalanxWave, waveCenter, PHALANX_WAVE_RADIUS));

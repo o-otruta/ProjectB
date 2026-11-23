@@ -164,8 +164,8 @@ namespace ProjectB.Arena
                 }
                 else if (target is EnemyBase enemy)
                 {
-                    enemy.TakeDamage(explosionDamage, isCrit: false);
-                    runStatistics?.RecordDamage(DamageSourceIds.Barrel, explosionDamage);
+                    int dealt = enemy.TakeDamageFrom(explosionDamage, isCrit: false, transform.position, isAoE: true);
+                    if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Barrel, dealt);
                     enemiesHit++;
                 }
                 else

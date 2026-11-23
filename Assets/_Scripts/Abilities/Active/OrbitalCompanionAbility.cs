@@ -387,7 +387,7 @@ namespace ProjectB.Abilities
                     if (!enemyDamageCooldowns.TryGetValue(enemyId, out float nextDamageTime) || currentTime >= nextDamageTime)
                     {
                         int scaledDamage = RollScaledDamage(currentDamage, out bool isCrit);
-                        DealDamage(damageable, scaledDamage, isCrit);
+                        DealDamage(damageable, scaledDamage, isCrit, sourcePosition: inst.position, isAoE: false);
                         enemyDamageCooldowns[enemyId] = currentTime + effectiveTick;
                     }
                 }

@@ -172,8 +172,8 @@ namespace ProjectB.Abilities
 
                         if (currentTargetDamageable is EnemyBase enemy)
                         {
-                            enemy.TakeDamage(finalDmg, isCrit);
-                            runStatistics?.RecordDamage(damageSourceId, finalDmg);
+                            int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position, isAoE: false);
+                            if (dealt > 0) runStatistics?.RecordDamage(damageSourceId, dealt);
                         }
                         else
                         {

@@ -114,6 +114,8 @@ namespace ProjectB.Visuals
         private static readonly Color MythicMagentaColor = new Color(0.95f, 0.36f, 1f, 1f);
         private static readonly Color SteamWhiteColor = new Color(0.92f, 0.98f, 1f, 1f);
         private static readonly Color ComboTextColor = new Color(1f, 0.68f, 0.16f, 1f);
+        private static readonly Color BlockedDamageColor = new Color(0.68f, 0.78f, 0.88f, 1f);
+        private static readonly Color DemonEnrageColor = new Color(1f, 0.18f, 0.14f, 1f);
 
         [Inject]
         public void Construct(
@@ -410,6 +412,10 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<SynergyReactionVfxEvent>(OnSynergyReactionVfx);
                 eventBus.Subscribe<BossDefeatedEvent>(OnBossDefeated);
                 eventBus.Subscribe<AbilitySfxEvent>(OnAbilitySfx);
+                eventBus.Subscribe<WaveEventStartedEvent>(OnWaveEventStarted);
+                eventBus.Subscribe<WaveEventEndedEvent>(OnWaveEventEnded);
+                eventBus.Subscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
+                eventBus.Subscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
             }
 
             if (heroHealth != null)
@@ -454,6 +460,10 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<SynergyReactionVfxEvent>(OnSynergyReactionVfx);
                 eventBus.Unsubscribe<BossDefeatedEvent>(OnBossDefeated);
                 eventBus.Unsubscribe<AbilitySfxEvent>(OnAbilitySfx);
+                eventBus.Unsubscribe<WaveEventStartedEvent>(OnWaveEventStarted);
+                eventBus.Unsubscribe<WaveEventEndedEvent>(OnWaveEventEnded);
+                eventBus.Unsubscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
+                eventBus.Unsubscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
             }
 
             if (heroHealth != null)
@@ -474,17 +484,22 @@ namespace ProjectB.Visuals
                 var item = AcquireDamageNumberItem();
                 if (item != null)
                 {
-                    Color col = evt.IsCrit
-                        ? critDamageColor
-                        : (evt.IsBossOrMiniBoss ? bossDamageColor : normalDamageColor);
-                    float scale = evt.IsCrit
-                        ? 1.45f
-                        : (evt.IsBossOrMiniBoss ? 1.25f : 1.0f);
+                    Color col = evt.IsBlocked
+                        ? BlockedDamageColor
+                        : (evt.IsCrit ? critDamageColor : (evt.IsBossOrMiniBoss ? bossDamageColor : normalDamageColor));
+                    float scale = evt.IsBlocked
+                        ? 0.85f
+                        : (evt.IsCrit ? 1.45f : (evt.IsBossOrMiniBoss ? 1.25f : 1.0f));
                     item.Show(evt.Position, evt.Damage, col, scale, mainCamera, damagePool, evt.IsCrit);
                 }
             }
 
-            audioManager?.PlaySfx(evt.IsCrit ? SfxType.CritHit : SfxType.Hit, volumeScale: evt.IsCrit ? 0.85f : 0.65f, randomizePitch: true);
+            if (evt.IsBlocked)
+            {
+                EmitBurst(evt.Position + Vector3.up * 0.7f, BlockedDamageColor, 3, 2.8f, 0.16f);
+            }
+
+            audioManager?.PlaySfx(evt.IsCrit ? SfxType.CritHit : SfxType.Hit, volumeScale: evt.IsCrit ? 0.85f : (evt.IsBlocked ? 0.45f : 0.65f), randomizePitch: true);
         }
 
         private void OnEnemyDied(EnemyDiedEvent evt)
@@ -582,6 +597,40 @@ namespace ProjectB.Visuals
         private void OnAbilitySfx(AbilitySfxEvent evt)
         {
             audioManager?.PlaySfx(evt.SfxType, volumeScale: evt.VolumeScale, randomizePitch: true);
+        }
+
+        private void OnWaveEventStarted(WaveEventStartedEvent evt)
+        {
+            Vector3 heroPos = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            Color accent = ProjectB.UI.WaveEventBannerUI.GetEventAccentColor(evt.EventType);
+            EmitExplosionRing(heroPos + Vector3.up * 0.7f, 2.8f, accent, LevelUpColor, 20, 6, 5.8f, 0.28f);
+            audioManager?.PlaySfx(evt.EventType == WaveEventType.GoldGoblin ? SfxType.ComboMilestone : SfxType.ShrineStart, volumeScale: 0.9f, randomizePitch: false);
+            cameraController?.Shake(0.2f, 0.14f);
+        }
+
+        private void OnWaveEventEnded(WaveEventEndedEvent evt)
+        {
+            if (!evt.Completed) return;
+            Color accent = ProjectB.UI.WaveEventBannerUI.GetEventAccentColor(evt.EventType);
+            EmitExplosionRing(evt.RewardPosition + Vector3.up * 0.6f, 2.6f, accent, CoinSparkColor, 22, 8, 6.0f, 0.3f);
+            audioManager?.PlaySfx(SfxType.SynergyFanfare, volumeScale: 0.85f, randomizePitch: false);
+        }
+
+        private void OnEnemySummonHeal(EnemySummonHealEvent evt)
+        {
+            EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(1.5f, evt.Radius * 0.5f), SoulNovaSecondaryColor, SoulNovaPrimaryColor, 16, 4, 4.4f, 0.24f);
+        }
+
+        private void OnDemonLordEnraged(DemonLordEnragedEvent evt)
+        {
+            EmitExplosionRing(evt.Position + Vector3.up * 0.8f, 4.0f, DemonEnrageColor, FireballSecondaryColor, 28, 12, 7.5f, 0.4f);
+            if (damagePool != null)
+            {
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.Position, "DEMON LORD ENRAGED!", DemonEnrageColor, 1.55f, 2.0f, mainCamera, damagePool);
+            }
+            audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 1.0f, randomizePitch: false);
+            cameraController?.Shake(0.42f, 0.3f);
         }
 
         private void OnSecretItemCollected(SecretItemCollectedEvent evt)

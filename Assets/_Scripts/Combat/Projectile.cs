@@ -106,7 +106,8 @@ namespace ProjectB.Combat
             if (targetDamageable != null && !targetDamageable.IsDead && rawDamage > 0f)
             {
                 int finalDamage = RollHitDamage(rawDamage, out bool isCrit);
-                DealDamage(targetDamageable, finalDamage, isCrit);
+                Vector3 hitOrigin = transform.position - transform.forward * 2f;
+                DealDamage(targetDamageable, finalDamage, isCrit, hitOrigin, isAoE: false);
                 TryApplyLifesteal();
             }
 
@@ -121,7 +122,7 @@ namespace ProjectB.Combat
                         !splashTarget.IsDead)
                     {
                         int splashDamage = RollHitDamage(rawDamage, out bool splashCrit);
-                        DealDamage(splashTarget, splashDamage, splashCrit);
+                        DealDamage(splashTarget, splashDamage, splashCrit, transform.position, isAoE: true);
                     }
                 }
             }
@@ -150,13 +151,13 @@ namespace ProjectB.Combat
             return Mathf.RoundToInt(rawDamage);
         }
 
-        private void DealDamage(IDamageable victim, int damage, bool isCrit)
+        private void DealDamage(IDamageable victim, int damage, bool isCrit, Vector3 sourcePosition, bool isAoE)
         {
             if (victim == null || victim.IsDead || damage <= 0) return;
             if (victim is EnemyBase enemy)
             {
-                enemy.TakeDamage(damage, isCrit);
-                runStatistics?.RecordDamage(DamageSourceIds.Weapon, damage);
+                int dealt = enemy.TakeDamageFrom(damage, isCrit, sourcePosition, isAoE);
+                runStatistics?.RecordDamage(DamageSourceIds.Weapon, dealt);
             }
             else
             {

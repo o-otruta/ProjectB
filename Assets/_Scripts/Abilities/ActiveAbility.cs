@@ -147,17 +147,24 @@ namespace ProjectB.Abilities
             return scaled > 0f ? Mathf.Max(1, Mathf.RoundToInt(scaled)) : 0;
         }
 
-        protected void DealDamage(IDamageable target, int damage, bool isCrit, string sourceIdOverride = null)
+        protected void DealDamage(
+            IDamageable target,
+            int damage,
+            bool isCrit,
+            string sourceIdOverride = null,
+            bool isAoE = false,
+            Vector3? sourcePosition = null)
         {
             if (target == null || target.IsDead || damage <= 0) return;
 
             if (target is EnemyBase enemy)
             {
-                enemy.TakeDamage(damage, isCrit);
+                Vector3 origin = sourcePosition ?? transform.position;
+                int dealt = enemy.TakeDamageFrom(damage, isCrit, origin, isAoE);
                 string sourceId = !string.IsNullOrEmpty(sourceIdOverride) ? sourceIdOverride : cachedAbilityId;
-                if (!string.IsNullOrEmpty(sourceId))
+                if (!string.IsNullOrEmpty(sourceId) && dealt > 0)
                 {
-                    runStatistics?.RecordDamage(sourceId, damage);
+                    runStatistics?.RecordDamage(sourceId, dealt);
                 }
             }
             else

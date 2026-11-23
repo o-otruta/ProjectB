@@ -80,6 +80,20 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+  - enemy: {fileID: 11400000, guid: a96a65b0a728c8a43bd18ebe89e0fd87, type: 2}
+    minWave: 18
+    maxWave: 0
+    spawnWeight: 0.75
+    packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
+  - enemy: {fileID: 11400000, guid: 585f18e4a1275584ea9fe4d593fe0cfd, type: 2}
+    minWave: 22
+    maxWave: 0
+    spawnWeight: 0.55
+    packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
   minWaveForElites: 10
   eliteChancePerWave: 0.05
   maxEliteChance: 0.25
@@ -105,6 +119,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d067f4be42e88eb498506c34a5f9f245, type: 2}
   - {fileID: 11400000, guid: e6e81c5c32537c0498d2e2732a59b77a, type: 2}
   - {fileID: 11400000, guid: c8e526e1a4e908a4c996093a987b0f8f, type: 2}
+  - {fileID: 11400000, guid: b99e09a99c73a144f84345b9f9623320, type: 2}
   bossXpBurstCount: 12
   bossCoinBurstCount: 15
   miniBossVacuumDropChance: 0.25
@@ -113,3 +128,21 @@ MonoBehaviour:
   leashDistance: 35
   leashCheckInterval: 2
   arenaPadding: 3
+  waveEventsEnabled: 1
+  firstWaveEventWave: 4
+  minWavesBetweenEvents: 3
+  maxWavesBetweenEvents: 4
+  swarmRushEnemyData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
+  swarmRushMinCount: 24
+  swarmRushMaxCount: 32
+  swarmRushRadius: 15
+  swarmRushDuration: 18
+  goldGoblinData: {fileID: 11400000, guid: 76c735530ed44a647a527eb9ee34f91a, type: 2}
+  goldGoblinDuration: 22
+  bloodMoonDuration: 25
+  bloodMoonEnemySpeedMultiplier: 1.2
+  bloodMoonXpMultiplier: 2
+  bloodMoonCoinMultiplier: 2
+  eliteAmbushRadius: 13
+  eliteAmbushCoinReward: 50
+  eliteAmbushCoinBurstCount: 10

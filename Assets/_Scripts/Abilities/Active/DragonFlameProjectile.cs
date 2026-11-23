@@ -121,9 +121,9 @@ namespace ProjectB.Abilities
                 hitsDealt++;
                 if (damageable is EnemyBase enemy)
                 {
-                    enemy.TakeDamage(finalDmg, isCrit);
+                    int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position - moveDirection * 2f, isAoE: false);
                     string attrSource = hitsDealt > 1 ? SynergyIds.DragonLord : sourceId;
-                    runStatistics?.RecordDamage(attrSource, finalDmg);
+                    if (dealt > 0) runStatistics?.RecordDamage(attrSource, dealt);
                 }
                 else
                 {

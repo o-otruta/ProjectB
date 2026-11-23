@@ -122,8 +122,8 @@ namespace ProjectB.Abilities
 
                 if (damageable is EnemyBase enemy)
                 {
-                    enemy.TakeDamage(finalDmg, isCrit);
-                    runStatistics?.RecordDamage(SynergyIds.DragonLord, finalDmg);
+                    int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position, isAoE: true);
+                    if (dealt > 0) runStatistics?.RecordDamage(SynergyIds.DragonLord, dealt);
                 }
                 else
                 {

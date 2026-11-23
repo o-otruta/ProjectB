@@ -51,6 +51,7 @@ namespace ProjectB.Enemies
         private bool isElite;
         private EliteArchetype eliteArchetype;
         protected bool hasBossRim;
+        protected bool hasCustomRim;
         protected float eliteSpeedMultiplier = 1f;
         protected float externalHasteMultiplier = 1f;
         private float externalHasteTimer = 0f;
@@ -62,18 +63,23 @@ namespace ProjectB.Enemies
         protected bool isMiniBoss;
         protected string activeBossId;
 
+        public static float GlobalEventSpeedMultiplier { get; set; } = 1f;
+
         public bool IsDead => !isAlive;
         public EnemyData EnemyData => enemyData;
         public bool IsElite => isElite;
         public EliteArchetype EliteType => eliteArchetype;
         public bool IsMiniBoss => isMiniBoss;
         public virtual bool IsBoss => false;
+        public virtual bool CanBeLeashed => true;
         public virtual string BossId => activeBossId;
         public bool IsHitFlashing => hitFlashTimer > 0f;
         public int CurrentHp => currentHp;
         public int MaxHp => maxHp;
         public float PullResistance => pullResistance;
-        public float EffectiveMoveSpeed => enemyData != null ? enemyData.speed * slowFactor * eliteSpeedMultiplier * externalHasteMultiplier : 0f;
+        public float EffectiveMoveSpeed => enemyData != null
+            ? enemyData.speed * slowFactor * eliteSpeedMultiplier * externalHasteMultiplier * GlobalEventSpeedMultiplier * GetAdditionalSpeedMultiplier()
+            : 0f;
         public bool IsSlowed => slowTimer > 0f && slowFactor < 0.999f;
         public float CurrentSlowFactor => slowTimer > 0f ? slowFactor : 1f;
         public bool HasExternalSpeedBuff => externalHasteTimer > 0f && externalHasteMultiplier > 1.001f;
@@ -98,7 +104,7 @@ namespace ProjectB.Enemies
             CaptureBaseScale();
         }
 
-        private void CaptureBaseScale()
+        protected void CaptureBaseScale()
         {
             if (!baseScaleCaptured)
             {
@@ -151,6 +157,7 @@ namespace ProjectB.Enemies
             isElite = false;
             eliteArchetype = EliteArchetype.None;
             hasBossRim = false;
+            hasCustomRim = false;
             eliteSpeedMultiplier = 1f;
             externalHasteMultiplier = 1f;
             externalHasteTimer = 0f;
@@ -298,7 +305,11 @@ namespace ProjectB.Enemies
             };
         }
 
+        protected virtual float GetAdditionalSpeedMultiplier() => 1f;
         protected virtual Color GetBossRimColor() => DefaultBossRimColor;
+        protected virtual Color GetBossBaseTint() => Color.white;
+        protected virtual Color GetCustomBaseTint() => Color.white;
+        protected virtual Color GetCustomRimColor() => Color.clear;
 
         public virtual void MakeMiniBoss(float hpMultiplier = 5f, float damageMultiplier = 2f, float scaleMultiplier = 1.85f, string displayName = null)
         {
@@ -327,7 +338,7 @@ namespace ProjectB.Enemies
             if (enemyRenderers == null || enemyRenderers.Length == 0) return;
 
             float clampedFlash = Mathf.Clamp01(hitFlashAmount);
-            if (!isElite && !isMiniBoss && !hasBossRim && clampedFlash <= 0.001f)
+            if (!isElite && !isMiniBoss && !hasBossRim && !hasCustomRim && clampedFlash <= 0.001f)
             {
                 ClearTint();
                 return;
@@ -348,6 +359,7 @@ namespace ProjectB.Enemies
             }
             else if (hasBossRim)
             {
+                baseTint = GetBossBaseTint();
                 rimColor = GetBossRimColor();
                 rimPower = 2.2f;
             }
@@ -355,6 +367,12 @@ namespace ProjectB.Enemies
             {
                 baseTint = GetEliteTintColor(eliteArchetype);
                 rimColor = GetEliteRimColor(eliteArchetype);
+                rimPower = 2.1f;
+            }
+            else if (hasCustomRim)
+            {
+                baseTint = GetCustomBaseTint();
+                rimColor = GetCustomRimColor();
                 rimPower = 2.1f;
             }
 
@@ -609,6 +627,22 @@ namespace ProjectB.Enemies
             }
         }
 
+        public virtual int Heal(int amount)
+        {
+            if (!isAlive || amount <= 0 || currentHp >= maxHp) return 0;
+
+            int prevHp = currentHp;
+            currentHp = Mathf.Min(maxHp, currentHp + amount);
+            int healed = currentHp - prevHp;
+
+            if (healed > 0 && (isMiniBoss || IsBoss))
+            {
+                eventBus?.Publish(new BossHealthChangedEvent(BossId, currentHp, maxHp));
+            }
+
+            return healed;
+        }
+
         public virtual void TakeDamage(int amount)
         {
             TakeDamage(amount, isCrit: false);
@@ -616,17 +650,40 @@ namespace ProjectB.Enemies
 
         public virtual void TakeDamage(int amount, bool isCrit)
         {
-            if (!isAlive || amount <= 0) return;
-            
-            currentHp = Mathf.Max(0, currentHp - amount);
+            ApplyIncomingDamage(amount, isCrit, hasSourcePosition: false, sourcePosition: default, isAoE: false);
+        }
 
-            eventBus?.Publish(new EnemyDamagedEvent(transform.position, amount, isMiniBoss || IsBoss, isCrit));
+        public virtual int TakeDamageFrom(int amount, bool isCrit, Vector3 sourcePosition, bool isAoE = false)
+        {
+            return ApplyIncomingDamage(amount, isCrit, hasSourcePosition: true, sourcePosition: sourcePosition, isAoE: isAoE);
+        }
+
+        protected virtual int ModifyIncomingDamage(int rawAmount, bool hasSourcePosition, Vector3 sourcePosition, bool isAoE, out bool wasBlocked)
+        {
+            wasBlocked = false;
+            return rawAmount;
+        }
+
+        protected virtual void OnDamageApplied(int finalAmount, bool isCrit, bool wasBlocked)
+        {
+        }
+
+        private int ApplyIncomingDamage(int amount, bool isCrit, bool hasSourcePosition, Vector3 sourcePosition, bool isAoE)
+        {
+            if (!isAlive || amount <= 0) return 0;
+
+            int finalAmount = Mathf.Max(1, ModifyIncomingDamage(amount, hasSourcePosition, sourcePosition, isAoE, out bool wasBlocked));
+            currentHp = Mathf.Max(0, currentHp - finalAmount);
+
+            eventBus?.Publish(new EnemyDamagedEvent(transform.position, finalAmount, isMiniBoss || IsBoss, isCrit, wasBlocked));
 
             if (isMiniBoss || IsBoss)
             {
                 eventBus?.Publish(new BossHealthChangedEvent(BossId, currentHp, maxHp));
             }
-            
+
+            OnDamageApplied(finalAmount, isCrit, wasBlocked);
+
             if (currentHp <= 0)
             {
                 Die();
@@ -636,6 +693,8 @@ namespace ProjectB.Enemies
                 hitFlashTimer = HIT_FLASH_DURATION;
                 ApplyVisualState(1f);
             }
+
+            return finalAmount;
         }
 
         protected virtual void Die()
@@ -676,7 +735,7 @@ namespace ProjectB.Enemies
             nextCheckTime = 0f;
         }
 
-        private void ReturnToPool()
+        protected void ReturnToPool()
         {
             if (pool != null)
             {

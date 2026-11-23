@@ -196,6 +196,48 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Безопасный отступ от внешних стен арены при спавне")]
         public float arenaPadding = 3f;
 
+        [Header("Wave Events (Sprint 10)")]
+        [Tooltip("Включить случайные события волн каждые 3-4 обычные волны")]
+        public bool waveEventsEnabled = true;
+
+        [Min(1)]
+        [Tooltip("Минимальный номер волны, начиная с которого могут запускаться события волн")]
+        public int firstWaveEventWave = 4;
+
+        [Min(1)]
+        [Tooltip("Минимальный интервал обычных волн между событиями")]
+        public int minWavesBetweenEvents = 3;
+
+        [Min(1)]
+        [Tooltip("Максимальный интервал обычных волн между событиями")]
+        public int maxWavesBetweenEvents = 4;
+
+        [Tooltip("Враг, спавнящийся кольцом во время Swarm Rush (по умолчанию SkeletonData)")]
+        public EnemyData swarmRushEnemyData;
+
+        [Min(1)]
+        public int swarmRushMinCount = 24;
+
+        [Min(1)]
+        public int swarmRushMaxCount = 32;
+
+        public float swarmRushRadius = 12f;
+        public float swarmRushDuration = 12f;
+
+        [Tooltip("Данные убегающего лут-гоблина для события Gold Goblin")]
+        public FleeingLootEnemyData goldGoblinData;
+
+        public float goldGoblinDuration = 18f;
+
+        public float bloodMoonDuration = 20f;
+        public float bloodMoonEnemySpeedMultiplier = 1.2f;
+        public float bloodMoonXpMultiplier = 2f;
+        public float bloodMoonCoinMultiplier = 2f;
+
+        public float eliteAmbushRadius = 12f;
+        public int eliteAmbushCoinReward = 50;
+        public int eliteAmbushCoinBurstCount = 10;
+
         public float GetHpDifficultyMultiplier(int wave)
         {
             int w = Mathf.Max(0, wave - 1);

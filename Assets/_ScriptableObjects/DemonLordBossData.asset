@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24fed005e429ecc4bab7093f9b59a455, type: 3}
+  m_Name: DemonLordBossData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.BossData
+  hp: 950
+  speed: 2.85
+  contactDamage: 26
+  damageCooldown: 0.85
+  contactRadius: 1.65
+  xpDrop: 10
+  coinDropChance: 1
+  coinDrop: 7
+  modelPrefab: {fileID: 5060843028107403187, guid: c13e3352d678bb246ad3749e1e4d6863, type: 3}
+  bossId: demon_lord
+  bossDisplayName: Demon Lord
+  isMiniBoss: 0
+  pullResistance: 0.1
+  minionData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
+  summonCount: 3
+  summonCooldown: 12
+  slamCooldown: 5.5
+  slamTriggerRange: 6.5
+  slamRadius: 4.5
+  slamTelegraphDuration: 1.1
+  slamDamage: 30
+  stopDistance: 9
+  teleportCooldown: 7
+  teleportMinDistance: 7
+  teleportMaxDistance: 12
+  volleyWeaponData: {fileID: 0}
+  volleyProjectileCount: 5
+  volleySpreadAngle: 55
+  volleyCooldown: 3.2
+  frostStopDistance: 7.5
+  spikeCooldown: 5.5
+  spikeTelegraphDuration: 1
+  spikeLineCount: 6
+  spikeLineLength: 10
+  spikeLineHalfWidth: 0.85
+  spikeDamage: 35
+  spikeSlowFactor: 0.55
+  spikeSlowDuration: 2.5
+  blizzardCooldown: 9
+  blizzardTelegraphDuration: 1.15
+  blizzardActiveDuration: 3.2
+  blizzardSafeInnerRadius: 3
+  blizzardOuterRadius: 9
+  blizzardTickInterval: 0.5
+  blizzardTickDamage: 14
+  blizzardSlowFactor: 0.65
+  demonEnrageHpThreshold: 0.5
+  demonEnrageSpeedMultiplier: 1.35
+  demonChargeCooldown: 5.5
+  demonChargeTriggerRange: 10.5
+  demonChargeWindupDuration: 0.425
+  demonChargeSpeed: 13
+  demonChargeDistance: 11
+  demonChargeHitRadius: 1.45
+  demonChargeDamage: 32
+  demonFireballCooldown: 4.5
+  demonPhase1FireballCount: 8
+  demonPhase2FireballCount: 12
+  demonFireballWeaponData: {fileID: 11400000, guid: 1eed33f68d8c4044db8f3c8e1f78b8e4, type: 2}
+  demonMeteorCooldown: 6.5
+  demonMeteorCount: 5
+  demonMeteorRadius: 2.6
+  demonMeteorTelegraphDuration: 1.05
+  demonMeteorDamage: 38

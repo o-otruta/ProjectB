@@ -25,6 +25,11 @@ namespace ProjectB.Data
         [Tooltip("Radius around the center (0,0) where no obstacles will spawn")]
         public float SafeZoneRadius = 5f;
 
+        [Header("Obstacle Placement")]
+        [Min(0f)]
+        [Tooltip("Extra radial clearance around each obstacle collider to prevent overlaps")]
+        public float ObstacleClearancePadding = 1.0f;
+
         [Header("Decorations")]
         [Tooltip("List of prefabs to spawn as decorations (e.g. grass)")]
         public GameObject[] DecorationPrefabs;
@@ -34,6 +39,36 @@ namespace ProjectB.Data
 
         [Tooltip("Maximum number of decorations to spawn")]
         public int MaxDecorations = 100;
+
+        [Header("Decorative Props (Instanced)")]
+        [Tooltip("Additional decorative voxel props rendered via GPU Instancing alongside grass")]
+        public GameObject[] PropDecorationPrefabs;
+
+        [Tooltip("Relative spawn weights matching PropDecorationPrefabs")]
+        public float[] PropDecorationWeights;
+
+        [Min(0)]
+        public int MinPropDecorations = 1400;
+
+        [Min(0)]
+        public int MaxPropDecorations = 1800;
+
+        [Header("Dynamic Arena Respawn")]
+        [Min(0)]
+        [Tooltip("Respawn fresh barrels and a Challenge Shrine near the hero every N completed waves (0 = disabled)")]
+        public int DynamicRespawnWaveInterval = 12;
+
+        [Min(0)]
+        public int DynamicRespawnMinBarrels = 2;
+
+        [Min(0)]
+        public int DynamicRespawnMaxBarrels = 3;
+
+        [Min(1f)]
+        public float DynamicRespawnMinRadius = 22f;
+
+        [Min(2f)]
+        public float DynamicRespawnMaxRadius = 45f;
 
         [Header("Interactive Arena Objects")]
         [Tooltip("Explosive voxel barrel prefab spawned around the arena")]

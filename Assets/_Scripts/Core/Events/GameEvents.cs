@@ -14,13 +14,15 @@ namespace ProjectB.Core.Events
         public int Damage;
         public bool IsBossOrMiniBoss;
         public bool IsCrit;
+        public bool IsBlocked;
 
-        public EnemyDamagedEvent(Vector3 position, int damage, bool isBossOrMiniBoss, bool isCrit = false)
+        public EnemyDamagedEvent(Vector3 position, int damage, bool isBossOrMiniBoss, bool isCrit = false, bool isBlocked = false)
         {
             Position = position;
             Damage = damage;
             IsBossOrMiniBoss = isBossOrMiniBoss;
             IsCrit = isCrit;
+            IsBlocked = isBlocked;
         }
     }
 
@@ -503,6 +505,72 @@ namespace ProjectB.Core.Events
         {
             SfxType = sfxType;
             VolumeScale = volumeScale;
+        }
+    }
+
+    /// <summary>
+    /// Началось динамическое событие волны (Swarm Rush, Gold Goblin, Blood Moon, Elite Ambush).
+    /// </summary>
+    public struct WaveEventStartedEvent
+    {
+        public WaveEventType EventType;
+        public string Title;
+        public string Subtitle;
+        public float Duration;
+
+        public WaveEventStartedEvent(WaveEventType eventType, string title, string subtitle, float duration)
+        {
+            EventType = eventType;
+            Title = title;
+            Subtitle = subtitle;
+            Duration = duration;
+        }
+    }
+
+    /// <summary>
+    /// Динамическое событие волны завершилось (по таймеру или после победы над целью).
+    /// </summary>
+    public struct WaveEventEndedEvent
+    {
+        public WaveEventType EventType;
+        public bool Completed;
+        public Vector3 RewardPosition;
+
+        public WaveEventEndedEvent(WaveEventType eventType, bool completed, Vector3 rewardPosition)
+        {
+            EventType = eventType;
+            Completed = completed;
+            RewardPosition = rewardPosition;
+        }
+    }
+
+    /// <summary>
+    /// Призыватель (SummonerEnemy) призвал миньонов и исцелил ближайших союзников.
+    /// </summary>
+    public struct EnemySummonHealEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+        public int HealedCount;
+
+        public EnemySummonHealEvent(Vector3 position, float radius, int healedCount)
+        {
+            Position = position;
+            Radius = radius;
+            HealedCount = healedCount;
+        }
+    }
+
+    /// <summary>
+    /// Босс Demon Lord перешёл во 2-ю фазу ярости (< 50% HP).
+    /// </summary>
+    public struct DemonLordEnragedEvent
+    {
+        public Vector3 Position;
+
+        public DemonLordEnragedEvent(Vector3 position)
+        {
+            Position = position;
         }
     }
 }

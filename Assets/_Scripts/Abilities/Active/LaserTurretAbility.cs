@@ -299,7 +299,7 @@ namespace ProjectB.Abilities
                             if (!fenceTickHits.Add(id)) continue;
 
                             int finalDmg = RollScaledDamage(tickDamage, out bool isCrit);
-                            DealDamage(damageable, finalDmg, isCrit, SynergyIds.OverchargedGrid);
+                            DealDamage(damageable, finalDmg, isCrit, SynergyIds.OverchargedGrid, isAoE: true, sourcePosition: (p0 + p1) * 0.5f);
                             enemiesHit++;
                         }
                     }

@@ -178,7 +178,7 @@ namespace ProjectB.Abilities
                 if (col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
                     int dmg = RollScaledDamage(currentDamage, out bool isCrit);
-                    DealDamage(damageable, dmg, isCrit);
+                    DealDamage(damageable, dmg, isCrit, isAoE: true);
                     enemiesHit++;
                 }
 

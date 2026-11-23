@@ -223,7 +223,7 @@ namespace ProjectB.Tests.EditMode
         {
             var config = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
             Assert.IsNotNull(config, "WaveConfig.asset must exist");
-            Assert.AreEqual(6, config.enemySchedule.Count);
+            Assert.AreEqual(8, config.enemySchedule.Count);
 
             var eligible = new List<EnemyWaveEntry>();
 
@@ -265,7 +265,7 @@ namespace ProjectB.Tests.EditMode
                 counts.TryGetValue(picked.enemy.name, out int c);
                 counts[picked.enemy.name] = c + 1;
             }
-            Assert.AreEqual(6, counts.Count, "All 6 enemy archetypes must be represented on Wave 40");
+            Assert.AreEqual(8, counts.Count, "All 8 enemy archetypes must be represented on Wave 40");
 
             // Mini-boss selection across 50 rolls on Wave 40 must never pick ExploderEnemyData
             for (int i = 0; i < 50; i++)

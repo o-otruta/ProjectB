@@ -115,10 +115,10 @@ namespace ProjectB.Abilities
                     if (!damagedEnemies.Contains(id))
                     {
                         int finalDamage = RollHitDamage(damage, out bool isCrit);
-                        DealDamage(damageable, finalDamage, isCrit);
+                        int dealt = DealDamage(damageable, finalDamage, isCrit, transform.position, isAoE: false);
                         if (damageable is EnemyBase)
                         {
-                            runStatistics?.RecordDamage(sourceId, finalDamage);
+                            if (dealt > 0) runStatistics?.RecordDamage(sourceId, dealt);
                             onHitEnemyCallback?.Invoke();
                         }
                         damagedEnemies.Add(id);

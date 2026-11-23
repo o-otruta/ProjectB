@@ -192,8 +192,8 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(8, slimeData.contactDamage);
             Assert.AreSame(skeletonData, necroData.minionData);
             Assert.AreEqual("frost_lich", lichData.bossId);
-            Assert.AreEqual(6, waveConfig.enemySchedule.Count);
-            Assert.AreEqual(3, waveConfig.bosses.Count);
+            Assert.GreaterOrEqual(waveConfig.enemySchedule.Count, 6);
+            Assert.GreaterOrEqual(waveConfig.bosses.Count, 3);
             Assert.AreSame(lichData, waveConfig.bosses[2]);
 
             // 6. Verify Gameplay scene WaveManager references WaveConfig.asset

@@ -217,7 +217,7 @@ namespace ProjectB.Abilities
                 if (applyDamage)
                 {
                     int dmg = RollScaledDamage(currentDamage, out bool isCrit);
-                    DealDamage(enemy, dmg, isCrit);
+                    DealDamage(enemy, dmg, isCrit, isAoE: true);
                 }
             }
         }

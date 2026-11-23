@@ -32,6 +32,7 @@ namespace ProjectB.Core
             // Register Managers & Environment
             builder.RegisterComponentInHierarchy<GameManager>();
             builder.RegisterComponentInHierarchy<WaveManager>();
+            builder.RegisterComponentInHierarchy<WaveEventManager>();
             builder.RegisterComponentInHierarchy<XpManager>();
             builder.RegisterComponentInHierarchy<CoinManager>();
             builder.RegisterComponentInHierarchy<UpgradeManager>();
@@ -48,6 +49,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HpBarUI>();
             builder.RegisterComponentInHierarchy<XpBarUI>();
             builder.RegisterComponentInHierarchy<WaveHudUI>();
+            builder.RegisterComponentInHierarchy<WaveEventBannerUI>();
             builder.RegisterComponentInHierarchy<CoinHudUI>();
             builder.RegisterComponentInHierarchy<ComboHudUI>();
             builder.RegisterComponentInHierarchy<AbilityHudUI>();

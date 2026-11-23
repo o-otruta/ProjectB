@@ -638,6 +638,8 @@ namespace ProjectB.EditorScripts
             if (ach.id.Contains("crystal")) return "secret_crystal";
             if (ach.id.Contains("golem")) return "boss_golem";
             if (ach.id.Contains("necromancer")) return "boss_necro";
+            if (ach.id.Contains("frost_lich")) return "ice_aura";
+            if (ach.id.Contains("demon_lord")) return "ult_meteor";
             if (ach.rewardType == AchievementRewardType.UnlockHero)
             {
                 return ach.rewardId switch

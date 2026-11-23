@@ -285,18 +285,18 @@
 ---
 
 ### Спринт 10: События Волн, 4-й Босс (Волна 100), Новые Враги и Живая Арена (P1)
-- [ ] **10.1. Менеджер Событий Волн (`WaveEventManager` + `WaveEventBannerUI`):**
+- [x] **10.1. Менеджер Событий Волн (`WaveEventManager` + `WaveEventBannerUI`):**
   - Реализовать 4 события из Раздела 4.3.Б (`Swarm Rush`, `Gold Goblin`, `Blood Moon`, `Elite Ambush`), запускаемые каждые 3–4 обычные волны (не перекрывая Intro/Boss волны), с баннером на HUD и золотым компасом на `GoldGoblin`.
-- [ ] **10.2. 3 новых архетипа врагов + 4-й Босс Волны 100 (`DemonLordBoss`):**
+- [x] **10.2. 3 новых архетипа врагов + 4-й Босс Волны 100 (`DemonLordBoss`):**
   - Воксельные `.blend` + `.obj` модели, префабы и `ScriptableObject`:
     - `ShieldedEnemy` (`ShieldBearerData`, W18 с Intro Wave — `-65%` фронтального урона);
     - `SummonerEnemy` (`VoidSummonerData`, W22 с Intro Wave — призыв и хил союзников);
     - `FleeingLootEnemy` (`GoldGoblinData`, для события `Gold Goblin`);
     - `DemonLordBoss : BossBase` (`DemonLordBossData`, **Волна 100** — 2 фазы с Enrage на `<50% HP`).
   - Добавить `DemonLordBossData` в `WaveConfig.bosses`, создать ачивки `DefeatFrostLich.asset` (W75) и `DefeatDemonLord.asset` (W100).
-- [ ] **10.3. «Живая» арена:**
+- [x] **10.3. «Живая» арена:**
   - В [ArenaGenerator.cs](file:///d:/UnityProjects/ProjectB/Assets/_Scripts/Arena/ArenaGenerator.cs) включить `Physics.CheckSphere` для препятствий (без наложений), добавить 2–3 новых декоративных пропа (грибы/цветы/руины через `ArenaDecorationRenderer`) и динамический респавн **2–3 новых взрывных бочек** + **Challenge Shrine** каждые 12 волн в радиусе `22–45м` от текущей позиции героя.
-- [ ] **10.4. Тесты Спринта 10:** `Sprint10EventsAndDemonLordTests.cs` (события волн, блок `ShieldedEnemy`, 2 фазы `DemonLordBoss`, overlap-free препятствия, динамический респавн бочек/алтарей).
+- [x] **10.4. Тесты Спринта 10:** `Sprint10EventsAndDemonLordTests.cs` (события волн, блок `ShieldedEnemy`, 2 фазы `DemonLordBoss`, overlap-free препятствия, динамический респавн бочек/алтарей).
 
 ---
 

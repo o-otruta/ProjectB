@@ -197,7 +197,7 @@ namespace ProjectB.Abilities
             chainTargets.Add(firstTarget);
             bool firstWasSlowed = firstDamageable is EnemyBase firstEnemy && firstEnemy.IsSlowed;
             int firstDmg = RollScaledDamage(currentDamage, out bool firstCrit);
-            DealDamage(firstDamageable, firstDmg, firstCrit);
+            DealDamage(firstDamageable, firstDmg, firstCrit, isAoE: true);
             if (hasThunderstorm && firstWasSlowed)
             {
                 TriggerThunderstormOverload(firstTarget, firstDamageable as EnemyBase, mask);
@@ -212,7 +212,7 @@ namespace ProjectB.Abilities
                 chainTargets.Add(nextTarget);
                 bool nextWasSlowed = nextDamageable is EnemyBase nextEnemy && nextEnemy.IsSlowed;
                 int bounceDmg = RollScaledDamage(currentDamage, out bool bounceCrit);
-                DealDamage(nextDamageable, bounceDmg, bounceCrit);
+                DealDamage(nextDamageable, bounceDmg, bounceCrit, isAoE: true);
                 if (hasThunderstorm && nextWasSlowed)
                 {
                     TriggerThunderstormOverload(nextTarget, nextDamageable as EnemyBase, mask);
@@ -298,7 +298,7 @@ namespace ProjectB.Abilities
                 if (neighbor == null || neighborDmg == null) continue;
 
                 int arcDmg = RollScaledDamage(currentDamage * 0.75f, out bool arcCrit);
-                DealDamage(neighborDmg, arcDmg, arcCrit, SynergyIds.Thunderstorm);
+                DealDamage(neighborDmg, arcDmg, arcCrit, SynergyIds.Thunderstorm, isAoE: true, sourcePosition: origin);
 
                 if (neighborDmg is EnemyBase neighborEnemy && !neighborEnemy.IsDead)
                 {

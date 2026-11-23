@@ -105,8 +105,8 @@ namespace ProjectB.Abilities
 
                 if (damageable is EnemyBase enemy)
                 {
-                    enemy.TakeDamage(finalDmg, isCrit);
-                    runStatistics?.RecordDamage(SynergyIds.BladeStorm, finalDmg);
+                    int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position - moveDirection * 2f, isAoE: false);
+                    if (dealt > 0) runStatistics?.RecordDamage(SynergyIds.BladeStorm, dealt);
                 }
                 else
                 {

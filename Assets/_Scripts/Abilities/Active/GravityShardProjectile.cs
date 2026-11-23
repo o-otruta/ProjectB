@@ -98,8 +98,8 @@ namespace ProjectB.Abilities
 
                 if (damageable is EnemyBase enemy)
                 {
-                    enemy.TakeDamage(finalDmg, isCrit);
-                    runStatistics?.RecordDamage(SynergyIds.CataclysmVortex, finalDmg);
+                    int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position, isAoE: true);
+                    if (dealt > 0) runStatistics?.RecordDamage(SynergyIds.CataclysmVortex, dealt);
                 }
                 else
                 {

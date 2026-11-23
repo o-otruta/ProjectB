@@ -35,6 +35,7 @@ namespace ProjectB.UI
         private UpgradeApplier upgradeApplier;
         private ArenaGenerator arenaGenerator;
         private VacuumMagnetSpawner vacuumMagnetSpawner;
+        private WaveEventManager waveEventManager;
 
         [Inject]
         public void Construct(
@@ -50,7 +51,8 @@ namespace ProjectB.UI
             UpgradeManager upgradeManager = null,
             UpgradeApplier upgradeApplier = null,
             ArenaGenerator arenaGenerator = null,
-            VacuumMagnetSpawner vacuumMagnetSpawner = null)
+            VacuumMagnetSpawner vacuumMagnetSpawner = null,
+            WaveEventManager waveEventManager = null)
         {
             this.waveManager = waveManager;
             this.heroHealth = heroHealth;
@@ -65,6 +67,7 @@ namespace ProjectB.UI
             this.upgradeApplier = upgradeApplier;
             this.arenaGenerator = arenaGenerator;
             this.vacuumMagnetSpawner = vacuumMagnetSpawner;
+            this.waveEventManager = waveEventManager;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -272,7 +275,7 @@ namespace ProjectB.UI
             panelRt.anchorMax = new Vector2(0.5f, 0.5f);
             panelRt.pivot = new Vector2(0.5f, 0.5f);
             panelRt.anchoredPosition = new Vector2(0f, 50f);
-            panelRt.sizeDelta = new Vector2(760f, 1010f);
+            panelRt.sizeDelta = new Vector2(760f, 1095f);
 
             var panelImg = menuPanel.GetComponent<Image>();
             panelImg.color = new Color(0.05f, 0.06f, 0.09f, 0.93f);
@@ -325,6 +328,11 @@ namespace ProjectB.UI
             AddFlexButton(waveRow2.transform, "W75 Lich", new Color(0.16f, 0.54f, 0.78f, 1f), () =>
             {
                 waveManager?.JumpToWave(75);
+                RefreshInfoHeader();
+            });
+            AddFlexButton(waveRow2.transform, "W100 Demon", new Color(0.84f, 0.14f, 0.14f, 1f), () =>
+            {
+                waveManager?.JumpToWave(100);
                 RefreshInfoHeader();
             });
 
@@ -416,6 +424,28 @@ namespace ProjectB.UI
             AddFlexButton(arenaRow.transform, "Spawn Shrine", new Color(0.56f, 0.22f, 0.78f, 1f), () =>
             {
                 arenaGenerator?.SpawnShrineNearHero(5.5f);
+                menuPanel.SetActive(false);
+            });
+
+            var eventRow = CreateRow(menuPanel.transform, 72f, 10f);
+            AddFlexButton(eventRow.transform, "Swarm", new Color(0.84f, 0.44f, 0.14f, 1f), () =>
+            {
+                waveEventManager?.StartEvent(ProjectB.Data.Enemies.WaveEventType.SwarmRush);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(eventRow.transform, "GoldGob", new Color(0.82f, 0.64f, 0.14f, 1f), () =>
+            {
+                waveEventManager?.StartEvent(ProjectB.Data.Enemies.WaveEventType.GoldGoblin);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(eventRow.transform, "BloodMn", new Color(0.76f, 0.16f, 0.22f, 1f), () =>
+            {
+                waveEventManager?.StartEvent(ProjectB.Data.Enemies.WaveEventType.BloodMoon);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(eventRow.transform, "Ambush", new Color(0.58f, 0.24f, 0.78f, 1f), () =>
+            {
+                waveEventManager?.StartEvent(ProjectB.Data.Enemies.WaveEventType.EliteAmbush);
                 menuPanel.SetActive(false);
             });
 

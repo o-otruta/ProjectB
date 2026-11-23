@@ -205,6 +205,12 @@ namespace ProjectB.Enemies
                 {
                     continue;
                 }
+                if (enemy is DemonLordBoss demonBoss &&
+                    (demonBoss.CurrentState == DemonLordBoss.DemonLordState.Charging ||
+                     demonBoss.CurrentState == DemonLordBoss.DemonLordState.WindingUpCharge))
+                {
+                    continue;
+                }
 
                 Vector2 offset = pushOffsets[i];
                 float resistanceScale = Mathf.Clamp(enemy.PullResistance, 0.25f, 1f);

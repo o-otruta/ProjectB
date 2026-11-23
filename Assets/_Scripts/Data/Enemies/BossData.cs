@@ -58,5 +58,26 @@ namespace ProjectB.Data.Enemies
         public int blizzardTickDamage = 14;
         [Range(0.25f, 1f)]
         public float blizzardSlowFactor = 0.65f;
+
+        [Header("Demon Lord — Phase 1 & Phase 2 Enrage")]
+        [Range(0.1f, 0.9f)]
+        public float demonEnrageHpThreshold = 0.5f;
+        public float demonEnrageSpeedMultiplier = 1.35f;
+        public float demonChargeCooldown = 5.5f;
+        public float demonChargeTriggerRange = 10f;
+        public float demonChargeWindupDuration = 0.425f;
+        public float demonChargeSpeed = 13f;
+        public float demonChargeDistance = 11f;
+        public float demonChargeHitRadius = 1.45f;
+        public int demonChargeDamage = 32;
+        public float demonFireballCooldown = 4.5f;
+        public int demonPhase1FireballCount = 8;
+        public int demonPhase2FireballCount = 12;
+        public WeaponData demonFireballWeaponData;
+        public float demonMeteorCooldown = 6.5f;
+        public int demonMeteorCount = 5;
+        public float demonMeteorRadius = 2.6f;
+        public float demonMeteorTelegraphDuration = 1.05f;
+        public int demonMeteorDamage = 38;
     }
 }

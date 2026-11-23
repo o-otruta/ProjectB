@@ -294,8 +294,8 @@ namespace ProjectB.Player
 
                         if (damageable is EnemyBase enemyDmg)
                         {
-                            enemyDmg.TakeDamage(finalDamage, isCrit);
-                            runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
+                            int dealt = enemyDmg.TakeDamageFrom(finalDamage, isCrit, heroPos, isAoE: true);
+                            if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Ultimate, dealt);
                         }
                         else
                         {
@@ -418,8 +418,8 @@ namespace ProjectB.Player
 
                     if (damageable is EnemyBase enemy)
                     {
-                        enemy.TakeDamage(finalDamage, isCrit);
-                        runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
+                        int dealt = enemy.TakeDamageFrom(finalDamage, isCrit, heroPos, isAoE: true);
+                        if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Ultimate, dealt);
                     }
                     else
                     {
@@ -531,8 +531,9 @@ namespace ProjectB.Player
 
                     if (damageable is EnemyBase enemy)
                     {
-                        enemy.TakeDamage(finalDamage, isCrit);
-                        runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
+                        Vector3 boltOrigin = soulBolts[b].position - soulBolts[b].direction * 2f;
+                        int dealt = enemy.TakeDamageFrom(finalDamage, isCrit, boltOrigin, isAoE: false);
+                        if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Ultimate, dealt);
                     }
                     else
                     {
@@ -673,8 +674,8 @@ namespace ProjectB.Player
 
                     if (damageable is EnemyBase enemy)
                     {
-                        enemy.TakeDamage(finalDamage, isCrit);
-                        runStatistics?.RecordDamage(DamageSourceIds.Ultimate, finalDamage);
+                        int dealt = enemy.TakeDamageFrom(finalDamage, isCrit, impactPos, isAoE: true);
+                        if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Ultimate, dealt);
                     }
                     else
                     {

@@ -25,12 +25,28 @@ MonoBehaviour:
   MinObstacles: 180
   MaxObstacles: 190
   SafeZoneRadius: 5
+  ObstacleClearancePadding: 1
   DecorationPrefabs:
   - {fileID: 919132149155446097, guid: 462483952238ce544a35dc84bee3c054, type: 3}
   - {fileID: 919132149155446097, guid: 75c91536f428a0a4f8356c03f427add6, type: 3}
   - {fileID: 919132149155446097, guid: 31cb9ca8b7016f548a0b89031f0ce036, type: 3}
   MinDecorations: 50000
   MaxDecorations: 50000
+  PropDecorationPrefabs:
+  - {fileID: 7948656569620401389, guid: 40e2ff5c91028114cbf439a9cfda356d, type: 3}
+  - {fileID: 3595000718546885656, guid: 40a5a8c6d98b3b3418be1619f6e49f5a, type: 3}
+  - {fileID: 5169182000439435091, guid: 888a6e8fa46440a4abe823b46be07322, type: 3}
+  PropDecorationWeights:
+  - 0.35
+  - 0.5
+  - 0.15
+  MinPropDecorations: 1400
+  MaxPropDecorations: 1800
+  DynamicRespawnWaveInterval: 12
+  DynamicRespawnMinBarrels: 2
+  DynamicRespawnMaxBarrels: 3
+  DynamicRespawnMinRadius: 22
+  DynamicRespawnMaxRadius: 45
   ExplosiveBarrelPrefab: {fileID: 6883574862524412394, guid: aa811282d7af8d643b72496ec14a21b5, type: 3}
   MinExplosiveBarrels: 8
   MaxExplosiveBarrels: 12

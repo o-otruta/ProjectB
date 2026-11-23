@@ -156,7 +156,7 @@ namespace ProjectB.Abilities
                 if (col.TryGetComponent<IDamageable>(out var damageable) && !damageable.IsDead)
                 {
                     int scaledDamage = RollScaledDamage(currentDamage, out bool isCrit);
-                    DealDamage(damageable, scaledDamage, isCrit);
+                    DealDamage(damageable, scaledDamage, isCrit, isAoE: true);
                 }
                 
                 if (col.TryGetComponent<ISlowable>(out var slowable))

@@ -9,6 +9,7 @@ using ProjectB.Arena;
 using ProjectB.Combat;
 using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.LevelUp;
 
 namespace ProjectB.Enemies
 {
@@ -24,6 +25,9 @@ namespace ProjectB.Enemies
         private GameEventBus eventBus;
         private ArenaGenerator arenaGenerator;
         private EnemyProjectilePool enemyProjectilePool;
+        private CoinManager coinManager;
+        private VacuumMagnetSpawner vacuumMagnetSpawner;
+        private IObjectResolver objectResolver;
 
         private Transform enemyContainer;
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
@@ -34,6 +38,8 @@ namespace ProjectB.Enemies
         private System.Action<EnemyBase> cachedEnemyDiedHandler;
         private System.Action<EnemyData, Vector3> cachedSummonMinionCallback;
         private System.Func<Vector3, float, float, Vector3> cachedSafePositionProvider;
+        private System.Action<Vector3, int> cachedSpawnCoinCallback;
+        private System.Action<Vector3> cachedSpawnVacuumCallback;
 
         private WaitForSeconds waveDelayWait;
         private WaitForSeconds spawnDelayWait;
@@ -87,7 +93,9 @@ namespace ProjectB.Enemies
             ProjectB.Meta.AchievementManager achievementManager, 
             GameEventBus eventBus,
             EnemyProjectilePool enemyProjectilePool,
-            ArenaGenerator arenaGenerator = null)
+            ArenaGenerator arenaGenerator = null,
+            CoinManager coinManager = null,
+            IObjectResolver resolver = null)
         {
             this.heroHealth = heroHealth;
             if (heroHealth != null)
@@ -98,6 +106,16 @@ namespace ProjectB.Enemies
             this.eventBus = eventBus;
             this.enemyProjectilePool = enemyProjectilePool;
             this.arenaGenerator = arenaGenerator;
+            this.coinManager = coinManager;
+            this.objectResolver = resolver;
+        }
+
+        public void SetVacuumMagnetSpawner(VacuumMagnetSpawner spawner)
+        {
+            if (spawner != null)
+            {
+                vacuumMagnetSpawner = spawner;
+            }
         }
 
         private void Start()
@@ -149,6 +167,8 @@ namespace ProjectB.Enemies
             if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
             if (cachedSummonMinionCallback == null) cachedSummonMinionCallback = SpawnSummonedMinion;
             if (cachedSafePositionProvider == null) cachedSafePositionProvider = GetValidPositionNear;
+            if (cachedSpawnCoinCallback == null) cachedSpawnCoinCallback = SpawnLootCoin;
+            if (cachedSpawnVacuumCallback == null) cachedSpawnVacuumCallback = SpawnLootVacuum;
 
             if (waveConfig != null)
             {
@@ -473,7 +493,7 @@ namespace ProjectB.Enemies
                 for (int i = 0; i < enemyIterationBuffer.Count; i++)
                 {
                     var enemy = enemyIterationBuffer[i];
-                    if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy) continue;
+                    if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy || !enemy.CanBeLeashed) continue;
 
                     Vector3 diff = enemy.transform.position - heroPos;
                     diff.y = 0f;
@@ -653,6 +673,35 @@ namespace ProjectB.Enemies
             return enemy;
         }
 
+        public EnemyBase SpawnEventEnemy(
+            EnemyData selectedType,
+            Vector3 spawnPos,
+            bool makeElite = false,
+            EliteArchetype eliteArchetype = EliteArchetype.Berserker)
+        {
+            if (selectedType == null) return null;
+            EnsurePoolsInitialized();
+            GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
+            EnemyBase enemy = SpawnEnemyInstance(selectedType, spawnPos, hpMultiplier, damageMultiplier);
+            if (makeElite && enemy != null)
+            {
+                enemy.MakeElite(eliteArchetype, waveConfig);
+            }
+            return enemy;
+        }
+
+        public void DespawnTrackedEnemy(EnemyBase enemy)
+        {
+            if (enemy == null) return;
+            if (cachedEnemyDiedHandler != null)
+            {
+                enemy.OnDied -= cachedEnemyDiedHandler;
+            }
+            activeEnemies.Remove(enemy);
+            enemy.Despawn();
+            CheckWaveEnd();
+        }
+
         private EnemyBase SpawnEnemyInstance(EnemyData selectedType, Vector3 spawnPos, float hpMultiplier, float damageMultiplier)
         {
             if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
@@ -662,15 +711,48 @@ namespace ProjectB.Enemies
             EnemyBase enemy = pool.Get();
             enemy.transform.position = ClampToArena(spawnPos);
 
-            if (enemy is ShootingEnemy shootingEnemy)
-            {
-                shootingEnemy.SetProjectilePool(enemyProjectilePool);
-            }
+            ConfigureSpecializedEnemy(enemy);
 
             enemy.Initialize(selectedType, heroTarget, pool, eventBus, hpMultiplier, damageMultiplier);
             enemy.OnDied += cachedEnemyDiedHandler;
             activeEnemies.Add(enemy);
             return enemy;
+        }
+
+        private void ConfigureSpecializedEnemy(EnemyBase enemy)
+        {
+            if (enemy is ShootingEnemy shootingEnemy)
+            {
+                shootingEnemy.SetProjectilePool(enemyProjectilePool);
+            }
+            else if (enemy is SummonerEnemy summonerEnemy)
+            {
+                summonerEnemy.SetSummonCallback(cachedSummonMinionCallback);
+            }
+            else if (enemy is FleeingLootEnemy fleeingEnemy)
+            {
+                float halfArena = arenaGenerator != null ? arenaGenerator.ArenaSize * 0.5f : 250f;
+                float padding = waveConfig != null ? waveConfig.arenaPadding : 3f;
+                float maxCoord = Mathf.Max(8f, halfArena - padding);
+                fleeingEnemy.ConfigureLootCallbacks(cachedSpawnCoinCallback, cachedSpawnVacuumCallback, maxCoord);
+            }
+        }
+
+        private void SpawnLootCoin(Vector3 pos, int amount)
+        {
+            if (coinManager == null || amount <= 0) return;
+            coinManager.EnsureInitialized();
+            coinManager.SpawnCoin(ClampToArena(pos), amount);
+        }
+
+        private void SpawnLootVacuum(Vector3 pos)
+        {
+            if (vacuumMagnetSpawner == null && objectResolver != null)
+            {
+                objectResolver.TryResolve(out vacuumMagnetSpawner);
+            }
+            if (vacuumMagnetSpawner == null) return;
+            vacuumMagnetSpawner.SpawnVacuumMagnet(ClampToArena(pos));
         }
 
         private void SpawnMiniBoss()
@@ -756,10 +838,7 @@ namespace ProjectB.Enemies
             EnemyBase minion = pool.Get();
             minion.transform.position = ClampToArena(nearPosition);
 
-            if (minion is ShootingEnemy shootingEnemy)
-            {
-                shootingEnemy.SetProjectilePool(enemyProjectilePool);
-            }
+            ConfigureSpecializedEnemy(minion);
 
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
             minion.Initialize(dataToSpawn, heroTarget, pool, eventBus, hpMultiplier, damageMultiplier);
@@ -874,7 +953,7 @@ namespace ProjectB.Enemies
                 var e = enemyIterationBuffer[i];
                 if (e != null && !e.IsDead)
                 {
-                    e.TakeDamage(Mathf.Max(999999, e.CurrentHp + 1));
+                    e.TakeDamageFrom(Mathf.Max(999999, e.CurrentHp + 1), false, e.transform.position, isAoE: true);
                 }
             }
             enemyIterationBuffer.Clear();
@@ -956,5 +1035,8 @@ namespace ProjectB.Enemies
 
         [ContextMenu("Debug: Jump To Wave 75 (Frost Lich Boss)")]
         public void DebugJumpToWave75() => JumpToWave(75);
+
+        [ContextMenu("Debug: Jump To Wave 100 (Demon Lord Boss)")]
+        public void DebugJumpToWave100() => JumpToWave(100);
     }
 }

@@ -52,6 +52,8 @@ namespace ProjectB.Arena
         private Camera _cachedCamera;
 
         public int TotalInstanceCount { get; private set; }
+        public int PrimaryInstanceCount { get; private set; }
+        public int PropInstanceCount { get; private set; }
         public int ChunkCount => _chunks.Count;
 
         public void Build(
@@ -62,32 +64,87 @@ namespace ProjectB.Arena
             float minScale = 0.8f,
             float maxScale = 1.2f)
         {
+            BuildWithProps(
+                decorationPrefabs,
+                arenaSize,
+                count,
+                null,
+                null,
+                0,
+                rng,
+                minScale,
+                maxScale,
+                minScale,
+                maxScale);
+        }
+
+        public void BuildWithProps(
+            GameObject[] primaryPrefabs,
+            float arenaSize,
+            int primaryCount,
+            GameObject[] propPrefabs,
+            float[] propWeights,
+            int propCount,
+            System.Random rng,
+            float primaryMinScale = 0.8f,
+            float primaryMaxScale = 1.2f,
+            float propMinScale = 0.85f,
+            float propMaxScale = 1.25f)
+        {
             Clear();
 
-            if (decorationPrefabs == null || decorationPrefabs.Length == 0 || count <= 0 || arenaSize <= 0f)
+            if (arenaSize <= 0f || rng == null)
             {
                 return;
             }
 
-            // 1. Extract meshes & instancing-enabled materials for each prefab
+            // 1. Extract meshes & instancing-enabled materials for primary and prop prefabs
             var materialCache = new Dictionary<Material, Material>();
-            var prefabDataList = new List<PrefabRenderData>(decorationPrefabs.Length);
+            var allPrefabs = new List<PrefabRenderData>();
+            var primaryIndices = new List<int>();
+            var propIndices = new List<int>();
+            var propWeightList = new List<float>();
 
-            for (int i = 0; i < decorationPrefabs.Length; i++)
+            if (primaryPrefabs != null && primaryCount > 0)
             {
-                GameObject prefab = decorationPrefabs[i];
-                if (prefab == null) continue;
-
-                PrefabRenderData data = ExtractPrefabData(prefab, materialCache);
-                if (data != null && data.Parts.Length > 0)
+                for (int i = 0; i < primaryPrefabs.Length; i++)
                 {
-                    prefabDataList.Add(data);
+                    GameObject prefab = primaryPrefabs[i];
+                    if (prefab == null) continue;
+
+                    PrefabRenderData data = ExtractPrefabData(prefab, materialCache);
+                    if (data != null && data.Parts.Length > 0)
+                    {
+                        primaryIndices.Add(allPrefabs.Count);
+                        allPrefabs.Add(data);
+                    }
                 }
             }
 
-            if (prefabDataList.Count == 0)
+            float totalPropWeight = 0f;
+            if (propPrefabs != null && propCount > 0)
             {
-                Debug.LogWarning("[ArenaDecorationRenderer] No renderable MeshRenderers found in DecorationPrefabs.");
+                for (int i = 0; i < propPrefabs.Length; i++)
+                {
+                    GameObject prefab = propPrefabs[i];
+                    if (prefab == null) continue;
+
+                    PrefabRenderData data = ExtractPrefabData(prefab, materialCache);
+                    if (data != null && data.Parts.Length > 0)
+                    {
+                        float w = (propWeights != null && i < propWeights.Length && propWeights[i] > 0f)
+                            ? propWeights[i]
+                            : 1f;
+                        propIndices.Add(allPrefabs.Count);
+                        propWeightList.Add(w);
+                        totalPropWeight += w;
+                        allPrefabs.Add(data);
+                    }
+                }
+            }
+
+            if (allPrefabs.Count == 0)
+            {
                 return;
             }
 
@@ -96,17 +153,16 @@ namespace ProjectB.Arena
             float halfSize = arenaSize * 0.5f;
             int gridDim = Mathf.Max(1, Mathf.CeilToInt(arenaSize / chunkSize));
             int totalCells = gridDim * gridDim;
-            int prefabCount = prefabDataList.Count;
+            int prefabCount = allPrefabs.Count;
 
-            // Temporary lists per (chunkIndex, prefabIndex, partIndex)
             int totalPartSlots = 0;
             int[] prefabPartOffsets = new int[prefabCount];
             var allParts = new List<MeshPart>();
             for (int p = 0; p < prefabCount; p++)
             {
                 prefabPartOffsets[p] = totalPartSlots;
-                totalPartSlots += prefabDataList[p].Parts.Length;
-                allParts.AddRange(prefabDataList[p].Parts);
+                totalPartSlots += allPrefabs[p].Parts.Length;
+                allParts.AddRange(allPrefabs[p].Parts);
             }
 
             var cellPartMatrices = new List<Matrix4x4>[totalCells][];
@@ -114,11 +170,13 @@ namespace ProjectB.Arena
             var cellBoundsMax = new Vector3[totalCells];
             var cellHasData = new bool[totalCells];
 
-            for (int i = 0; i < count; i++)
+            int actualPrimary = primaryIndices.Count > 0 ? Mathf.Max(0, primaryCount) : 0;
+            int actualProps = propIndices.Count > 0 ? Mathf.Max(0, propCount) : 0;
+
+            void PlaceInstance(int allPrefabIdx, float minScale, float maxScale)
             {
                 float x = -halfSize + (float)rng.NextDouble() * arenaSize;
                 float z = -halfSize + (float)rng.NextDouble() * arenaSize;
-                int prefabIdx = rng.Next(0, prefabCount);
                 float yRot = (float)rng.NextDouble() * 360f;
                 float randomScale = minScale + (float)rng.NextDouble() * (maxScale - minScale);
 
@@ -126,7 +184,7 @@ namespace ProjectB.Arena
                 int cz = Mathf.Clamp(Mathf.FloorToInt((z + halfSize) / chunkSize), 0, gridDim - 1);
                 int cellIdx = cz * gridDim + cx;
 
-                PrefabRenderData pData = prefabDataList[prefabIdx];
+                PrefabRenderData pData = allPrefabs[allPrefabIdx];
                 Vector3 pos = new Vector3(x, 0f, z);
                 Quaternion rot = Quaternion.Euler(0f, yRot, 0f);
                 Vector3 scale = pData.RootScale * randomScale;
@@ -139,7 +197,7 @@ namespace ProjectB.Arena
                     cellPartMatrices[cellIdx] = slotArrays;
                 }
 
-                int partOffset = prefabPartOffsets[prefabIdx];
+                int partOffset = prefabPartOffsets[allPrefabIdx];
                 for (int partIdx = 0; partIdx < pData.Parts.Length; partIdx++)
                 {
                     int globalSlot = partOffset + partIdx;
@@ -150,11 +208,9 @@ namespace ProjectB.Arena
                         slotArrays[globalSlot] = list;
                     }
 
-                    Matrix4x4 finalMatrix = instanceMatrix * pData.Parts[partIdx].LocalToPrefab;
-                    list.Add(finalMatrix);
+                    list.Add(instanceMatrix * pData.Parts[partIdx].LocalToPrefab);
                 }
 
-                // Expand chunk AABB conservatively to cover voxel height/extents
                 const float padXZ = 1.5f;
                 const float padY = 2.5f;
                 Vector3 minPt = new Vector3(x - padXZ, -0.5f, z - padXZ);
@@ -171,6 +227,32 @@ namespace ProjectB.Arena
                     cellBoundsMin[cellIdx] = Vector3.Min(cellBoundsMin[cellIdx], minPt);
                     cellBoundsMax[cellIdx] = Vector3.Max(cellBoundsMax[cellIdx], maxPt);
                 }
+            }
+
+            for (int i = 0; i < actualPrimary; i++)
+            {
+                int allIdx = primaryIndices[rng.Next(0, primaryIndices.Count)];
+                PlaceInstance(allIdx, primaryMinScale, primaryMaxScale);
+            }
+
+            for (int i = 0; i < actualProps; i++)
+            {
+                int chosenPropSlot = 0;
+                if (propIndices.Count > 1 && totalPropWeight > 0f)
+                {
+                    double roll = rng.NextDouble() * totalPropWeight;
+                    double acc = 0.0;
+                    for (int k = 0; k < propIndices.Count; k++)
+                    {
+                        acc += propWeightList[k];
+                        if (acc >= roll)
+                        {
+                            chosenPropSlot = k;
+                            break;
+                        }
+                    }
+                }
+                PlaceInstance(propIndices[chosenPropSlot], propMinScale, propMaxScale);
             }
 
             // 3. Finalize compact chunk arrays for zero-GC rendering
@@ -220,7 +302,9 @@ namespace ProjectB.Arena
                 }
             }
 
-            TotalInstanceCount = count;
+            PrimaryInstanceCount = actualPrimary;
+            PropInstanceCount = actualProps;
+            TotalInstanceCount = actualPrimary + actualProps;
         }
 
         private PrefabRenderData ExtractPrefabData(GameObject prefab, Dictionary<Material, Material> materialCache)
@@ -336,6 +420,8 @@ namespace ProjectB.Arena
         {
             _chunks.Clear();
             TotalInstanceCount = 0;
+            PrimaryInstanceCount = 0;
+            PropInstanceCount = 0;
 
             for (int i = 0; i < _ownedMaterials.Count; i++)
             {

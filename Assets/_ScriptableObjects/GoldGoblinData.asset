@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3b0a6f7f2c3d6b45b6dcc93c9921a9c, type: 3}
+  m_Name: GoldGoblinData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.FleeingLootEnemyData
+  hp: 65
+  speed: 5.2
+  contactDamage: 0
+  damageCooldown: 1
+  contactRadius: 0.8
+  xpDrop: 8
+  coinDropChance: 0
+  coinDrop: 0
+  modelPrefab: {fileID: 1081042996728563014, guid: 9ea09fbe207042e43b06ef0a244c8cdc, type: 3}
+  fleeOrbitDistance: 20
+  coinsPerHit: 2
+  hitDropCooldown: 0.25
+  deathCoinMin: 40
+  deathCoinMax: 80
+  deathCoinBurstCount: 12
+  compassRevealDistance: 80

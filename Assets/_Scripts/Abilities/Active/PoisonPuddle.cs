@@ -193,8 +193,8 @@ namespace ProjectB.Abilities
 
                 if (damageable is EnemyBase enemy)
                 {
-                    enemy.TakeDamage(finalDmg, isCrit);
-                    stats?.RecordDamage(SynergyIds.ToxicInferno, finalDmg);
+                    int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position, isAoE: true);
+                    if (dealt > 0) stats?.RecordDamage(SynergyIds.ToxicInferno, dealt);
                 }
                 else
                 {
@@ -271,16 +271,19 @@ namespace ProjectB.Abilities
 
                     if (damageable is EnemyBase enemy)
                     {
-                        enemy.TakeDamage(finalDmg, isCrit);
-                        if (IsIgnited && finalDmg > 1)
+                        int dealt = enemy.TakeDamageFrom(finalDmg, isCrit, transform.position, isAoE: true);
+                        if (dealt > 0)
                         {
-                            int bonusHalf = finalDmg / 2;
-                            runStatistics?.RecordDamage(damageSourceId, finalDmg - bonusHalf);
-                            runStatistics?.RecordDamage(SynergyIds.ToxicInferno, bonusHalf);
-                        }
-                        else
-                        {
-                            runStatistics?.RecordDamage(damageSourceId, finalDmg);
+                            if (IsIgnited && dealt > 1)
+                            {
+                                int bonusHalf = dealt / 2;
+                                runStatistics?.RecordDamage(damageSourceId, dealt - bonusHalf);
+                                runStatistics?.RecordDamage(SynergyIds.ToxicInferno, bonusHalf);
+                            }
+                            else
+                            {
+                                runStatistics?.RecordDamage(damageSourceId, dealt);
+                            }
                         }
                     }
                     else

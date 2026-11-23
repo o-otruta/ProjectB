@@ -194,10 +194,10 @@ namespace ProjectB.Abilities
                 if (!piercedIds.Add(id)) continue;
 
                 int finalDamage = RollHitDamage(damage, out bool isCrit);
-                DealDamage(damageable, finalDamage, isCrit);
-                if (damageable is EnemyBase)
+                int dealt = DealDamage(damageable, finalDamage, isCrit, transform.position - lastMoveDir * 2f, isAoE: false);
+                if (damageable is EnemyBase && dealt > 0)
                 {
-                    runStatistics?.RecordDamage(SynergyIds.OverchargedGrid, finalDamage);
+                    runStatistics?.RecordDamage(SynergyIds.OverchargedGrid, dealt);
                 }
 
                 remainingPierces--;
@@ -214,10 +214,10 @@ namespace ProjectB.Abilities
             if (targetDamageable != null && !targetDamageable.IsDead)
             {
                 int finalDamage = RollHitDamage(damage, out bool isCrit);
-                DealDamage(targetDamageable, finalDamage, isCrit);
-                if (targetDamageable is EnemyBase && !string.IsNullOrEmpty(sourceId))
+                int dealt = DealDamage(targetDamageable, finalDamage, isCrit, transform.position - lastMoveDir * 2f, isAoE: false);
+                if (targetDamageable is EnemyBase && !string.IsNullOrEmpty(sourceId) && dealt > 0)
                 {
-                    runStatistics?.RecordDamage(sourceId, finalDamage);
+                    runStatistics?.RecordDamage(sourceId, dealt);
                 }
             }
 
@@ -244,17 +244,18 @@ namespace ProjectB.Abilities
             return Mathf.RoundToInt(rawDamage);
         }
 
-        protected static void DealDamage(IDamageable victim, int finalDamage, bool isCrit)
+        protected static int DealDamage(IDamageable victim, int finalDamage, bool isCrit, Vector3? sourcePosition = null, bool isAoE = false)
         {
-            if (victim == null || victim.IsDead || finalDamage <= 0) return;
+            if (victim == null || victim.IsDead || finalDamage <= 0) return 0;
             if (victim is EnemyBase enemy)
             {
-                enemy.TakeDamage(finalDamage, isCrit);
+                return sourcePosition.HasValue
+                    ? enemy.TakeDamageFrom(finalDamage, isCrit, sourcePosition.Value, isAoE)
+                    : enemy.TakeDamageFrom(finalDamage, isCrit, enemy.transform.position - Vector3.forward, isAoE);
             }
-            else
-            {
-                victim.TakeDamage(finalDamage);
-            }
+
+            victim.TakeDamage(finalDamage);
+            return finalDamage;
         }
 
         public virtual void ReturnToPool()

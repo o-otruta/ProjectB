@@ -37,13 +37,17 @@ namespace ProjectB.Arena
         private GameManager _gameManager;
 
         private readonly List<ExplosiveBarrel> _spawnedBarrels = new List<ExplosiveBarrel>();
+        private readonly List<GameObject> _spawnedObstacles = new List<GameObject>();
         private Transform _interactablesContainer;
+        private bool _isSubscribed;
 
         public int CurrentSeed { get; private set; }
         public ArenaConfig Config => _config;
         public float ArenaSize => _config != null ? _config.ArenaSize : 100f;
         public IReadOnlyList<ExplosiveBarrel> SpawnedBarrels => _spawnedBarrels;
+        public IReadOnlyList<GameObject> SpawnedObstacles => _spawnedObstacles;
         public ChallengeShrine ActiveShrine { get; private set; }
+        public ArenaDecorationRenderer DecorationRenderer => _decorationRenderer;
 
         [Inject]
         public void Construct(
@@ -60,6 +64,8 @@ namespace ProjectB.Arena
             _heroEconomy = heroEconomy;
             _heroExperience = heroExperience;
             _runStatistics = runStatistics;
+
+            SubscribeToEvents();
         }
 
         private void ResolveDeferredDependencies()
@@ -79,9 +85,33 @@ namespace ProjectB.Arena
 
         private void Start()
         {
+            SubscribeToEvents();
             if (_generateOnStart)
             {
                 GenerateArena();
+            }
+        }
+
+        private void SubscribeToEvents()
+        {
+            if (_isSubscribed || _eventBus == null) return;
+            _eventBus.Subscribe<WaveCompletedEvent>(OnWaveCompleted);
+            _isSubscribed = true;
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            if (!_isSubscribed || _eventBus == null) return;
+            _eventBus.Unsubscribe<WaveCompletedEvent>(OnWaveCompleted);
+            _isSubscribed = false;
+        }
+
+        private void OnWaveCompleted(WaveCompletedEvent evt)
+        {
+            if (_config == null || _config.DynamicRespawnWaveInterval <= 0) return;
+            if (evt.CompletedWave > 0 && evt.CompletedWave % _config.DynamicRespawnWaveInterval == 0)
+            {
+                RespawnInteractablesNearHero(null, out _);
             }
         }
 
@@ -122,6 +152,7 @@ namespace ProjectB.Arena
         public void ClearArena()
         {
             _spawnedBarrels.Clear();
+            _spawnedObstacles.Clear();
             ActiveShrine = null;
             _interactablesContainer = null;
 
@@ -146,6 +177,7 @@ namespace ProjectB.Arena
 
         private void OnDestroy()
         {
+            UnsubscribeFromEvents();
             if (_fallbackFloorMaterial != null)
             {
                 Destroy(_fallbackFloorMaterial);
@@ -282,35 +314,70 @@ namespace ProjectB.Arena
             int count = Range(_config.MinObstacles, _config.MaxObstacles + 1);
             float spawnHalfSize = Mathf.Max(0f, _config.ArenaSize / 2f - 2f);
             float safeRadiusSq = _config.SafeZoneRadius * _config.SafeZoneRadius;
-            
-            // To prevent infinite loops in edge cases
-            int maxAttempts = count * 10; 
+            float padding = Mathf.Max(0f, _config.ObstacleClearancePadding);
+
+            int maxAttempts = count * 15;
             int attempts = 0;
             int spawned = 0;
             int obstacleLayer = LayerMask.NameToLayer("Obstacles");
+            int obstacleMask = LayerMask.GetMask("Obstacles");
+
+            float[] prefabClearanceRadii = new float[_config.ObstaclePrefabs.Length];
+            for (int i = 0; i < _config.ObstaclePrefabs.Length; i++)
+            {
+                prefabClearanceRadii[i] = ComputeObstacleClearanceRadius(_config.ObstaclePrefabs[i]) + padding;
+            }
+
+            var placedPositions = new List<Vector3>(count);
+            var placedRadii = new List<float>(count);
 
             GameObject obstaclesContainer = new GameObject("Obstacles");
             obstaclesContainer.transform.SetParent(transform);
 
+            Physics.SyncTransforms();
+
             while (spawned < count && attempts < maxAttempts)
             {
                 attempts++;
-                
+
                 float x = Range(-spawnHalfSize, spawnHalfSize);
                 float z = Range(-spawnHalfSize, spawnHalfSize);
-                
+
                 // Avoid safe zone
                 if (x * x + z * z < safeRadiusSq)
                     continue;
 
                 Vector3 position = new Vector3(x, 0f, z);
-                
-                // Optional: Check if we are overlapping existing obstacles using physics (Physics.CheckSphere).
-                // Skipping for MVP to keep it simple, or we can add it if requested.
+                int prefabIdx = Range(0, _config.ObstaclePrefabs.Length);
+                GameObject prefab = _config.ObstaclePrefabs[prefabIdx];
+                if (prefab == null) continue;
 
-                GameObject prefab = _config.ObstaclePrefabs[Range(0, _config.ObstaclePrefabs.Length)];
+                float clearanceRadius = prefabClearanceRadii[prefabIdx];
+
+                // Check against already-placed obstacles in this pass
+                bool overlapsPlaced = false;
+                for (int i = 0; i < placedPositions.Count; i++)
+                {
+                    Vector3 existing = placedPositions[i];
+                    float minSep = clearanceRadius + placedRadii[i];
+                    float dx = existing.x - position.x;
+                    float dz = existing.z - position.z;
+                    if (dx * dx + dz * dz < minSep * minSep)
+                    {
+                        overlapsPlaced = true;
+                        break;
+                    }
+                }
+                if (overlapsPlaced) continue;
+
+                // Also verify against existing physics colliders on the Obstacles layer
+                if (obstacleMask != 0 && Physics.CheckSphere(position + Vector3.up * 0.75f, clearanceRadius, obstacleMask, QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+
                 GameObject obstacle = Instantiate(prefab, position, Quaternion.Euler(0, Range(0f, 360f), 0), obstaclesContainer.transform);
-                
+
                 if (obstacleLayer != -1)
                 {
                     obstacle.layer = obstacleLayer;
@@ -319,19 +386,55 @@ namespace ProjectB.Arena
                         child.gameObject.layer = obstacleLayer;
                     }
                 }
-                
+
+                _spawnedObstacles.Add(obstacle);
+                placedPositions.Add(position);
+                placedRadii.Add(clearanceRadius);
                 spawned++;
             }
+
+            Physics.SyncTransforms();
         }
-        private void GenerateDecorations()
+
+        public static float ComputeObstacleClearanceRadius(GameObject prefab)
         {
-            if (_config.DecorationPrefabs == null || _config.DecorationPrefabs.Length == 0)
+            if (prefab == null) return 1.2f;
+
+            Vector3 lossy = prefab.transform.localScale;
+            float maxScaleXZ = Mathf.Max(Mathf.Abs(lossy.x), Mathf.Abs(lossy.z), 0.1f);
+
+            var cap = prefab.GetComponentInChildren<CapsuleCollider>(true);
+            if (cap != null)
             {
-                return;
+                return Mathf.Max(0.45f, cap.radius * maxScaleXZ);
             }
 
-            int count = Range(_config.MinDecorations, _config.MaxDecorations + 1);
-            if (count <= 0)
+            var sph = prefab.GetComponentInChildren<SphereCollider>(true);
+            if (sph != null)
+            {
+                return Mathf.Max(0.45f, sph.radius * Mathf.Max(maxScaleXZ, Mathf.Abs(lossy.y)));
+            }
+
+            var box = prefab.GetComponentInChildren<BoxCollider>(true);
+            if (box != null)
+            {
+                float halfW = Mathf.Max(Mathf.Abs(box.size.x * lossy.x), Mathf.Abs(box.size.z * lossy.z)) * 0.5f;
+                return Mathf.Max(0.45f, halfW);
+            }
+
+            return 1.2f;
+        }
+
+        private void GenerateDecorations()
+        {
+            int primaryCount = (_config.DecorationPrefabs != null && _config.DecorationPrefabs.Length > 0)
+                ? Range(_config.MinDecorations, _config.MaxDecorations + 1)
+                : 0;
+            int propCount = (_config.PropDecorationPrefabs != null && _config.PropDecorationPrefabs.Length > 0)
+                ? Range(Mathf.Max(0, _config.MinPropDecorations), Mathf.Max(_config.MinPropDecorations, _config.MaxPropDecorations) + 1)
+                : 0;
+
+            if (primaryCount <= 0 && propCount <= 0)
             {
                 return;
             }
@@ -345,7 +448,14 @@ namespace ProjectB.Arena
                 }
             }
 
-            _decorationRenderer.Build(_config.DecorationPrefabs, _config.ArenaSize, count, _rng);
+            _decorationRenderer.BuildWithProps(
+                _config.DecorationPrefabs,
+                _config.ArenaSize,
+                primaryCount,
+                _config.PropDecorationPrefabs,
+                _config.PropDecorationWeights,
+                propCount,
+                _rng);
         }
 
         private void GenerateInteractables()
@@ -488,6 +598,143 @@ namespace ProjectB.Arena
             pos.x = Mathf.Clamp(pos.x, -maxBound, maxBound);
             pos.z = Mathf.Clamp(pos.z, -maxBound, maxBound);
             return SpawnShrineAt(pos);
+        }
+
+        public int RespawnInteractablesNearHero(Vector3? centerOverride, out ChallengeShrine respawnedShrine)
+        {
+            respawnedShrine = null;
+            if (_config == null) return 0;
+
+            if (_rng == null)
+            {
+                int seed = CurrentSeed != 0 ? CurrentSeed : (_config.Seed != 0 ? _config.Seed : 1337);
+                _rng = new System.Random(seed);
+            }
+
+            if (_interactablesContainer == null)
+            {
+                var interactablesGo = new GameObject("Interactables");
+                interactablesGo.transform.SetParent(transform, false);
+                _interactablesContainer = interactablesGo.transform;
+            }
+
+            Vector3 center = centerOverride ?? (_heroHealth != null ? _heroHealth.transform.position : Vector3.zero);
+            center.y = 0f;
+
+            float maxBound = Mathf.Max(8f, ArenaSize * 0.5f - 4f);
+            float minR = Mathf.Min(Mathf.Max(5f, _config.DynamicRespawnMinRadius), Mathf.Max(5f, maxBound - 2f));
+            float maxR = Mathf.Clamp(Mathf.Max(minR + 2f, _config.DynamicRespawnMaxRadius), minR + 1f, maxBound);
+            int obstacleMask = LayerMask.GetMask("Obstacles");
+
+            int barrelsSpawned = 0;
+            if (_config.ExplosiveBarrelPrefab != null && _config.DynamicRespawnMaxBarrels > 0)
+            {
+                int minB = Mathf.Max(0, _config.DynamicRespawnMinBarrels);
+                int maxB = Mathf.Max(minB, _config.DynamicRespawnMaxBarrels);
+                int targetBarrels = Range(minB, maxB + 1);
+
+                for (int b = 0; b < targetBarrels; b++)
+                {
+                    if (!TryFindClearPointInRing(center, minR, maxR, maxBound, obstacleMask, 1.3f, 6f, out Vector3 candidate))
+                    {
+                        break;
+                    }
+
+                    ExplosiveBarrel recycled = FindDetonatedBarrel();
+                    if (recycled != null)
+                    {
+                        recycled.transform.SetPositionAndRotation(candidate, Quaternion.Euler(0f, Range(0f, 360f), 0f));
+                        recycled.Initialize(_heroHealth, _eventBus, _runStatistics);
+                        barrelsSpawned++;
+                    }
+                    else if (SpawnBarrelAt(candidate) != null)
+                    {
+                        barrelsSpawned++;
+                    }
+                }
+            }
+
+            if (_config.ChallengeShrinePrefab != null && (ActiveShrine == null || ActiveShrine.State != ShrineState.Active))
+            {
+                if (TryFindClearPointInRing(center, minR, maxR, maxBound, obstacleMask, 1.8f, 5f, out Vector3 shrinePos))
+                {
+                    if (ActiveShrine != null && ActiveShrine.State == ShrineState.Idle)
+                    {
+                        GameObject oldGo = ActiveShrine.gameObject;
+                        ActiveShrine = null;
+                        if (Application.isPlaying) Destroy(oldGo);
+                        else DestroyImmediate(oldGo);
+                    }
+
+                    respawnedShrine = SpawnShrineAt(shrinePos);
+                }
+            }
+
+            return barrelsSpawned;
+        }
+
+        private ExplosiveBarrel FindDetonatedBarrel()
+        {
+            for (int i = 0; i < _spawnedBarrels.Count; i++)
+            {
+                ExplosiveBarrel b = _spawnedBarrels[i];
+                if (b != null && (b.IsDead || !b.gameObject.activeSelf))
+                {
+                    return b;
+                }
+            }
+            return null;
+        }
+
+        private bool TryFindClearPointInRing(
+            Vector3 center,
+            float minR,
+            float maxR,
+            float maxBound,
+            int obstacleMask,
+            float obstacleClearance,
+            float barrelMinSpacing,
+            out Vector3 result)
+        {
+            float barrelSpacingSq = barrelMinSpacing * barrelMinSpacing;
+            for (int attempt = 0; attempt < 25; attempt++)
+            {
+                float angle = Range(0f, Mathf.PI * 2f);
+                float dist = Range(minR, maxR);
+                Vector3 candidate = new Vector3(
+                    Mathf.Clamp(center.x + Mathf.Cos(angle) * dist, -maxBound, maxBound),
+                    0f,
+                    Mathf.Clamp(center.z + Mathf.Sin(angle) * dist, -maxBound, maxBound));
+
+                if (obstacleMask != 0 && Physics.CheckSphere(candidate + Vector3.up * 0.75f, obstacleClearance, obstacleMask, QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+
+                bool tooClose = false;
+                for (int i = 0; i < _spawnedBarrels.Count; i++)
+                {
+                    ExplosiveBarrel b = _spawnedBarrels[i];
+                    if (b == null || b.IsDead || !b.gameObject.activeSelf) continue;
+                    float dx = b.transform.position.x - candidate.x;
+                    float dz = b.transform.position.z - candidate.z;
+                    if (dx * dx + dz * dz < barrelSpacingSq)
+                    {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (tooClose) continue;
+
+                result = candidate;
+                return true;
+            }
+
+            result = new Vector3(
+                Mathf.Clamp(center.x + minR, -maxBound, maxBound),
+                0f,
+                Mathf.Clamp(center.z, -maxBound, maxBound));
+            return true;
         }
     }
 }

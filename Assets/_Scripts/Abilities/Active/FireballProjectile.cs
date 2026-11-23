@@ -113,10 +113,10 @@ namespace ProjectB.Abilities
                     }
 
                     int finalDamage = RollHitDamage(damage, out bool isCrit);
-                    DealDamage(damageable, finalDamage, isCrit);
-                    if (enemy != null && !string.IsNullOrEmpty(sourceId))
+                    int dealt = DealDamage(damageable, finalDamage, isCrit, transform.position, isAoE: true);
+                    if (enemy != null && !string.IsNullOrEmpty(sourceId) && dealt > 0)
                     {
-                        runStatistics?.RecordDamage(sourceId, finalDamage);
+                        runStatistics?.RecordDamage(sourceId, dealt);
                     }
                 }
             }
@@ -172,11 +172,11 @@ namespace ProjectB.Abilities
                 if (!col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
 
                 int finalDamage = RollHitDamage(steamRawDamage, out bool isCrit);
-                DealDamage(damageable, finalDamage, isCrit);
+                int dealt = DealDamage(damageable, finalDamage, isCrit, center, isAoE: true);
 
                 if (damageable is EnemyBase enemy)
                 {
-                    runStatistics?.RecordDamage(SynergyIds.SteamBlast, finalDamage);
+                    if (dealt > 0) runStatistics?.RecordDamage(SynergyIds.SteamBlast, dealt);
 
                     if (!enemy.IsDead)
                     {
