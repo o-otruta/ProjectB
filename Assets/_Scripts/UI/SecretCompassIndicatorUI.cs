@@ -1,9 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Arena;
 using ProjectB.Core;
+using ProjectB.Data.Platform;
 using ProjectB.Player;
 
 namespace ProjectB.UI
@@ -22,7 +24,7 @@ namespace ProjectB.UI
     /// Secret items are intentionally excluded so players discover them via their light beacon.
     /// Zero GC allocations in LateUpdate.
     /// </summary>
-    public class SecretCompassIndicatorUI : MonoBehaviour
+    public class SecretCompassIndicatorUI : MonoBehaviour, ILayoutModeConsumer
     {
         public const int MAX_COMPASS_SLOTS = 3;
         private const int MAX_CANDIDATES = 16;
@@ -91,6 +93,7 @@ namespace ProjectB.UI
         [SerializeField] private float bottomPadding = 260f;
         [SerializeField] private float pulseSpeed = 4.5f;
         [SerializeField] private float pulseAmplitude = 0.08f;
+        [SerializeField] private CameraConfig cameraConfig;
 
         private SecretItemSpawner secretItemSpawner;
         private ArenaGenerator arenaGenerator;
@@ -99,6 +102,10 @@ namespace ProjectB.UI
         private CameraController cameraController;
         private Camera mainCamera;
         private RectTransform parentRect;
+        private LayoutModeBinding layoutBinding;
+        private LayoutMode activeLayoutMode = LayoutMode.Portrait;
+        private CompassMargins activeMargins;
+        private bool hasLayoutMargins;
 
         private readonly SlotRuntimeState[] slotStates = new SlotRuntimeState[MAX_COMPASS_SLOTS];
         private readonly CompassPoiCandidate[] candidateBuffer = new CompassPoiCandidate[MAX_CANDIDATES];
@@ -106,6 +113,14 @@ namespace ProjectB.UI
         private bool slotsInitialized;
 
         public int ActiveVisibleSlotCount => activeVisibleSlotCount;
+        public CompassMargins ActiveMargins
+        {
+            get
+            {
+                if (!hasLayoutMargins) RefreshActiveMargins();
+                return activeMargins;
+            }
+        }
 
         private static string[] BuildDistanceLabels(int count)
         {
@@ -204,18 +219,74 @@ namespace ProjectB.UI
             HeroHealth heroHealth,
             CameraController cameraController = null,
             ArenaGenerator arenaGenerator = null,
-            VacuumMagnetSpawner vacuumMagnetSpawner = null)
+            VacuumMagnetSpawner vacuumMagnetSpawner = null,
+            LayoutModeService layoutModeService = null,
+            CameraConfig cameraConfig = null)
         {
             this.secretItemSpawner = secretItemSpawner;
             this.heroHealth = heroHealth;
             this.cameraController = cameraController;
             this.arenaGenerator = arenaGenerator;
             this.vacuumMagnetSpawner = vacuumMagnetSpawner;
+            BindLayout(layoutModeService, cameraConfig);
+        }
+
+        public void BindLayout(LayoutModeService layoutModeService, CameraConfig config = null)
+        {
+            if (config != null) cameraConfig = config;
+            EnsureLayoutBinding();
+            layoutBinding.Bind(layoutModeService);
+            if (layoutModeService != null)
+            {
+                activeLayoutMode = layoutModeService.Mode;
+                if (isActiveAndEnabled)
+                {
+                    layoutBinding.Enable();
+                }
+            }
+            RefreshActiveMargins();
+        }
+
+        public void ApplyLayoutMode(LayoutMode mode)
+        {
+            activeLayoutMode = mode;
+            RefreshActiveMargins();
+        }
+
+        private void EnsureLayoutBinding()
+        {
+            layoutBinding ??= new LayoutModeBinding(ApplyLayoutMode);
+        }
+
+        private void RefreshActiveMargins()
+        {
+            if (cameraConfig == null && Application.isPlaying)
+            {
+                RootServices.TryResolve(out cameraConfig);
+            }
+
+            if (cameraConfig != null)
+            {
+                activeMargins = cameraConfig.GetCompassMargins(activeLayoutMode);
+            }
+            else
+            {
+                activeMargins = new CompassMargins
+                {
+                    left = sidePadding,
+                    right = sidePadding,
+                    top = topPadding,
+                    bottom = bottomPadding
+                };
+            }
+            hasLayoutMargins = true;
         }
 
         private void Awake()
         {
             EnsureSlotStates();
+            EnsureLayoutBinding();
+            RefreshActiveMargins();
 
             var graphics = GetComponentsInChildren<Graphic>(true);
             for (int i = 0; i < graphics.Length; i++)
@@ -227,6 +298,21 @@ namespace ProjectB.UI
             }
 
             HideAllSlots(force: true);
+        }
+
+        private void OnEnable()
+        {
+            EnsureLayoutBinding();
+            if (layoutBinding.Enable() && layoutBinding.Service != null)
+            {
+                activeLayoutMode = layoutBinding.Service.Mode;
+            }
+            RefreshActiveMargins();
+        }
+
+        private void OnDisable()
+        {
+            layoutBinding?.Disable();
         }
 
         private void Start()
@@ -544,6 +630,29 @@ namespace ProjectB.UI
             out float arrowAngleDeg,
             out int distanceMeters)
         {
+            return EvaluateIndicatorState(
+                heroPos,
+                itemPos,
+                cam,
+                canvasSize,
+                maxDistance,
+                ActiveMargins,
+                out anchoredPos,
+                out arrowAngleDeg,
+                out distanceMeters);
+        }
+
+        public bool EvaluateIndicatorState(
+            Vector3 heroPos,
+            Vector3 itemPos,
+            Camera cam,
+            Vector2 canvasSize,
+            float maxDistance,
+            CompassMargins margins,
+            out Vector2 anchoredPos,
+            out float arrowAngleDeg,
+            out int distanceMeters)
+        {
             anchoredPos = Vector2.zero;
             arrowAngleDeg = 0f;
 
@@ -584,10 +693,10 @@ namespace ProjectB.UI
 
             float halfW = canvasSize.x * 0.5f;
             float halfH = canvasSize.y * 0.5f;
-            float minX = Mathf.Min(0f, -halfW + sidePadding);
-            float maxX = Mathf.Max(0f, halfW - sidePadding);
-            float minY = Mathf.Min(0f, -halfH + bottomPadding);
-            float maxY = Mathf.Max(0f, halfH - topPadding);
+            float minX = Mathf.Min(0f, -halfW + margins.left);
+            float maxX = Mathf.Max(0f, halfW - margins.right);
+            float minY = Mathf.Min(0f, -halfH + margins.bottom);
+            float maxY = Mathf.Max(0f, halfH - margins.top);
 
             float t = float.MaxValue;
             if (dir.x > 0.0001f) t = Mathf.Min(t, maxX / dir.x);

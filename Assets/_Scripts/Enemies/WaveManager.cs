@@ -5,6 +5,7 @@ using UnityEngine.Pool;
 using VContainer;
 using ProjectB.Data;
 using ProjectB.Data.Enemies;
+using ProjectB.Data.Platform;
 using ProjectB.Player;
 using ProjectB.Arena;
 using ProjectB.Combat;
@@ -30,6 +31,8 @@ namespace ProjectB.Enemies
         private EnemyRuntimeModifiers enemyRuntimeModifiers;
         private RunRulesConfig runRulesConfig;
         private ProjectB.Meta.SaveManager saveManager;
+        private CameraController cameraController;
+        private CameraConfig cameraConfig;
 
         private Transform enemyContainer;
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
@@ -126,7 +129,9 @@ namespace ProjectB.Enemies
             IObjectResolver resolver = null,
             EnemyRuntimeModifiers enemyRuntimeModifiers = null,
             RunRulesConfig runRulesConfig = null,
-            ProjectB.Meta.SaveManager saveManager = null)
+            ProjectB.Meta.SaveManager saveManager = null,
+            CameraController cameraController = null,
+            CameraConfig cameraConfig = null)
         {
             this.heroHealth = heroHealth;
             if (heroHealth != null)
@@ -142,8 +147,18 @@ namespace ProjectB.Enemies
             this.enemyRuntimeModifiers = enemyRuntimeModifiers;
             if (runRulesConfig != null) this.runRulesConfig = runRulesConfig;
             this.saveManager = saveManager;
+            if (cameraController != null) this.cameraController = cameraController;
+            if (cameraConfig != null) this.cameraConfig = cameraConfig;
             isFtueRun = saveManager != null && saveManager.IsFirstRun;
         }
+
+        public void SetCameraController(CameraController controller, CameraConfig config = null)
+        {
+            cameraController = controller;
+            if (config != null) cameraConfig = config;
+        }
+
+        public bool HasCameraSpawnBounds => cameraController != null;
 
         public void SetRunRulesConfig(RunRulesConfig rules)
         {
@@ -644,7 +659,11 @@ namespace ProjectB.Enemies
                 if (heroTarget == null || (heroHealth != null && heroHealth.IsDead)) continue;
                 if (activeEnemies.Count == 0) continue;
 
-                float leashDist = waveConfig != null ? waveConfig.leashDistance : 35f;
+                float configLeash = waveConfig != null ? waveConfig.leashDistance : 35f;
+                float minSafeLeash = cameraController != null
+                    ? cameraController.CachedSpawnRadiusMax + (cameraConfig != null ? cameraConfig.leashMargin : cameraController.Config.leashMargin)
+                    : 0f;
+                float leashDist = Mathf.Max(configLeash, minSafeLeash);
                 float leashDistSq = leashDist * leashDist;
                 Vector3 heroPos = heroTarget.position;
 
@@ -699,12 +718,92 @@ namespace ProjectB.Enemies
             return ClampToArena(center + ringOffset);
         }
 
-        private Vector3 GetValidSpawnPosition()
+        public float GetOffscreenSpawnDistance(Vector3 dirXZ, float extraMargin = 0f)
+        {
+            if (cameraController != null)
+            {
+                return cameraController.GetOffscreenSpawnDistance(dirXZ, extraMargin);
+            }
+            float baseMin = waveConfig != null ? waveConfig.spawnRadiusMin : 10f;
+            return baseMin + Mathf.Max(0f, extraMargin);
+        }
+
+        public float GetMaxOffscreenSpawnRadius()
+        {
+            if (cameraController != null)
+            {
+                return cameraController.CachedSpawnRadiusMax;
+            }
+            return waveConfig != null ? waveConfig.spawnRadiusMax : 15f;
+        }
+
+        public Vector3 GetValidOffscreenPositionAlongDirection(
+            Vector3 center,
+            Vector3 dirXZ,
+            float extraMargin = 0f,
+            float bandWidthOverride = -1f)
+        {
+            Vector3 dir = new Vector3(dirXZ.x, 0f, dirXZ.z);
+            if (dir.sqrMagnitude <= 1e-5f) dir = Vector3.forward;
+            else dir.Normalize();
+
+            float baseAngle = Mathf.Atan2(dir.z, dir.x);
+            float minRad = GetOffscreenSpawnDistance(dir, extraMargin);
+            float bandWidth = bandWidthOverride >= 0f
+                ? bandWidthOverride
+                : (cameraController != null
+                    ? cameraController.Config.spawnBandWidth
+                    : Mathf.Max(1f, (waveConfig != null ? waveConfig.spawnRadiusMax - waveConfig.spawnRadiusMin : 5f)));
+            float maxRad = minRad + Mathf.Max(0f, bandWidth);
+
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                float jitter = attempt == 0 ? 0f : Random.Range(-0.15f, 0.15f);
+                float angle = baseAngle + jitter;
+                Vector3 attemptDir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                float attemptMin = attempt == 0 ? minRad : GetOffscreenSpawnDistance(attemptDir, extraMargin);
+                float attemptMax = attemptMin + Mathf.Max(0f, bandWidth);
+                float radius = Random.Range(attemptMin, attemptMax);
+                Vector3 candidate = ClampToArena(center + attemptDir * radius);
+
+                if (obstacleMask == 0 || !Physics.CheckSphere(candidate + Vector3.up * 0.5f, 0.6f, obstacleMask))
+                {
+                    return candidate;
+                }
+            }
+
+            return ClampToArena(center + dir * Mathf.Max(0f, minRad));
+        }
+
+        public Vector3 GetValidSpawnPosition(float extraMargin = 0f)
         {
             Vector3 center = heroTarget != null ? heroTarget.position : Vector3.zero;
-            float minRad = waveConfig != null ? waveConfig.spawnRadiusMin : 10f;
-            float maxRad = waveConfig != null ? waveConfig.spawnRadiusMax : 15f;
-            return GetValidPositionNear(center, minRad, maxRad);
+            if (cameraController != null)
+            {
+                float bandWidth = cameraController.Config.spawnBandWidth;
+                for (int attempt = 0; attempt < 10; attempt++)
+                {
+                    float angle = Random.Range(0f, Mathf.PI * 2f);
+                    Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                    float minRad = cameraController.GetOffscreenSpawnDistance(dir, extraMargin);
+                    float radius = Random.Range(minRad, minRad + bandWidth);
+                    Vector3 candidate = ClampToArena(center + dir * radius);
+
+                    if (obstacleMask == 0 || !Physics.CheckSphere(candidate + Vector3.up * 0.5f, 0.6f, obstacleMask))
+                    {
+                        return candidate;
+                    }
+                }
+
+                float fallbackAngle = Random.Range(0f, Mathf.PI * 2f);
+                Vector3 fallbackDir = new Vector3(Mathf.Cos(fallbackAngle), 0f, Mathf.Sin(fallbackAngle));
+                float safeMinRad = cameraController.GetOffscreenSpawnDistance(fallbackDir, extraMargin);
+                return ClampToArena(center + fallbackDir * safeMinRad);
+            }
+
+            float legacyMin = (waveConfig != null ? waveConfig.spawnRadiusMin : 10f) + Mathf.Max(0f, extraMargin);
+            float legacyMax = (waveConfig != null ? waveConfig.spawnRadiusMax : 15f) + Mathf.Max(0f, extraMargin);
+            return GetValidPositionNear(center, legacyMin, legacyMax);
         }
 
         public static EnemyWaveEntry SelectEntryForWaveSpawn(
@@ -804,7 +903,7 @@ namespace ProjectB.Enemies
 
             if (selectedEntry == null || selectedEntry.enemy == null) return 1;
 
-            Vector3 basePos = GetValidSpawnPosition();
+            Vector3 basePos = GetValidSpawnPosition(packCount > 1 ? 1.8f : 0f);
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
             bool spawnedEliteInPack = false;
             int actuallySpawned = 0;
@@ -1154,7 +1253,21 @@ namespace ProjectB.Enemies
             IObjectPool<EnemyBase> pool = enemyPools[dataToSpawn];
 
             EnemyBase minion = pool.Get();
-            minion.transform.position = ClampToArena(nearPosition);
+            Vector3 resolvedPos = ClampToArena(nearPosition);
+            CameraConfig cfg = cameraConfig ?? (cameraController != null ? cameraController.Config : null);
+            if (cameraController != null && heroTarget != null && cfg != null && cfg.spawnSummonsOffscreen)
+            {
+                Vector3 heroPos = heroTarget.position;
+                Vector3 dir = nearPosition - heroPos;
+                dir.y = 0f;
+                if (dir.sqrMagnitude <= 0.01f)
+                {
+                    float a = Random.Range(0f, Mathf.PI * 2f);
+                    dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                }
+                resolvedPos = GetValidOffscreenPositionAlongDirection(heroPos, dir, extraMargin: 0f, bandWidthOverride: 2.0f);
+            }
+            minion.transform.position = resolvedPos;
 
             ConfigureSpecializedEnemy(minion);
             minion.SetRuntimeModifiers(ResolveEnemyModifiers());

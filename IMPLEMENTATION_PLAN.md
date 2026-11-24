@@ -381,7 +381,7 @@
 
 ### Спринт 14 — Мультиплатформа и Web-билд (РЕЛИЗ 1)
 - [x] **14.1.** Адаптивный фундамент (`LayoutModeService`, `InputModeService`, `AdaptiveCanvasScaler`, `ResponsiveRect`, `AdaptiveLayoutGroup`, `OrientationPolicy`).
-- [ ] **14.2.** Камера по короткой стороне (`CameraConfig`), радиус спавна от проекции фрустума + кламп компаса к HUD.
+- [x] **14.2.** Камера по короткой стороне (`CameraConfig`), радиус спавна от проекции фрустума + кламп компаса к HUD.
 - [x] **14.3.** Мультиввод (`InputActionAsset`, `MoveInput`-агрегатор для Touch + клавиатуры + геймпада, подсказки и системная кнопка Back).
 - [ ] **14.4.** Ландшафтные раскладки всех экранов меню, HUD, Pause и Game Over; прогон `9:21 / 4:3 / 16:10 / 21:9` и замер draw calls (13.6).
 - [ ] **14.5.** Web-билд (Poki или CrazyGames): Build Profile `Web`, Quality `Web`, браузерный lifecycle, `IAdProvider` / `IPlatformEvents` / `ISaveStorage`.

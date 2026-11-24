@@ -670,7 +670,12 @@ namespace ProjectB.Enemies
             for (int i = 0; i < count; i++)
             {
                 float angle = baseAngle + step * i;
-                Vector3 desired = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                float offscreenRadius = waveManager.HasCameraSpawnBounds
+                    ? waveManager.GetOffscreenSpawnDistance(dir, extraMargin: 1.5f)
+                    : 0f;
+                float effectiveRadius = Mathf.Max(radius, offscreenRadius);
+                Vector3 desired = center + dir * effectiveRadius;
                 Vector3 safePos = waveManager.GetValidPositionNear(desired, 0f, 1.5f);
                 waveManager.SpawnEventEnemy(swarmEnemy, safePos);
             }
@@ -688,7 +693,9 @@ namespace ProjectB.Enemies
             if (cfg.goldGoblinData == null || waveManager == null) return false;
 
             Vector3 center = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
-            Vector3 spawnPos = waveManager.GetValidPositionNear(center, 11f, 15f);
+            Vector3 spawnPos = waveManager.HasCameraSpawnBounds
+                ? waveManager.GetValidSpawnPosition()
+                : waveManager.GetValidPositionNear(center, 11f, 15f);
             EnemyBase spawned = waveManager.SpawnEventEnemy(cfg.goldGoblinData, spawnPos);
             activeGoldGoblin = spawned as FleeingLootEnemy;
             if (activeGoldGoblin == null) return false;
@@ -733,7 +740,12 @@ namespace ProjectB.Enemies
             for (int i = 0; i < 3; i++)
             {
                 float angle = baseAngle + (Mathf.PI * 2f / 3f) * i;
-                Vector3 desired = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                float offscreenRadius = waveManager.HasCameraSpawnBounds
+                    ? waveManager.GetOffscreenSpawnDistance(dir, extraMargin: 1.5f)
+                    : 0f;
+                float effectiveRadius = Mathf.Max(radius, offscreenRadius);
+                Vector3 desired = center + dir * effectiveRadius;
                 Vector3 safePos = waveManager.GetValidPositionNear(desired, 0f, 1.5f);
                 EliteArchetype archetype = i switch
                 {
@@ -793,8 +805,12 @@ namespace ProjectB.Enemies
             Vector3 center = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
             center.y = 0f;
 
-            float spawnDist = Mathf.Max(10f, cfg.spawnRadiusMax > 0f ? cfg.spawnRadiusMax : 15f);
             float halfWidth = Mathf.Max(1f, cfg.corridorHordeCorridorHalfWidth);
+            float baseDist = Mathf.Max(10f, cfg.spawnRadiusMax > 0f ? cfg.spawnRadiusMax : 15f);
+            float offscreenDist = waveManager.HasCameraSpawnBounds
+                ? waveManager.GetOffscreenSpawnDistance(activeCorridorDirection, extraMargin: halfWidth + 1.2f)
+                : 0f;
+            float spawnDist = Mathf.Max(baseDist, offscreenDist);
             int batch = Mathf.Max(1, cfg.corridorHordeBatchSize);
             float hpScale = Mathf.Clamp(cfg.corridorHordeHpMultiplier, 0.2f, 1f);
 

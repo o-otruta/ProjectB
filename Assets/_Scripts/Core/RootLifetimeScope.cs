@@ -45,6 +45,11 @@ namespace ProjectB.Core
             builder.RegisterInstance(inputConfig);
             builder.Register<GameInputService>(Lifetime.Singleton);
 
+            // Sprint 14.2: short-side camera framing, frustum spawn ring and HUD compass margins.
+            CameraConfig cameraConfig = Resources.Load<CameraConfig>(CameraConfig.RESOURCE_PATH);
+            if (cameraConfig == null) cameraConfig = CameraConfig.CreateRuntimeDefault();
+            builder.RegisterInstance(cameraConfig);
+
             // Eagerly construct LocalizationService first so Current is bound to SaveManager before any UI reads or subscribes.
             builder.RegisterBuildCallback(container =>
             {
