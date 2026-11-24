@@ -246,6 +246,8 @@ namespace ProjectB.EditorScripts
                 float hpMult = config.GetHpDifficultyMultiplier(wave);
                 float dmgMult = config.GetDamageDifficultyMultiplier(wave);
                 float coinMult = config.GetCoinMultiplier(wave);
+                float effSpawnDelay = config.GetWaveSpawnDelay(wave, false);
+                float elitePct = config.GetEliteChanceForWave(wave) * 100f;
                 int enemyCount = Mathf.Min(
                     Mathf.RoundToInt(config.baseEnemyCount * Mathf.Pow(config.enemiesPerWaveMultiplier, wave - 1)),
                     config.maxEnemiesPerWave);
@@ -254,7 +256,7 @@ namespace ProjectB.EditorScripts
                 bool isMiniBoss = WaveManager.IsMiniBossWave(wave, config.miniBossInterval, config.bossInterval);
                 EnemyWaveEntry intro = config.GetIntroEntryForWave(wave);
 
-                sb.Append($"Wave {wave,3} | HP x{hpMult:F2} | Dmg x{dmgMult:F2} | Coin x{coinMult:F2} | Count {enemyCount,2}");
+                sb.Append($"Wave {wave,3} | HP x{hpMult:F2} | Dmg x{dmgMult:F2} | Coin x{coinMult:F2} | Count {enemyCount,2} | Delay {effSpawnDelay:F2}s | Elite {elitePct,2:F0}%");
                 if (intro != null && intro.enemy != null)
                 {
                     sb.Append($" | INTRO: {intro.enemy.name} ({Mathf.RoundToInt(intro.introSpawnShare * 100f)}%)");
@@ -857,9 +859,7 @@ namespace ProjectB.EditorScripts
                     float avgCoinExpected = totalWeight > 0f ? weightedCoinChanceValue / totalWeight : 0.25f;
                     float avgCoinDrop = totalWeight > 0f ? weightedCoinDrop / totalWeight : 1f;
 
-                    float eliteChance = wave >= config.minWaveForElites
-                        ? Mathf.Min(config.maxEliteChance, (wave - config.minWaveForElites + 1) * config.eliteChancePerWave)
-                        : 0f;
+                    float eliteChance = config.GetEliteChanceForWave(wave);
                     float effectiveHpMult = hpMult * (1f - eliteChance + eliteChance * avgEliteHpMult);
 
                     waveHp = count * avgHp * effectiveHpMult;
@@ -874,7 +874,11 @@ namespace ProjectB.EditorScripts
                         cumShards += config.miniBossShardReward;
                     }
 
-                    float activeCombatTime = Mathf.Min(config.maxWaveDuration, Mathf.Max(16f, count * config.spawnDelay + 8f));
+                    float effSpawnDelay = config.GetWaveSpawnDelay(wave, false);
+                    float overlapFactor = config.IsWaveSaturated(wave, false) && config.enableWaveOverlap
+                        ? 1f - Mathf.Clamp01(config.waveOverlapThreshold) * 0.5f
+                        : 1f;
+                    float activeCombatTime = Mathf.Min(config.maxWaveDuration, Mathf.Max(12f, (count * effSpawnDelay + 8f) * overlapFactor));
                     waveDuration = activeCombatTime + config.waveDelay;
 
                     if (includeEvents && config.waveEventsEnabled && wave >= config.firstWaveEventWave && !isMiniBoss)

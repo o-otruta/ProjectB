@@ -32,6 +32,9 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Fraction of enemies in the intro wave that will be this newly introduced enemy")]
         public float introSpawnShare = 0.5f;
 
+        [Tooltip("Increase packSize on high waves using WaveConfig pack scaling")]
+        public bool scalePackSizeWithWave = false;
+
         public bool IsEligibleForWave(int wave)
         {
             if (enemy == null || spawnWeight <= 0f) return false;
@@ -277,6 +280,69 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Optional lighter wave overrides applied on waves 1..N during a player's first run (totalRuns == 0)")]
         public List<FtueWaveOverride> ftueWaves = new List<FtueWaveOverride>();
 
+        [Header("Density Scaling & Wave Overlap (Sprint 16.1)")]
+        [Min(0.05f)]
+        [Tooltip("Minimum pause between spawns once wave size saturates at maxEnemiesPerWave")]
+        public float minSpawnDelay = 0.16f;
+
+        [Min(0f)]
+        [Tooltip("Reduction applied to spawnDelay per wave after reaching maxEnemiesPerWave")]
+        public float spawnDelayReductionPerWave = 0.012f;
+
+        [Tooltip("Start the next saturated wave early once alive enemies drop to <= waveOverlapThreshold of spawned count")]
+        public bool enableWaveOverlap = true;
+
+        [Range(0f, 0.75f)]
+        [Tooltip("Fraction of current wave spawned enemies remaining that allows the next wave to start early")]
+        public float waveOverlapThreshold = 0.30f;
+
+        [Min(1)]
+        [Tooltip("First wave on which packSize-scaled entries begin gaining bonus enemies per pack")]
+        public int packSizeScalingStartWave = 20;
+
+        [Min(1)]
+        [Tooltip("Interval in waves per +1 bonus enemy in packSize-scaled entries")]
+        public int packSizeBonusWaveInterval = 20;
+
+        [Min(0)]
+        [Tooltip("Maximum bonus enemies added to packSize on high waves")]
+        public int maxPackSizeBonus = 2;
+
+        [Header("Corridor Horde Event (Sprint 16.1)")]
+        [Tooltip("Enable periodic one-sided Corridor Horde waves roughly every 10 waves")]
+        public bool corridorHordeEnabled = true;
+
+        [Min(1)]
+        [Tooltip("First eligible wave for Corridor Horde (keeps early FTUE/intro runs W1-W12 untouched)")]
+        public int firstCorridorHordeWave = 19;
+
+        [Min(2)]
+        [Tooltip("Target interval in waves between Corridor Horde events")]
+        public int corridorHordeInterval = 10;
+
+        [Min(3f)]
+        [Tooltip("Duration in seconds of the directional Corridor Horde stream")]
+        public float corridorHordeDuration = 12f;
+
+        [Min(0.05f)]
+        [Tooltip("Seconds between directional horde batches during Corridor Horde")]
+        public float corridorHordeSpawnInterval = 0.30f;
+
+        [Min(1)]
+        [Tooltip("Number of weak mobs spawned per batch during Corridor Horde")]
+        public int corridorHordeBatchSize = 2;
+
+        [Range(0.2f, 1f)]
+        [Tooltip("HP multiplier applied to Corridor Horde mobs so AoE builds mow them down")]
+        public float corridorHordeHpMultiplier = 0.55f;
+
+        [Min(1f)]
+        [Tooltip("Half-width in meters of the directional spawn corridor")]
+        public float corridorHordeCorridorHalfWidth = 3.5f;
+
+        [Tooltip("Weak horde enemy spawned during Corridor Horde (defaults to SwarmRush / Skeleton)")]
+        public EnemyData corridorHordeEnemyData;
+
         public int FtueWaveCount => ftueWaves != null ? ftueWaves.Count : 0;
 
         public bool TryGetFtueWave(int wave, out FtueWaveOverride ftueWave)
@@ -307,13 +373,92 @@ namespace ProjectB.Data.Enemies
             return maxEnemiesPerWave > 0 ? Mathf.Min(count, maxEnemiesPerWave) : Mathf.Max(1, count);
         }
 
+        public int GetDensitySaturationWave()
+        {
+            if (maxEnemiesPerWave <= 0) return int.MaxValue;
+            if (baseEnemyCount >= maxEnemiesPerWave) return 1;
+            if (enemiesPerWaveMultiplier <= 1.0001f) return int.MaxValue;
+
+            for (int wave = 1; wave <= 200; wave++)
+            {
+                int w = wave - 1;
+                int count = Mathf.RoundToInt(baseEnemyCount * Mathf.Pow(enemiesPerWaveMultiplier, w));
+                if (count >= maxEnemiesPerWave)
+                {
+                    return wave;
+                }
+            }
+
+            return int.MaxValue;
+        }
+
+        public bool IsWaveSaturated(int wave, bool isFtueRun)
+        {
+            if (isFtueRun || maxEnemiesPerWave <= 0 || wave <= 0) return false;
+            return wave >= GetDensitySaturationWave();
+        }
+
         public float GetWaveSpawnDelay(int wave, bool isFtueRun)
         {
             if (isFtueRun && TryGetFtueWave(wave, out FtueWaveOverride ftue))
             {
                 return Mathf.Max(0.05f, ftue.spawnDelay);
             }
-            return Mathf.Max(0.05f, spawnDelay);
+
+            float baseDelay = Mathf.Max(0.05f, spawnDelay);
+            if (isFtueRun || spawnDelayReductionPerWave <= 0f)
+            {
+                return baseDelay;
+            }
+
+            int satWave = GetDensitySaturationWave();
+            if (wave <= satWave)
+            {
+                return baseDelay;
+            }
+
+            float floorDelay = Mathf.Min(baseDelay, Mathf.Max(0.05f, minSpawnDelay));
+            float reduced = baseDelay - (wave - satWave) * spawnDelayReductionPerWave;
+            return Mathf.Max(floorDelay, reduced);
+        }
+
+        public int GetOverlapAliveThreshold(int wave, int spawnedInWave, bool isFtueRun, bool isBossWave)
+        {
+            if (!enableWaveOverlap || isBossWave || isFtueRun || waveOverlapThreshold <= 0f || spawnedInWave <= 0)
+            {
+                return 0;
+            }
+
+            if (!IsWaveSaturated(wave, isFtueRun))
+            {
+                return 0;
+            }
+
+            return Mathf.FloorToInt(spawnedInWave * Mathf.Clamp01(waveOverlapThreshold));
+        }
+
+        public int GetEffectivePackSize(EnemyWaveEntry entry, int wave)
+        {
+            if (entry == null) return 1;
+            int basePack = Mathf.Max(1, entry.packSize);
+            if (!entry.scalePackSizeWithWave || maxPackSizeBonus <= 0 || wave < packSizeScalingStartWave)
+            {
+                return basePack;
+            }
+
+            int interval = Mathf.Max(1, packSizeBonusWaveInterval);
+            int bonus = Mathf.Min(maxPackSizeBonus, 1 + (wave - packSizeScalingStartWave) / interval);
+            return basePack + bonus;
+        }
+
+        public float GetEliteChanceForWave(int wave)
+        {
+            if (wave < minWaveForElites || eliteChancePerWave <= 0f || maxEliteChance <= 0f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(Mathf.Min(maxEliteChance, (wave - minWaveForElites + 1) * eliteChancePerWave));
         }
 
         public float GetHpDifficultyMultiplier(int wave, bool isFtueRun)

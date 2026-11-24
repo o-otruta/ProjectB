@@ -42,9 +42,20 @@ namespace ProjectB.Enemies
         private System.Func<Vector3, float, float, Vector3> cachedSafePositionProvider;
         private System.Action<Vector3, int> cachedSpawnCoinCallback;
         private System.Action<Vector3> cachedSpawnVacuumCallback;
+        private System.Action<EnemyData, Vector3, float, float> cachedSplitChildCallback;
+        private System.Action<Vector3, FrostWispEnemyData> cachedFrostZoneCallback;
+        private System.Action<FrostSlowZone> cachedFrostZoneReleasedCallback;
+
+        private const int MAX_ACTIVE_FROST_ZONES = 24;
+        private ObjectPool<FrostSlowZone> frostZonePool;
+        private readonly List<FrostSlowZone> activeFrostZones = new List<FrostSlowZone>(MAX_ACTIVE_FROST_ZONES);
+        private Transform frostZoneContainer;
+        private Material cachedFrostZoneMaterial;
 
         private WaitForSeconds waveDelayWait;
         private WaitForSeconds spawnDelayWait;
+        private WaitForSeconds cachedWaveSpawnWait;
+        private float cachedWaveSpawnDelay = -1f;
         private WaitForSeconds maxWaveDurationWait;
         private WaitForSeconds[] ftueSpawnDelayWaits;
         private int obstacleMask;
@@ -52,6 +63,8 @@ namespace ProjectB.Enemies
 
         private int currentWave = 1;
         private bool isFtueRun;
+        private int currentWaveSpawnedCount;
+        private bool currentWaveIsBoss;
         public int CurrentWave => currentWave;
         public bool IsFtueRun => isFtueRun;
         public void SetFtueRun(bool value) { isFtueRun = value; }
@@ -60,6 +73,10 @@ namespace ProjectB.Enemies
         public int AvailableEnemySlots => Mathf.Max(0, MaxActiveEnemies - activeEnemies.Count);
         public bool CanSpawnMoreEnemies => activeEnemies.Count < MaxActiveEnemies;
         public int PendingWaveEnemies { get; private set; }
+        public int CurrentWaveSpawnedCount => currentWaveSpawnedCount;
+        public int CurrentWaveOverlapThreshold => waveConfig != null
+            ? waveConfig.GetOverlapAliveThreshold(currentWave, currentWaveSpawnedCount, isFtueRun, currentWaveIsBoss)
+            : 0;
         public IReadOnlyCollection<EnemyBase> ActiveEnemies => activeEnemies;
         public WaveConfig Config => waveConfig;
         public EnemyRuntimeModifiers RuntimeModifiers => ResolveEnemyModifiers();
@@ -206,6 +223,9 @@ namespace ProjectB.Enemies
             if (cachedSafePositionProvider == null) cachedSafePositionProvider = GetValidPositionNear;
             if (cachedSpawnCoinCallback == null) cachedSpawnCoinCallback = SpawnLootCoin;
             if (cachedSpawnVacuumCallback == null) cachedSpawnVacuumCallback = SpawnLootVacuum;
+            if (cachedSplitChildCallback == null) cachedSplitChildCallback = SpawnSplitChild;
+            if (cachedFrostZoneCallback == null) cachedFrostZoneCallback = SpawnFrostSlowZone;
+            if (cachedFrostZoneReleasedCallback == null) cachedFrostZoneReleasedCallback = HandleFrostZoneReleased;
 
             if (waveConfig != null)
             {
@@ -247,6 +267,10 @@ namespace ProjectB.Enemies
                     if (entry != null && entry.enemy != null)
                     {
                         EnsureEnemyPool(entry.enemy);
+                        if (entry.enemy is SplitterEnemyData splitter && splitter.splitChildData != null)
+                        {
+                            EnsureEnemyPool(splitter.splitChildData);
+                        }
                     }
                 }
             }
@@ -385,6 +409,13 @@ namespace ProjectB.Enemies
                 heroHealth.OnDamageTaken -= HandleHeroDamageTaken;
             }
             StopAllCoroutines();
+            ClearActiveFrostZones();
+            if (frostZoneContainer != null)
+            {
+                if (Application.isPlaying) Destroy(frostZoneContainer.gameObject);
+                else DestroyImmediate(frostZoneContainer.gameObject);
+                frostZoneContainer = null;
+            }
             if (enemyContainer != null)
             {
                 if (Application.isPlaying) Destroy(enemyContainer.gameObject);
@@ -414,6 +445,8 @@ namespace ProjectB.Enemies
             StopAllCoroutines();
             isSpawning = false;
             PendingWaveEnemies = 0;
+            currentWaveSpawnedCount = 0;
+            currentWaveIsBoss = false;
             waveDurationCoroutine = null;
             spawnWaveCoroutine = null;
             startWaveDelayCoroutine = null;
@@ -429,6 +462,7 @@ namespace ProjectB.Enemies
                 }
             }
             enemyIterationBuffer.Clear();
+            ClearActiveFrostZones();
         }
 
         private IEnumerator StartWaveDelay()
@@ -446,6 +480,18 @@ namespace ProjectB.Enemies
                 WaitForSeconds ftueWait = ftueSpawnDelayWaits[wave - 1];
                 if (ftueWait != null) return ftueWait;
             }
+
+            if (waveConfig != null)
+            {
+                float targetDelay = waveConfig.GetWaveSpawnDelay(wave, isFtueRun);
+                if (cachedWaveSpawnWait == null || !Mathf.Approximately(cachedWaveSpawnDelay, targetDelay))
+                {
+                    cachedWaveSpawnDelay = targetDelay;
+                    cachedWaveSpawnWait = new WaitForSeconds(targetDelay);
+                }
+                return cachedWaveSpawnWait;
+            }
+
             return spawnDelayWait;
         }
 
@@ -453,11 +499,13 @@ namespace ProjectB.Enemies
         {
             isSpawning = true;
             int waveNumber = currentWave;
+            currentWaveSpawnedCount = 0;
 
             bool isFtueWave = waveConfig.IsFtueProtectedWave(waveNumber, isFtueRun);
             bool hasBossesConfigured = waveConfig.bosses != null && waveConfig.bosses.Count > 0;
             bool isBossWave = !isFtueWave && hasBossesConfigured && IsBossWave(waveNumber, waveConfig.bossInterval);
             bool isMiniBossWave = !isFtueWave && IsMiniBossWave(waveNumber, waveConfig.miniBossInterval, waveConfig.bossInterval);
+            currentWaveIsBoss = isBossWave;
 
             if (isBossWave)
             {
@@ -477,6 +525,7 @@ namespace ProjectB.Enemies
 
                 // Boss wave: no timeout skip, no regular wave mobs — boss + its summons only
                 SpawnBoss(bossData);
+                currentWaveSpawnedCount = 1;
 
                 if (currentWave == waveNumber)
                 {
@@ -547,6 +596,7 @@ namespace ProjectB.Enemies
                 }
 
                 spawnedCount += spawnedNow;
+                currentWaveSpawnedCount = spawnedCount;
                 PendingWaveEnemies = Mathf.Max(0, enemiesToSpawn - spawnedCount);
                 yield return activeSpawnWait;
             }
@@ -674,7 +724,8 @@ namespace ProjectB.Enemies
 
                 if (introChoiceRoll < introProb)
                 {
-                    packCount = Mathf.Clamp(introEntry.packSize, 1, Mathf.Min(remainingInWave, introRemaining));
+                    int effectiveIntroPack = config.GetEffectivePackSize(introEntry, wave);
+                    packCount = Mathf.Clamp(effectiveIntroPack, 1, Mathf.Min(remainingInWave, introRemaining));
                     introRemaining -= packCount;
                     return introEntry;
                 }
@@ -693,7 +744,8 @@ namespace ProjectB.Enemies
             int maxRegularPack = introRemaining > 0
                 ? Mathf.Max(1, remainingInWave - introRemaining)
                 : Mathf.Max(1, remainingInWave);
-            packCount = Mathf.Clamp(selected.packSize, 1, maxRegularPack);
+            int effectiveSelectedPack = config.GetEffectivePackSize(selected, wave);
+            packCount = Mathf.Clamp(effectiveSelectedPack, 1, maxRegularPack);
 
             if (ReferenceEquals(selected, introEntry) && introRemaining > 0)
             {
@@ -760,9 +812,7 @@ namespace ProjectB.Enemies
                 bool elitesAllowed = waveConfig != null && !waveConfig.IsFtueProtectedWave(currentWave, isFtueRun);
                 if (elitesAllowed && !spawnedEliteInPack && currentWave >= waveConfig.minWaveForElites)
                 {
-                    float chance = Mathf.Min(
-                        waveConfig.maxEliteChance,
-                        (currentWave - waveConfig.minWaveForElites + 1) * waveConfig.eliteChancePerWave);
+                    float chance = waveConfig.GetEliteChanceForWave(currentWave);
                     if (Random.value < chance)
                     {
                         enemy.MakeElite(PickEliteArchetype(Random.value), waveConfig);
@@ -801,11 +851,13 @@ namespace ProjectB.Enemies
             EnemyData selectedType,
             Vector3 spawnPos,
             bool makeElite = false,
-            EliteArchetype eliteArchetype = EliteArchetype.Berserker)
+            EliteArchetype eliteArchetype = EliteArchetype.Berserker,
+            float hpScaleOverride = 1f)
         {
             if (selectedType == null) return null;
             EnsurePoolsInitialized();
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
+            hpMultiplier *= Mathf.Max(0.05f, hpScaleOverride);
             EnemyBase enemy = SpawnEnemyInstance(selectedType, spawnPos, hpMultiplier, damageMultiplier);
             if (makeElite && enemy != null)
             {
@@ -862,6 +914,125 @@ namespace ProjectB.Enemies
                 float maxCoord = Mathf.Max(8f, halfArena - padding);
                 fleeingEnemy.ConfigureLootCallbacks(cachedSpawnCoinCallback, cachedSpawnVacuumCallback, maxCoord);
             }
+            else if (enemy is SplitterEnemy splitterEnemy)
+            {
+                splitterEnemy.SetSplitSpawnCallback(cachedSplitChildCallback);
+            }
+            else if (enemy is FrostWispEnemy frostWispEnemy)
+            {
+                frostWispEnemy.SetFrostZoneCallback(cachedFrostZoneCallback);
+            }
+        }
+
+        private void SpawnSplitChild(EnemyData childData, Vector3 position, float hpScale, float dmgScale)
+        {
+            if (childData == null || !CanSpawnMoreEnemies) return;
+            if (heroHealth != null && heroHealth.IsDead) return;
+
+            EnsurePoolsInitialized();
+            GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
+            hpMultiplier *= Mathf.Max(0.1f, hpScale);
+            damageMultiplier *= Mathf.Max(0.1f, dmgScale);
+
+            SpawnEnemyInstance(childData, position, hpMultiplier, damageMultiplier);
+        }
+
+        private void EnsureFrostZonePoolInitialized()
+        {
+            if (frostZonePool != null) return;
+            if (frostZoneContainer == null)
+            {
+                frostZoneContainer = new GameObject("FrostZoneContainer").transform;
+            }
+
+            frostZonePool = new ObjectPool<FrostSlowZone>(
+                createFunc: () =>
+                {
+                    var go = new GameObject("FrostSlowZone");
+                    go.transform.SetParent(frostZoneContainer, false);
+                    return go.AddComponent<FrostSlowZone>();
+                },
+                actionOnGet: z => z.gameObject.SetActive(true),
+                actionOnRelease: z => z.gameObject.SetActive(false),
+                actionOnDestroy: z =>
+                {
+                    if (z != null)
+                    {
+                        if (Application.isPlaying) Destroy(z.gameObject);
+                        else DestroyImmediate(z.gameObject);
+                    }
+                },
+                collectionCheck: false,
+                defaultCapacity: 8,
+                maxSize: MAX_ACTIVE_FROST_ZONES);
+        }
+
+        private void SpawnFrostSlowZone(Vector3 position, FrostWispEnemyData wispData)
+        {
+            if (wispData == null || (heroHealth != null && heroHealth.IsDead)) return;
+
+            EnsureFrostZonePoolInitialized();
+
+            if (activeFrostZones.Count >= MAX_ACTIVE_FROST_ZONES && activeFrostZones[0] != null)
+            {
+                activeFrostZones[0].ForceExpire();
+            }
+
+            if (cachedFrostZoneMaterial == null)
+            {
+                cachedFrostZoneMaterial = Resources.Load<Material>("FrostWispZoneMat");
+                if (cachedFrostZoneMaterial == null)
+                {
+                    Shader urpUnlit = Shader.Find("Universal Render Pipeline/Unlit");
+                    if (urpUnlit != null)
+                    {
+                        cachedFrostZoneMaterial = new Material(urpUnlit)
+                        {
+                            name = "FrostZoneRuntimeMat",
+                            enableInstancing = true
+                        };
+                        if (cachedFrostZoneMaterial.HasProperty("_BaseColor"))
+                        {
+                            cachedFrostZoneMaterial.SetColor("_BaseColor", new Color(0.45f, 0.90f, 1.0f, 0.50f));
+                        }
+                    }
+                }
+            }
+
+            FrostSlowZone zone = frostZonePool.Get();
+            ISlowable heroSlowable = heroTarget != null ? heroTarget.GetComponent<ISlowable>() : null;
+            Vector3 clampedPos = ClampToArena(position);
+            zone.Initialize(
+                clampedPos,
+                wispData.frostZoneRadius,
+                wispData.frostZoneDuration,
+                wispData.heroSlowFactor,
+                wispData.slowRefreshDuration,
+                wispData.zoneTickInterval,
+                heroTarget,
+                heroSlowable,
+                cachedFrostZoneMaterial,
+                frostZonePool,
+                wispData.frostZonePrefab,
+                cachedFrostZoneReleasedCallback);
+            activeFrostZones.Add(zone);
+        }
+
+        private void HandleFrostZoneReleased(FrostSlowZone zone)
+        {
+            activeFrostZones.Remove(zone);
+        }
+
+        private void ClearActiveFrostZones()
+        {
+            for (int i = activeFrostZones.Count - 1; i >= 0; i--)
+            {
+                if (activeFrostZones[i] != null)
+                {
+                    activeFrostZones[i].ForceExpire();
+                }
+            }
+            activeFrostZones.Clear();
         }
 
         private void SpawnLootCoin(Vector3 pos, int amount)
@@ -1009,7 +1180,11 @@ namespace ProjectB.Enemies
             }
             enemyIterationBuffer.Clear();
 
-            if (!isSpawning && activeEnemies.Count <= 0)
+            int overlapThreshold = waveConfig != null
+                ? waveConfig.GetOverlapAliveThreshold(currentWave, currentWaveSpawnedCount, isFtueRun, currentWaveIsBoss)
+                : 0;
+
+            if (!isSpawning && activeEnemies.Count <= overlapThreshold)
             {
                 AdvanceWave();
             }
@@ -1018,6 +1193,8 @@ namespace ProjectB.Enemies
         private void AdvanceWave()
         {
             StopWaveCoroutines();
+            currentWaveSpawnedCount = 0;
+            currentWaveIsBoss = false;
 
             int completedWave = currentWave;
             if (!tookDamageInCurrentWave)
@@ -1059,6 +1236,8 @@ namespace ProjectB.Enemies
         {
             if (!Application.isPlaying) return;
             StopWaveCoroutines();
+            currentWaveSpawnedCount = 0;
+            currentWaveIsBoss = false;
 
             CopyActiveEnemiesToBuffer();
             for (int i = 0; i < enemyIterationBuffer.Count; i++)
@@ -1072,6 +1251,7 @@ namespace ProjectB.Enemies
             }
             activeEnemies.Clear();
             enemyIterationBuffer.Clear();
+            ClearActiveFrostZones();
 
             int prev = currentWave;
             currentWave = Mathf.Max(1, targetWave);
@@ -1092,6 +1272,7 @@ namespace ProjectB.Enemies
                 }
             }
             enemyIterationBuffer.Clear();
+            ClearActiveFrostZones();
         }
 
         public void ResumeAfterRevive()

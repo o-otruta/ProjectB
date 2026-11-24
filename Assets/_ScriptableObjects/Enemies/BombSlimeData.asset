@@ -21,6 +21,7 @@ MonoBehaviour:
   coinDropChance: 0.25
   coinDrop: 1
   modelPrefab: {fileID: 795682729957671077, guid: 89954bf483ca1bd4e84c7a3bda42eda3, type: 3}
+  icon: {fileID: 21300000, guid: 0af8a3f88556fcc49b8916976cf01718, type: 3}
   triggerDistance: 1.8
   fuseDuration: 0.75
   explosionRadius: 2.5

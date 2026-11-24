@@ -19,8 +19,8 @@ MonoBehaviour:
   spawnRadiusMin: 10
   spawnRadiusMax: 15
   maxEnemiesPerWave: 50
-  hpLinearPerWave: 0.1
-  hpQuadraticPerWave: 0.0005
+  hpLinearPerWave: 0.085
+  hpQuadraticPerWave: 0.0002
   hpCurveMultiplier:
     serializedVersion: 2
     m_Curve: []
@@ -35,8 +35,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  coinLinearPerWave: 0.015
-  maxCoinMultiplier: 2.5
+  coinLinearPerWave: 0.007
+  maxCoinMultiplier: 1.65
   enemySchedule:
   - enemy: {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
     minWave: 1
@@ -45,6 +45,7 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 0
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 1
   - enemy: {fileID: 11400000, guid: ce3993e4a6d7430479db4af2e92e918f, type: 2}
     minWave: 3
     maxWave: 0
@@ -52,6 +53,7 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
   - enemy: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
     minWave: 6
     maxWave: 0
@@ -59,6 +61,7 @@ MonoBehaviour:
     packSize: 4
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 1
   - enemy: {fileID: 11400000, guid: cddf28e2f636f834591c8101af197021, type: 2}
     minWave: 7
     maxWave: 0
@@ -66,6 +69,7 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
   - enemy: {fileID: 11400000, guid: 25a0c720dfb26e846a0f3ed9c26bf25e, type: 2}
     minWave: 11
     maxWave: 0
@@ -73,6 +77,7 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
   - enemy: {fileID: 11400000, guid: 9b87d44779d63944c92a508b97ac792e, type: 2}
     minWave: 14
     maxWave: 0
@@ -80,6 +85,7 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
   - enemy: {fileID: 11400000, guid: a96a65b0a728c8a43bd18ebe89e0fd87, type: 2}
     minWave: 18
     maxWave: 0
@@ -87,6 +93,7 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
   - enemy: {fileID: 11400000, guid: 585f18e4a1275584ea9fe4d593fe0cfd, type: 2}
     minWave: 22
     maxWave: 0
@@ -94,9 +101,34 @@ MonoBehaviour:
     packSize: 1
     triggerIntroWave: 1
     introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
+  - enemy: {fileID: 11400000, guid: 25d0bd16ef89c074784b510140b1c58e, type: 2}
+    minWave: 32
+    maxWave: 0
+    spawnWeight: 0.65
+    packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
+    scalePackSizeWithWave: 1
+  - enemy: {fileID: 11400000, guid: cfe24c033315515489b6d2cd1c58975a, type: 2}
+    minWave: 46
+    maxWave: 0
+    spawnWeight: 0.6
+    packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
+  - enemy: {fileID: 11400000, guid: 183b1fe6f5515cd42907ad65019589eb, type: 2}
+    minWave: 61
+    maxWave: 0
+    spawnWeight: 0.5
+    packSize: 1
+    triggerIntroWave: 1
+    introSpawnShare: 0.5
+    scalePackSizeWithWave: 0
   minWaveForElites: 10
-  eliteChancePerWave: 0.05
-  maxEliteChance: 0.25
+  eliteChancePerWave: 0.025
+  maxEliteChance: 0.35
   eliteHpMultiplier: 3
   eliteDamageMultiplier: 2
   berserkerSpeedMultiplier: 1.25
@@ -159,3 +191,19 @@ MonoBehaviour:
     spawnDelay: 0.65
     hpMultiplier: 0.85
     damageMultiplier: 0.9
+  minSpawnDelay: 0.16
+  spawnDelayReductionPerWave: 0.012
+  enableWaveOverlap: 1
+  waveOverlapThreshold: 0.3
+  packSizeScalingStartWave: 20
+  packSizeBonusWaveInterval: 20
+  maxPackSizeBonus: 2
+  corridorHordeEnabled: 1
+  firstCorridorHordeWave: 19
+  corridorHordeInterval: 10
+  corridorHordeDuration: 12
+  corridorHordeSpawnInterval: 0.3
+  corridorHordeBatchSize: 2
+  corridorHordeHpMultiplier: 0.55
+  corridorHordeCorridorHalfWidth: 3.5
+  corridorHordeEnemyData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}

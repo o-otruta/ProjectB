@@ -692,7 +692,16 @@ namespace ProjectB.Enemies
             return rawAmount;
         }
 
+        protected virtual int AbsorbIncomingDamage(int finalAmount, bool isCrit, bool wasBlocked)
+        {
+            return finalAmount;
+        }
+
         protected virtual void OnDamageApplied(int finalAmount, bool isCrit, bool wasBlocked)
+        {
+        }
+
+        protected virtual void OnBeforeDeathBroadcast()
         {
         }
 
@@ -706,7 +715,11 @@ namespace ProjectB.Enemies
             }
 
             int finalAmount = Mathf.Max(1, ModifyIncomingDamage(amount, hasSourcePosition, sourcePosition, isAoE, out bool wasBlocked));
-            currentHp = Mathf.Max(0, currentHp - finalAmount);
+            int hpDamage = AbsorbIncomingDamage(finalAmount, isCrit, wasBlocked);
+            if (hpDamage > 0)
+            {
+                currentHp = Mathf.Max(0, currentHp - hpDamage);
+            }
 
             eventBus?.Publish(new EnemyDamagedEvent(transform.position, finalAmount, isMiniBoss || IsBoss, isCrit, wasBlocked));
 
@@ -749,6 +762,7 @@ namespace ProjectB.Enemies
                 bossId: BossId,
                 eliteArchetype: eliteArchetype));
 
+            OnBeforeDeathBroadcast();
             OnDied?.Invoke(this);
             ReturnToPool();
         }

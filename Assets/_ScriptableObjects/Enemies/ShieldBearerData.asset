@@ -21,5 +21,6 @@ MonoBehaviour:
   coinDropChance: 0.32
   coinDrop: 2
   modelPrefab: {fileID: 7388987578087438979, guid: 253182d1e75dde044b43877814fc9015, type: 3}
+  icon: {fileID: 21300000, guid: c3f1e6afcd3b0da45a0c4e6a2306fb35, type: 3}
   frontalBlockHalfAngle: 60
   frontalDamageReduction: 0.65

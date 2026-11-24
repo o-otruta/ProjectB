@@ -49,9 +49,14 @@ namespace ProjectB.Enemies
         private float eventDuration;
         private float remainingTime;
         private int nextScheduledEventWave = 4;
+        private int nextCorridorHordeWave = 19;
         private int ambushTotalElites;
         private float nextAmbushPruneTime;
         private FleeingLootEnemy activeGoldGoblin;
+        private Vector3 activeCorridorDirection = Vector3.forward;
+        private Vector3 activeCorridorPerp = Vector3.right;
+        private float corridorSpawnTimer;
+        private int corridorSpawnedTotal;
         private bool isSubscribed;
 
         private bool hasSearchedForLight;
@@ -67,9 +72,12 @@ namespace ProjectB.Enemies
         public float RemainingTime => remainingTime;
         public float NormalizedRemainingTime => eventDuration > 0.001f ? Mathf.Clamp01(remainingTime / eventDuration) : 1f;
         public int NextScheduledEventWave => nextScheduledEventWave;
+        public int NextCorridorHordeWave => nextCorridorHordeWave;
         public int AmbushTotalElites => ambushTotalElites;
         public int AmbushRemainingElites => ambushElites.Count;
         public FleeingLootEnemy ActiveGoldGoblin => activeGoldGoblin;
+        public Vector3 ActiveCorridorDirection => activeCorridorDirection;
+        public int CorridorSpawnedTotal => corridorSpawnedTotal;
         public Light ArenaDirectionalLight => arenaDirectionalLight;
 
         public float BloodMoonXpMultiplier
@@ -122,6 +130,36 @@ namespace ProjectB.Enemies
             return true;
         }
 
+        public static bool CanTriggerCorridorHordeOnWave(WaveConfig config, int wave, bool isFtueRun = false)
+        {
+            if (config == null || !config.corridorHordeEnabled || wave < Mathf.Max(1, config.firstCorridorHordeWave))
+            {
+                return false;
+            }
+
+            if (config.IsFtueProtectedWave(wave, isFtueRun))
+            {
+                return false;
+            }
+
+            if (config.bosses != null && config.bosses.Count > 0 && WaveManager.IsBossWave(wave, config.bossInterval))
+            {
+                return false;
+            }
+
+            if (WaveManager.IsMiniBossWave(wave, config.miniBossInterval, config.bossInterval))
+            {
+                return false;
+            }
+
+            if (config.GetIntroEntryForWave(wave) != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         [Inject]
         public void Construct(
             WaveManager waveManager,
@@ -147,6 +185,7 @@ namespace ProjectB.Enemies
             if (cfg != null)
             {
                 nextScheduledEventWave = Mathf.Max(1, cfg.firstWaveEventWave);
+                nextCorridorHordeWave = Mathf.Max(1, cfg.firstCorridorHordeWave);
             }
 
             if (isActiveAndEnabled)
@@ -185,6 +224,7 @@ namespace ProjectB.Enemies
             if (cfg != null)
             {
                 nextScheduledEventWave = Mathf.Max(1, cfg.firstWaveEventWave);
+                nextCorridorHordeWave = Mathf.Max(1, cfg.firstCorridorHordeWave);
             }
             ResolveDirectionalLight();
             Subscribe();
@@ -252,6 +292,21 @@ namespace ProjectB.Enemies
                 return;
             }
 
+            if (activeEventType == WaveEventType.CorridorHorde)
+            {
+                WaveConfig cfg = ActiveConfig;
+                if (cfg != null)
+                {
+                    corridorSpawnTimer -= deltaTime;
+                    float interval = Mathf.Max(0.05f, cfg.corridorHordeSpawnInterval);
+                    while (corridorSpawnTimer <= 0f)
+                    {
+                        corridorSpawnTimer += interval;
+                        SpawnCorridorHordeBatch(cfg);
+                    }
+                }
+            }
+
             if (eventDuration > 0f)
             {
                 remainingTime -= deltaTime;
@@ -268,8 +323,20 @@ namespace ProjectB.Enemies
             if (heroHealth != null && heroHealth.IsDead) return;
             WaveConfig cfg = ActiveConfig;
             if (cfg == null || activeEventType != WaveEventType.None) return;
-            if (evt.NextWave < nextScheduledEventWave) return;
+
             bool isFtueRun = waveManager != null && waveManager.IsFtueRun;
+
+            if (cfg.corridorHordeEnabled && evt.NextWave >= nextCorridorHordeWave)
+            {
+                if (CanTriggerCorridorHordeOnWave(cfg, evt.NextWave, isFtueRun) && StartEvent(WaveEventType.CorridorHorde))
+                {
+                    nextCorridorHordeWave = evt.NextWave + Mathf.Max(2, cfg.corridorHordeInterval);
+                    nextScheduledEventWave = Mathf.Max(nextScheduledEventWave, evt.NextWave + Mathf.Max(1, cfg.minWavesBetweenEvents));
+                    return;
+                }
+            }
+
+            if (evt.NextWave < nextScheduledEventWave) return;
             if (!CanTriggerEventOnWave(cfg, evt.NextWave, isFtueRun)) return;
 
             WaveEventType chosen = PickNextEventType(cfg);
@@ -318,6 +385,7 @@ namespace ProjectB.Enemies
                 WaveEventType.GoldGoblin => cfg.goldGoblinData != null,
                 WaveEventType.BloodMoon => true,
                 WaveEventType.EliteAmbush => cfg.enemySchedule != null && cfg.enemySchedule.Count > 0,
+                WaveEventType.CorridorHorde => ResolveCorridorHordeEnemy(cfg) != null,
                 _ => false
             };
         }
@@ -343,6 +411,8 @@ namespace ProjectB.Enemies
                     return StartBloodMoon(cfg);
                 case WaveEventType.EliteAmbush:
                     return StartEliteAmbush(cfg);
+                case WaveEventType.CorridorHorde:
+                    return StartCorridorHorde(cfg);
                 default:
                     return false;
             }
@@ -456,6 +526,54 @@ namespace ProjectB.Enemies
                 Loc.Get("event.elite_ambush.title", "ELITE AMBUSH!"),
                 Loc.Get("event.elite_ambush.subtitle", "DEFEAT 3 ELITES FOR MAGNET & COINS!"));
             return true;
+        }
+
+        private bool StartCorridorHorde(WaveConfig cfg)
+        {
+            EnemyData hordeEnemy = ResolveCorridorHordeEnemy(cfg);
+            if (hordeEnemy == null || waveManager == null) return false;
+
+            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            activeCorridorDirection = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            activeCorridorPerp = new Vector3(-activeCorridorDirection.z, 0f, activeCorridorDirection.x);
+            corridorSpawnTimer = Mathf.Max(0.05f, cfg.corridorHordeSpawnInterval);
+            corridorSpawnedTotal = 0;
+
+            BeginEventState(
+                WaveEventType.CorridorHorde,
+                cfg.corridorHordeDuration,
+                Loc.Get("event.corridor_horde.title", "HORDE CORRIDOR!"),
+                Loc.Get("event.corridor_horde.subtitle", "HOLD THE LINE AGAINST THE ONSLAUGHT!"));
+
+            SpawnCorridorHordeBatch(cfg);
+            return true;
+        }
+
+        private void SpawnCorridorHordeBatch(WaveConfig cfg)
+        {
+            if (cfg == null || waveManager == null || !waveManager.CanSpawnMoreEnemies) return;
+            EnemyData hordeEnemy = ResolveCorridorHordeEnemy(cfg);
+            if (hordeEnemy == null) return;
+
+            Vector3 center = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            center.y = 0f;
+
+            float spawnDist = Mathf.Max(10f, cfg.spawnRadiusMax > 0f ? cfg.spawnRadiusMax : 15f);
+            float halfWidth = Mathf.Max(1f, cfg.corridorHordeCorridorHalfWidth);
+            int batch = Mathf.Max(1, cfg.corridorHordeBatchSize);
+            float hpScale = Mathf.Clamp(cfg.corridorHordeHpMultiplier, 0.2f, 1f);
+
+            for (int i = 0; i < batch; i++)
+            {
+                if (!waveManager.CanSpawnMoreEnemies) break;
+                float lateral = UnityEngine.Random.Range(-halfWidth, halfWidth);
+                Vector3 desired = center + activeCorridorDirection * spawnDist + activeCorridorPerp * lateral;
+                Vector3 safePos = waveManager.GetValidPositionNear(desired, 0f, 1.2f);
+                if (waveManager.SpawnEventEnemy(hordeEnemy, safePos, makeElite: false, hpScaleOverride: hpScale) != null)
+                {
+                    corridorSpawnedTotal++;
+                }
+            }
         }
 
         private void BeginEventState(WaveEventType type, float duration, string title, string subtitle)
@@ -588,6 +706,7 @@ namespace ProjectB.Enemies
             eventDuration = 0f;
             remainingTime = 0f;
             ambushTotalElites = 0;
+            corridorSpawnTimer = 0f;
 
             if (endedType == WaveEventType.BloodMoon)
             {
@@ -637,6 +756,12 @@ namespace ProjectB.Enemies
                 }
             }
             return cfg.enemySchedule[0]?.enemy;
+        }
+
+        private EnemyData ResolveCorridorHordeEnemy(WaveConfig cfg)
+        {
+            if (cfg.corridorHordeEnemyData != null) return cfg.corridorHordeEnemyData;
+            return ResolveSwarmRushEnemy(cfg);
         }
 
         private void ResolveDirectionalLight()

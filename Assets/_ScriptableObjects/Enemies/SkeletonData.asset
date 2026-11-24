@@ -21,3 +21,4 @@ MonoBehaviour:
   coinDropChance: 0.22
   coinDrop: 1
   modelPrefab: {fileID: 8338125148646119660, guid: ce0c85cdc1b6b224fbe45016df31b6d3, type: 3}
+  icon: {fileID: 21300000, guid: 091184c838d0b3440b262ed62c542f09, type: 3}

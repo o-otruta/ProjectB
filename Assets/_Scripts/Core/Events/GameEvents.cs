@@ -643,4 +643,49 @@ namespace ProjectB.Core.Events
             Radius = radius;
         }
     }
+
+    /// <summary>
+    /// Sprint 16.2: Splitter Slime split into smaller slimelets upon death.
+    /// </summary>
+    public struct EnemySplitEvent
+    {
+        public Vector3 Position;
+        public int SpawnedCount;
+
+        public EnemySplitEvent(Vector3 position, int spawnedCount)
+        {
+            Position = position;
+            SpawnedCount = spawnedCount;
+        }
+    }
+
+    /// <summary>
+    /// Sprint 16.2: Frost Wisp spawned a slowing frost zone on death.
+    /// </summary>
+    public struct FrostWispZoneSpawnedEvent
+    {
+        public Vector3 Position;
+        public float Radius;
+
+        public FrostWispZoneSpawnedEvent(Vector3 position, float radius)
+        {
+            Position = position;
+            Radius = radius;
+        }
+    }
+
+    /// <summary>
+    /// Sprint 16.2: Siege Golemite's stone shell shattered into Phase 2 (exposed fast core).
+    /// </summary>
+    public struct SiegeShellBrokenEvent
+    {
+        public Vector3 Position;
+        public float Scale;
+
+        public SiegeShellBrokenEvent(Vector3 position, float scale)
+        {
+            Position = position;
+            Scale = scale;
+        }
+    }
 }

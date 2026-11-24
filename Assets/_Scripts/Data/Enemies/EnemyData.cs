@@ -35,5 +35,9 @@ namespace ProjectB.Data.Enemies
         [Header("Visuals")]
         [Tooltip("Visual model prefab for this enemy")]
         public GameObject modelPrefab;
+
+        [Header("UI")]
+        [Tooltip("64x64 voxel collection icon")]
+        public Sprite icon;
     }
 }

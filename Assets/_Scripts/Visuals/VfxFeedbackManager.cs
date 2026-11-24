@@ -460,6 +460,9 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<AbilityVfxEvent>(OnAbilityVfx);
                 eventBus.Subscribe<BossShardsGainedEvent>(OnBossShardsGained);
                 eventBus.Subscribe<SecondWindTriggeredEvent>(OnSecondWind);
+                eventBus.Subscribe<EnemySplitEvent>(OnEnemySplit);
+                eventBus.Subscribe<FrostWispZoneSpawnedEvent>(OnFrostWispZoneSpawned);
+                eventBus.Subscribe<SiegeShellBrokenEvent>(OnSiegeShellBroken);
             }
 
             if (heroHealth != null)
@@ -511,6 +514,9 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<AbilityVfxEvent>(OnAbilityVfx);
                 eventBus.Unsubscribe<BossShardsGainedEvent>(OnBossShardsGained);
                 eventBus.Unsubscribe<SecondWindTriggeredEvent>(OnSecondWind);
+                eventBus.Unsubscribe<EnemySplitEvent>(OnEnemySplit);
+                eventBus.Unsubscribe<FrostWispZoneSpawnedEvent>(OnFrostWispZoneSpawned);
+                eventBus.Unsubscribe<SiegeShellBrokenEvent>(OnSiegeShellBroken);
             }
 
             if (heroHealth != null)
@@ -857,6 +863,43 @@ namespace ProjectB.Visuals
                 size: 0.34f);
             audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.62f, randomizePitch: true);
             cameraController?.Shake(0.18f, 0.14f);
+        }
+
+        private void OnEnemySplit(EnemySplitEvent evt)
+        {
+            EmitBurst(evt.Position + Vector3.up * 0.35f, XpSparkColor, count: 14, speed: 4.5f, size: 0.28f);
+            EmitBurst(evt.Position + Vector3.up * 0.45f, FrostPrimaryColor, count: 8, speed: 3.4f, size: 0.22f);
+        }
+
+        private void OnFrostWispZoneSpawned(FrostWispZoneSpawnedEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.25f,
+                Mathf.Max(1.2f, evt.Radius),
+                FrostPrimaryColor,
+                FrostSecondaryColor,
+                ringCount: 16,
+                centerCount: 6,
+                speed: 4.2f,
+                size: 0.26f);
+            audioManager?.PlaySfx(SfxType.IceShatter, volumeScale: 0.45f, randomizePitch: true);
+        }
+
+        private void OnSiegeShellBroken(SiegeShellBrokenEvent evt)
+        {
+            float scale = Mathf.Max(0.8f, evt.Scale);
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 0.65f,
+                2.2f * scale,
+                SeismicSecondaryColor,
+                FireballPrimaryColor,
+                ringCount: 22,
+                centerCount: 10,
+                speed: 6.4f,
+                size: 0.38f);
+            audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.55f, randomizePitch: true);
+            cameraController?.Shake(0.18f, 0.12f);
+            TryTriggerHitStop(0.025f);
         }
 
         private void OnFrostLichNova(FrostLichNovaEvent evt)

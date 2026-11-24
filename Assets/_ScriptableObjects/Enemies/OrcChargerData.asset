@@ -21,6 +21,7 @@ MonoBehaviour:
   coinDropChance: 0.3
   coinDrop: 1
   modelPrefab: {fileID: 2488475599238186541, guid: 6595e4d83d3566e4684f74fed3931658, type: 3}
+  icon: {fileID: 21300000, guid: 16c3a74a1efc2cd42b01f110a1500419, type: 3}
   chargeTriggerRange: 7
   chargeWindupDuration: 0.8
   chargeSpeed: 11

@@ -307,6 +307,8 @@
   "event.ambush.left": "ОСТАЛОСЬ {0}/3",
   "event.blood_moon.subtitle": "x2 XP И МОНЕТЫ  •  +20% СКОРОСТЬ ВРАГОВ",
   "event.blood_moon.title": "КРОВАВАЯ ЛУНА!",
+  "event.corridor_horde.subtitle": "ДЕРЖИТЕ ЛИНИЮ ПРОТИВ НАТИСКА!",
+  "event.corridor_horde.title": "КОРИДОР ОРДЫ!",
   "event.default_title": "СОБЫТИЕ ВОЛНЫ",
   "event.elite_ambush.subtitle": "ОДОЛЕЙТЕ 3 ЭЛИТНЫХ ЗА МАГНИТ И МОНЕТЫ!",
   "event.elite_ambush.title": "ЭЛИТНАЯ ЗАСАДА!",

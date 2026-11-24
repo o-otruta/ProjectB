@@ -236,7 +236,7 @@ namespace ProjectB.Tests.EditMode
             // 4. WaveConfig & ArenaConfig
             var waveConfig = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
             Assert.IsNotNull(waveConfig);
-            Assert.AreEqual(8, waveConfig.enemySchedule.Count);
+            Assert.AreEqual(11, waveConfig.enemySchedule.Count);
             Assert.IsTrue(waveConfig.enemySchedule.Exists(e => e.enemy is ShieldedEnemyData && e.minWave == 18 && e.triggerIntroWave));
             Assert.IsTrue(waveConfig.enemySchedule.Exists(e => e.enemy is SummonerEnemyData && e.minWave == 22 && e.triggerIntroWave));
 

@@ -21,6 +21,7 @@ MonoBehaviour:
   coinDropChance: 0.35
   coinDrop: 2
   modelPrefab: {fileID: 4445684233913297441, guid: 6af39e1d6fb6e75449eb077c98d95b6e, type: 3}
+  icon: {fileID: 21300000, guid: 9fdc3089f9aff184aa17e519f3dfa383, type: 3}
   preferredDistance: 8
   retreatDistance: 4.8
   summonInterval: 6

@@ -6,6 +6,7 @@ namespace ProjectB.Data.Enemies
         SwarmRush = 1,
         GoldGoblin = 2,
         BloodMoon = 3,
-        EliteAmbush = 4
+        EliteAmbush = 4,
+        CorridorHorde = 5
     }
 }

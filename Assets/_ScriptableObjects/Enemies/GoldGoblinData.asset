@@ -21,6 +21,7 @@ MonoBehaviour:
   coinDropChance: 0
   coinDrop: 0
   modelPrefab: {fileID: 1081042996728563014, guid: 9ea09fbe207042e43b06ef0a244c8cdc, type: 3}
+  icon: {fileID: 21300000, guid: 80ff2884eac831242a5468bfdd47f342, type: 3}
   fleeOrbitDistance: 20
   coinsPerHit: 2
   hitDropCooldown: 0.25

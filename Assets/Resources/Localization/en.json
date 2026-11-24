@@ -307,6 +307,8 @@
   "event.ambush.left": "{0}/3 LEFT",
   "event.blood_moon.subtitle": "x2 XP & COINS  •  +20% ENEMY SPEED",
   "event.blood_moon.title": "BLOOD MOON!",
+  "event.corridor_horde.subtitle": "HOLD THE LINE AGAINST THE ONSLAUGHT!",
+  "event.corridor_horde.title": "HORDE CORRIDOR!",
   "event.default_title": "WAVE EVENT",
   "event.elite_ambush.subtitle": "DEFEAT 3 ELITES FOR MAGNET & COINS!",
   "event.elite_ambush.title": "ELITE AMBUSH!",

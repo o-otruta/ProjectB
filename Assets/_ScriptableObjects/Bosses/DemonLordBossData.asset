@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24fed005e429ecc4bab7093f9b59a455, type: 3}
   m_Name: DemonLordBossData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.BossData
-  hp: 1900
+  hp: 2600
   speed: 2.85
   contactDamage: 26
   damageCooldown: 0.85
@@ -21,6 +21,7 @@ MonoBehaviour:
   coinDropChance: 1
   coinDrop: 7
   modelPrefab: {fileID: 5060843028107403187, guid: c13e3352d678bb246ad3749e1e4d6863, type: 3}
+  icon: {fileID: 0}
   bossId: demon_lord
   bossDisplayName: Demon Lord
   nameKey: boss.demon_lord.name

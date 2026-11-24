@@ -265,6 +265,7 @@ namespace ProjectB.UI
                 WaveEventType.GoldGoblin => theme.gold,
                 WaveEventType.BloodMoon => theme.danger,
                 WaveEventType.EliteAmbush => theme.rarityEpic,
+                WaveEventType.CorridorHorde => theme.accent,
                 _ => theme.textPrimary
             };
         }

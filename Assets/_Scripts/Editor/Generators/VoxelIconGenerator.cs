@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using ProjectB.Abilities;
 using ProjectB.Data;
+using ProjectB.Data.Enemies;
 using ProjectB.Data.Meta;
 using ProjectB.LevelUp;
 
@@ -265,6 +266,29 @@ namespace ProjectB.EditorScripts
                 };
                 node.icon = GetOrCreateSprite($"talent_{node.id}", framed: true, spriteCache, key, frameCol);
                 EditorUtility.SetDirty(node);
+            }
+
+            // 8. Enemies (Sprint 16.2)
+            foreach (string guid in AssetDatabase.FindAssets("t:EnemyData", new[] { "Assets/_ScriptableObjects/Enemies" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var enemy = AssetDatabase.LoadAssetAtPath<EnemyData>(path);
+                if (enemy == null) continue;
+
+                string key = ResolveEnemyTemplateKey(enemy.name);
+                Color32 frameCol = enemy switch
+                {
+                    SiegeGolemiteEnemyData => FireOrange,
+                    FrostWispEnemyData => IceBlue,
+                    SplitterEnemyData => Green,
+                    SummonerEnemyData => Purple,
+                    ShieldedEnemyData => Silver,
+                    ExploderEnemyData => FireRed,
+                    FleeingLootEnemyData => Gold,
+                    _ => Crimson
+                };
+                enemy.icon = GetOrCreateSprite($"enemy_{enemy.name}", framed: true, spriteCache, key, frameCol);
+                EditorUtility.SetDirty(enemy);
             }
 
             AssetDatabase.SaveAssets();
@@ -1982,8 +2006,273 @@ namespace ProjectB.EditorScripts
                     "................",
                     "................",
                     "................"
+                },
+                ["enemy_slime"] = new[]
+                {
+                    "................",
+                    "................",
+                    "......KKKK......",
+                    "....KKEEEEKK....",
+                    "...KEEEEEEEEK...",
+                    "..KEEEWWWWEEEK..",
+                    "..KEEKWEEWKEEK..",
+                    ".KEEEKKEEKKEEEK.",
+                    ".KEEEEEEEEEEEEK.",
+                    ".KEEEEEEEEEEEEK.",
+                    ".KFFFFFFFFFFFFK.",
+                    "..KKKKKKKKKKKK..",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_splitter_slime"] = new[]
+                {
+                    "................",
+                    ".....KKKKKK.....",
+                    "...KKEEEEEEKK...",
+                    "..KEEWWEEWWEEK..",
+                    ".KEEYYEEEEYYEEK.",
+                    ".KEEYYEEEEYYEEK.",
+                    ".KEEEWWEEWWEEEK.",
+                    ".KEEEKKEEKKEEEK.",
+                    ".KEEEEEEEEEEEEK.",
+                    ".KFFYYYYYYYYFFK.",
+                    ".KFFFFFFFFFFFFK.",
+                    "..KKKKKKKKKKKK..",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_split_slimelet"] = new[]
+                {
+                    "................",
+                    "................",
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KEEEEEEK....",
+                    "...KEEYYYYEEK...",
+                    "...KEKWEEKWEK...",
+                    "...KEEEEEEEEK...",
+                    "...KFFFFFFFFK...",
+                    "....KKKKKKKK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_frost_wisp"] = new[]
+                {
+                    ".......KK.......",
+                    "......KIWK......",
+                    ".....KIWWIK.....",
+                    "..K..KIYYIK..K..",
+                    ".KYK.KIWWIK.KYK.",
+                    "..K.KIIYYIIK.K..",
+                    "...KIIWKKWIIK...",
+                    "...KIJJJJJJIK...",
+                    "....KIJYYJIK....",
+                    ".....KIJJIK.....",
+                    "....K..KK..K....",
+                    "...KYK....KYK...",
+                    "....K......K....",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_siege_golemite"] = new[]
+                {
+                    "..KK........KK..",
+                    ".KSSK.KKKK.KSSK.",
+                    ".KDDKKSDDSKKDDK.",
+                    ".KDDKSGOOGSKDDK.",
+                    ".KDDKDDDDDDKDDK.",
+                    "..KKKDSOOSDKDDK.",
+                    "..KDDDSOOSDKDDK.",
+                    "..KDDDSOOSDKDDK.",
+                    "..KDDDOOOODKDDK.",
+                    "..KDDDDDDDDKDDK.",
+                    "..KDDK....KDDK..",
+                    "..KDDK....KDDK..",
+                    "..KKKK....KKKK..",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_goblin"] = new[]
+                {
+                    "................",
+                    ".KK..........KK.",
+                    ".KEK.KKKKKK.KEK.",
+                    "..KEKEEEEEEKEK..",
+                    "...KEEEEEEEEEK..",
+                    "...KERKEEKREEK..",
+                    "...KEEEEEEEEEK..",
+                    "....KEKKKKKEK...",
+                    "....KBBBBBBBK...",
+                    "...KBBBBBBBBBK..",
+                    "....KBBKKBBK....",
+                    "....KDDKKDDK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_skeleton"] = new[]
+                {
+                    "................",
+                    ".....KKKKKK.....",
+                    "....KWWWWWWK....",
+                    "...KWWWWWWWWK...",
+                    "...KWWKWWKWWK...",
+                    "...KWWWWWWWWK...",
+                    "....KWWKKWWK....",
+                    "....KWKWKWKK....",
+                    ".....KKKKKK.....",
+                    "....KSWWWWWSK...",
+                    ".....KSWWSK.....",
+                    "....KWWKKWWK....",
+                    "....KWWKKWWK....",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_bat"] = new[]
+                {
+                    "................",
+                    "................",
+                    ".KK..........KK.",
+                    "KPPK..KKKK..KPPK",
+                    "KPQPKKPPPPKKPQPK",
+                    "KPPPKPPRRPPKPPPK",
+                    ".KPPKPPPPPPKPPK.",
+                    "..KK.KPPPPK.KK..",
+                    ".....KPPPPK.....",
+                    "......KKKK......",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_bomb_slime"] = new[]
+                {
+                    ".......KK.......",
+                    "......KHHK......",
+                    ".....KORK.......",
+                    "....KKKKKKKK....",
+                    "...KCRRRRRRCK...",
+                    "..KCRROOOORRCK..",
+                    "..KCRKRRRRKRCK..",
+                    "..KCRRRRRRRRCK..",
+                    "..KCMMMMMMMMCK..",
+                    "...KKKKKKKKKK...",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_orc_charger"] = new[]
+                {
+                    "................",
+                    ".KWK.KKKKKK.KWK.",
+                    ".KWWKCCCCCCKWWK.",
+                    "..KKCCCCCCCCKK..",
+                    "..KCCKWWWWKCCK..",
+                    "..KCCCRRRRCCCK..",
+                    "..KCCCCCCCCCCK..",
+                    "...KBBBBBBBBK...",
+                    "..KBBBBBBBBBBK..",
+                    "...KBBKKKKBBK...",
+                    "....KK....KK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_shield_bearer"] = new[]
+                {
+                    "................",
+                    "....KKKKKKKK....",
+                    "...KSSSSSSSSK...",
+                    "..KSSDDDDDDSSK..",
+                    "..KSDRKDDKRDSS..",
+                    "..KSDDDDDDDSSK..",
+                    "..KSDDGGGGDDSK..",
+                    "..KSDDGGGGDDSK..",
+                    "..KSDDDDDDDSSK..",
+                    "...KSSDDDDSSK...",
+                    "....KKKKKKKK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_void_summoner"] = new[]
+                {
+                    "......KKKK......",
+                    ".....KPPPPK.....",
+                    "....KPPQQPPK....",
+                    "...KPPYYYYPPK...",
+                    "...KPQKKKKQPK...",
+                    "...KPPYYYYPPK...",
+                    "....KPPPPPPK....",
+                    "...KQQPPPPQQK...",
+                    "..KQQQPPPPQQQK..",
+                    "..KQQQPPPPQQQK..",
+                    "...KKKPPPPKKK...",
+                    "....KKKKKKKK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
+                },
+                ["enemy_gold_goblin"] = new[]
+                {
+                    "................",
+                    ".KK..........KK.",
+                    ".KHK.KKKKKK.KHK.",
+                    "..KHKHHHHHHKHK..",
+                    "...KHHHHHHHHHK..",
+                    "...KHGKHHKGHK...",
+                    "...KGGGGGGGGK...",
+                    "....KGKKKKGK....",
+                    "....KAAAAAAK....",
+                    "...KGGGGGGGGK...",
+                    "....KGGKKGGK....",
+                    "....KAAKKAAK....",
+                    "................",
+                    "................",
+                    "................",
+                    "................"
                 }
             };
+        }
+
+        private static string ResolveEnemyTemplateKey(string enemyName)
+        {
+            if (string.IsNullOrEmpty(enemyName)) return "enemy_slime";
+            if (enemyName.Contains("Splitter")) return "enemy_splitter_slime";
+            if (enemyName.Contains("SplitSlimelet")) return "enemy_split_slimelet";
+            if (enemyName.Contains("FrostWisp")) return "enemy_frost_wisp";
+            if (enemyName.Contains("SiegeGolemite")) return "enemy_siege_golemite";
+            if (enemyName.Contains("Bomb")) return "enemy_bomb_slime";
+            if (enemyName.Contains("GoldGoblin")) return "enemy_gold_goblin";
+            if (enemyName.Contains("Goblin")) return "enemy_goblin";
+            if (enemyName.Contains("Skeleton")) return "enemy_skeleton";
+            if (enemyName.Contains("Bat")) return "enemy_bat";
+            if (enemyName.Contains("Charger")) return "enemy_orc_charger";
+            if (enemyName.Contains("Shield")) return "enemy_shield_bearer";
+            if (enemyName.Contains("Summoner")) return "enemy_void_summoner";
+            return "enemy_slime";
         }
     }
 }

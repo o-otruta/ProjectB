@@ -307,6 +307,8 @@
   "event.ambush.left": "ЛИШИЛОСЬ {0}/3",
   "event.blood_moon.subtitle": "x2 XP І МОНЕТИ  •  +20% ШВИДКІСТЬ ВОРОГІВ",
   "event.blood_moon.title": "КРИВАВИЙ МІСЯЦЬ!",
+  "event.corridor_horde.subtitle": "ТРИМАЙТЕ ЛІНІЮ ПРОТИ НАВАЛИ!",
+  "event.corridor_horde.title": "КОРИДОР ОРДИ!",
   "event.default_title": "ПОДІЯ ХВИЛІ",
   "event.elite_ambush.subtitle": "ЗДОЛАЙТЕ 3 ЕЛІТНИХ ЗА МАГНІТ І МОНЕТИ!",
   "event.elite_ambush.title": "ЕЛІТНА ЗАСІДКА!",

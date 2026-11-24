@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 158e2564f073c044cb42a8d34ae9ea16, type: 3}
+  m_Name: SiegeGolemiteData
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.SiegeGolemiteEnemyData
+  hp: 90
+  speed: 1.9
+  contactDamage: 18
+  damageCooldown: 1
+  contactRadius: 1.25
+  xpDrop: 8
+  coinDropChance: 0.38
+  coinDrop: 3
+  modelPrefab: {fileID: 1064321926245377596, guid: 7a18815230c845b48a97ca7b95fbc95a, type: 3}
+  icon: {fileID: 21300000, guid: 02877865a71f08c48b23891d5cea8a7a, type: 3}
+  shellHp: 130
+  shellFlatArmor: 18
+  shellMinDamagePercent: 0.15
+  coreSpeedMultiplier: 2
