@@ -204,6 +204,10 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Безопасный отступ от внешних стен арены при спавне")]
         public float arenaPadding = 3f;
 
+        [Min(1)]
+        [Tooltip("Глобальный лимит одновременно живых врагов на арене (волны, события, призывы).")]
+        public int maxActiveEnemies = 300;
+
         [Header("Wave Events (Sprint 10)")]
         [Tooltip("Включить случайные события волн каждые 3-4 обычные волны")]
         public bool waveEventsEnabled = true;

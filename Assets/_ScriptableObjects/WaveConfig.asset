@@ -131,6 +131,7 @@ MonoBehaviour:
   leashDistance: 35
   leashCheckInterval: 2
   arenaPadding: 3
+  maxActiveEnemies: 300
   waveEventsEnabled: 1
   firstWaveEventWave: 4
   minWavesBetweenEvents: 3

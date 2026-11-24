@@ -50,6 +50,10 @@ namespace ProjectB.Enemies
         private int currentWave = 1;
         public int CurrentWave => currentWave;
         public int EnemiesAlive => activeEnemies.Count;
+        public int MaxActiveEnemies => waveConfig != null && waveConfig.maxActiveEnemies > 0 ? waveConfig.maxActiveEnemies : 300;
+        public int AvailableEnemySlots => Mathf.Max(0, MaxActiveEnemies - activeEnemies.Count);
+        public bool CanSpawnMoreEnemies => activeEnemies.Count < MaxActiveEnemies;
+        public int PendingWaveEnemies { get; private set; }
         public IReadOnlyCollection<EnemyBase> ActiveEnemies => activeEnemies;
         public WaveConfig Config => waveConfig;
         private bool isSpawning = false;
@@ -363,6 +367,7 @@ namespace ProjectB.Enemies
         {
             StopAllCoroutines();
             isSpawning = false;
+            PendingWaveEnemies = 0;
             waveDurationCoroutine = null;
             spawnWaveCoroutine = null;
             startWaveDelayCoroutine = null;
@@ -399,6 +404,16 @@ namespace ProjectB.Enemies
 
             if (isBossWave)
             {
+                while (!CanSpawnMoreEnemies)
+                {
+                    if (heroTarget == null || (heroHealth != null && heroHealth.IsDead) || currentWave != waveNumber)
+                    {
+                        if (currentWave == waveNumber) isSpawning = false;
+                        yield break;
+                    }
+                    yield return spawnDelayWait;
+                }
+
                 int bossIndex = GetBossIndexForWave(waveNumber, waveConfig.bossInterval, waveConfig.bosses.Count);
                 BossData bossData = waveConfig.bosses[bossIndex];
                 DevLog.Log($"[WaveManager] Boss Wave {waveNumber}! Spawning {bossData.bossDisplayName}.");
@@ -433,24 +448,55 @@ namespace ProjectB.Enemies
 
             if (isMiniBossWave)
             {
+                while (!CanSpawnMoreEnemies)
+                {
+                    if (heroTarget == null || (heroHealth != null && heroHealth.IsDead) || currentWave != waveNumber)
+                    {
+                        if (currentWave == waveNumber) isSpawning = false;
+                        yield break;
+                    }
+                    yield return spawnDelayWait;
+                }
                 SpawnMiniBoss();
             }
 
             int spawnedCount = 0;
+            PendingWaveEnemies = enemiesToSpawn;
             while (spawnedCount < enemiesToSpawn)
             {
                 if (heroTarget == null || (heroHealth != null && heroHealth.IsDead) || currentWave != waveNumber)
                 {
-                    if (currentWave == waveNumber) isSpawning = false;
+                    if (currentWave == waveNumber)
+                    {
+                        isSpawning = false;
+                        PendingWaveEnemies = 0;
+                    }
                     yield break;
                 }
 
-                spawnedCount += SpawnEnemyOrPack(enemiesToSpawn - spawnedCount, introEntry, ref introRemaining);
+                int slots = AvailableEnemySlots;
+                if (slots <= 0)
+                {
+                    yield return spawnDelayWait;
+                    continue;
+                }
+
+                int budget = Mathf.Min(enemiesToSpawn - spawnedCount, slots);
+                int spawnedNow = SpawnEnemyOrPack(budget, introEntry, ref introRemaining);
+                if (spawnedNow <= 0)
+                {
+                    yield return spawnDelayWait;
+                    continue;
+                }
+
+                spawnedCount += spawnedNow;
+                PendingWaveEnemies = Mathf.Max(0, enemiesToSpawn - spawnedCount);
                 yield return spawnDelayWait;
             }
             
             if (currentWave == waveNumber)
             {
+                PendingWaveEnemies = 0;
                 isSpawning = false;
                 spawnWaveCoroutine = null;
                 CheckWaveEnd();
@@ -533,7 +579,10 @@ namespace ProjectB.Enemies
                 }
             }
 
-            return ClampToArena(center + (Random.insideUnitSphere * minRad));
+            float fallbackAngle = Random.Range(0f, Mathf.PI * 2f);
+            float safeMinRad = Mathf.Max(0f, minRad);
+            Vector3 ringOffset = new Vector3(Mathf.Cos(fallbackAngle), 0f, Mathf.Sin(fallbackAngle)) * safeMinRad;
+            return ClampToArena(center + ringOffset);
         }
 
         private Vector3 GetValidSpawnPosition()
@@ -614,6 +663,8 @@ namespace ProjectB.Enemies
 
         private int SpawnEnemyOrPack(int remainingInWave, EnemyWaveEntry introEntry, ref int introRemaining)
         {
+            if (!CanSpawnMoreEnemies || remainingInWave <= 0) return 0;
+
             EnemyWaveEntry selectedEntry = SelectEntryForWaveSpawn(
                 waveConfig,
                 currentWave,
@@ -629,14 +680,19 @@ namespace ProjectB.Enemies
             Vector3 basePos = GetValidSpawnPosition();
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
             bool spawnedEliteInPack = false;
+            int actuallySpawned = 0;
 
             for (int i = 0; i < packCount; i++)
             {
+                if (!CanSpawnMoreEnemies) break;
+
                 Vector3 spawnPos = i == 0
                     ? basePos
                     : GetValidPositionNear(basePos, 0.9f, 1.8f);
 
                 EnemyBase enemy = SpawnEnemyInstance(selectedEntry.enemy, spawnPos, hpMultiplier, damageMultiplier);
+                if (enemy == null) break;
+                actuallySpawned++;
 
                 if (!spawnedEliteInPack && currentWave >= waveConfig.minWaveForElites)
                 {
@@ -651,7 +707,12 @@ namespace ProjectB.Enemies
                 }
             }
 
-            return packCount;
+            if (actuallySpawned < packCount && ReferenceEquals(selectedEntry, introEntry))
+            {
+                introRemaining += packCount - actuallySpawned;
+            }
+
+            return actuallySpawned;
         }
 
         public EnemyBase SpawnEnemyForWave(
@@ -704,6 +765,7 @@ namespace ProjectB.Enemies
 
         private EnemyBase SpawnEnemyInstance(EnemyData selectedType, Vector3 spawnPos, float hpMultiplier, float damageMultiplier)
         {
+            if (!CanSpawnMoreEnemies) return null;
             if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
             EnsureEnemyPool(selectedType);
             IObjectPool<EnemyBase> pool = enemyPools[selectedType];
@@ -757,13 +819,15 @@ namespace ProjectB.Enemies
 
         private void SpawnMiniBoss()
         {
-            if (waveConfig == null) return;
+            if (waveConfig == null || !CanSpawnMoreEnemies) return;
 
             EnemyData selectedType = waveConfig.SelectMiniBossEnemyForWave(currentWave, Random.value);
             if (selectedType == null) return;
 
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
             EnemyBase enemy = SpawnEnemyInstance(selectedType, GetValidSpawnPosition(), hpMultiplier, damageMultiplier);
+            if (enemy == null) return;
+
             enemy.MakeMiniBoss(
                 waveConfig.miniBossHpMultiplier,
                 waveConfig.miniBossDamageMultiplier,
@@ -789,7 +853,7 @@ namespace ProjectB.Enemies
 
         private void SpawnBoss(BossData bossData)
         {
-            if (bossData == null) return;
+            if (bossData == null || !CanSpawnMoreEnemies) return;
             EnsurePoolsInitialized();
             EnsureBossPool(bossData);
 
@@ -824,7 +888,8 @@ namespace ProjectB.Enemies
         private void SpawnSummonedMinion(EnemyData minionData, Vector3 nearPosition)
         {
             if (heroHealth != null && heroHealth.IsDead) return;
-            if (activeEnemies.Count >= MAX_ACTIVE_ENEMIES_FOR_SUMMON) return;
+            int summonCap = Mathf.Min(MAX_ACTIVE_ENEMIES_FOR_SUMMON, MaxActiveEnemies);
+            if (activeEnemies.Count >= summonCap) return;
 
             EnemyData dataToSpawn = minionData != null
                 ? minionData
@@ -902,6 +967,7 @@ namespace ProjectB.Enemies
 
         private void StopWaveCoroutines()
         {
+            PendingWaveEnemies = 0;
             if (waveDurationCoroutine != null)
             {
                 StopCoroutine(waveDurationCoroutine);

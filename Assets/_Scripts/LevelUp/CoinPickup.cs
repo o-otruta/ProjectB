@@ -11,20 +11,48 @@ namespace ProjectB.LevelUp
         private HeroEconomy heroEconomy;
         private int coinAmount;
         private float magnetSpeed = 10f;
+        private Vector3 baseScale = Vector3.one;
+        private bool hasBaseScale;
+        private int mergeCount;
         
         private bool isMagnetized;
 
+        public int CoinAmount => coinAmount;
+        public int MergeCount => mergeCount;
         public bool IsMagnetized => isMagnetized;
         public float CurrentMagnetSpeed => magnetSpeed;
 
         public void Initialize(Transform hero, int amount, IObjectPool<CoinPickup> coinPool, HeroEconomy economy = null)
         {
+            if (!hasBaseScale)
+            {
+                baseScale = transform.localScale;
+                hasBaseScale = true;
+            }
+            transform.localScale = baseScale;
+            mergeCount = 0;
+
             heroTarget = hero;
             heroEconomy = economy != null ? economy : (hero != null ? hero.GetComponent<HeroEconomy>() : null);
             coinAmount = amount;
             pool = coinPool;
             isMagnetized = false;
             enabled = false; // Отключаем Update пока монета лежит на земле
+        }
+
+        public void AddMergedAmount(int additionalAmount, float scaleMultiplier)
+        {
+            if (additionalAmount <= 0) return;
+
+            if (!hasBaseScale)
+            {
+                baseScale = transform.localScale;
+                hasBaseScale = true;
+            }
+
+            coinAmount += additionalAmount;
+            mergeCount++;
+            transform.localScale = baseScale * Mathf.Max(1f, scaleMultiplier);
         }
 
         private void Update()

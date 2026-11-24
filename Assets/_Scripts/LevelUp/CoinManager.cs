@@ -2,14 +2,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
+using ProjectB.Data;
 
 namespace ProjectB.LevelUp
 {
     public class CoinManager : MonoBehaviour
     {
+        public const int DEFAULT_MAX_ACTIVE_COINS = 300;
+
         [SerializeField] private GameObject coinPrefab;
+        [SerializeField] private PickupConfig pickupConfig;
         private Transform heroTarget;
         private ProjectB.Player.HeroEconomy heroEconomy;
+        private PickupConfig cachedDefaultConfig;
 
         private IObjectPool<CoinPickup> coinPool;
         private Transform poolContainer;
@@ -20,7 +25,30 @@ namespace ProjectB.LevelUp
         private readonly List<CoinPickup> magnetizeBuffer = new List<CoinPickup>(256);
 
         public int ActiveCount => activeCoins.Count;
+        public int MaxActiveCoins
+        {
+            get
+            {
+                PickupConfig cfg = ResolveConfig();
+                return cfg != null && cfg.maxActiveCoins > 0 ? cfg.maxActiveCoins : DEFAULT_MAX_ACTIVE_COINS;
+            }
+        }
         public IReadOnlyCollection<CoinPickup> ActiveCoins => activeCoins;
+
+        public void SetConfig(PickupConfig config)
+        {
+            pickupConfig = config;
+        }
+
+        private PickupConfig ResolveConfig()
+        {
+            if (pickupConfig != null) return pickupConfig;
+            if (cachedDefaultConfig == null)
+            {
+                cachedDefaultConfig = Resources.Load<PickupConfig>(PickupConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultConfig;
+        }
 
         [Inject]
         public void Construct(ProjectB.Player.HeroHealth heroHealth, ProjectB.Player.HeroEconomy heroEconomy)
@@ -126,15 +154,63 @@ namespace ProjectB.LevelUp
         public void SpawnCoin(Vector3 position, int amount)
         {
             if (heroTarget == null || coinPool == null) return;
+
+            position.y = 0.25f;
+
+            if (activeCoins.Count >= MaxActiveCoins && TryMergeIntoNearestCoin(position, amount))
+            {
+                return;
+            }
             
             CoinPickup pickup = coinPool.Get();
             if (pickup == null) return;
             
-            position.y = 0.25f;
             pickup.transform.position = position;
             
             pickup.Initialize(heroTarget, amount, coinPool, heroEconomy);
             activeCoins.Add(pickup);
+        }
+
+        private bool TryMergeIntoNearestCoin(Vector3 position, int amount)
+        {
+            CoinPickup nearestGrounded = null;
+            float nearestGroundedDistSq = float.MaxValue;
+            CoinPickup nearestAny = null;
+            float nearestAnyDistSq = float.MaxValue;
+
+            foreach (CoinPickup coin in activeCoins)
+            {
+                if (coin == null || !coin.gameObject.activeInHierarchy) continue;
+
+                Vector3 diff = coin.transform.position - position;
+                diff.y = 0f;
+                float distSq = diff.sqrMagnitude;
+
+                if (!coin.IsMagnetized && distSq < nearestGroundedDistSq)
+                {
+                    nearestGroundedDistSq = distSq;
+                    nearestGrounded = coin;
+                }
+
+                if (distSq < nearestAnyDistSq)
+                {
+                    nearestAnyDistSq = distSq;
+                    nearestAny = coin;
+                }
+            }
+
+            CoinPickup target = nearestGrounded != null ? nearestGrounded : nearestAny;
+            if (target == null) return false;
+
+            if (amount > 0)
+            {
+                PickupConfig cfg = ResolveConfig();
+                float scaleMult = cfg != null
+                    ? cfg.EvaluateMergedScaleMultiplier(target.MergeCount + 1)
+                    : Mathf.Min(2f, 1f + Mathf.Log(2f + target.MergeCount, 2f) * 0.15f);
+                target.AddMergedAmount(amount, scaleMult);
+            }
+            return true;
         }
 
         public int MagnetizeAll(float speed = 28f)

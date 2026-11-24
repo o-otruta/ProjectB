@@ -2,14 +2,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
+using ProjectB.Data;
 
 namespace ProjectB.LevelUp
 {
     public class XpManager : MonoBehaviour
     {
+        public const int DEFAULT_MAX_ACTIVE_CRYSTALS = 300;
+
         [SerializeField] private GameObject xpCrystalPrefab;
+        [SerializeField] private PickupConfig pickupConfig;
         private Transform heroTarget;
         private HeroExperience heroExperience;
+        private PickupConfig cachedDefaultConfig;
 
         private IObjectPool<XpCrystal> xpPool;
         private Transform poolContainer;
@@ -20,7 +25,30 @@ namespace ProjectB.LevelUp
         private readonly List<XpCrystal> magnetizeBuffer = new List<XpCrystal>(256);
 
         public int ActiveCount => activeCrystals.Count;
+        public int MaxActiveCrystals
+        {
+            get
+            {
+                PickupConfig cfg = ResolveConfig();
+                return cfg != null && cfg.maxActiveXpCrystals > 0 ? cfg.maxActiveXpCrystals : DEFAULT_MAX_ACTIVE_CRYSTALS;
+            }
+        }
         public IReadOnlyCollection<XpCrystal> ActiveCrystals => activeCrystals;
+
+        public void SetConfig(PickupConfig config)
+        {
+            pickupConfig = config;
+        }
+
+        private PickupConfig ResolveConfig()
+        {
+            if (pickupConfig != null) return pickupConfig;
+            if (cachedDefaultConfig == null)
+            {
+                cachedDefaultConfig = Resources.Load<PickupConfig>(PickupConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultConfig;
+        }
 
         [Inject]
         public void Construct(ProjectB.Player.HeroHealth heroHealth, HeroExperience heroExperience)
@@ -131,16 +159,64 @@ namespace ProjectB.LevelUp
         public void SpawnXp(Vector3 position, int amount)
         {
             if (heroTarget == null || xpPool == null) return;
+
+            position.y = 0.25f;
+
+            if (activeCrystals.Count >= MaxActiveCrystals && TryMergeIntoNearestCrystal(position, amount))
+            {
+                return;
+            }
             
             XpCrystal crystal = xpPool.Get();
             if (crystal == null) return;
             
             // Немного приподнимаем кристалл над землей
-            position.y = 0.25f;
             crystal.transform.position = position;
             
             crystal.Initialize(heroTarget, amount, xpPool, heroExperience);
             activeCrystals.Add(crystal);
+        }
+
+        private bool TryMergeIntoNearestCrystal(Vector3 position, int amount)
+        {
+            XpCrystal nearestGrounded = null;
+            float nearestGroundedDistSq = float.MaxValue;
+            XpCrystal nearestAny = null;
+            float nearestAnyDistSq = float.MaxValue;
+
+            foreach (XpCrystal crystal in activeCrystals)
+            {
+                if (crystal == null || !crystal.gameObject.activeInHierarchy) continue;
+
+                Vector3 diff = crystal.transform.position - position;
+                diff.y = 0f;
+                float distSq = diff.sqrMagnitude;
+
+                if (!crystal.IsMagnetized && distSq < nearestGroundedDistSq)
+                {
+                    nearestGroundedDistSq = distSq;
+                    nearestGrounded = crystal;
+                }
+
+                if (distSq < nearestAnyDistSq)
+                {
+                    nearestAnyDistSq = distSq;
+                    nearestAny = crystal;
+                }
+            }
+
+            XpCrystal target = nearestGrounded != null ? nearestGrounded : nearestAny;
+            if (target == null) return false;
+
+            if (amount > 0)
+            {
+                PickupConfig cfg = ResolveConfig();
+                float scaleMult = cfg != null
+                    ? cfg.EvaluateMergedScaleMultiplier(target.MergeCount + 1)
+                    : Mathf.Min(2f, 1f + Mathf.Log(2f + target.MergeCount, 2f) * 0.15f);
+                target.AddMergedAmount(amount, scaleMult);
+            }
+            return true;
         }
 
         public int MagnetizeAll(float speed = 28f)
