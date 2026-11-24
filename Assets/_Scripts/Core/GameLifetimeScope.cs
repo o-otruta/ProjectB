@@ -74,6 +74,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HudVisibilityController>();
             builder.RegisterComponentInHierarchy<KillCounterHudUI>();
             builder.RegisterComponentInHierarchy<SettingsPopupUI>();
+            builder.RegisterComponentInHierarchy<GameplayFtueUI>();
             
             // Register Player
             builder.RegisterComponentInHierarchy<HeroHealth>();

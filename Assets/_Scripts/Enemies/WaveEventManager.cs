@@ -92,9 +92,14 @@ namespace ProjectB.Enemies
 
         private WaveConfig ActiveConfig => overrideConfig != null ? overrideConfig : (waveManager != null ? waveManager.Config : null);
 
-        public static bool CanTriggerEventOnWave(WaveConfig config, int wave)
+        public static bool CanTriggerEventOnWave(WaveConfig config, int wave, bool isFtueRun = false)
         {
             if (config == null || !config.waveEventsEnabled || wave < Mathf.Max(1, config.firstWaveEventWave))
+            {
+                return false;
+            }
+
+            if (config.IsFtueProtectedWave(wave, isFtueRun))
             {
                 return false;
             }
@@ -264,7 +269,8 @@ namespace ProjectB.Enemies
             WaveConfig cfg = ActiveConfig;
             if (cfg == null || activeEventType != WaveEventType.None) return;
             if (evt.NextWave < nextScheduledEventWave) return;
-            if (!CanTriggerEventOnWave(cfg, evt.NextWave)) return;
+            bool isFtueRun = waveManager != null && waveManager.IsFtueRun;
+            if (!CanTriggerEventOnWave(cfg, evt.NextWave, isFtueRun)) return;
 
             WaveEventType chosen = PickNextEventType(cfg);
             if (chosen != WaveEventType.None && StartEvent(chosen))

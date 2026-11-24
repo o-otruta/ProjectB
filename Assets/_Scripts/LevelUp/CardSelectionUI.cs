@@ -46,6 +46,9 @@ namespace ProjectB.LevelUp
         private bool isAnimatingCards;
         private float animationElapsed;
 
+        public event System.Action OnCardsShown;
+        public event System.Action OnCardChosen;
+
         public bool IsActive => selectionPanel != null && selectionPanel.activeSelf;
 
         public bool CanRerollCurrentOffer =>
@@ -154,6 +157,7 @@ namespace ProjectB.LevelUp
             }
 
             StartBounceAnimation();
+            OnCardsShown?.Invoke();
         }
 
         private void RefreshHeader()
@@ -413,6 +417,8 @@ namespace ProjectB.LevelUp
             currentCards = null;
             freeRerollsAvailable = 0;
             hasRerolledThisLevelUp = false;
+
+            OnCardChosen?.Invoke();
 
             if (Application.isPlaying && isActiveAndEnabled && selectFeedbackDuration > 0f)
             {

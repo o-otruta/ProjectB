@@ -31,6 +31,7 @@ namespace ProjectB.Core
                 .As<IAbilitySlotBonusProvider>();
             builder.Register<AudioManager>(Lifetime.Singleton);
             builder.Register<AdManager>(Lifetime.Singleton);
+            builder.Register<LocalizationService>(Lifetime.Singleton);
 
             // Sprint 14.1: adaptive foundation — layout mode (Portrait/Landscape), input mode and build-profile orientation.
             builder.RegisterEntryPoint<LayoutModeService>().AsSelf();

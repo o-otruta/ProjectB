@@ -12,6 +12,8 @@ namespace ProjectB.Meta
         public SaveData Data { get; private set; }
         public bool IsDirty { get; private set; }
         public bool WasInterruptedRunRecovered { get; private set; }
+        public bool IsFirstRun => Data == null || Data.totalRuns == 0;
+        public bool IsFtueUpgradesHintDismissed => Data != null && Data.ftueUpgradesHintDismissed;
         public event Action OnDataChanged;
 
         public SaveManager()
@@ -128,6 +130,13 @@ namespace ProjectB.Meta
             Data = new SaveData();
             Save();
             DevLog.Log("[SaveManager] Save Data Reset.");
+        }
+
+        public void MarkFtueUpgradesHintDismissed(bool saveImmediately = true)
+        {
+            if (Data == null || Data.ftueUpgradesHintDismissed) return;
+            Data.ftueUpgradesHintDismissed = true;
+            CommitChange(saveImmediately);
         }
 
         // --- Boss Shards & Constellation ---

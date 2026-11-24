@@ -40,28 +40,41 @@ namespace ProjectB.UI
         [SerializeField] private Camera previewCamera;
         [SerializeField] private GameObject heroPreviewRoot;
 
+        [Header("Sprint 12.2: FTUE upgrades hint")]
+        [SerializeField] private GameObject ftueUpgradesGlow;
+        [SerializeField] private GameObject ftueUpgradesHintRoot;
+        [SerializeField] private TMP_Text ftueUpgradesHintText;
+
         private SaveManager saveManager;
         private DailyBonusManager bonusManager;
         private AchievementManager achievementManager;
         private AudioManager audioManager;
+        private MetaUpgradeManager metaUpgradeManager;
+        private LocalizationService localization;
         private int previewCullingMask = -1;
         private bool previewActive = true;
         private int selectedTab = -1;
+        private bool isFtueUpgradesHintActive;
 
         public bool IsHeroPreviewActive => previewActive;
         public int SelectedTab => selectedTab;
+        public bool IsFtueUpgradesHintActive => isFtueUpgradesHintActive;
 
         [Inject]
         public void Construct(
             SaveManager saveManager,
             DailyBonusManager bonusManager,
             AchievementManager achievementManager = null,
-            AudioManager audioManager = null)
+            AudioManager audioManager = null,
+            MetaUpgradeManager metaUpgradeManager = null,
+            LocalizationService localization = null)
         {
             this.saveManager = saveManager;
             this.bonusManager = bonusManager;
             this.achievementManager = achievementManager;
             this.audioManager = audioManager;
+            this.metaUpgradeManager = metaUpgradeManager;
+            this.localization = localization;
 
             if (this.saveManager != null)
             {
@@ -78,6 +91,18 @@ namespace ProjectB.UI
             {
                 this.achievementManager.OnAchievementUnlocked += HandleAchievementUnlocked;
             }
+
+            if (this.metaUpgradeManager != null)
+            {
+                this.metaUpgradeManager.OnUpgradePurchased += HandleMetaUpgradePurchased;
+            }
+
+            if (this.localization != null)
+            {
+                this.localization.LanguageChanged += RefreshFtueTexts;
+            }
+
+            RefreshFtueTexts();
         }
 
         private void Awake()
@@ -108,11 +133,38 @@ namespace ProjectB.UI
             {
                 achievementManager.OnAchievementUnlocked -= HandleAchievementUnlocked;
             }
+            if (metaUpgradeManager != null)
+            {
+                metaUpgradeManager.OnUpgradePurchased -= HandleMetaUpgradePurchased;
+            }
+            if (localization != null)
+            {
+                localization.LanguageChanged -= RefreshFtueTexts;
+            }
         }
 
         private void HandleAchievementUnlocked(AchievementData _)
         {
             UpdateBadges();
+        }
+
+        private void HandleMetaUpgradePurchased(string _)
+        {
+            if (saveManager != null && !saveManager.IsFtueUpgradesHintDismissed)
+            {
+                saveManager.MarkFtueUpgradesHintDismissed(saveImmediately: true);
+            }
+            UpdateBadges();
+        }
+
+        private void RefreshFtueTexts()
+        {
+            if (ftueUpgradesHintText != null)
+            {
+                ftueUpgradesHintText.text = localization != null
+                    ? localization.Get(LocalizationService.KEY_FTUE_UPGRADES_HINT, "Upgrade your hero!")
+                    : "Upgrade your hero!";
+            }
         }
 
         private void UpdateCoinsDisplay()
@@ -123,15 +175,31 @@ namespace ProjectB.UI
             else if (coinsText != null) coinsText.text = saveManager.Data.coins.ToString();
 
             if (shardsLabel != null) shardsLabel.SetValue(saveManager.Data.bossShards, animate: true);
+
+            UpdateBadges();
+        }
+
+        public bool ShouldShowFtueUpgradesHint()
+        {
+            return saveManager != null
+                && saveManager.Data != null
+                && saveManager.Data.totalRuns >= 1
+                && !saveManager.IsFtueUpgradesHintDismissed
+                && metaUpgradeManager != null
+                && metaUpgradeManager.CanAffordAnyUpgrade();
         }
 
         private void UpdateBadges()
         {
             int newAchievements = achievementManager != null ? achievementManager.unlockedThisRun.Count : 0;
             bool bonusAvailable = bonusManager != null && bonusManager.IsRewardAvailable();
+            isFtueUpgradesHintActive = ShouldShowFtueUpgradesHint();
+
+            RefreshFtueHintVisuals();
 
             if (tabBar != null)
             {
+                tabBar.SetBadgeDot(TAB_UPGRADES, isFtueUpgradesHintActive);
                 tabBar.SetBadge(TAB_ACHIEVEMENTS, newAchievements);
                 tabBar.SetBadgeDot(TAB_BONUS, bonusAvailable);
                 return;
@@ -139,6 +207,22 @@ namespace ProjectB.UI
 
             if (achievementsBadge != null) achievementsBadge.SetActive(newAchievements > 0);
             if (bonusBadge != null) bonusBadge.SetActive(bonusAvailable);
+        }
+
+        private void RefreshFtueHintVisuals()
+        {
+            if (ftueUpgradesGlow != null && ftueUpgradesGlow.activeSelf != isFtueUpgradesHintActive)
+            {
+                ftueUpgradesGlow.SetActive(isFtueUpgradesHintActive);
+            }
+            if (ftueUpgradesHintRoot != null)
+            {
+                bool showPopup = isFtueUpgradesHintActive && selectedTab != TAB_UPGRADES;
+                if (ftueUpgradesHintRoot.activeSelf != showPopup)
+                {
+                    ftueUpgradesHintRoot.SetActive(showPopup);
+                }
+            }
         }
 
         /// <summary>
@@ -190,6 +274,7 @@ namespace ProjectB.UI
         private void SelectTab(int index)
         {
             selectedTab = index;
+            RefreshFtueHintVisuals();
             if (tabBar != null)
             {
                 tabBar.Select(index);
@@ -231,6 +316,11 @@ namespace ProjectB.UI
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             DevLog.Log("[MainMenuUI] Upgrades clicked");
+            if (isFtueUpgradesHintActive || ShouldShowFtueUpgradesHint())
+            {
+                saveManager?.MarkFtueUpgradesHintDismissed(saveImmediately: true);
+                UpdateBadges();
+            }
             CloseAllPanels();
             SelectTab(TAB_UPGRADES);
             if (metaUpgradeUI != null)

@@ -65,6 +65,33 @@ namespace ProjectB.Meta
             return saveManager.Data.coins >= cost;
         }
 
+        public bool CanAffordAnyUpgrade()
+        {
+            foreach (var data in upgradeDataMap.Values)
+            {
+                if (data != null && CanAfford(data.id))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public int GetCheapestAvailableUpgradeCost()
+        {
+            int minCost = -1;
+            foreach (var data in upgradeDataMap.Values)
+            {
+                if (data == null) continue;
+                int cost = GetUpgradeCost(data.id);
+                if (cost >= 0 && (minCost < 0 || cost < minCost))
+                {
+                    minCost = cost;
+                }
+            }
+            return minCost;
+        }
+
         public int GetUpgradeCost(string id)
         {
             var data = GetUpgradeData(id);

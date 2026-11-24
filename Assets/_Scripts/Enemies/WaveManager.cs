@@ -29,6 +29,7 @@ namespace ProjectB.Enemies
         private IObjectResolver objectResolver;
         private EnemyRuntimeModifiers enemyRuntimeModifiers;
         private RunRulesConfig runRulesConfig;
+        private ProjectB.Meta.SaveManager saveManager;
 
         private Transform enemyContainer;
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
@@ -45,11 +46,15 @@ namespace ProjectB.Enemies
         private WaitForSeconds waveDelayWait;
         private WaitForSeconds spawnDelayWait;
         private WaitForSeconds maxWaveDurationWait;
+        private WaitForSeconds[] ftueSpawnDelayWaits;
         private int obstacleMask;
         private int separationFrameCounter;
 
         private int currentWave = 1;
+        private bool isFtueRun;
         public int CurrentWave => currentWave;
+        public bool IsFtueRun => isFtueRun;
+        public void SetFtueRun(bool value) { isFtueRun = value; }
         public int EnemiesAlive => activeEnemies.Count;
         public int MaxActiveEnemies => waveConfig != null && waveConfig.maxActiveEnemies > 0 ? waveConfig.maxActiveEnemies : 300;
         public int AvailableEnemySlots => Mathf.Max(0, MaxActiveEnemies - activeEnemies.Count);
@@ -103,7 +108,8 @@ namespace ProjectB.Enemies
             CoinManager coinManager = null,
             IObjectResolver resolver = null,
             EnemyRuntimeModifiers enemyRuntimeModifiers = null,
-            RunRulesConfig runRulesConfig = null)
+            RunRulesConfig runRulesConfig = null,
+            ProjectB.Meta.SaveManager saveManager = null)
         {
             this.heroHealth = heroHealth;
             if (heroHealth != null)
@@ -118,6 +124,8 @@ namespace ProjectB.Enemies
             this.objectResolver = resolver;
             this.enemyRuntimeModifiers = enemyRuntimeModifiers;
             if (runRulesConfig != null) this.runRulesConfig = runRulesConfig;
+            this.saveManager = saveManager;
+            isFtueRun = saveManager != null && saveManager.IsFirstRun;
         }
 
         public void SetRunRulesConfig(RunRulesConfig rules)
@@ -148,6 +156,11 @@ namespace ProjectB.Enemies
             {
                 Debug.LogError("WaveManager missing WaveConfig, enemySchedule, or heroTarget!");
                 return;
+            }
+
+            if (saveManager != null)
+            {
+                isFtueRun = saveManager.IsFirstRun;
             }
 
             EnsurePoolsInitialized();
@@ -201,6 +214,19 @@ namespace ProjectB.Enemies
                 if (maxWaveDurationWait == null && waveConfig.maxWaveDuration > 0f)
                 {
                     maxWaveDurationWait = new WaitForSeconds(waveConfig.maxWaveDuration);
+                }
+                int ftueCount = waveConfig.FtueWaveCount;
+                if (ftueCount > 0 && (ftueSpawnDelayWaits == null || ftueSpawnDelayWaits.Length != ftueCount))
+                {
+                    ftueSpawnDelayWaits = new WaitForSeconds[ftueCount];
+                    for (int i = 0; i < ftueCount; i++)
+                    {
+                        var fw = waveConfig.ftueWaves[i];
+                        if (fw != null)
+                        {
+                            ftueSpawnDelayWaits[i] = new WaitForSeconds(Mathf.Max(0.05f, fw.spawnDelay));
+                        }
+                    }
                 }
             }
 
@@ -413,14 +439,25 @@ namespace ProjectB.Enemies
             spawnWaveCoroutine = StartCoroutine(SpawnWaveCoroutine());
         }
 
+        private WaitForSeconds GetSpawnDelayWaitForWave(int wave)
+        {
+            if (isFtueRun && ftueSpawnDelayWaits != null && wave >= 1 && wave <= ftueSpawnDelayWaits.Length)
+            {
+                WaitForSeconds ftueWait = ftueSpawnDelayWaits[wave - 1];
+                if (ftueWait != null) return ftueWait;
+            }
+            return spawnDelayWait;
+        }
+
         private IEnumerator SpawnWaveCoroutine()
         {
             isSpawning = true;
             int waveNumber = currentWave;
 
+            bool isFtueWave = waveConfig.IsFtueProtectedWave(waveNumber, isFtueRun);
             bool hasBossesConfigured = waveConfig.bosses != null && waveConfig.bosses.Count > 0;
-            bool isBossWave = hasBossesConfigured && IsBossWave(waveNumber, waveConfig.bossInterval);
-            bool isMiniBossWave = IsMiniBossWave(waveNumber, waveConfig.miniBossInterval, waveConfig.bossInterval);
+            bool isBossWave = !isFtueWave && hasBossesConfigured && IsBossWave(waveNumber, waveConfig.bossInterval);
+            bool isMiniBossWave = !isFtueWave && IsMiniBossWave(waveNumber, waveConfig.miniBossInterval, waveConfig.bossInterval);
 
             if (isBossWave)
             {
@@ -450,15 +487,15 @@ namespace ProjectB.Enemies
                 yield break;
             }
 
-            int enemiesToSpawn = Mathf.RoundToInt(waveConfig.baseEnemyCount * Mathf.Pow(waveConfig.enemiesPerWaveMultiplier, currentWave - 1));
-            enemiesToSpawn = Mathf.Min(enemiesToSpawn, waveConfig.maxEnemiesPerWave);
+            int enemiesToSpawn = waveConfig.GetWaveEnemyCount(waveNumber, isFtueRun);
+            WaitForSeconds activeSpawnWait = GetSpawnDelayWaitForWave(waveNumber);
 
             EnemyWaveEntry introEntry = waveConfig.GetIntroEntryForWave(waveNumber);
             int introRemaining = introEntry != null
                 ? Mathf.Clamp(Mathf.RoundToInt(enemiesToSpawn * introEntry.introSpawnShare), 0, enemiesToSpawn)
                 : 0;
 
-            DevLog.Log($"[WaveManager] Spawning Wave {currentWave} with {enemiesToSpawn} enemies{(isMiniBossWave ? " + Mini-Boss" : "")}.");
+            DevLog.Log($"[WaveManager] Spawning Wave {currentWave} with {enemiesToSpawn} enemies{(isMiniBossWave ? " + Mini-Boss" : "")}{(isFtueWave ? " (FTUE)" : "")}.");
 
             if (maxWaveDurationWait != null)
             {
@@ -475,7 +512,7 @@ namespace ProjectB.Enemies
                         if (currentWave == waveNumber) isSpawning = false;
                         yield break;
                     }
-                    yield return spawnDelayWait;
+                    yield return activeSpawnWait;
                 }
                 SpawnMiniBoss();
             }
@@ -497,7 +534,7 @@ namespace ProjectB.Enemies
                 int slots = AvailableEnemySlots;
                 if (slots <= 0)
                 {
-                    yield return spawnDelayWait;
+                    yield return activeSpawnWait;
                     continue;
                 }
 
@@ -505,13 +542,13 @@ namespace ProjectB.Enemies
                 int spawnedNow = SpawnEnemyOrPack(budget, introEntry, ref introRemaining);
                 if (spawnedNow <= 0)
                 {
-                    yield return spawnDelayWait;
+                    yield return activeSpawnWait;
                     continue;
                 }
 
                 spawnedCount += spawnedNow;
                 PendingWaveEnemies = Mathf.Max(0, enemiesToSpawn - spawnedCount);
-                yield return spawnDelayWait;
+                yield return activeSpawnWait;
             }
             
             if (currentWave == waveNumber)
@@ -676,8 +713,8 @@ namespace ProjectB.Enemies
             int targetWave = Mathf.Max(1, wave);
             if (waveConfig != null)
             {
-                hpMult = waveConfig.GetHpDifficultyMultiplier(targetWave);
-                dmgMult = waveConfig.GetDamageDifficultyMultiplier(targetWave);
+                hpMult = waveConfig.GetHpDifficultyMultiplier(targetWave, isFtueRun);
+                dmgMult = waveConfig.GetDamageDifficultyMultiplier(targetWave, isFtueRun);
             }
             else
             {
@@ -720,7 +757,8 @@ namespace ProjectB.Enemies
                 if (enemy == null) break;
                 actuallySpawned++;
 
-                if (!spawnedEliteInPack && currentWave >= waveConfig.minWaveForElites)
+                bool elitesAllowed = waveConfig != null && !waveConfig.IsFtueProtectedWave(currentWave, isFtueRun);
+                if (elitesAllowed && !spawnedEliteInPack && currentWave >= waveConfig.minWaveForElites)
                 {
                     float chance = Mathf.Min(
                         waveConfig.maxEliteChance,

@@ -61,6 +61,9 @@ namespace ProjectB.Meta
         // ID открытых узлов Дерева Созвездий
         public List<string> unlockedTalentIds = new List<string>();
 
+        // --- Онбординг / FTUE (Sprint 12.2) ---
+        public bool ftueUpgradesHintDismissed;
+
         // --- Версионирование ---
         public const int CURRENT_SAVE_VERSION = 2;
         public int saveVersion = CURRENT_SAVE_VERSION;

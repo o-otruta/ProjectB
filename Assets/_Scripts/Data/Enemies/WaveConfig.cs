@@ -41,6 +41,26 @@ namespace ProjectB.Data.Enemies
         }
     }
 
+    [Serializable]
+    public class FtueWaveOverride
+    {
+        [Min(1)]
+        [Tooltip("Number of enemies in this FTUE wave")]
+        public int enemyCount = 4;
+
+        [Min(0.05f)]
+        [Tooltip("Pause between enemy spawns in this FTUE wave")]
+        public float spawnDelay = 0.7f;
+
+        [Min(0.1f)]
+        [Tooltip("Enemy HP multiplier for this FTUE wave")]
+        public float hpMultiplier = 0.75f;
+
+        [Min(0.1f)]
+        [Tooltip("Enemy damage multiplier for this FTUE wave")]
+        public float damageMultiplier = 0.85f;
+    }
+
     [CreateAssetMenu(fileName = "WaveConfig", menuName = "ProjectB/Data/Enemies/WaveConfig")]
     public class WaveConfig : ScriptableObject
     {
@@ -252,6 +272,69 @@ namespace ProjectB.Data.Enemies
         public float eliteAmbushRadius = 12f;
         public int eliteAmbushCoinReward = 50;
         public int eliteAmbushCoinBurstCount = 10;
+
+        [Header("FTUE First Run Waves (Sprint 12.2)")]
+        [Tooltip("Optional lighter wave overrides applied on waves 1..N during a player's first run (totalRuns == 0)")]
+        public List<FtueWaveOverride> ftueWaves = new List<FtueWaveOverride>();
+
+        public int FtueWaveCount => ftueWaves != null ? ftueWaves.Count : 0;
+
+        public bool TryGetFtueWave(int wave, out FtueWaveOverride ftueWave)
+        {
+            if (wave >= 1 && ftueWaves != null && wave <= ftueWaves.Count)
+            {
+                ftueWave = ftueWaves[wave - 1];
+                return ftueWave != null;
+            }
+            ftueWave = null;
+            return false;
+        }
+
+        public bool IsFtueProtectedWave(int wave, bool isFtueRun)
+        {
+            return isFtueRun && TryGetFtueWave(wave, out _);
+        }
+
+        public int GetWaveEnemyCount(int wave, bool isFtueRun)
+        {
+            if (isFtueRun && TryGetFtueWave(wave, out FtueWaveOverride ftue))
+            {
+                int cap = maxEnemiesPerWave > 0 ? maxEnemiesPerWave : int.MaxValue;
+                return Mathf.Clamp(ftue.enemyCount, 1, cap);
+            }
+            int w = Mathf.Max(0, wave - 1);
+            int count = Mathf.RoundToInt(baseEnemyCount * Mathf.Pow(enemiesPerWaveMultiplier, w));
+            return maxEnemiesPerWave > 0 ? Mathf.Min(count, maxEnemiesPerWave) : Mathf.Max(1, count);
+        }
+
+        public float GetWaveSpawnDelay(int wave, bool isFtueRun)
+        {
+            if (isFtueRun && TryGetFtueWave(wave, out FtueWaveOverride ftue))
+            {
+                return Mathf.Max(0.05f, ftue.spawnDelay);
+            }
+            return Mathf.Max(0.05f, spawnDelay);
+        }
+
+        public float GetHpDifficultyMultiplier(int wave, bool isFtueRun)
+        {
+            float baseMult = GetHpDifficultyMultiplier(wave);
+            if (isFtueRun && TryGetFtueWave(wave, out FtueWaveOverride ftue))
+            {
+                return Mathf.Max(0.1f, baseMult * Mathf.Max(0.1f, ftue.hpMultiplier));
+            }
+            return baseMult;
+        }
+
+        public float GetDamageDifficultyMultiplier(int wave, bool isFtueRun)
+        {
+            float baseMult = GetDamageDifficultyMultiplier(wave);
+            if (isFtueRun && TryGetFtueWave(wave, out FtueWaveOverride ftue))
+            {
+                return Mathf.Max(0.1f, baseMult * Mathf.Max(0.1f, ftue.damageMultiplier));
+            }
+            return baseMult;
+        }
 
         public float GetHpDifficultyMultiplier(int wave)
         {
