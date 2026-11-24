@@ -840,6 +840,62 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(10, contentTransform.childCount, "Expected all 10 Passive abilities in PASSIVES tab with no leftovers");
         }
 
+        [Test]
+        public void DebugCheatMenu_AbilityPicker_LoadsFromCardCatalogWhenCardPoolIsNull()
+        {
+            CardCatalog catalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+            Assert.IsNotNull(catalog, "Resources/CardCatalog.asset must exist");
+
+            using var saveManager = new SaveManager();
+            using var slotService = new AbilitySlotService(saveManager, null);
+            var stats = new HeroRuntimeStats();
+            var bus = new GameEventBus();
+
+            var heroGo = Track(new GameObject("CatalogPickerHero"));
+            var heroAbilities = heroGo.AddComponent<HeroAbilities>();
+            heroAbilities.Construct(stats, bus, null, null, slotService);
+
+            var applier = new UpgradeApplier(null, stats, heroAbilities, bus);
+            var mgrGo = Track(new GameObject("CatalogPickerUpgradeMgr"));
+            var upgradeMgr = mgrGo.AddComponent<UpgradeManager>();
+            // Production setup: UpgradeManager.cardPool is null; cards come from injected CardCatalog.
+            Assert.IsNull(upgradeMgr.cardPool);
+            upgradeMgr.Construct(null, null, null, heroAbilities, applier, saveManager, cardCatalog: catalog);
+            upgradeMgr.InitializeRunPool();
+
+            var canvasGo = Track(new GameObject("CatalogPickerCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster)));
+            canvasGo.GetComponent<RectTransform>().sizeDelta = new Vector2(1080f, 1920f);
+
+            var cheatGo = Track(new GameObject("CatalogCheatMenuGo", typeof(RectTransform)));
+            cheatGo.transform.SetParent(canvasGo.transform, false);
+            var cheatMenu = cheatGo.AddComponent<DebugCheatMenu>();
+            cheatMenu.Construct(null, null, null, null, null, null, null, saveManager, heroAbilities, upgradeMgr, applier);
+
+            typeof(DebugCheatMenu).GetMethod("BuildOverlayUI", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(cheatMenu, null);
+            typeof(DebugCheatMenu).GetMethod("OpenAbilityPicker", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(cheatMenu, null);
+            Canvas.ForceUpdateCanvases();
+
+            var contentTransform = (Transform)GetPrivateField(cheatMenu, "pickerContentTransform");
+            var activesLabel = (TextMeshProUGUI)GetPrivateField(cheatMenu, "activesTabLabel");
+            var passivesLabel = (TextMeshProUGUI)GetPrivateField(cheatMenu, "passivesTabLabel");
+
+            Assert.AreEqual(17, contentTransform.childCount, "Ability picker must list all 17 Active abilities from CardCatalog when cardPool is null");
+            Assert.AreEqual("ACTIVES (17)", activesLabel.text);
+            Assert.AreEqual("PASSIVES (10)", passivesLabel.text);
+
+            var passivesBtn = (Button)GetPrivateField(cheatMenu, "passivesTabBtn");
+            passivesBtn.onClick.Invoke();
+            Canvas.ForceUpdateCanvases();
+            Assert.AreEqual(10, contentTransform.childCount, "Ability picker must list all 10 Passive abilities from CardCatalog");
+
+            var cachedCards = (List<AbilityCardData>)GetPrivateField(cheatMenu, "cachedCards");
+            Assert.AreEqual(27, cachedCards.Count);
+            AbilityCardData sampleActive = cachedCards.Find(c => c.abilityData != null && c.abilityData.type == AbilityType.Active);
+            Assert.IsNotNull(sampleActive);
+            Assert.IsTrue(cheatMenu.GrantOrUpgradeAbility(sampleActive));
+            Assert.IsTrue(heroAbilities.HasAbility(sampleActive.abilityData.id));
+        }
+
         private static void SetPrivateField(object target, string fieldName, object value)
         {
             var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

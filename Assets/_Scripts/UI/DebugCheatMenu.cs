@@ -8,6 +8,8 @@ using VContainer;
 using ProjectB.Abilities;
 using ProjectB.Arena;
 using ProjectB.Core;
+using ProjectB.Data;
+using ProjectB.Data.Enemies;
 using ProjectB.Enemies;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
@@ -36,6 +38,7 @@ namespace ProjectB.UI
         private ArenaGenerator arenaGenerator;
         private VacuumMagnetSpawner vacuumMagnetSpawner;
         private WaveEventManager waveEventManager;
+        private CardCatalog cardCatalog;
 
         [Inject]
         public void Construct(
@@ -52,7 +55,8 @@ namespace ProjectB.UI
             UpgradeApplier upgradeApplier = null,
             ArenaGenerator arenaGenerator = null,
             VacuumMagnetSpawner vacuumMagnetSpawner = null,
-            WaveEventManager waveEventManager = null)
+            WaveEventManager waveEventManager = null,
+            CardCatalog cardCatalog = null)
         {
             this.waveManager = waveManager;
             this.heroHealth = heroHealth;
@@ -68,6 +72,7 @@ namespace ProjectB.UI
             this.arenaGenerator = arenaGenerator;
             this.vacuumMagnetSpawner = vacuumMagnetSpawner;
             this.waveEventManager = waveEventManager;
+            this.cardCatalog = cardCatalog;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -275,7 +280,7 @@ namespace ProjectB.UI
             panelRt.anchorMax = new Vector2(0.5f, 0.5f);
             panelRt.pivot = new Vector2(0.5f, 0.5f);
             panelRt.anchoredPosition = new Vector2(0f, 50f);
-            panelRt.sizeDelta = new Vector2(760f, 1095f);
+            panelRt.sizeDelta = new Vector2(760f, 1185f);
 
             var panelImg = menuPanel.GetComponent<Image>();
             panelImg.color = new Color(0.05f, 0.06f, 0.09f, 0.93f);
@@ -446,6 +451,28 @@ namespace ProjectB.UI
             AddFlexButton(eventRow.transform, "Ambush", new Color(0.58f, 0.24f, 0.78f, 1f), () =>
             {
                 waveEventManager?.StartEvent(ProjectB.Data.Enemies.WaveEventType.EliteAmbush);
+                menuPanel.SetActive(false);
+            });
+
+            var mutatorRow = CreateRow(menuPanel.transform, 72f, 10f);
+            AddFlexButton(mutatorRow.transform, "Fog", new Color(0.22f, 0.56f, 0.78f, 1f), () =>
+            {
+                waveEventManager?.StartMutator(WaveMutatorType.Fog);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(mutatorRow.transform, "EliteSrg", new Color(0.64f, 0.28f, 0.82f, 1f), () =>
+            {
+                waveEventManager?.StartMutator(WaveMutatorType.EliteSurge);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(mutatorRow.transform, "GlassHrd", new Color(0.84f, 0.48f, 0.16f, 1f), () =>
+            {
+                waveEventManager?.StartMutator(WaveMutatorType.GlassHorde);
+                menuPanel.SetActive(false);
+            });
+            AddFlexButton(mutatorRow.transform, "End Mut", new Color(0.32f, 0.36f, 0.44f, 1f), () =>
+            {
+                waveEventManager?.EndCurrentMutator(false);
                 menuPanel.SetActive(false);
             });
 
@@ -672,11 +699,21 @@ namespace ProjectB.UI
         private void CollectAbilityCards()
         {
             cachedCards.Clear();
-            if (upgradeManager == null || upgradeManager.cardPool == null) return;
-
-            for (int i = 0; i < upgradeManager.cardPool.Count; i++)
+            IReadOnlyList<CardData> sourcePool = upgradeManager != null ? upgradeManager.ResolvedCardPool : null;
+            if (sourcePool == null || sourcePool.Count == 0)
             {
-                if (upgradeManager.cardPool[i] is AbilityCardData abilityCard && abilityCard.abilityData != null)
+                sourcePool = cardCatalog != null ? cardCatalog.cards : null;
+            }
+            if (sourcePool == null || sourcePool.Count == 0)
+            {
+                CardCatalog fallbackCatalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+                sourcePool = fallbackCatalog != null ? fallbackCatalog.cards : null;
+            }
+            if (sourcePool == null) return;
+
+            for (int i = 0; i < sourcePool.Count; i++)
+            {
+                if (sourcePool[i] is AbilityCardData abilityCard && abilityCard.abilityData != null)
                 {
                     bool duplicate = false;
                     for (int j = 0; j < cachedCards.Count; j++)
