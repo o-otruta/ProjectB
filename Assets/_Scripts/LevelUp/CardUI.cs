@@ -38,6 +38,7 @@ namespace ProjectB.LevelUp
 
         private CardData currentData;
         private Action<CardData> onCardClicked;
+        private Func<bool> isInputLockedCheck;
         private bool isInteractable = true;
         private string currentAdBadgeLabel = string.Empty;
         private string currentLevelBadgeLabel = string.Empty;
@@ -61,11 +62,13 @@ namespace ProjectB.LevelUp
             bool requiresAd = false,
             bool canWatchAd = true,
             string levelBadge = null,
-            Color? levelBadgeColor = null)
+            Color? levelBadgeColor = null,
+            Func<bool> isInputLockedCheck = null)
         {
             UiTheme theme = UiTheme.Current;
             currentData = data;
             onCardClicked = clickCallback;
+            this.isInputLockedCheck = isInputLockedCheck;
             isInteractable = !requiresAd || canWatchAd;
             currentAdBadgeLabel = requiresAd ? (canWatchAd ? "WATCH AD" : "AD UNAVAILABLE") : string.Empty;
             currentLevelBadgeLabel = levelBadge ?? string.Empty;
@@ -210,6 +213,7 @@ namespace ProjectB.LevelUp
 
         public void Activate()
         {
+            if (isInputLockedCheck != null && isInputLockedCheck()) return;
             if (!isInteractable)
             {
                 UiAudio.Error();

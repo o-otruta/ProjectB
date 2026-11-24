@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using ProjectB.Core;
 using ProjectB.Data.Platform;
 using ProjectB.LevelUp;
 using ProjectB.UI;
@@ -23,6 +24,7 @@ namespace ProjectB.EditorScripts
     public static class Sprint14InputWiringTool
     {
         public const string INPUT_CONFIG_PATH = "Assets/Resources/InputConfig.asset";
+        public const string CAMERA_CONFIG_PATH = "Assets/Resources/CameraConfig.asset";
         public const string INPUT_ACTIONS_PATH = "Assets/Resources/ProjectB_InputActions.inputactions";
         public const string LEGACY_INPUT_ACTIONS_PATH = "Assets/InputSystem_Actions.inputactions";
         public const string MAIN_MENU_SCENE = "Assets/_Scenes/MainMenu.unity";
@@ -39,6 +41,54 @@ namespace ProjectB.EditorScripts
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[Sprint14InputWiringTool] Sprint 14.3 input wiring complete.");
+        }
+
+        [MenuItem("ProjectB/Platform/Apply Sprint 14.2 Camera Setup")]
+        public static void ApplyCameraSetup()
+        {
+            EnsureCameraConfigAsset();
+            CameraConfig camCfg = AssetDatabase.LoadAssetAtPath<CameraConfig>(CAMERA_CONFIG_PATH);
+
+            Scene scene = EditorSceneManager.OpenScene(GAMEPLAY_SCENE, OpenSceneMode.Single);
+            CameraController camCtrl = null;
+            SecretCompassIndicatorUI compass = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (camCtrl == null) camCtrl = root.GetComponentInChildren<CameraController>(true);
+                if (compass == null) compass = root.GetComponentInChildren<SecretCompassIndicatorUI>(true);
+            }
+
+            if (camCtrl != null && camCfg != null)
+            {
+                var soCam = new SerializedObject(camCtrl);
+                soCam.FindProperty("cameraConfig").objectReferenceValue = camCfg;
+                soCam.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(camCtrl);
+            }
+
+            if (compass != null && camCfg != null)
+            {
+                var soCompass = new SerializedObject(compass);
+                soCompass.FindProperty("cameraConfig").objectReferenceValue = camCfg;
+                soCompass.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(compass);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[Sprint14InputWiringTool] Sprint 14.2 CameraConfig asset and Gameplay wiring complete.");
+        }
+
+        public static void EnsureCameraConfigAsset()
+        {
+            CameraConfig existing = AssetDatabase.LoadAssetAtPath<CameraConfig>(CAMERA_CONFIG_PATH);
+            if (existing != null) return;
+
+            var config = ScriptableObject.CreateInstance<CameraConfig>();
+            AssetDatabase.CreateAsset(config, CAMERA_CONFIG_PATH);
+            EditorUtility.SetDirty(config);
         }
 
         public static void EnsureInputConfigAsset()
@@ -252,11 +302,11 @@ namespace ProjectB.EditorScripts
                 {
                     KeyHintBadgeUI pauseBadge = EnsureKeyHintBadge(
                         pauseBtn.transform,
-                        "ESC",
+                        "P",
                         new Vector2(0.5f, 0f),
                         new Vector2(0.5f, 0f),
                         new Vector2(0f, -10f),
-                        new Vector2(58f, 26f),
+                        new Vector2(40f, 26f),
                         15f);
                     soPause.FindProperty("pauseKeyHint").objectReferenceValue = pauseBadge;
                     soPause.ApplyModifiedPropertiesWithoutUndo();

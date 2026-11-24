@@ -153,6 +153,7 @@ namespace ProjectB.Core
 
             InputAction pause = gameplay.AddAction("Pause", InputActionType.Button);
             pause.AddBinding("<Keyboard>/escape");
+            pause.AddBinding("<Keyboard>/p");
             pause.AddBinding("<Gamepad>/start");
 
             InputActionMap ui = asset.AddActionMap("UI");

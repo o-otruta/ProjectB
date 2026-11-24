@@ -212,6 +212,17 @@
                 },
                 {
                     "name": "",
+                    "id": "b1b2c3d4-1111-4000-8000-000000000018",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "b1b2c3d4-1111-4000-8000-000000000017",
                     "path": "<Gamepad>/start",
                     "interactions": "",

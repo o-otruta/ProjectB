@@ -15,3 +15,4 @@ MonoBehaviour:
   moveDeadzone: 0.15
   floatingJoystickInLandscape: 1
   buttonHoverScale: 1.04
+  cardSelectInputDelay: 0.4

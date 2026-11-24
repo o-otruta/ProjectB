@@ -11,11 +11,14 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using ProjectB.Ads;
 using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data;
+using ProjectB.Data.Enemies;
 using ProjectB.Data.Platform;
 using ProjectB.EditorScripts;
+using ProjectB.Enemies;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
 using ProjectB.Player;
@@ -442,6 +445,34 @@ namespace ProjectB.Tests.EditMode
             Assert.GreaterOrEqual(inputCfg.moveDeadzone, 0f);
             Assert.LessOrEqual(inputCfg.moveDeadzone, 0.5f);
             Assert.IsTrue(inputCfg.floatingJoystickInLandscape);
+            Assert.AreEqual(0.4f, inputCfg.cardSelectInputDelay, 1e-4f);
+        }
+
+        [Test]
+        public void GameInputService_FallbackAndProjectAsset_PauseHasEscapeAndP()
+        {
+            var projectAsset = Resources.Load<InputActionAsset>(GameInputService.INPUT_ACTIONS_RESOURCE_PATH);
+            Assert.IsNotNull(projectAsset, "ProjectB_InputActions must exist");
+            AssertHasPauseBindings(projectAsset, "ProjectB_InputActions");
+
+            using var fallbackService = new GameInputService(null, cloneAsset: false);
+            Assert.IsNotNull(fallbackService.PauseAction, "Fallback PauseAction must exist");
+            AssertHasPauseBindings(fallbackService.ActionsAsset, "FallbackAsset");
+        }
+
+        private static void AssertHasPauseBindings(InputActionAsset asset, string label)
+        {
+            InputAction pause = asset.FindActionMap("Gameplay", throwIfNotFound: true).FindAction("Pause", throwIfNotFound: true);
+            bool hasEscape = false;
+            bool hasP = false;
+            for (int i = 0; i < pause.bindings.Count; i++)
+            {
+                string path = pause.bindings[i].effectivePath;
+                if (string.Equals(path, "<Keyboard>/escape", StringComparison.OrdinalIgnoreCase)) hasEscape = true;
+                else if (string.Equals(path, "<Keyboard>/p", StringComparison.OrdinalIgnoreCase)) hasP = true;
+            }
+            Assert.IsTrue(hasEscape, $"{label}: Gameplay/Pause must include <Keyboard>/escape");
+            Assert.IsTrue(hasP, $"{label}: Gameplay/Pause must include <Keyboard>/p");
         }
 
         [Test]
@@ -607,6 +638,140 @@ namespace ProjectB.Tests.EditMode
 
             Assert.IsTrue(selection.TrySelectSlotByIndex(1), "Slot 2 hotkey should select second card");
             Assert.AreSame(cardA, chosen);
+        }
+
+        [Test]
+        public void CardSelectionUI_InputDelay_BlocksEarlySelectionAndReArmsOnReroll_AndKeepsThirdCardAdGate()
+        {
+            bool createdEs = EventSystem.current == null;
+            GameObject esGo = null;
+            EventSystem es = EventSystem.current;
+            if (createdEs)
+            {
+                esGo = Track(new GameObject("TestEventSystem", typeof(EventSystem)));
+                es = esGo.GetComponent<EventSystem>();
+                typeof(EventSystem).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(es, null);
+                EventSystem.current = es;
+            }
+
+            try
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+
+                var selRoot = Track(new GameObject("DelayedCardSelection", typeof(RectTransform), typeof(CardSelectionUI)));
+                var panel = new GameObject("Panel", typeof(RectTransform));
+                panel.transform.SetParent(selRoot.transform, false);
+
+                var slots = new CardUI[3];
+                for (int i = 0; i < 3; i++)
+                {
+                    var cardGo = new GameObject($"Card_{i}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(CardUI));
+                    cardGo.transform.SetParent(panel.transform, false);
+                    slots[i] = cardGo.GetComponent<CardUI>();
+                }
+
+                var rerollGo = new GameObject("Reroll", typeof(RectTransform), typeof(Image), typeof(Button));
+                rerollGo.transform.SetParent(panel.transform, false);
+
+                var selection = selRoot.GetComponent<CardSelectionUI>();
+                typeof(CardSelectionUI).GetField("selectionPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(selection, panel);
+                typeof(CardSelectionUI).GetField("cardSlots", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(selection, slots);
+                typeof(CardSelectionUI).GetField("rerollButton", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(selection, rerollGo.GetComponent<Button>());
+
+                var inputCfg = Track(ScriptableObject.CreateInstance<InputConfig>());
+                inputCfg.cardSelectInputDelay = 0.4f;
+
+                using var inputMode = new InputModeService(InputMode.KeyboardMouse, listenToInputSystem: false);
+                var mockAds = new MockAdProvider { IsRewardedReady = true, SimulateRewardGranted = false };
+                var adConfig = Track(ScriptableObject.CreateInstance<AdConfig>());
+                adConfig.maxRewardedPerSession = 10;
+                adConfig.maxRewardedPerDay = 20;
+                var adManager = new AdManager(null, adConfig, mockAds);
+
+                selection.Construct(adManager, null, null, null, null, inputMode, inputCfg);
+
+                float fakeTime = 10f;
+                selection.SetUnscaledTimeProviderForTest(() => fakeTime);
+
+                var cardA = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+                cardA.cardName = "CardA";
+                var cardB = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+                cardB.cardName = "CardB";
+                var cardC = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+                cardC.cardName = "CardC";
+                var cardD = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+                cardD.cardName = "CardD";
+
+                CardData chosen = null;
+                bool rerolled = false;
+                selection.ShowCards(
+                    new List<CardData> { cardA, cardB, cardC },
+                    c => chosen = c,
+                    (_, __) =>
+                    {
+                        rerolled = true;
+                        return new List<CardData> { cardD, cardA, cardC };
+                    },
+                    freeRerolls: 1);
+
+                // During the 0.4s guard window: no initial focus, and every input type is ignored.
+                Assert.IsTrue(selection.IsInputLocked);
+                selection.TickInputLock();
+                Assert.IsNull(EventSystem.current.currentSelectedGameObject, "Focus must not be placed on Card 0 during the delay");
+
+                fakeTime = 10.35f;
+                selection.TickInputLock();
+                slots[0].OnPointerClick(null);
+                slots[0].OnSubmit(null);
+                Assert.IsFalse(selection.TrySelectSlotByIndex(0));
+                Assert.IsFalse(selection.TrySelectSlotByIndex(1));
+                Assert.IsFalse(selection.TrySelectSlotByIndex(2));
+                selection.TriggerReroll();
+                Assert.IsNull(chosen, "Early card selection within 0.4s must be ignored");
+                Assert.IsFalse(rerolled, "Early reroll within 0.4s must be ignored");
+                Assert.IsNull(EventSystem.current.currentSelectedGameObject);
+
+                // After 0.4s expires: focus moves to Card 0 and reroll works.
+                fakeTime = 10.45f;
+                selection.TickInputLock();
+                Assert.IsFalse(selection.IsInputLocked);
+                Assert.AreSame(slots[0].gameObject, EventSystem.current.currentSelectedGameObject, "Focus moves to first card once delay expires");
+
+                selection.TriggerReroll();
+                Assert.IsTrue(rerolled, "Reroll should succeed after the delay");
+                Assert.IsTrue(selection.IsInputLocked, "Reroll must re-arm the 0.4s input guard");
+                Assert.IsNull(EventSystem.current.currentSelectedGameObject, "Focus clears on reroll during the new delay");
+
+                // During the post-reroll 0.4s guard window: selection is blocked again.
+                fakeTime = 10.80f;
+                selection.TickInputLock();
+                slots[0].OnSubmit(null);
+                slots[1].OnPointerClick(null);
+                Assert.IsFalse(selection.TrySelectSlotByIndex(0));
+                Assert.IsNull(chosen, "Selection immediately after reroll must be ignored");
+
+                // After post-reroll 0.4s expires: unlocked again, and 3rd card still requires rewarded ad.
+                fakeTime = 10.90f;
+                selection.TickInputLock();
+                Assert.IsFalse(selection.IsInputLocked);
+                Assert.AreSame(slots[0].gameObject, EventSystem.current.currentSelectedGameObject);
+
+                Assert.IsTrue(selection.TrySelectSlotByIndex(2));
+                Assert.AreEqual(1, mockAds.RewardedShowCalls, "Selecting 3rd card must request rewarded ad");
+                Assert.IsNull(chosen, "3rd card must not be granted if rewarded ad fails");
+
+                mockAds.SimulateRewardGranted = true;
+                slots[2].OnSubmit(null);
+                Assert.AreEqual(2, mockAds.RewardedShowCalls);
+                Assert.AreSame(cardC, chosen, "3rd card should be selected after rewarded ad is granted");
+            }
+            finally
+            {
+                if (createdEs && es != null)
+                {
+                    typeof(EventSystem).GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(es, null);
+                }
+            }
         }
 
         [Test]
@@ -804,7 +969,9 @@ namespace ProjectB.Tests.EditMode
 
                         Assert.IsNotNull(joystick.GetComponent<CanvasGroup>(), "VirtualJoystick must have CanvasGroup");
                         Assert.IsNotNull(typeof(UltimateButtonUI).GetField("keyHintBadge", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ultBtn), "Ultimate keyHintBadge missing");
-                        Assert.IsNotNull(typeof(PauseMenuUI).GetField("pauseKeyHint", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(pauseUi), "Pause keyHint missing");
+                        var pauseHint = (KeyHintBadgeUI)typeof(PauseMenuUI).GetField("pauseKeyHint", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(pauseUi);
+                        Assert.IsNotNull(pauseHint, "Pause keyHint missing");
+                        Assert.AreEqual("P", pauseHint.KeyLabel, "Pause keyHint must display P (Esc is caught by browser fullscreen)");
                         Assert.IsNotNull(typeof(CardSelectionUI).GetField("rerollKeyHint", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(cardSel), "Reroll keyHint missing");
                         Assert.IsNotNull(typeof(GameOverUI).GetField("restartButton", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(gameOver), "GameOver restartButton missing");
                         Assert.IsNotNull(typeof(GameOverUI).GetField("menuButton", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(gameOver), "GameOver menuButton missing");
@@ -822,6 +989,318 @@ namespace ProjectB.Tests.EditMode
                     if (openedHere) EditorSceneManager.CloseScene(scene, true);
                 }
             }
+        }
+
+        // ───────────────────────── 14.2 Camera & Spawn Ring ─────────────────────────
+
+        [Test]
+        public void CameraConfig_ResourceAssetExists_WithValidDefaults()
+        {
+            var camCfg = Resources.Load<CameraConfig>(CameraConfig.RESOURCE_PATH);
+            Assert.IsNotNull(camCfg, "Resources/CameraConfig.asset must exist");
+            Assert.AreEqual(35.98f, camCfg.shortSideFov, 0.05f);
+            Assert.AreEqual(50f, camCfg.landscapeShortSideFov, 0.05f);
+            Assert.AreEqual(21f / 9f, camCfg.maxAspectRatio, 0.01f);
+            Assert.Greater(camCfg.spawnMargin, 0.5f);
+            Assert.Greater(camCfg.spawnBandWidth, 0.5f);
+            Assert.IsFalse(camCfg.spawnSummonsOffscreen, "Summons must spawn near caster by default");
+        }
+
+        [Test]
+        public void CameraController_ShortSideFov_PreservesPhonePortrait_AndClampsUltrawide()
+        {
+            var camCfg = Track(ScriptableObject.CreateInstance<CameraConfig>());
+
+            // 9:16 phone portrait must match legacy vFOV = 60° (no shrinkage!)
+            float fov9x16 = CameraController.CalculateVerticalFov(9f / 16f, camCfg);
+            Assert.AreEqual(60.0f, fov9x16, 0.1f, "9:16 portrait must preserve 60 deg vertical FOV");
+
+            // 9:21 narrow phone preserves horizontal short-side FOV
+            float fov9x21 = CameraController.CalculateVerticalFov(9f / 21f, camCfg);
+            float hFov9x21 = Camera.VerticalToHorizontalFieldOfView(fov9x21, 9f / 21f);
+            Assert.AreEqual(camCfg.shortSideFov, hFov9x21, 0.1f);
+            Assert.Greater(fov9x21, fov9x16, "9:21 must expand vertically without losing horizontal view");
+
+            // Landscape 4:3, 16:10, 16:9, 21:9 use landscapeShortSideFov
+            Assert.AreEqual(camCfg.landscapeShortSideFov, CameraController.CalculateVerticalFov(4f / 3f, camCfg), 0.05f);
+            Assert.AreEqual(camCfg.landscapeShortSideFov, CameraController.CalculateVerticalFov(16f / 10f, camCfg), 0.05f);
+            Assert.AreEqual(camCfg.landscapeShortSideFov, CameraController.CalculateVerticalFov(16f / 9f, camCfg), 0.05f);
+            Assert.AreEqual(camCfg.landscapeShortSideFov, CameraController.CalculateVerticalFov(21f / 9f, camCfg), 0.05f);
+
+            // 32:9 ultra-wide clamps horizontal FOV to 21:9's horizontal FOV at landscapeShortSideFov
+            float fov32x9 = CameraController.CalculateVerticalFov(32f / 9f, camCfg);
+            float hFov32x9 = Camera.VerticalToHorizontalFieldOfView(fov32x9, 32f / 9f);
+            float hFov21x9 = Camera.VerticalToHorizontalFieldOfView(camCfg.landscapeShortSideFov, 21f / 9f);
+            Assert.AreEqual(hFov21x9, hFov32x9, 0.15f, "32:9 must clamp horizontal FOV to 21:9");
+        }
+
+        [TestCase(16f / 9f, "16:9")]
+        [TestCase(16f / 10f, "16:10")]
+        [TestCase(21f / 9f, "21:9")]
+        public void CameraController_LandscapeFov_RecalculatesOffscreenSpawn_WhenLandscapeFovChanges(float aspect, string label)
+        {
+            var camCfg = Track(ScriptableObject.CreateInstance<CameraConfig>());
+            var camGo = Track(new GameObject($"LandscapeCam_{label}", typeof(Camera), typeof(CameraController)));
+            var cam = camGo.GetComponent<Camera>();
+            var ctrl = camGo.GetComponent<CameraController>();
+            ctrl.offset = new Vector3(0f, 20f, -12f);
+            camGo.transform.position = ctrl.offset;
+            camGo.transform.rotation = Quaternion.LookRotation(-ctrl.offset);
+            cam.aspect = aspect;
+
+            camCfg.landscapeShortSideFov = 40f;
+            ctrl.BindServices(null, camCfg);
+            ctrl.RefreshForAspect(aspect, force: true);
+            Assert.AreEqual(40f, cam.fieldOfView, 0.05f);
+            float spawnMinAt40 = ctrl.CachedSpawnRadiusMin;
+
+            camCfg.landscapeShortSideFov = 55f;
+            ctrl.RefreshForAspect(aspect, force: true);
+            Assert.AreEqual(55f, cam.fieldOfView, 0.05f);
+            Assert.Greater(ctrl.CachedSpawnRadiusMin, spawnMinAt40, $"{label}: larger landscapeShortSideFov must expand off-screen spawn ring");
+
+            for (int deg = 0; deg < 360; deg += 15)
+            {
+                float rad = deg * Mathf.Deg2Rad;
+                Vector3 dir = new Vector3(Mathf.Cos(rad), 0f, Mathf.Sin(rad));
+                Vector3 pos = dir * ctrl.GetOffscreenSpawnDistance(dir);
+                Vector3 vp = cam.WorldToViewportPoint(pos);
+                bool inside = vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
+                Assert.IsFalse(inside, $"{label} @ 55° angle {deg}: spawn {pos} inside viewport {vp}");
+            }
+        }
+
+        [TestCase(9f / 21f, "9:21")]
+        [TestCase(9f / 16f, "9:16")]
+        [TestCase(4f / 3f, "4:3")]
+        [TestCase(16f / 10f, "16:10")]
+        [TestCase(16f / 9f, "16:9")]
+        [TestCase(21f / 9f, "21:9")]
+        [TestCase(32f / 9f, "32:9")]
+        public void CameraController_SpawnRing_IsStrictlyOffscreen_AcrossAllAspects(float aspect, string label)
+        {
+            var camCfg = Track(ScriptableObject.CreateInstance<CameraConfig>());
+            var camGo = Track(new GameObject($"Cam_{label}", typeof(Camera), typeof(CameraController)));
+            var cam = camGo.GetComponent<Camera>();
+            var ctrl = camGo.GetComponent<CameraController>();
+
+            ctrl.offset = new Vector3(0f, 20f, -12f);
+            camGo.transform.position = ctrl.offset;
+            camGo.transform.rotation = Quaternion.LookRotation(-ctrl.offset);
+            cam.aspect = aspect;
+
+            ctrl.BindServices(null, camCfg);
+            ctrl.RefreshForAspect(aspect, force: true);
+
+            for (int deg = 0; deg < 360; deg += 10)
+            {
+                float rad = deg * Mathf.Deg2Rad;
+                Vector3 dir = new Vector3(Mathf.Cos(rad), 0f, Mathf.Sin(rad));
+
+                float dist = ctrl.GetOffscreenSpawnDistance(dir);
+                Vector3 worldPos = dir * dist;
+                Vector3 vp = cam.WorldToViewportPoint(worldPos);
+                bool insideViewport = vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
+                Assert.IsFalse(insideViewport, $"{label} angle {deg}: directional spawn at {worldPos} (vp={vp}) appeared inside viewport!");
+
+                Vector3 ringPos = dir * ctrl.CachedSpawnRadiusMin;
+                Vector3 ringVp = cam.WorldToViewportPoint(ringPos);
+                bool ringInside = ringVp.z > 0f && ringVp.x >= 0f && ringVp.x <= 1f && ringVp.y >= 0f && ringVp.y <= 1f;
+                Assert.IsFalse(ringInside, $"{label} angle {deg}: circular ring spawn at {ringPos} (vp={ringVp}) appeared inside viewport!");
+            }
+        }
+
+        [Test]
+        public void CameraController_CacheRecalculatesOnLayoutModeChangedAndResize_WithZeroGc()
+        {
+            var camCfg = Track(ScriptableObject.CreateInstance<CameraConfig>());
+            var camGo = Track(new GameObject("CachedCam", typeof(Camera), typeof(CameraController)));
+            var cam = camGo.GetComponent<Camera>();
+            var ctrl = camGo.GetComponent<CameraController>();
+            ctrl.offset = new Vector3(0f, 20f, -12f);
+            camGo.transform.position = ctrl.offset;
+            camGo.transform.rotation = Quaternion.LookRotation(-ctrl.offset);
+
+            var layout = new LayoutModeService(config);
+            layout.UpdateMetrics(1080, 1920, Full(1080, 1920));
+            ctrl.BindServices(layout, camCfg);
+
+            int v0 = ctrl.FrustumCacheVersion;
+            float portraitRadius = ctrl.CachedSpawnRadiusMin;
+
+            // Resize within Portrait (9:21) -> ScreenChanged recalculates cache
+            layout.UpdateMetrics(1080, 2520, Full(1080, 2520));
+            int v1 = ctrl.FrustumCacheVersion;
+            Assert.Greater(v1, v0);
+            Assert.Greater(ctrl.CachedSpawnRadiusMin, portraitRadius, "Taller 9:21 frustum needs larger spawn radius");
+
+            // Flip to Landscape (16:9) -> LayoutModeChanged + ScreenChanged recalculates cache
+            layout.UpdateMetrics(1920, 1080, Full(1920, 1080));
+            int v2 = ctrl.FrustumCacheVersion;
+            Assert.Greater(v2, v1);
+
+            // Steady-state directional queries allocate 0 bytes
+            Vector3 probeDir = new Vector3(1f, 0f, 0.5f).normalized;
+            _ = ctrl.GetOffscreenSpawnDistance(probeDir);
+
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 500; i++)
+            {
+                float d = ctrl.GetOffscreenSpawnDistance(probeDir);
+                if (d <= 0f) Assert.Fail();
+            }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.AreEqual(0L, allocated, "GetOffscreenSpawnDistance must allocate 0 bytes");
+        }
+
+        [Test]
+        public void WaveManager_AndWaveEventManager_OffscreenSpawns_ApplyToWavesCorridorSwarmAndSummons()
+        {
+            var camCfg = Track(ScriptableObject.CreateInstance<CameraConfig>());
+            var camGo = Track(new GameObject("SpawnCam", typeof(Camera), typeof(CameraController)));
+            var cam = camGo.GetComponent<Camera>();
+            var ctrl = camGo.GetComponent<CameraController>();
+            ctrl.offset = new Vector3(0f, 20f, -12f);
+            camGo.transform.position = ctrl.offset;
+            camGo.transform.rotation = Quaternion.LookRotation(-ctrl.offset);
+            cam.aspect = 16f / 9f;
+            ctrl.BindServices(null, camCfg);
+            ctrl.RefreshForAspect(16f / 9f, force: true);
+
+            var mob = Track(ScriptableObject.CreateInstance<EnemyData>());
+            mob.name = "OffscreenMob";
+            mob.hp = 50;
+            mob.speed = 3f;
+            mob.contactDamage = 5;
+
+            var waveCfg = Track(ScriptableObject.CreateInstance<WaveConfig>());
+            waveCfg.spawnRadiusMin = 10f;
+            waveCfg.spawnRadiusMax = 15f;
+            waveCfg.waveEventsEnabled = false;
+            waveCfg.swarmRushMinCount = 12;
+            waveCfg.swarmRushMaxCount = 12;
+            waveCfg.swarmRushRadius = 10f;
+            waveCfg.swarmRushEnemyData = mob;
+            waveCfg.corridorHordeEnemyData = mob;
+            waveCfg.corridorHordeBatchSize = 6;
+            waveCfg.corridorHordeCorridorHalfWidth = 3.5f;
+            waveCfg.enemySchedule = new List<EnemyWaveEntry>
+            {
+                new EnemyWaveEntry { enemy = mob, minWave = 1, maxWave = 0, spawnWeight = 1f, packSize = 1, triggerIntroWave = false }
+            };
+
+            var bus = new GameEventBus();
+            var heroGo = Track(new GameObject("SpawnHero"));
+            var heroHp = heroGo.AddComponent<HeroHealth>();
+            heroHp.Construct(new HeroRuntimeStats(), bus, null);
+
+            var waveGo = Track(new GameObject("OffscreenWaveMgr", typeof(WaveManager)));
+            var waveMgr = waveGo.GetComponent<WaveManager>();
+            typeof(WaveManager).GetField("waveConfig", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(waveMgr, waveCfg);
+            waveMgr.Construct(heroHp, null, bus, null, null, null, null, new EnemyRuntimeModifiers(), null, null, ctrl, camCfg);
+            waveMgr.EnsurePoolsInitialized();
+
+            // 1. Regular wave spawn positions (including pack extra margin) must be off-screen on 16:9
+            for (int i = 0; i < 40; i++)
+            {
+                Vector3 pos = waveMgr.GetValidSpawnPosition(extraMargin: 1.8f);
+                Vector3 vp = cam.WorldToViewportPoint(pos);
+                bool inside = vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
+                Assert.IsFalse(inside, $"Wave spawn #{i} at {pos} (vp={vp}) appeared inside 16:9 viewport");
+            }
+
+            // 2. Boss / VoidSummoner summoned minions spawn near caster when spawnSummonsOffscreen = false (default)
+            Assert.IsFalse(camCfg.spawnSummonsOffscreen);
+            MethodInfo summonMethod = typeof(WaveManager).GetMethod("SpawnSummonedMinion", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(summonMethod);
+            Vector3 nearPos = new Vector3(3f, 0f, 2f);
+            summonMethod.Invoke(waveMgr, new object[] { mob, nearPos });
+            Assert.AreEqual(1, waveMgr.EnemiesAlive);
+            foreach (EnemyBase e in waveMgr.ActiveEnemies)
+            {
+                Assert.Less(Vector3.Distance(e.transform.position, nearPos), 0.01f, $"Summoned minion must appear at nearPosition when spawnSummonsOffscreen=false (got {e.transform.position})");
+                waveMgr.DespawnTrackedEnemy(e);
+                break;
+            }
+
+            // Optional toggle spawnSummonsOffscreen = true still pushes summons off-screen
+            camCfg.spawnSummonsOffscreen = true;
+            summonMethod.Invoke(waveMgr, new object[] { mob, nearPos });
+            Assert.AreEqual(1, waveMgr.EnemiesAlive);
+            foreach (EnemyBase e in waveMgr.ActiveEnemies)
+            {
+                Vector3 vp = cam.WorldToViewportPoint(e.transform.position);
+                bool inside = vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
+                Assert.IsFalse(inside, $"Summoned minion at {e.transform.position} (vp={vp}) spawned inside 16:9 viewport when spawnSummonsOffscreen=true");
+                waveMgr.DespawnTrackedEnemy(e);
+                break;
+            }
+            camCfg.spawnSummonsOffscreen = false;
+
+            // 3. CorridorHorde & SwarmRush in WaveEventManager must spawn strictly off-screen
+            var evtGo = Track(new GameObject("OffscreenEventMgr", typeof(WaveEventManager)));
+            var evtMgr = evtGo.GetComponent<WaveEventManager>();
+            typeof(WaveEventManager).GetField("overrideConfig", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(evtMgr, waveCfg);
+            evtMgr.Construct(waveMgr, heroHp, null, null, null, bus, null, new EnemyRuntimeModifiers());
+
+            Assert.IsTrue(evtMgr.StartEvent(WaveEventType.CorridorHorde));
+            Assert.AreEqual(6, waveMgr.EnemiesAlive);
+            foreach (EnemyBase e in waveMgr.ActiveEnemies)
+            {
+                Vector3 vp = cam.WorldToViewportPoint(e.transform.position);
+                bool inside = vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
+                Assert.IsFalse(inside, $"CorridorHorde enemy at {e.transform.position} (vp={vp}) spawned inside 16:9 viewport");
+            }
+
+            waveMgr.KillAllActiveEnemies();
+            Assert.IsTrue(evtMgr.StartEvent(WaveEventType.SwarmRush));
+            Assert.Greater(waveMgr.EnemiesAlive, 0);
+            foreach (EnemyBase e in waveMgr.ActiveEnemies)
+            {
+                Vector3 vp = cam.WorldToViewportPoint(e.transform.position);
+                bool inside = vp.z > 0f && vp.x >= 0f && vp.x <= 1f && vp.y >= 0f && vp.y <= 1f;
+                Assert.IsFalse(inside, $"SwarmRush enemy at {e.transform.position} (vp={vp}) spawned inside 16:9 viewport");
+            }
+        }
+
+        [Test]
+        public void SecretCompassIndicatorUI_ClampsToHudZones_ForPortraitAndLandscape()
+        {
+            var camCfg = Track(ScriptableObject.CreateInstance<CameraConfig>());
+            var camGo = Track(new GameObject("CompassCam", typeof(Camera), typeof(CameraController)));
+            var cam = camGo.GetComponent<Camera>();
+            var ctrl = camGo.GetComponent<CameraController>();
+            ctrl.offset = new Vector3(0f, 20f, -12f);
+            camGo.transform.position = ctrl.offset;
+            camGo.transform.rotation = Quaternion.LookRotation(-ctrl.offset);
+
+            var layout = new LayoutModeService(config);
+            layout.UpdateMetrics(1080, 1920, Full(1080, 1920));
+
+            var compassGo = Track(new GameObject("LayoutCompass", typeof(RectTransform), typeof(SecretCompassIndicatorUI)));
+            var compass = compassGo.GetComponent<SecretCompassIndicatorUI>();
+            compass.BindLayout(layout, camCfg);
+
+            // Portrait: 1080x1920 -> topPadding 240, bottomPadding 260, side 85
+            cam.aspect = 9f / 16f;
+            ctrl.BindServices(layout, camCfg);
+            ctrl.RefreshForAspect(9f / 16f, force: true);
+            Assert.IsTrue(compass.EvaluateIndicatorState(Vector3.zero, new Vector3(0f, 0f, 40f), cam, new Vector2(1080f, 1920f), 60f, out Vector2 topPortrait, out _, out _));
+            Assert.LessOrEqual(topPortrait.y, 1920f * 0.5f - camCfg.portraitCompassMargins.top + 0.1f);
+
+            // Flip to Landscape 1920x1080 -> left 220, right 200, top 110, bottom 90
+            layout.UpdateMetrics(1920, 1080, Full(1920, 1080));
+            cam.aspect = 16f / 9f;
+            Assert.AreEqual(camCfg.landscapeCompassMargins.left, compass.ActiveMargins.left, 0.01f);
+
+            Assert.IsTrue(compass.EvaluateIndicatorState(Vector3.zero, new Vector3(-40f, 0f, 0f), cam, new Vector2(1920f, 1080f), 60f, out Vector2 leftLand, out _, out _));
+            Assert.GreaterOrEqual(leftLand.x, -1920f * 0.5f + camCfg.landscapeCompassMargins.left - 0.1f, "Left HUD zone must be respected in Landscape");
+
+            Assert.IsTrue(compass.EvaluateIndicatorState(Vector3.zero, new Vector3(40f, 0f, 0f), cam, new Vector2(1920f, 1080f), 60f, out Vector2 rightLand, out _, out _));
+            Assert.LessOrEqual(rightLand.x, 1920f * 0.5f - camCfg.landscapeCompassMargins.right + 0.1f, "Right HUD zone must be respected in Landscape");
+
+            Assert.IsTrue(compass.EvaluateIndicatorState(Vector3.zero, new Vector3(0f, 0f, -40f), cam, new Vector2(1920f, 1080f), 60f, out Vector2 bottomLand, out _, out _));
+            Assert.GreaterOrEqual(bottomLand.y, -1080f * 0.5f + camCfg.landscapeCompassMargins.bottom - 0.1f, "Bottom HUD zone must be respected in Landscape");
         }
     }
 }

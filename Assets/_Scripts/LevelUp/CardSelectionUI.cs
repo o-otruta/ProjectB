@@ -7,6 +7,7 @@ using ProjectB.Abilities;
 using ProjectB.Ads;
 using ProjectB.Core;
 using ProjectB.Data;
+using ProjectB.Data.Platform;
 using ProjectB.UI;
 
 namespace ProjectB.LevelUp
@@ -42,6 +43,9 @@ namespace ProjectB.LevelUp
         private HeroExperience heroExperience;
         private GameInputService gameInput;
         private InputModeService inputModeService;
+        private InputConfig inputConfig;
+        private System.Func<float> unscaledTimeProvider;
+        private System.Func<bool> cachedIsInputLockedCheck;
         private System.Action<InputMode> cachedInputModeHandler;
         private readonly char[] levelBuffer = new char[16];
 
@@ -49,11 +53,14 @@ namespace ProjectB.LevelUp
         private bool hasRerolledThisLevelUp;
         private bool isAnimatingCards;
         private float animationElapsed;
+        private float inputUnlockTime;
+        private bool pendingInitialFocus;
 
         public event System.Action OnCardsShown;
         public event System.Action OnCardChosen;
 
         public bool IsActive => selectionPanel != null && selectionPanel.activeSelf;
+        public bool IsInputLocked => IsActive && GetUnscaledTime() < inputUnlockTime;
 
         public bool CanRerollCurrentOffer =>
             onRerollCallback != null
@@ -79,7 +86,8 @@ namespace ProjectB.LevelUp
             AudioManager audioManager = null,
             HeroExperience heroExperience = null,
             GameInputService gameInput = null,
-            InputModeService inputModeService = null)
+            InputModeService inputModeService = null,
+            InputConfig inputConfig = null)
         {
             UnsubscribeInputMode();
             this.adManager = adManager;
@@ -88,11 +96,20 @@ namespace ProjectB.LevelUp
             this.heroExperience = heroExperience;
             this.gameInput = gameInput;
             this.inputModeService = inputModeService;
+            if (inputConfig != null) this.inputConfig = inputConfig;
             SubscribeInputMode();
         }
 
+        public void SetInputConfig(InputConfig config) => inputConfig = config;
+        public void SetUnscaledTimeProviderForTest(System.Func<float> provider) => unscaledTimeProvider = provider;
+
         private void Awake()
         {
+            cachedIsInputLockedCheck ??= IsInputLockedCheck;
+            if (inputConfig == null && Application.isPlaying)
+            {
+                RootServices.TryResolve(out inputConfig);
+            }
             if (rerollButton != null)
             {
                 rerollButton.onClick.AddListener(OnRerollClicked);
@@ -131,7 +148,7 @@ namespace ProjectB.LevelUp
             {
                 UiFocusHelper.ClearSelection();
             }
-            else if (IsActive && UnityEngine.EventSystems.EventSystem.current != null &&
+            else if (IsActive && !IsInputLocked && UnityEngine.EventSystems.EventSystem.current != null &&
                      UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
             {
                 FocusFirstCard();
@@ -140,7 +157,9 @@ namespace ProjectB.LevelUp
 
         private void Update()
         {
-            if (IsActive && onCardSelectedCallback != null && gameInput != null)
+            TickInputLock();
+
+            if (IsActive && !IsInputLocked && onCardSelectedCallback != null && gameInput != null)
             {
                 if (gameInput.WasCardPressedThisFrame(0)) TrySelectSlotByIndex(0);
                 else if (gameInput.WasCardPressedThisFrame(1)) TrySelectSlotByIndex(1);
@@ -209,13 +228,13 @@ namespace ProjectB.LevelUp
             }
 
             StartBounceAnimation();
-            FocusFirstCard();
+            ArmInputLock();
             OnCardsShown?.Invoke();
         }
 
         public bool TrySelectSlotByIndex(int slotIndex)
         {
-            if (!IsActive || onCardSelectedCallback == null || cardSlots == null || currentCards == null) return false;
+            if (IsInputLocked || !IsActive || onCardSelectedCallback == null || cardSlots == null || currentCards == null) return false;
             if (slotIndex < 0 || slotIndex >= cardSlots.Length || slotIndex >= currentCards.Count) return false;
 
             CardUI slot = cardSlots[slotIndex];
@@ -223,6 +242,43 @@ namespace ProjectB.LevelUp
 
             slot.Activate();
             return true;
+        }
+
+        public void TickInputLock()
+        {
+            if (!IsActive) return;
+            if (pendingInitialFocus && !IsInputLocked)
+            {
+                pendingInitialFocus = false;
+                FocusFirstCard();
+            }
+        }
+
+        private bool IsInputLockedCheck() => IsInputLocked;
+
+        private float GetUnscaledTime() => unscaledTimeProvider != null ? unscaledTimeProvider() : Time.unscaledTime;
+
+        private float ResolveInputDelay()
+        {
+            if (inputConfig != null) return Mathf.Max(0f, inputConfig.cardSelectInputDelay);
+            return Application.isPlaying ? 0.4f : 0f;
+        }
+
+        private void ArmInputLock()
+        {
+            float delay = ResolveInputDelay();
+            UiFocusHelper.ClearSelection();
+            if (delay > 0f)
+            {
+                inputUnlockTime = GetUnscaledTime() + delay;
+                pendingInitialFocus = true;
+            }
+            else
+            {
+                inputUnlockTime = 0f;
+                pendingInitialFocus = false;
+                FocusFirstCard();
+            }
         }
 
         private void FocusFirstCard()
@@ -255,6 +311,8 @@ namespace ProjectB.LevelUp
         public void Hide()
         {
             isAnimatingCards = false;
+            pendingInitialFocus = false;
+            inputUnlockTime = 0f;
             ResetSlotScales();
 
             if (selectionPanel != null)
@@ -350,6 +408,7 @@ namespace ProjectB.LevelUp
                     CardData cardData = currentCards[slotIndex];
                     string badgeLabel = FormatLevelBadge(cardData, heroAbilities, out Color badgeColor);
 
+                    cachedIsInputLockedCheck ??= IsInputLockedCheck;
                     cardSlots[i].gameObject.SetActive(true);
                     cardSlots[i].Setup(
                         cardData,
@@ -357,7 +416,8 @@ namespace ProjectB.LevelUp
                         requiresAd,
                         canWatchAd,
                         badgeLabel,
-                        badgeColor);
+                        badgeColor,
+                        cachedIsInputLockedCheck);
                 }
                 else
                 {
@@ -428,7 +488,7 @@ namespace ProjectB.LevelUp
 
         private void OnRerollClicked()
         {
-            if (onRerollCallback == null || hasRerolledThisLevelUp) return;
+            if (IsInputLocked || onRerollCallback == null || hasRerolledThisLevelUp) return;
 
             if (freeRerollsAvailable > 0)
             {
@@ -466,14 +526,14 @@ namespace ProjectB.LevelUp
                 currentCards = rerolled;
                 RefreshSlots();
                 StartBounceAnimation();
-                FocusFirstCard();
+                ArmInputLock();
             }
             RefreshRerollButton();
         }
 
         private void OnCardClicked(int slotIndex, CardData card)
         {
-            if (onCardSelectedCallback == null) return;
+            if (IsInputLocked || onCardSelectedCallback == null) return;
 
             bool requiresAd = slotIndex >= freeCardsCount;
             if (!requiresAd)
