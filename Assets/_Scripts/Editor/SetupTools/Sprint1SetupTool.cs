@@ -17,9 +17,9 @@ using ProjectB.Visuals;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint1SetupTool
     {
-        [MenuItem("ProjectB/Setup/Run Sprint 1 Asset & Scene Setup")]
         public static void RunAll()
         {
             SetupGoblinAndBatWavesData();

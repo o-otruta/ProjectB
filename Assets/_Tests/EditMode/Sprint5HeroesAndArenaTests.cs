@@ -176,10 +176,10 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(shrinePrefab.transform.Find("RuneRing"));
 
             // 8. Verify HeroData, WeaponData, HeroCatalog, Achievements, ArenaConfig, WaveConfig
-            var ranger = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/RangerData.asset");
-            var necro = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/NecromancerHeroData.asset");
-            var bow = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/RapidBowWeaponData.asset");
-            var soul = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/SoulBoltWeaponData.asset");
+            var ranger = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/RangerData.asset");
+            var necro = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/NecromancerHeroData.asset");
+            var bow = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/Weapons/RapidBowWeaponData.asset");
+            var soul = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/Weapons/SoulBoltWeaponData.asset");
 
             Assert.IsNotNull(ranger);
             Assert.IsNotNull(necro);

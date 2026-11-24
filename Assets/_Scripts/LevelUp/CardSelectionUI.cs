@@ -216,10 +216,6 @@ namespace ProjectB.LevelUp
                     }
                     return "UPGRADE";
 
-                case SynergyCardData:
-                    badgeColor = new Color(0.92f, 0.68f, 0.12f, 1f);
-                    return "SYNERGY!";
-
                 case StatUpgradeCardData:
                     badgeColor = new Color(0.45f, 0.35f, 0.72f, 1f);
                     return "STAT BOOST";

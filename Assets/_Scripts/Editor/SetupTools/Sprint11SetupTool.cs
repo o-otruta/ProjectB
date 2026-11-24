@@ -23,6 +23,7 @@ namespace ProjectB.EditorScripts
     /// Sprint 11: Constellation Tree, Paladin &amp; Engineer heroes, weapon upgrade cards,
     /// 4 new active + 2 passive abilities and 4 reactive synergies.
     /// </summary>
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint11SetupTool
     {
         private const string SHADER_VOXEL_LIT = "ProjectB/VoxelLit";
@@ -55,8 +56,6 @@ namespace ProjectB.EditorScripts
         private const string NODE_SPRITE_PATH = "Assets/_UI/ConstellationNode.png";
         private const string HALO_SPRITE_PATH = "Assets/_UI/ConstellationHalo.png";
         private const string WHITE_SPRITE_PATH = "Assets/_UI/Sprint10WhiteSquare.png";
-
-        [MenuItem("ProjectB/Setup/Run Sprint 11 Constellation, Heroes & Arsenal Setup")]
         public static void RunAll()
         {
             EnsureFolders();
@@ -129,7 +128,6 @@ namespace ProjectB.EditorScripts
         /// interactive against static background props. Coin base/glow materials share identical motion values
         /// so both sub-meshes stay in sync.
         /// </summary>
-        [MenuItem("ProjectB/Setup/Sprint 11 — Configure Pickup Bob & Spin")]
         public static void ConfigurePickupMotion()
         {
             ConfigurePickupMaterial($"{VOXEL_MAT_DIR}/XpCrystal_Glow_Mat.mat", bobAmplitude: 0.12f, bobSpeed: 2.8f, spinSpeed: 70f);
@@ -791,7 +789,6 @@ namespace ProjectB.EditorScripts
             syn.description = desc;
             syn.rarity = rarity;
             syn.requiredAbilityIds = new List<string> { abilityA, abilityB };
-            syn.rewardCard = null;
             EditorUtility.SetDirty(syn);
             return syn;
         }
@@ -1162,8 +1159,6 @@ namespace ProjectB.EditorScripts
             labelText.fontStyle = FontStyles.Bold;
             return btn;
         }
-
-        [MenuItem("ProjectB/Setup/Sprint 11 — Rebuild Constellation UI (MainMenu)")]
         public static void BuildMainMenuConstellationUI()
         {
             Scene scene = EditorSceneManager.OpenScene(MAINMENU_SCENE_PATH, OpenSceneMode.Single);

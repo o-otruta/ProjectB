@@ -11,12 +11,11 @@ using ProjectB.UI;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint2SetupTool
     {
         private const string CARDS_DIR = "Assets/_ScriptableObjects/Cards";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
-
-        [MenuItem("ProjectB/Setup/Run Sprint 2 Asset & Scene Setup")]
         public static void RunAll()
         {
             CreateAndWireModifierCards();

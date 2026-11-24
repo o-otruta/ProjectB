@@ -17,6 +17,7 @@ using ProjectB.Visuals;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint10SetupTool
     {
         private const string SHADER_VOXEL_LIT = "ProjectB/VoxelLit";
@@ -32,8 +33,6 @@ namespace ProjectB.EditorScripts
         private const string ACHIEVEMENTS_DIR = "Assets/Resources/Achievements";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
         private const string WHITE_SPRITE_PATH = "Assets/_UI/Sprint10WhiteSquare.png";
-
-        [MenuItem("ProjectB/Setup/Run Sprint 10 Events, Enemies, Boss & Living Arena Setup")]
         public static void RunAll()
         {
             EnsureFolders();

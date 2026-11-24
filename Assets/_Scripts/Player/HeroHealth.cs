@@ -14,6 +14,7 @@ namespace ProjectB.Player
         private const float HERO_HIT_FLASH_DURATION = 0.14f;
 
         [SerializeField] private HeroData heroData;
+        [SerializeField] private RunRulesConfig runRulesConfig;
         [SerializeField] [Min(0f)] private float postHitInvulnerabilityDuration = 0.18f;
 
         [Header("Keystone: Second Wind (Constellation Tree)")]
@@ -25,6 +26,8 @@ namespace ProjectB.Player
         private static readonly Collider[] secondWindBuffer = new Collider[96];
         private bool secondWindUsed;
         private float regenAccumulator;
+        private RunRulesConfig cachedDefaultRules;
+        private bool triedLoadDefaultRules;
 
         public event System.Action<int, int> OnHealthChanged;
         public event System.Action<int> OnDamageTaken;
@@ -48,11 +51,38 @@ namespace ProjectB.Player
         public bool IsInvulnerable => isInvulnerable || isGodMode || reviveInvulnerabilityTimer > 0f || postHitInvulnerabilityTimer > 0f;
         public bool IsPostHitInvulnerable => postHitInvulnerabilityTimer > 0f;
         public bool IsHitFlashing => hitFlashTimer > 0f;
-        public float PostHitInvulnerabilityDuration => postHitInvulnerabilityDuration + (runtimeStats != null ? runtimeStats.BonusIFrameSeconds : 0f);
+        public float PostHitInvulnerabilityDuration => BasePostHitInvulnerabilityDuration + (runtimeStats != null ? runtimeStats.BonusIFrameSeconds : 0f);
         public bool HasSecondWindAvailable => runtimeStats != null && runtimeStats.HasSecondWind && !secondWindUsed;
         public bool SecondWindUsed => secondWindUsed;
-        public float SecondWindHpPercent => secondWindHpPercent;
-        public float SecondWindInvulnerability => secondWindInvulnerability;
+        public float SecondWindHpPercent => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindHpPercent : secondWindHpPercent;
+        public float SecondWindInvulnerability => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindInvulnerability : secondWindInvulnerability;
+        public float SecondWindKnockbackRadius => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindKnockbackRadius : secondWindKnockbackRadius;
+        public float SecondWindKnockbackDistance => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindKnockbackDistance : secondWindKnockbackDistance;
+        private float BasePostHitInvulnerabilityDuration
+        {
+            get
+            {
+                if (runRulesConfig != null) return runRulesConfig.postHitInvulnerabilityDuration;
+                if (!Mathf.Approximately(postHitInvulnerabilityDuration, 0.18f)) return postHitInvulnerabilityDuration;
+                return ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.postHitInvulnerabilityDuration : postHitInvulnerabilityDuration;
+            }
+        }
+
+        public void SetRunRulesConfig(RunRulesConfig rules)
+        {
+            runRulesConfig = rules;
+        }
+
+        private RunRulesConfig ResolveRunRulesConfig()
+        {
+            if (runRulesConfig != null) return runRulesConfig;
+            if (!triedLoadDefaultRules)
+            {
+                triedLoadDefaultRules = true;
+                cachedDefaultRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultRules;
+        }
         public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
         public int MaxHp => currentMaxHp;
@@ -272,14 +302,19 @@ namespace ProjectB.Player
             if (!HasSecondWindAvailable) return false;
 
             secondWindUsed = true;
-            currentHp = Mathf.Max(1, Mathf.RoundToInt(currentMaxHp * secondWindHpPercent));
-            reviveInvulnerabilityTimer = Mathf.Max(reviveInvulnerabilityTimer, secondWindInvulnerability);
+            float hpPct = SecondWindHpPercent;
+            float invuln = SecondWindInvulnerability;
+            float kbRadius = SecondWindKnockbackRadius;
+            float kbDist = SecondWindKnockbackDistance;
+
+            currentHp = Mathf.Max(1, Mathf.RoundToInt(currentMaxHp * hpPct));
+            reviveInvulnerabilityTimer = Mathf.Max(reviveInvulnerabilityTimer, invuln);
             postHitInvulnerabilityTimer = 0f;
             hitFlashTimer = HERO_HIT_FLASH_DURATION;
             ApplyHitFlash(1f);
 
-            int pushed = PushEnemiesAway(transform.position, secondWindKnockbackRadius, secondWindKnockbackDistance);
-            eventBus?.Publish(new SecondWindTriggeredEvent(transform.position, secondWindKnockbackRadius, pushed));
+            int pushed = PushEnemiesAway(transform.position, kbRadius, kbDist);
+            eventBus?.Publish(new SecondWindTriggeredEvent(transform.position, kbRadius, pushed));
             return true;
         }
 

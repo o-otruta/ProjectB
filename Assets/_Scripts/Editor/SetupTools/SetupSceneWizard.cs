@@ -10,9 +10,9 @@ using ProjectB.Player;
 using ProjectB.Enemies;
 using ProjectB.UI;
 
+[System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
 public class SetupSceneWizard : EditorWindow
 {
-    [MenuItem("ProjectB/Setup Test Scene")]
     public static void Setup()
     {
         // 1. Setup Layers and Tags

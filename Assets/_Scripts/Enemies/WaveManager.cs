@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using VContainer;
+using ProjectB.Data;
 using ProjectB.Data.Enemies;
 using ProjectB.Player;
 using ProjectB.Arena;
@@ -18,6 +19,7 @@ namespace ProjectB.Enemies
         private const int MAX_ACTIVE_ENEMIES_FOR_SUMMON = 80;
 
         [SerializeField] private WaveConfig waveConfig;
+        [SerializeField] private RunRulesConfig runRulesConfig;
         
         private HeroHealth heroHealth;
         private Transform heroTarget;
@@ -28,6 +30,9 @@ namespace ProjectB.Enemies
         private CoinManager coinManager;
         private VacuumMagnetSpawner vacuumMagnetSpawner;
         private IObjectResolver objectResolver;
+        private EnemyRuntimeModifiers enemyRuntimeModifiers;
+        private RunRulesConfig cachedDefaultRules;
+        private bool triedLoadDefaultRules;
 
         private Transform enemyContainer;
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
@@ -56,6 +61,7 @@ namespace ProjectB.Enemies
         public int PendingWaveEnemies { get; private set; }
         public IReadOnlyCollection<EnemyBase> ActiveEnemies => activeEnemies;
         public WaveConfig Config => waveConfig;
+        public EnemyRuntimeModifiers RuntimeModifiers => ResolveEnemyModifiers();
         private bool isSpawning = false;
         private bool tookDamageInCurrentWave = false;
         private int consecutiveNoDamageWaves = 0;
@@ -99,7 +105,8 @@ namespace ProjectB.Enemies
             EnemyProjectilePool enemyProjectilePool,
             ArenaGenerator arenaGenerator = null,
             CoinManager coinManager = null,
-            IObjectResolver resolver = null)
+            IObjectResolver resolver = null,
+            EnemyRuntimeModifiers enemyRuntimeModifiers = null)
         {
             this.heroHealth = heroHealth;
             if (heroHealth != null)
@@ -112,6 +119,32 @@ namespace ProjectB.Enemies
             this.arenaGenerator = arenaGenerator;
             this.coinManager = coinManager;
             this.objectResolver = resolver;
+            this.enemyRuntimeModifiers = enemyRuntimeModifiers;
+        }
+
+        public void SetRunRulesConfig(RunRulesConfig rules)
+        {
+            runRulesConfig = rules;
+        }
+
+        private RunRulesConfig ResolveRunRulesConfig()
+        {
+            if (runRulesConfig != null) return runRulesConfig;
+            if (!triedLoadDefaultRules)
+            {
+                triedLoadDefaultRules = true;
+                cachedDefaultRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultRules;
+        }
+
+        private EnemyRuntimeModifiers ResolveEnemyModifiers()
+        {
+            if (enemyRuntimeModifiers == null)
+            {
+                enemyRuntimeModifiers = new EnemyRuntimeModifiers();
+            }
+            return enemyRuntimeModifiers;
         }
 
         public void SetVacuumMagnetSpawner(VacuumMagnetSpawner spawner)
@@ -648,14 +681,20 @@ namespace ProjectB.Enemies
 
         private void GetWaveDifficultyMultipliers(out float hpMult, out float dmgMult)
         {
+            GetWaveDifficultyMultipliersForWave(currentWave, out hpMult, out dmgMult);
+        }
+
+        private void GetWaveDifficultyMultipliersForWave(int wave, out float hpMult, out float dmgMult)
+        {
+            int targetWave = Mathf.Max(1, wave);
             if (waveConfig != null)
             {
-                hpMult = waveConfig.GetHpDifficultyMultiplier(currentWave);
-                dmgMult = waveConfig.GetDamageDifficultyMultiplier(currentWave);
+                hpMult = waveConfig.GetHpDifficultyMultiplier(targetWave);
+                dmgMult = waveConfig.GetDamageDifficultyMultiplier(targetWave);
             }
             else
             {
-                float fallback = 1f + (currentWave - 1) * 0.1f;
+                float fallback = 1f + (targetWave - 1) * 0.1f;
                 hpMult = fallback;
                 dmgMult = fallback;
             }
@@ -724,8 +763,7 @@ namespace ProjectB.Enemies
         {
             if (selectedType == null) return null;
             EnsurePoolsInitialized();
-            currentWave = Mathf.Max(1, waveNumber);
-            GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
+            GetWaveDifficultyMultipliersForWave(waveNumber, out float hpMultiplier, out float damageMultiplier);
             EnemyBase enemy = SpawnEnemyInstance(selectedType, spawnPos, hpMultiplier, damageMultiplier);
             if (makeElite && enemy != null)
             {
@@ -774,6 +812,7 @@ namespace ProjectB.Enemies
             enemy.transform.position = ClampToArena(spawnPos);
 
             ConfigureSpecializedEnemy(enemy);
+            enemy.SetRuntimeModifiers(ResolveEnemyModifiers());
 
             enemy.Initialize(selectedType, heroTarget, pool, eventBus, hpMultiplier, damageMultiplier);
             enemy.OnDied += cachedEnemyDiedHandler;
@@ -862,6 +901,7 @@ namespace ProjectB.Enemies
             enemy.transform.position = GetValidSpawnPosition();
 
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
+            enemy.SetRuntimeModifiers(ResolveEnemyModifiers());
 
             if (enemy is BossBase boss)
             {
@@ -888,7 +928,11 @@ namespace ProjectB.Enemies
         private void SpawnSummonedMinion(EnemyData minionData, Vector3 nearPosition)
         {
             if (heroHealth != null && heroHealth.IsDead) return;
-            int summonCap = Mathf.Min(MAX_ACTIVE_ENEMIES_FOR_SUMMON, MaxActiveEnemies);
+            RunRulesConfig rules = ResolveRunRulesConfig();
+            int configuredSummonCap = rules != null && rules.maxActiveEnemiesForSummon > 0
+                ? rules.maxActiveEnemiesForSummon
+                : MAX_ACTIVE_ENEMIES_FOR_SUMMON;
+            int summonCap = Mathf.Min(configuredSummonCap, MaxActiveEnemies);
             if (activeEnemies.Count >= summonCap) return;
 
             EnemyData dataToSpawn = minionData != null
@@ -904,6 +948,7 @@ namespace ProjectB.Enemies
             minion.transform.position = ClampToArena(nearPosition);
 
             ConfigureSpecializedEnemy(minion);
+            minion.SetRuntimeModifiers(ResolveEnemyModifiers());
 
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
             minion.Initialize(dataToSpawn, heroTarget, pool, eventBus, hpMultiplier, damageMultiplier);
@@ -1044,7 +1089,9 @@ namespace ProjectB.Enemies
             enemyIterationBuffer.Clear();
 
             Vector3 heroPos = heroTarget != null ? heroTarget.position : Vector3.zero;
-            const float safeRadius = 4.5f;
+            RunRulesConfig rules = ResolveRunRulesConfig();
+            float safeRadius = rules != null ? rules.reviveSafeRadius : 4.5f;
+            float pushDistance = rules != null ? rules.revivePushDistance : 5.5f;
             float safeRadiusSq = safeRadius * safeRadius;
 
             if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
@@ -1064,7 +1111,7 @@ namespace ProjectB.Enemies
                     if (diff.sqrMagnitude < safeRadiusSq)
                     {
                         Vector3 pushDir = diff.sqrMagnitude > 0.001f ? diff.normalized : Vector3.forward;
-                        enemy.Teleport(ClampToArena(heroPos + pushDir * 5.5f));
+                        enemy.Teleport(ClampToArena(heroPos + pushDir * pushDistance));
                     }
                 }
             }

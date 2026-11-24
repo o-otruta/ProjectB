@@ -8,9 +8,9 @@ using UnityEditor.SceneManagement;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public class MainMenuSetup
     {
-        [MenuItem("Tools/Setup Main Menu")]
         public static void Setup()
         {
             // Set up the scene hierarchy

@@ -130,7 +130,7 @@ namespace ProjectB.UI
             if (iconBackground != null) iconBackground.color = theme.surfaceRaised;
             if (lockBadge != null) lockBadge.SetActive(!isUnlocked);
 
-            Sprite icon = synergy.icon != null ? synergy.icon : (synergy.rewardCard != null ? synergy.rewardCard.icon : null);
+            Sprite icon = synergy.icon;
             bool hasIcon = icon != null;
             if (iconImage != null)
             {
@@ -170,7 +170,7 @@ namespace ProjectB.UI
             {
                 string desc = !string.IsNullOrEmpty(synergy.description)
                     ? synergy.description
-                    : (synergy.rewardCard != null ? synergy.rewardCard.description : string.Empty);
+                    : string.Empty;
                 descriptionText.text = desc;
                 descriptionText.color = isUnlocked ? theme.textSecondary : theme.textDisabled;
             }

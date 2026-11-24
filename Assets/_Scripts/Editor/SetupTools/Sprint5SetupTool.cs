@@ -14,6 +14,7 @@ using ProjectB.Visuals;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint5SetupTool
     {
         private const int ENEMY_LAYER = 8;
@@ -30,8 +31,6 @@ namespace ProjectB.EditorScripts
         private const string SO_DIR = "Assets/_ScriptableObjects";
         private const string ACH_DIR = "Assets/Resources/Achievements";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
-
-        [MenuItem("ProjectB/Setup/Run Sprint 5 Asset & Scene Setup")]
         public static void RunAll()
         {
             EnsureFolder(VOXEL_MAT_DIR);

@@ -65,9 +65,6 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Максимальное количество врагов в одной волне (потолок)")]
         public int maxEnemiesPerWave = 50;
 
-        [Tooltip("Множитель увеличения здоровья и урона врагов с каждой волной (0.2 = +20% за волну)")]
-        public float difficultyPerWave = 0.01f;
-
         [Header("Difficulty Scaling Curves")]
         [Tooltip("Использовать раздельные кривые роста HP и урона врагов")]
         public bool useSeparateDifficultyScaling = true;
@@ -253,11 +250,6 @@ namespace ProjectB.Data.Enemies
         public float GetHpDifficultyMultiplier(int wave)
         {
             int w = Mathf.Max(0, wave - 1);
-            if (!useSeparateDifficultyScaling)
-            {
-                return Mathf.Max(1f, 1f + w * difficultyPerWave);
-            }
-
             float mult = 1f + w * hpLinearPerWave + w * w * hpQuadraticPerWave;
             if (hpCurveMultiplier != null && hpCurveMultiplier.length > 0)
             {
@@ -269,11 +261,6 @@ namespace ProjectB.Data.Enemies
         public float GetDamageDifficultyMultiplier(int wave)
         {
             int w = Mathf.Max(0, wave - 1);
-            if (!useSeparateDifficultyScaling)
-            {
-                return Mathf.Max(1f, 1f + w * difficultyPerWave);
-            }
-
             float mult = 1f + w * damageLinearPerWave;
             if (damageCurveMultiplier != null && damageCurveMultiplier.length > 0)
             {

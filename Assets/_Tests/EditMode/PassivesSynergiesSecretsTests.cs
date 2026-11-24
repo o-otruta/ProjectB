@@ -83,23 +83,18 @@ namespace ProjectB.Tests.EditMode
             ab2.effectType = PassiveEffectType.ArmorFlat;
             ab2.baseValue = 5f;
 
-            var synergyCard = Track(ScriptableObject.CreateInstance<SynergyCardData>());
-            synergyCard.synergyId = "steam_blast";
-            synergyCard.cardName = "Steam Blast";
-            synergyCard.rarity = CardRarity.Legendary;
-
             var synergy = Track(ScriptableObject.CreateInstance<SynergyData>());
             synergy.id = "steam_blast";
             synergy.synergyName = "Steam Blast";
             synergy.requiredAbilityIds = new List<string> { "Fireball", "IceAura" };
-            synergy.rewardCard = synergyCard;
 
             heroAbilities.SetAvailableSynergies(new List<SynergyData> { synergy });
 
             var applier = new UpgradeApplier(null, stats, heroAbilities, bus);
             var mgrGo = Track(new GameObject("TestUpgradeMgr"));
             var mgr = mgrGo.AddComponent<UpgradeManager>();
-            mgr.cardPool = new List<CardData> { synergyCard };
+            var emptyCatalog = Track(ScriptableObject.CreateInstance<CardCatalog>());
+            mgr.SetCardCatalog(emptyCatalog);
             mgr.synergies = new List<SynergyData> { synergy };
             mgr.Construct(null, null, null, heroAbilities, applier, null);
             mgr.InitializeRunPool();

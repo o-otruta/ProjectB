@@ -26,6 +26,7 @@ namespace ProjectB.Core
             builder.Register<GameEventBus>(Lifetime.Scoped);
             builder.Register<HeroRuntimeStats>(Lifetime.Scoped);
             builder.Register<UpgradeApplier>(Lifetime.Scoped);
+            builder.Register<EnemyRuntimeModifiers>(Lifetime.Scoped);
             builder.Register<EnemyProjectilePool>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
             builder.RegisterEntryPoint<MetaRunRewardsHandler>().AsSelf();

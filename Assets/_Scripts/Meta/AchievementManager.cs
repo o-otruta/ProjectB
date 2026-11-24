@@ -11,6 +11,8 @@ namespace ProjectB.Meta
         private readonly List<AchievementData> _allAchievements;
         private readonly Dictionary<string, AchievementData> _achievementsById;
         private readonly Dictionary<AchievementConditionType, List<AchievementData>> _achievementsByCondition;
+        private readonly HashSet<string> _completedIds;
+        private int _syncedCompletedCount = -1;
 
         public List<AchievementData> unlockedThisRun { get; private set; }
         
@@ -33,7 +35,14 @@ namespace ProjectB.Meta
             });
             _achievementsById = new Dictionary<string, AchievementData>(_allAchievements.Count);
             _achievementsByCondition = new Dictionary<AchievementConditionType, List<AchievementData>>();
+            _completedIds = new HashSet<string>(StringComparer.Ordinal);
             unlockedThisRun = new List<AchievementData>();
+
+            if (_saveManager != null)
+            {
+                _saveManager.OnDataChanged += InvalidateCompletedCache;
+            }
+            EnsureCompletedCacheSynced();
 
             for (int i = 0; i < _allAchievements.Count; i++)
             {
@@ -64,12 +73,43 @@ namespace ProjectB.Meta
             unlockedThisRun.Clear();
         }
 
+        private void InvalidateCompletedCache()
+        {
+            _syncedCompletedCount = -1;
+        }
+
+        private void EnsureCompletedCacheSynced()
+        {
+            var list = _saveManager?.Data?.completedAchievements;
+            int count = list != null ? list.Count : 0;
+            if (_syncedCompletedCount == count) return;
+
+            _completedIds.Clear();
+            if (list != null)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (!string.IsNullOrEmpty(list[i]))
+                    {
+                        _completedIds.Add(list[i]);
+                    }
+                }
+            }
+            _syncedCompletedCount = count;
+        }
+
+        private bool IsAchievementCompleted(string id)
+        {
+            EnsureCompletedCacheSynced();
+            return _completedIds.Contains(id);
+        }
+
         public void AddProgress(string id, int amount)
         {
             if (string.IsNullOrEmpty(id) || amount <= 0) return;
             if (!_achievementsById.TryGetValue(id, out var achievement)) return;
 
-            if (_saveManager.Data.completedAchievements.Contains(id)) return;
+            if (IsAchievementCompleted(id)) return;
 
             _saveManager.Data.achievementProgress.TryGetValue(id, out int currentProgress);
             
@@ -97,7 +137,7 @@ namespace ProjectB.Meta
             for (int i = 0; i < list.Count; i++)
             {
                 var achievement = list[i];
-                if (_saveManager.Data.completedAchievements.Contains(achievement.id)) continue;
+                if (IsAchievementCompleted(achievement.id)) continue;
 
                 if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
                 {
@@ -113,7 +153,7 @@ namespace ProjectB.Meta
             for (int i = 0; i < list.Count; i++)
             {
                 var achievement = list[i];
-                if (_saveManager.Data.completedAchievements.Contains(achievement.id)) continue;
+                if (IsAchievementCompleted(achievement.id)) continue;
 
                 if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
                 {
@@ -129,9 +169,11 @@ namespace ProjectB.Meta
 
         private void UnlockAchievement(AchievementData achievement)
         {
-            if (_saveManager.Data.completedAchievements.Contains(achievement.id)) return;
+            if (IsAchievementCompleted(achievement.id)) return;
 
+            _completedIds.Add(achievement.id);
             _saveManager.CompleteAchievement(achievement.id, saveImmediately: false);
+            _syncedCompletedCount = _saveManager?.Data?.completedAchievements?.Count ?? _completedIds.Count;
             unlockedThisRun.Add(achievement);
 
             // Награды (без немедленного дискового I/O в бою)

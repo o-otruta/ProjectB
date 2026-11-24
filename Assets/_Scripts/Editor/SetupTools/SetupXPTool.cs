@@ -9,9 +9,9 @@ using ProjectB.Player;
 
 namespace ProjectB.Editor
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public class SetupXPTool
     {
-        [MenuItem("ProjectB/Setup XP System")]
         public static void SetupXP()
         {
             // 1. Add HeroExperience to Player

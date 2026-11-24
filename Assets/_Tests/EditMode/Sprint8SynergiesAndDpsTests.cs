@@ -184,15 +184,6 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(1, ha.GetAbilityLevel("PoisonAlchemist"));
             Assert.AreEqual(1, ha.GetAbilityLevel("Fireball"));
             Assert.AreEqual(1f, stats.GlobalDamageMultiplier, 0.001f);
-
-            // SynergyCardData must never appear in LevelUp cards
-            var mgrGo = Track(new GameObject("NoSynCardsMgr"));
-            var mgr = mgrGo.AddComponent<UpgradeManager>();
-            mgr.cardPool = new List<CardData> { syn.rewardCard };
-            mgr.synergies = new List<SynergyData> { syn };
-            mgr.Construct(null, null, null, ha, null, null);
-            mgr.InitializeRunPool();
-            Assert.AreEqual(0, mgr.GetRandomCards(5).Count);
         }
 
         [Test]
@@ -758,7 +749,7 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual("Hero: Ranger", GameOverUI.FormatReward(rangerAch));
             Assert.AreEqual("Unlocked: Dragon Whelp", GameOverUI.FormatReward(dragonAch));
 
-            // SynergyCatalog & clean SynergyCardData (0 flat bonuses)
+            // SynergyCatalog
             var synCatalog = Resources.Load<SynergyCatalog>("SynergyCatalog");
             Assert.IsNotNull(synCatalog, "Resources/SynergyCatalog.asset must exist");
             Assert.GreaterOrEqual(synCatalog.synergies.Count, 8, "8 Sprint 8 reactions (+4 added in Sprint 11)");
@@ -767,12 +758,6 @@ namespace ProjectB.Tests.EditMode
                 SynergyData syn = synCatalog.synergies[i];
                 Assert.IsNotNull(syn);
                 Assert.IsFalse(string.IsNullOrEmpty(syn.description));
-                if (syn.rewardCard != null)
-                {
-                    Assert.AreEqual(0, syn.rewardCard.abilityBonuses.Count, $"{syn.id} rewardCard must have 0 flat abilityBonuses");
-                    Assert.AreEqual(0f, syn.rewardCard.globalDamageBonusPercent, 0.001f);
-                    Assert.AreEqual(0f, syn.rewardCard.armorBonus, 0.001f);
-                }
             }
 
             // Gameplay.unity & MainMenu.unity wiring

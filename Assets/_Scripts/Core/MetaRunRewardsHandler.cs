@@ -3,6 +3,7 @@ using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.Enemies;
 using ProjectB.Meta;
 using ProjectB.Player;
@@ -24,6 +25,9 @@ namespace ProjectB.Core
         private readonly HeroRuntimeStats runtimeStats;
         private readonly HeroEconomy heroEconomy;
         private readonly AchievementManager achievementManager;
+        private readonly EnemyRuntimeModifiers enemyRuntimeModifiers;
+        private RunRulesConfig runRulesConfig;
+        private bool triedLoadRules;
 
         private bool started;
         private int crystalsCollected;
@@ -37,7 +41,21 @@ namespace ProjectB.Core
             WaveManager waveManager = null,
             HeroRuntimeStats runtimeStats = null,
             HeroEconomy heroEconomy = null,
-            AchievementManager achievementManager = null)
+            AchievementManager achievementManager = null,
+            EnemyRuntimeModifiers enemyRuntimeModifiers = null)
+            : this(eventBus, runStatistics, waveManager, runtimeStats, heroEconomy, achievementManager, enemyRuntimeModifiers, null)
+        {
+        }
+
+        public MetaRunRewardsHandler(
+            GameEventBus eventBus,
+            RunStatistics runStatistics,
+            WaveManager waveManager,
+            HeroRuntimeStats runtimeStats,
+            HeroEconomy heroEconomy,
+            AchievementManager achievementManager,
+            EnemyRuntimeModifiers enemyRuntimeModifiers,
+            RunRulesConfig runRulesConfig)
         {
             this.eventBus = eventBus;
             this.runStatistics = runStatistics;
@@ -45,6 +63,28 @@ namespace ProjectB.Core
             this.runtimeStats = runtimeStats;
             this.heroEconomy = heroEconomy;
             this.achievementManager = achievementManager;
+            this.enemyRuntimeModifiers = enemyRuntimeModifiers ?? waveManager?.RuntimeModifiers;
+            this.runRulesConfig = runRulesConfig;
+        }
+
+        private RunRulesConfig ResolveRunRulesConfig()
+        {
+            if (runRulesConfig != null) return runRulesConfig;
+            if (!triedLoadRules)
+            {
+                triedLoadRules = true;
+                runRulesConfig = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return runRulesConfig;
+        }
+
+        private int CrystalsPerGreedBonus
+        {
+            get
+            {
+                RunRulesConfig cfg = ResolveRunRulesConfig();
+                return cfg != null && cfg.crystalsPerGreedBonus > 0 ? cfg.crystalsPerGreedBonus : CRYSTALS_PER_GREED_BONUS;
+            }
         }
 
         public void Start()
@@ -52,7 +92,10 @@ namespace ProjectB.Core
             if (started) return;
             started = true;
 
-            EnemyBase.BossDamageTakenMultiplier = runtimeStats != null ? Mathf.Max(0.1f, runtimeStats.BossDamageMultiplier) : 1f;
+            if (enemyRuntimeModifiers != null)
+            {
+                enemyRuntimeModifiers.BossDamageTakenMultiplier = runtimeStats != null ? Mathf.Max(0.1f, runtimeStats.BossDamageMultiplier) : 1f;
+            }
 
             if (eventBus == null) return;
             eventBus.Subscribe<EnemyDiedEvent>(OnEnemyDied);
@@ -63,7 +106,10 @@ namespace ProjectB.Core
 
         public void Dispose()
         {
-            EnemyBase.BossDamageTakenMultiplier = 1f;
+            if (enemyRuntimeModifiers != null)
+            {
+                enemyRuntimeModifiers.BossDamageTakenMultiplier = 1f;
+            }
             if (!started || eventBus == null) return;
             eventBus.Unsubscribe<EnemyDiedEvent>(OnEnemyDied);
             eventBus.Unsubscribe<ChallengeShrineEvent>(OnChallengeShrine);
@@ -107,7 +153,7 @@ namespace ProjectB.Core
             if (bonus <= 0) return;
 
             crystalsCollected++;
-            if (crystalsCollected % CRYSTALS_PER_GREED_BONUS == 0)
+            if (crystalsCollected % CrystalsPerGreedBonus == 0)
             {
                 heroEconomy?.AddCoin(bonus);
             }

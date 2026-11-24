@@ -13,13 +13,12 @@ using ProjectB.UI;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint7SetupTool
     {
         private const string ELITE_AURA_MAT_PATH = "Assets/_Materials/EliteAuraMat.mat";
         private const string WAVE_CONFIG_PATH = "Assets/_ScriptableObjects/WaveConfig.asset";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
-
-        [MenuItem("ProjectB/Setup/Run Sprint 7 Asset, Scene & Hygiene Setup")]
         public static void RunAll()
         {
             RemoveDeadAssets();

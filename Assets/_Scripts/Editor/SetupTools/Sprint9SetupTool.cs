@@ -15,6 +15,7 @@ using ProjectB.Visuals;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint9SetupTool
     {
         private const string VOXEL_SHADER_NAME = "ProjectB/VoxelLit";
@@ -41,8 +42,6 @@ namespace ProjectB.EditorScripts
             "OrcCharger_Mat", "OrcCharger_Glow_Mat",
             "FrostLich_Mat", "FrostLich_Glow_Mat"
         };
-
-        [MenuItem("ProjectB/Setup/Run Sprint 9 Visuals & Audio Setup")]
         public static void RunAll()
         {
             EnsureFolder(VOXEL_MAT_DIR);

@@ -13,7 +13,5 @@ namespace ProjectB.LevelUp
         public CardRarity rarity = CardRarity.Legendary;
         [Tooltip("All ability IDs the hero must own for this synergy to auto-activate")]
         public List<string> requiredAbilityIds = new List<string>();
-        [Tooltip("Legacy card reference kept for asset compatibility; synergies now auto-activate without LevelUp cards")]
-        public SynergyCardData rewardCard;
     }
 }

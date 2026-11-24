@@ -46,9 +46,6 @@ namespace ProjectB.LevelUp
                 case WeaponUpgradeCardData weaponCard:
                     ApplyWeaponUpgrade(weaponCard);
                     break;
-                case SynergyCardData synergyCard:
-                    ApplySynergyCard(synergyCard);
-                    break;
                 default:
                     Debug.LogWarning($"[UpgradeApplier] Unsupported card type: {card.GetType().Name}");
                     break;
@@ -123,20 +120,6 @@ namespace ProjectB.LevelUp
                     card.hasSecondaryModifier,
                     card.secondaryModifierType,
                     card.secondaryValue);
-            }
-        }
-
-        private void ApplySynergyCard(SynergyCardData card)
-        {
-            if (card == null) return;
-
-            if (heroAbilities != null)
-            {
-                heroAbilities.TryActivateSynergyById(card.synergyId, card.cardName);
-            }
-            else
-            {
-                eventBus?.Publish(new SynergyActivatedEvent(card.synergyId, card.cardName));
             }
         }
     }

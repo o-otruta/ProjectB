@@ -10,6 +10,7 @@ using ProjectB.UI;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint3SetupTool
     {
         private const string ABILITIES_DIR = "Assets/_ScriptableObjects/Abilities";
@@ -22,8 +23,6 @@ namespace ProjectB.EditorScripts
         private const string LOCK_ICON_PATH = "Assets/_UI/Icons/Generated/ui_slot_lock.png";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
         private const int ENEMY_LAYER_MASK = 1 << 8;
-
-        [MenuItem("ProjectB/Setup/Run Sprint 3 Asset & Scene Setup")]
         public static void RunAll()
         {
             var materials = CreateOrUpdateMaterials();
@@ -405,124 +404,63 @@ namespace ProjectB.EditorScripts
             // 1. Thunderstorm: ChainLightning + IceAura
             synergiesOut.Add(CreateSynergy(
                 "Synergy_Thunderstorm",
-                "SynergyCard_Thunderstorm",
                 "thunder_storm",
                 "Thunderstorm",
-                "Synergy: Thunderstorm",
-                "Chain Lightning + Ice Aura: +3 Bounces & +12 Damage to Chain Lightning; +1.5m Radius & +20% Slow to Ice Aura.",
+                "Chain Lightning + Ice Aura",
                 CardRarity.Legendary,
-                new List<string> { "ChainLightning", "IceAura" },
-                new List<SynergyAbilityBonus>
-                {
-                    new SynergyAbilityBonus { targetAbilityId = "ChainLightning", modifierType = ModifierType.Count, value = 3f },
-                    new SynergyAbilityBonus { targetAbilityId = "ChainLightning", modifierType = ModifierType.Damage, value = 12f },
-                    new SynergyAbilityBonus { targetAbilityId = "IceAura", modifierType = ModifierType.Radius, value = 1.5f },
-                    new SynergyAbilityBonus { targetAbilityId = "IceAura", modifierType = ModifierType.SlowAmount, value = 0.2f }
-                }));
+                new List<string> { "ChainLightning", "IceAura" }));
 
             // 2. Toxic Inferno: PoisonAlchemist + Fireball
             synergiesOut.Add(CreateSynergy(
                 "Synergy_ToxicInferno",
-                "SynergyCard_ToxicInferno",
                 "toxic_inferno",
                 "Toxic Inferno",
-                "Synergy: Toxic Inferno",
-                "Poison Flask + Fireball: +1 Flask, +1.2m Puddle & +8 Damage; +1 Fireball & +10 Fireball Damage.",
+                "Poison Flask + Fireball",
                 CardRarity.Epic,
-                new List<string> { "PoisonAlchemist", "Fireball" },
-                new List<SynergyAbilityBonus>
-                {
-                    new SynergyAbilityBonus { targetAbilityId = "PoisonAlchemist", modifierType = ModifierType.Count, value = 1f },
-                    new SynergyAbilityBonus { targetAbilityId = "PoisonAlchemist", modifierType = ModifierType.Area, value = 1.2f },
-                    new SynergyAbilityBonus { targetAbilityId = "PoisonAlchemist", modifierType = ModifierType.Damage, value = 8f },
-                    new SynergyAbilityBonus { targetAbilityId = "Fireball", modifierType = ModifierType.Count, value = 1f },
-                    new SynergyAbilityBonus { targetAbilityId = "Fireball", modifierType = ModifierType.Damage, value = 10f }
-                }));
+                new List<string> { "PoisonAlchemist", "Fireball" }));
 
             // 3. Aegis Phalanx: orbital_small_sword + GuardianShield
             synergiesOut.Add(CreateSynergy(
                 "Synergy_AegisPhalanx",
-                "SynergyCard_AegisPhalanx",
                 "aegis_phalanx",
                 "Aegis Phalanx",
-                "Synergy: Aegis Phalanx",
-                "Orbital Sword + Guardian Shields: +2 Swords, +2 Shields, +60°/s Spin Speed, and +15 Armor.",
+                "Orbital Sword + Guardian Shields",
                 CardRarity.Epic,
-                new List<string> { "orbital_small_sword", "GuardianShield" },
-                new List<SynergyAbilityBonus>
-                {
-                    new SynergyAbilityBonus { targetAbilityId = "orbital_small_sword", modifierType = ModifierType.Count, value = 2f },
-                    new SynergyAbilityBonus { targetAbilityId = "orbital_small_sword", modifierType = ModifierType.Speed, value = 60f },
-                    new SynergyAbilityBonus { targetAbilityId = "GuardianShield", modifierType = ModifierType.Count, value = 2f },
-                    new SynergyAbilityBonus { targetAbilityId = "GuardianShield", modifierType = ModifierType.Speed, value = 60f }
-                },
-                armorBonus: 15f));
+                new List<string> { "orbital_small_sword", "GuardianShield" }));
 
             // 4. Dragon Lord: MiniDragon + BattleFury
             synergiesOut.Add(CreateSynergy(
                 "Synergy_DragonLord",
-                "SynergyCard_DragonLord",
                 "dragon_lord",
                 "Dragon Lord",
-                "Synergy: Dragon Lord",
-                "Dragon Whelp + Battle Fury: Summons +1 Dragon Whelp, +10 Dragon Damage, and +25% Global Damage.",
+                "Dragon Whelp + Battle Fury",
                 CardRarity.Legendary,
-                new List<string> { "MiniDragon", "BattleFury" },
-                new List<SynergyAbilityBonus>
-                {
-                    new SynergyAbilityBonus { targetAbilityId = "MiniDragon", modifierType = ModifierType.Count, value = 1f },
-                    new SynergyAbilityBonus { targetAbilityId = "MiniDragon", modifierType = ModifierType.Damage, value = 10f }
-                },
-                globalDamageBonusPercent: 25f));
+                new List<string> { "MiniDragon", "BattleFury" }));
 
             // 5. Cataclysm Vortex: BlackHole + VoxelTornado
             synergiesOut.Add(CreateSynergy(
                 "Synergy_CataclysmVortex",
-                "SynergyCard_CataclysmVortex",
                 "cataclysm_vortex",
                 "Cataclysm Vortex",
-                "Synergy: Cataclysm Vortex",
-                "Black Hole + Arcane Tornado: +2m Black Hole Radius & +8 Damage; +2 Tornadoes & +8 Damage.",
+                "Black Hole + Arcane Tornado",
                 CardRarity.Legendary,
-                new List<string> { "BlackHole", "VoxelTornado" },
-                new List<SynergyAbilityBonus>
-                {
-                    new SynergyAbilityBonus { targetAbilityId = "BlackHole", modifierType = ModifierType.Radius, value = 2f },
-                    new SynergyAbilityBonus { targetAbilityId = "BlackHole", modifierType = ModifierType.Damage, value = 8f },
-                    new SynergyAbilityBonus { targetAbilityId = "VoxelTornado", modifierType = ModifierType.Count, value = 2f },
-                    new SynergyAbilityBonus { targetAbilityId = "VoxelTornado", modifierType = ModifierType.Damage, value = 8f }
-                }));
+                new List<string> { "BlackHole", "VoxelTornado" }));
         }
 
         private static SynergyData CreateSynergy(
             string synergyAssetName,
-            string cardAssetName,
             string synergyId,
             string synergyName,
-            string cardTitle,
-            string cardDescription,
+            string description,
             CardRarity rarity,
-            List<string> requiredAbilityIds,
-            List<SynergyAbilityBonus> abilityBonuses,
-            float globalDamageBonusPercent = 0f,
-            float armorBonus = 0f)
+            List<string> requiredAbilityIds)
         {
-            var card = LoadOrCreateAsset<SynergyCardData>($"{CARDS_DIR}/{cardAssetName}.asset");
-            card.cardName = cardTitle;
-            card.description = cardDescription;
-            card.rarity = rarity;
-            card.isConsumable = true;
-            card.synergyId = synergyId;
-            card.abilityBonuses = abilityBonuses;
-            card.globalDamageBonusPercent = globalDamageBonusPercent;
-            card.armorBonus = armorBonus;
-            EditorUtility.SetDirty(card);
-
             var syn = LoadOrCreateAsset<SynergyData>($"{SYNERGIES_DIR}/{synergyAssetName}.asset");
             syn.id = synergyId;
             syn.synergyName = synergyName;
+            syn.description = description;
+            syn.rarity = rarity;
             syn.requiredAbilityIds = requiredAbilityIds;
-            syn.rewardCard = card;
             EditorUtility.SetDirty(syn);
 
             return syn;

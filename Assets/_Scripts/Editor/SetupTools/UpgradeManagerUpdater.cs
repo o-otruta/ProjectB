@@ -4,9 +4,9 @@ using UnityEditor.SceneManagement;
 using ProjectB.LevelUp;
 using System.Collections.Generic;
 
+[System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
 public class UpgradeManagerUpdater
 {
-    [MenuItem("Tools/Update Upgrade Manager")]
     public static void UpdateManager()
     {
         string scenePath = "Assets/_Scenes/Gameplay.unity";

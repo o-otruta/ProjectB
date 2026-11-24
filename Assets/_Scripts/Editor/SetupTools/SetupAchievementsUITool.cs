@@ -6,9 +6,9 @@ using ProjectB.UI;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public class SetupAchievementsUITool
     {
-        [MenuItem("ProjectB/Setup/Setup Achievements UI")]
         public static void Setup()
         {
             Canvas canvas = Object.FindAnyObjectByType<Canvas>();

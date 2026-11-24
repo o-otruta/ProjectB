@@ -37,6 +37,7 @@ namespace ProjectB.Enemies
         private VacuumMagnetSpawner vacuumMagnetSpawner;
         private GameEventBus eventBus;
         private GameManager gameManager;
+        private EnemyRuntimeModifiers enemyRuntimeModifiers;
 
         private readonly List<EnemyBase> ambushElites = new List<EnemyBase>(4);
         private readonly WaveEventType[] eligibleTypesBuffer = new WaveEventType[4];
@@ -53,6 +54,7 @@ namespace ProjectB.Enemies
         private FleeingLootEnemy activeGoldGoblin;
         private bool isSubscribed;
 
+        private bool hasSearchedForLight;
         private bool hasCapturedLightBase;
         private Color originalLightColor = Color.white;
         private float originalLightIntensity = 1f;
@@ -123,7 +125,8 @@ namespace ProjectB.Enemies
             CoinManager coinManager = null,
             VacuumMagnetSpawner vacuumMagnetSpawner = null,
             GameEventBus eventBus = null,
-            GameManager gameManager = null)
+            GameManager gameManager = null,
+            EnemyRuntimeModifiers enemyRuntimeModifiers = null)
         {
             this.waveManager = waveManager;
             this.heroHealth = heroHealth;
@@ -132,6 +135,7 @@ namespace ProjectB.Enemies
             this.vacuumMagnetSpawner = vacuumMagnetSpawner;
             this.eventBus = eventBus;
             this.gameManager = gameManager;
+            this.enemyRuntimeModifiers = enemyRuntimeModifiers ?? waveManager?.RuntimeModifiers;
             this.waveManager?.SetVacuumMagnetSpawner(vacuumMagnetSpawner);
 
             WaveConfig cfg = ActiveConfig;
@@ -146,11 +150,28 @@ namespace ProjectB.Enemies
             }
         }
 
+        public void SetDirectionalLight(Light light)
+        {
+            arenaDirectionalLight = light;
+            hasSearchedForLight = true;
+            hasCapturedLightBase = false;
+        }
+
+        private EnemyRuntimeModifiers ResolveEnemyModifiers()
+        {
+            if (enemyRuntimeModifiers == null && waveManager != null)
+            {
+                enemyRuntimeModifiers = waveManager.RuntimeModifiers;
+            }
+            return enemyRuntimeModifiers;
+        }
+
         private void Awake()
         {
             cachedGoblinDiedHandler = HandleGoldGoblinDied;
             cachedAmbushEliteDiedHandler = HandleAmbushEliteDied;
-            EnemyBase.GlobalEventSpeedMultiplier = 1f;
+            EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
+            if (mods != null) mods.EventSpeedMultiplier = 1f;
         }
 
         private void Start()
@@ -177,7 +198,8 @@ namespace ProjectB.Enemies
         private void OnDestroy()
         {
             Unsubscribe();
-            EnemyBase.GlobalEventSpeedMultiplier = 1f;
+            EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
+            if (mods != null) mods.EventSpeedMultiplier = 1f;
             RestoreLightImmediate();
             CleanupTrackedEntities();
         }
@@ -367,7 +389,8 @@ namespace ProjectB.Enemies
         private bool StartBloodMoon(WaveConfig cfg)
         {
             ResolveDirectionalLight();
-            EnemyBase.GlobalEventSpeedMultiplier = Mathf.Max(1f, cfg.bloodMoonEnemySpeedMultiplier);
+            EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
+            if (mods != null) mods.EventSpeedMultiplier = Mathf.Max(1f, cfg.bloodMoonEnemySpeedMultiplier);
             BeginEventState(WaveEventType.BloodMoon, cfg.bloodMoonDuration, "BLOOD MOON!", "x2 XP & COINS  •  +20% ENEMY SPEED");
             return true;
         }
@@ -546,7 +569,8 @@ namespace ProjectB.Enemies
 
             if (endedType == WaveEventType.BloodMoon)
             {
-                EnemyBase.GlobalEventSpeedMultiplier = 1f;
+                EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
+                if (mods != null) mods.EventSpeedMultiplier = 1f;
             }
 
             CleanupTrackedEntities();
@@ -595,9 +619,10 @@ namespace ProjectB.Enemies
 
         private void ResolveDirectionalLight()
         {
-            if (arenaDirectionalLight == null)
+            if (arenaDirectionalLight == null && !hasSearchedForLight)
             {
-                Light[] lights = FindObjectsByType<Light>();
+                hasSearchedForLight = true;
+                Light[] lights = FindObjectsByType<Light>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
                 for (int i = 0; i < lights.Length; i++)
                 {
                     if (lights[i] != null && lights[i].type == LightType.Directional)

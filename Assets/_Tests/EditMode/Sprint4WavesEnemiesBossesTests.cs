@@ -177,12 +177,12 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Enemies/FrostLichBoss.prefab").GetComponent<FrostLichBoss>());
 
             // 5. Verify ScriptableObjects and WaveConfig wiring
-            var skeletonData = AssetDatabase.LoadAssetAtPath<EnemyData>("Assets/_ScriptableObjects/SkeletonData.asset");
-            var bombData = AssetDatabase.LoadAssetAtPath<ExploderEnemyData>("Assets/_ScriptableObjects/BombBugData.asset");
-            var orcData = AssetDatabase.LoadAssetAtPath<ChargerEnemyData>("Assets/_ScriptableObjects/OrcChargerData.asset");
-            var lichData = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/FrostLichBossData.asset");
-            var slimeData = AssetDatabase.LoadAssetAtPath<EnemyData>("Assets/_ScriptableObjects/SlimeData.asset");
-            var necroData = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/NecromancerBossData.asset");
+            var skeletonData = AssetDatabase.LoadAssetAtPath<EnemyData>("Assets/_ScriptableObjects/Enemies/SkeletonData.asset");
+            var bombData = AssetDatabase.LoadAssetAtPath<ExploderEnemyData>("Assets/_ScriptableObjects/Enemies/BombSlimeData.asset");
+            var orcData = AssetDatabase.LoadAssetAtPath<ChargerEnemyData>("Assets/_ScriptableObjects/Enemies/OrcChargerData.asset");
+            var lichData = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/Bosses/FrostLichBossData.asset");
+            var slimeData = AssetDatabase.LoadAssetAtPath<EnemyData>("Assets/_ScriptableObjects/Enemies/SlimeData.asset");
+            var necroData = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/Bosses/NecromancerBossData.asset");
             var waveConfig = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
 
             Assert.IsNotNull(skeletonData);
@@ -461,7 +461,7 @@ namespace ProjectB.Tests.EditMode
             typeof(HeroHealth).GetField("currentHp", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(heroHealth, 300);
             var heroMove = heroGo.AddComponent<HeroMovement>();
 
-            var lichData = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/FrostLichBossData.asset");
+            var lichData = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/Bosses/FrostLichBossData.asset");
             var lichPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Enemies/FrostLichBoss.prefab");
             var lichGo = Track(Object.Instantiate(lichPrefab));
             lichGo.transform.position = Vector3.zero;

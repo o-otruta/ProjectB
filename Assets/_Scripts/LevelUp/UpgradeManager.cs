@@ -4,6 +4,7 @@ using UnityEngine;
 using ProjectB.Player;
 using ProjectB.UI;
 using ProjectB.Core;
+using ProjectB.Data;
 using ProjectB.Meta;
 using VContainer;
 using ProjectB.Abilities;
@@ -12,16 +13,19 @@ namespace ProjectB.LevelUp
 {
     public class UpgradeManager : MonoBehaviour
     {
+        [Header("Catalog & Rules")]
+        [SerializeField] private CardCatalog cardCatalog;
+        [SerializeField] private RunRulesConfig runRulesConfig;
+
         [Tooltip("Количество карточек на выбор при повышении уровня")]
         public int maxCardsToOffer = 3;
 
-        [Tooltip("Количество бесплатных рероллов карточек за забег")]
+        [Tooltip("Количество бесплатных рероллов карточек за забег (fallback, если RunRulesConfig не задан)")]
         [SerializeField] private int freeRerollsPerRun = 1;
         
-        public List<CardData> cardPool; // Пул доступных карточек
+        public List<CardData> cardPool; // Fallback/override pool for tests; production reads CardCatalog
         public List<SynergyData> synergies = new List<SynergyData>(); // Синергии способностей
         private List<CardData> dynamicPool = new List<CardData>(); // Пул добавленных модификаторов
-        private readonly HashSet<string> claimedSynergyIds = new HashSet<string>();
         
         private CardSelectionUI cardUI;
         private HeroExperience heroExp;
@@ -31,11 +35,53 @@ namespace ProjectB.LevelUp
         private SaveManager saveManager;
         private HeroRuntimeStats runtimeStats;
         private ProjectB.Combat.HeroCombat heroCombat;
+        private CardCatalog cachedDefaultCatalog;
+        private RunRulesConfig cachedDefaultRules;
         
         private int pendingLevelUps = 0;
         private int freeRerollsRemaining = 0;
 
         public int FreeRerollsRemaining => freeRerollsRemaining;
+
+        public IReadOnlyList<CardData> ResolvedCardPool
+        {
+            get
+            {
+                if (cardPool != null && cardPool.Count > 0) return cardPool;
+                CardCatalog catalog = ResolveCardCatalog();
+                return catalog != null ? catalog.cards : null;
+            }
+        }
+
+        public void SetCardCatalog(CardCatalog catalog)
+        {
+            cardCatalog = catalog;
+        }
+
+        public void SetRunRulesConfig(RunRulesConfig rules)
+        {
+            runRulesConfig = rules;
+        }
+
+        private CardCatalog ResolveCardCatalog()
+        {
+            if (cardCatalog != null) return cardCatalog;
+            if (cachedDefaultCatalog == null)
+            {
+                cachedDefaultCatalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultCatalog;
+        }
+
+        private RunRulesConfig ResolveRunRulesConfig()
+        {
+            if (runRulesConfig != null) return runRulesConfig;
+            if (cachedDefaultRules == null)
+            {
+                cachedDefaultRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultRules;
+        }
 
         [Inject]
         public void Construct(
@@ -87,15 +133,17 @@ namespace ProjectB.LevelUp
         public void InitializeRunPool()
         {
             dynamicPool.Clear();
-            claimedSynergyIds.Clear();
-            freeRerollsRemaining = Mathf.Max(0, freeRerollsPerRun) + (runtimeStats != null ? runtimeStats.FreeRerollBonus : 0);
-            if (cardPool == null) return;
+            RunRulesConfig rules = ResolveRunRulesConfig();
+            int baseFreeRerolls = rules != null ? rules.freeRerollsPerRun : freeRerollsPerRun;
+            freeRerollsRemaining = Mathf.Max(0, baseFreeRerolls) + (runtimeStats != null ? runtimeStats.FreeRerollBonus : 0);
 
-            for (int i = 0; i < cardPool.Count; i++)
+            IReadOnlyList<CardData> sourcePool = ResolvedCardPool;
+            if (sourcePool == null) return;
+
+            for (int i = 0; i < sourcePool.Count; i++)
             {
-                var card = cardPool[i];
+                var card = sourcePool[i];
                 if (card == null) continue;
-                if (card is SynergyCardData) continue;
 
                 if (card is AbilityCardData abilityCard)
                 {
@@ -234,7 +282,7 @@ namespace ProjectB.LevelUp
             {
                 foreach (var card in dynamicPool)
                 {
-                    if (card == null || card is SynergyCardData) continue;
+                    if (card == null) continue;
 
                     if (card is AbilityCardData abilityCard)
                     {
@@ -374,25 +422,6 @@ namespace ProjectB.LevelUp
             }
         }
 
-        private bool IsSynergyReady(SynergyData synergy)
-        {
-            if (synergy == null || synergy.rewardCard == null || heroAbilities == null) return false;
-            if (synergy.requiredAbilityIds == null || synergy.requiredAbilityIds.Count == 0) return false;
-
-            string key = !string.IsNullOrEmpty(synergy.id) ? synergy.id : synergy.rewardCard.synergyId;
-            if (!string.IsNullOrEmpty(key) && claimedSynergyIds.Contains(key)) return false;
-
-            for (int i = 0; i < synergy.requiredAbilityIds.Count; i++)
-            {
-                string reqId = synergy.requiredAbilityIds[i];
-                if (string.IsNullOrEmpty(reqId) || !heroAbilities.HasAbility(reqId))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         /// <summary>
         /// Grants a random unlocked Rare+ ability directly (used by Mystery Crystal secret item).
         /// Falls back to any unowned unlocked ability if no Rare+ abilities remain.
@@ -442,12 +471,6 @@ namespace ProjectB.LevelUp
 
         private void OnCardSelected(CardData selectedCard)
         {
-            if (selectedCard is SynergyCardData synergyCard)
-            {
-                string key = !string.IsNullOrEmpty(synergyCard.synergyId) ? synergyCard.synergyId : synergyCard.name;
-                claimedSynergyIds.Add(key);
-            }
-
             if (selectedCard.isConsumable)
             {
                 dynamicPool.Remove(selectedCard);

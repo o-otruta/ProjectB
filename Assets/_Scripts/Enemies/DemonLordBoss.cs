@@ -310,7 +310,7 @@ namespace ProjectB.Enemies
         private void StepFireCharge(float deltaTime)
         {
             float baseSpeed = bossData != null ? bossData.demonChargeSpeed : 13f;
-            float speed = baseSpeed * slowFactor * externalHasteMultiplier * GlobalEventSpeedMultiplier * GetAdditionalSpeedMultiplier();
+            float speed = baseSpeed * slowFactor * externalHasteMultiplier * EventSpeedMultiplier * GetAdditionalSpeedMultiplier();
             float requestedStep = Mathf.Max(0f, speed * deltaTime);
             float remaining = Mathf.Max(0f, plannedChargeDistance - chargeDistanceTravelled);
             float step = Mathf.Min(requestedStep, remaining);

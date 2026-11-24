@@ -562,8 +562,6 @@ namespace ProjectB.Tests.EditMode
             foreach (var syn in synergies)
             {
                 Assert.IsNotNull(syn);
-                Assert.IsNotNull(syn.rewardCard);
-                Assert.IsNotNull(syn.rewardCard.icon);
             }
 
             heroAbilities.SetAvailableSynergies(synergies);
@@ -571,7 +569,7 @@ namespace ProjectB.Tests.EditMode
             var applier = new UpgradeApplier(null, stats, heroAbilities, bus);
             var mgrGo = Track(new GameObject("SynergyUpgradeMgr"));
             var mgr = mgrGo.AddComponent<UpgradeManager>();
-            mgr.cardPool = new List<CardData>();
+            mgr.SetCardCatalog(Track(ScriptableObject.CreateInstance<CardCatalog>()));
             mgr.synergies = synergies;
             mgr.Construct(null, null, null, heroAbilities, applier, saveManager);
             mgr.InitializeRunPool();
@@ -667,11 +665,12 @@ namespace ProjectB.Tests.EditMode
                     "ChronoTomeCard", "CriticalLensCard", "TitanHeartCard", "GoldenIdolCard"
                 };
 
+                var resolvedPool = new List<CardData>(upgradeMgr.ResolvedCardPool);
                 foreach (var cardName in expectedCardNames)
                 {
                     var card = AssetDatabase.LoadAssetAtPath<AbilityCardData>($"Assets/_ScriptableObjects/Cards/{cardName}.asset");
                     Assert.IsNotNull(card, $"Missing card asset {cardName}");
-                    Assert.Contains(card, upgradeMgr.cardPool, $"Gameplay UpgradeManager.cardPool missing {cardName}");
+                    Assert.Contains(card, resolvedPool, $"Gameplay UpgradeManager.ResolvedCardPool missing {cardName}");
                 }
             }
             finally
@@ -765,7 +764,7 @@ namespace ProjectB.Tests.EditMode
                 }
 
                 Assert.IsNotNull(sceneMgr);
-                realCardPool = new List<CardData>(sceneMgr.cardPool);
+                realCardPool = new List<CardData>(sceneMgr.ResolvedCardPool);
             }
             finally
             {
@@ -821,19 +820,19 @@ namespace ProjectB.Tests.EditMode
 
             var contentTransform = (Transform)GetPrivateField(cheatMenu, "pickerContentTransform");
             var contentRt = contentTransform.GetComponent<RectTransform>();
-            Assert.AreEqual(13, contentTransform.childCount, "Expected all 13 Active abilities in ACTIVES tab");
-            Assert.GreaterOrEqual(contentRt.rect.height, 600f, "Grid content height must fit all 7 rows of actives");
+            Assert.AreEqual(17, contentTransform.childCount, "Expected all 17 Active abilities in ACTIVES tab");
+            Assert.GreaterOrEqual(contentRt.rect.height, 600f, "Grid content height must fit all active rows");
 
             var activesLabel = (TextMeshProUGUI)GetPrivateField(cheatMenu, "activesTabLabel");
             var passivesLabel = (TextMeshProUGUI)GetPrivateField(cheatMenu, "passivesTabLabel");
-            Assert.AreEqual("ACTIVES (13)", activesLabel.text);
-            Assert.AreEqual("PASSIVES (8)", passivesLabel.text);
+            Assert.AreEqual("ACTIVES (17)", activesLabel.text);
+            Assert.AreEqual("PASSIVES (10)", passivesLabel.text);
 
             var passivesBtn = (Button)GetPrivateField(cheatMenu, "passivesTabBtn");
             passivesBtn.onClick.Invoke();
             Canvas.ForceUpdateCanvases();
 
-            Assert.AreEqual(8, contentTransform.childCount, "Expected all 8 Passive abilities in PASSIVES tab with no leftovers");
+            Assert.AreEqual(10, contentTransform.childCount, "Expected all 10 Passive abilities in PASSIVES tab with no leftovers");
         }
 
         private static void SetPrivateField(object target, string fieldName, object value)

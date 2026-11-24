@@ -116,11 +116,6 @@ namespace ProjectB.EditorScripts
                     };
                     sprite = GetOrCreateSprite($"card_weapon_{weaponCard.upgradeType}", framed: true, spriteCache, key, GetRarityFrameColor(weaponCard.rarity));
                 }
-                else if (card is SynergyCardData synCard)
-                {
-                    string key = ResolveSynergyTemplateKey(synCard.synergyId);
-                    sprite = GetOrCreateSprite($"card_synergy_{synCard.synergyId}", framed: true, spriteCache, key, Gold);
-                }
 
                 if (sprite != null)
                 {

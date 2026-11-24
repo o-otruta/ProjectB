@@ -35,8 +35,6 @@ namespace ProjectB.Tests.EditMode
             hadOriginalSave = PlayerPrefs.HasKey(SaveManager.SAVE_KEY);
             originalSaveJson = hadOriginalSave ? PlayerPrefs.GetString(SaveManager.SAVE_KEY) : null;
             PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
-            EnemyBase.BossDamageTakenMultiplier = 1f;
-            EnemyBase.GlobalEventSpeedMultiplier = 1f;
 
             preExistingRoots.Clear();
             Scene active = SceneManager.GetActiveScene();
@@ -49,7 +47,6 @@ namespace ProjectB.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            EnemyBase.BossDamageTakenMultiplier = 1f;
             for (int i = disposables.Count - 1; i >= 0; i--) disposables[i]?.Dispose();
             disposables.Clear();
 
@@ -1079,12 +1076,14 @@ namespace ProjectB.Tests.EditMode
         public void BossDamageTalent_AmplifiesDamageTakenByBossesOnly()
         {
             var bus = new GameEventBus();
+            var mods = new EnemyRuntimeModifiers { BossDamageTakenMultiplier = 1.15f };
             var normal = SpawnEnemy("Normal", Vector3.zero, 1000, bus);
+            normal.SetRuntimeModifiers(mods);
             var mini = SpawnEnemy("Mini", Vector3.right * 3f, 1000, bus);
+            mini.SetRuntimeModifiers(mods);
             mini.MakeMiniBoss(1f, 1f, 1f);
             int miniMax = mini.MaxHp;
 
-            EnemyBase.BossDamageTakenMultiplier = 1.15f;
             normal.TakeDamage(100);
             mini.TakeDamage(100);
             Assert.AreEqual(900, normal.CurrentHp);

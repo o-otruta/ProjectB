@@ -228,10 +228,6 @@ namespace ProjectB.Tests.EditMode
             modCard.modifierType = ModifierType.Count;
             modCard.value = 1f;
 
-            var synergyCard = Track(ScriptableObject.CreateInstance<SynergyCardData>());
-            synergyCard.cardName = "Blade Storm";
-            synergyCard.synergyId = "blade_storm";
-
             var statCard = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
             statCard.cardName = "Max HP";
             statCard.statType = StatType.MaxHP;
@@ -239,7 +235,6 @@ namespace ProjectB.Tests.EditMode
 
             Assert.AreEqual("NEW ACTIVE", CardSelectionUI.FormatLevelBadge(abilityCard, heroAbilities, out _));
             Assert.AreEqual("NEW PASSIVE", CardSelectionUI.FormatLevelBadge(passiveAbilityCard, heroAbilities, out _));
-            Assert.AreEqual("SYNERGY!", CardSelectionUI.FormatLevelBadge(synergyCard, heroAbilities, out _));
             Assert.AreEqual("STAT BOOST", CardSelectionUI.FormatLevelBadge(statCard, heroAbilities, out _));
 
             heroAbilities.AddAbility(shooterData);

@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 20ada558541fa324d8c5a998d73667d1, type: 3}
-  m_Name: EnemyShooterWeapon
+  m_Name: KnightWeaponData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Combat.WeaponData
-  damage: 5
-  attackCooldown: 2
+  damage: 10
+  attackCooldown: 0.5
   range: 8
-  projectileSpeed: 6
+  projectileSpeed: 15
   splashRadius: 0
   lifestealChance: 0
   lifestealAmount: 0
-  projectilePrefab: {fileID: 5801039045769942572, guid: ea83e9a22127bbd4f85ae04b8087380d, type: 3}
+  projectilePrefab: {fileID: 6831994681046026528, guid: 90d102a0c85b67d458e46c0632a5f51d, type: 3}

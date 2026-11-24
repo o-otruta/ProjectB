@@ -62,13 +62,19 @@ namespace ProjectB.Enemies
         private float hitFlashTimer;
         protected bool isMiniBoss;
         protected string activeBossId;
+        private EnemyRuntimeModifiers runtimeModifiers;
 
-        public static float GlobalEventSpeedMultiplier { get; set; } = 1f;
+        protected float EventSpeedMultiplier => runtimeModifiers != null ? runtimeModifiers.EventSpeedMultiplier : 1f;
 
         /// <summary>
-        /// Constellation "Boss Damage" bonus applied to all damage taken by bosses and mini-bosses (set per run).
+        /// Constellation "Boss Damage" bonus applied to all damage taken by bosses and mini-bosses (run-scoped).
         /// </summary>
-        public static float BossDamageTakenMultiplier { get; set; } = 1f;
+        protected float BossDamageTakenMultiplier => runtimeModifiers != null ? runtimeModifiers.BossDamageTakenMultiplier : 1f;
+
+        public void SetRuntimeModifiers(EnemyRuntimeModifiers modifiers)
+        {
+            runtimeModifiers = modifiers;
+        }
 
         // --- Sprint 11: Freeze & Taunt ---
         private float frozenTimer;
@@ -96,7 +102,7 @@ namespace ProjectB.Enemies
         public int MaxHp => maxHp;
         public float PullResistance => pullResistance;
         public float EffectiveMoveSpeed => enemyData != null
-            ? enemyData.speed * slowFactor * eliteSpeedMultiplier * externalHasteMultiplier * GlobalEventSpeedMultiplier * GetAdditionalSpeedMultiplier()
+            ? enemyData.speed * slowFactor * eliteSpeedMultiplier * externalHasteMultiplier * EventSpeedMultiplier * GetAdditionalSpeedMultiplier()
             : 0f;
         public bool IsSlowed => slowTimer > 0f && slowFactor < 0.999f;
         public float CurrentSlowFactor => slowTimer > 0f ? slowFactor : 1f;

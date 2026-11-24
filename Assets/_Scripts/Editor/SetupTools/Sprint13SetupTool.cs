@@ -17,6 +17,7 @@ namespace ProjectB.EditorScripts
     ///    their DI registrations stay, visuals are regenerated from the kit);
     /// 5) applies the theme to both scenes and all UI prefabs.
     /// </summary>
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static partial class Sprint13SetupTool
     {
         public const string MAINMENU_SCENE_PATH = "Assets/_Scenes/MainMenu.unity";
@@ -25,15 +26,11 @@ namespace ProjectB.EditorScripts
         // Portrait layout constants at the 1080×1920 reference.
         private const float TOP_BAR_HEIGHT = 150f;
         private const float BOTTOM_BAR_HEIGHT = 200f;
-
-        [MenuItem("ProjectB/Setup/Run Sprint 13 UI Redesign Setup")]
         public static void RunAll()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             RunAllWithoutPrompt(regenerateAssets: true);
         }
-
-        [MenuItem("ProjectB/Setup/Run Sprint 13 UI Redesign Setup (Layouts Only)")]
         public static void RunLayoutsOnly()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;

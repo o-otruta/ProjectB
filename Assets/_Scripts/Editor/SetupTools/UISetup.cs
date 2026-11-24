@@ -8,9 +8,9 @@ using ProjectB.Player;
 using ProjectB.Enemies;
 using ProjectB.LevelUp;
 
+[System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
 public class UISetup
 {
-    [MenuItem("Tools/Setup UI")]
     public static void Setup()
     {
         var canvas = GameObject.Find("Canvas");

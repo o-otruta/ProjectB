@@ -68,7 +68,7 @@ namespace ProjectB.Tests.EditMode
         [Test]
         public void GoblinAndBatData_ConfiguredAndGoblinWiredIntoGameplayWaveManager()
         {
-            var goblin = AssetDatabase.LoadAssetAtPath<ShootingEnemyData>("Assets/_ScriptableObjects/GoblinData.asset");
+            var goblin = AssetDatabase.LoadAssetAtPath<ShootingEnemyData>("Assets/_ScriptableObjects/Enemies/GoblinData.asset");
             Assert.IsNotNull(goblin, "GoblinData.asset must exist");
             Assert.AreEqual(28, goblin.hp);
             Assert.AreEqual(2.8f, goblin.speed, 0.01f);
@@ -76,7 +76,7 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(goblin.modelPrefab);
             Assert.IsNotNull(goblin.weaponData);
 
-            var bat = AssetDatabase.LoadAssetAtPath<ShootingEnemyData>("Assets/_ScriptableObjects/BatData.asset");
+            var bat = AssetDatabase.LoadAssetAtPath<ShootingEnemyData>("Assets/_ScriptableObjects/Enemies/BatData.asset");
             Assert.IsNotNull(bat);
             Assert.AreEqual(38, bat.hp);
             Assert.AreEqual(3.2f, bat.speed, 0.01f);
@@ -119,8 +119,8 @@ namespace ProjectB.Tests.EditMode
         [Test]
         public void MageHeroAndReachWave25Achievement_ConfiguredForUnlockAndMeteorStrike()
         {
-            var mage = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/MageData.asset");
-            var mageWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/MageWeaponData.asset");
+            var mage = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/MageData.asset");
+            var mageWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/Weapons/MageWeaponData.asset");
             var reach25 = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/ReachWave25.asset");
 
             Assert.IsNotNull(mage);
@@ -394,11 +394,11 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(slimeAnim.EnableBobbing);
             Assert.AreSame(slimeChild, slimeAnim.BobbingTransform);
 
-            // 4. DefaultVolumeProfile clean & configured
-            string volYaml = File.ReadAllText("Assets/Settings/DefaultVolumeProfile.asset");
-            Assert.IsFalse(volYaml.Contains("m_Script: {fileID: 0}"), "DefaultVolumeProfile.asset contains broken m_Script references");
+            // 4. ProjectB_PostFX profile clean & configured
+            string volYaml = File.ReadAllText("Assets/Settings/ProjectB_PostFX.asset");
+            Assert.IsFalse(volYaml.Contains("m_Script: {fileID: 0}"), "ProjectB_PostFX.asset contains broken m_Script references");
 
-            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/Settings/DefaultVolumeProfile.asset");
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/Settings/ProjectB_PostFX.asset");
             Assert.IsNotNull(profile);
             foreach (var comp in profile.components)
             {

@@ -499,7 +499,7 @@
   - `SecretConfig` (SO): шанс спавна за забег (`10%`), минимальная дистанция от центра (`28м`), бонус узла Созвездия `Secret & Shrine` (`+20%` к шансу спавна, `+30%` к награде).
   - Убрать секрет из `SecretCompassIndicatorUI`: остаются Алтарь, Магнит и Gold Goblin.
   - Пересчитать цели ачивок `Treasure Hunter`, `Ancient Scholar` и `Secret Collector` под новую редкость; обновить тесты компаса.
-- [ ] **15.4. Data-Driven и чистка техдолга (B4, A2–A6):**
+- [x] **15.4. Data-Driven и чистка техдолга (B4, A2–A6):**
   - `CardCatalog` (SO в `Resources`) вместо `UpgradeManager.cardPool` + тест полноты каталога.
   - `RunRulesConfig` / `ComboConfig`: бесплатные рероллы, вехи и бонусы комбо, Second Wind, i-frames, `CRYSTALS_PER_GREED_BONUS`, лимит призывов, безопасный радиус воскрешения.
   - `EnemyRuntimeModifiers` (scoped-сервис) вместо статических `EnemyBase.GlobalEventSpeedMultiplier` / `BossDamageTakenMultiplier`.

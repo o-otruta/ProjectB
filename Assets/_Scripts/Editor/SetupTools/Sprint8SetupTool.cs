@@ -12,6 +12,7 @@ using ProjectB.UI;
 
 namespace ProjectB.EditorScripts
 {
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint8SetupTool
     {
         private const string SYNERGIES_DIR = "Assets/_ScriptableObjects/Synergies";
@@ -33,8 +34,6 @@ namespace ProjectB.EditorScripts
             public CardRarity Rarity;
             public string[] RequiredIds;
         }
-
-        [MenuItem("ProjectB/Setup/Run Sprint 8 Synergies, Combo & Breakdown Setup")]
         public static void RunAll()
         {
             List<SynergyData> synergies = UpdateSynergiesAndCards();
@@ -140,7 +139,6 @@ namespace ProjectB.EditorScripts
             {
                 SynergySpec spec = specs[i];
                 string synPath = $"{SYNERGIES_DIR}/{spec.AssetName}.asset";
-                string cardPath = $"{CARDS_DIR}/{spec.CardAssetName}.asset";
 
                 var syn = AssetDatabase.LoadAssetAtPath<SynergyData>(synPath);
                 if (syn == null)
@@ -149,29 +147,11 @@ namespace ProjectB.EditorScripts
                     AssetDatabase.CreateAsset(syn, synPath);
                 }
 
-                var card = AssetDatabase.LoadAssetAtPath<SynergyCardData>(cardPath);
-                if (card != null)
-                {
-                    card.cardName = $"Synergy: {spec.DisplayName}";
-                    card.description = spec.Description;
-                    card.rarity = spec.Rarity;
-                    card.synergyId = spec.Id;
-                    card.abilityBonuses.Clear();
-                    card.globalDamageBonusPercent = 0f;
-                    card.armorBonus = 0f;
-                    EditorUtility.SetDirty(card);
-                }
-
                 syn.id = spec.Id;
                 syn.synergyName = spec.DisplayName;
                 syn.description = spec.Description;
                 syn.rarity = spec.Rarity;
-                if (card != null && card.icon != null)
-                {
-                    syn.icon = card.icon;
-                }
                 syn.requiredAbilityIds = new List<string>(spec.RequiredIds);
-                syn.rewardCard = card;
                 EditorUtility.SetDirty(syn);
 
                 list.Add(syn);

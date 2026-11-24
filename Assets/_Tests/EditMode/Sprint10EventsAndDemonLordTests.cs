@@ -41,7 +41,6 @@ namespace ProjectB.Tests.EditMode
             originalSaveJson = hadOriginalSave ? PlayerPrefs.GetString(SaveManager.SAVE_KEY) : null;
             PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
 
-            EnemyBase.GlobalEventSpeedMultiplier = 1f;
             SecretCompassIndicatorUI.ClearDynamicPois();
             Time.timeScale = 1f;
 
@@ -59,7 +58,6 @@ namespace ProjectB.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            EnemyBase.GlobalEventSpeedMultiplier = 1f;
             SecretCompassIndicatorUI.ClearDynamicPois();
             Time.timeScale = 1f;
 
@@ -454,7 +452,7 @@ namespace ProjectB.Tests.EditMode
                 Assert.AreEqual(deterministicEnemy.coinDrop, normalCoinGain, "Baseline non-BloodMoon kill should drop exact deterministic coins");
 
                 Assert.IsTrue(em.StartEvent(WaveEventType.BloodMoon));
-                Assert.AreEqual(1.2f, EnemyBase.GlobalEventSpeedMultiplier, 0.001f);
+                Assert.AreEqual(1.2f, wm.RuntimeModifiers.EventSpeedMultiplier, 0.001f);
                 em.TickEvent(1.0f);
                 Assert.Greater(dirLight.color.r, dirLight.color.g, "Blood Moon should shift directional light toward crimson");
 
@@ -469,7 +467,7 @@ namespace ProjectB.Tests.EditMode
                 Assert.AreEqual(normalCoinGain * 2, bloodCoinGain, "Blood Moon must double dropped coin values");
 
                 em.EndCurrentEvent(completed: true, Vector3.zero);
-                Assert.AreEqual(1f, EnemyBase.GlobalEventSpeedMultiplier, 0.001f);
+                Assert.AreEqual(1f, wm.RuntimeModifiers.EventSpeedMultiplier, 0.001f);
                 em.TickEvent(2.0f);
                 Assert.AreEqual(Color.white.g, dirLight.color.g, 0.02f);
 
@@ -515,7 +513,7 @@ namespace ProjectB.Tests.EditMode
         [Test]
         public void ShieldedEnemy_Blocks65PercentFrontalNonAoEDamage_AllowsFlankRearAoEAndResetsOnPoolReuse()
         {
-            var data = AssetDatabase.LoadAssetAtPath<ShieldedEnemyData>("Assets/_ScriptableObjects/ShieldBearerData.asset");
+            var data = AssetDatabase.LoadAssetAtPath<ShieldedEnemyData>("Assets/_ScriptableObjects/Enemies/ShieldBearerData.asset");
             Assert.IsNotNull(data);
 
             var (_, heroHealth, _, _, _, bus) = CreateTestHero();
@@ -571,7 +569,7 @@ namespace ProjectB.Tests.EditMode
         [Test]
         public void SummonerEnemy_ExecuteSummonAndHealPulse_SummonsTwoMinionsAndHealsDamagedAlliesOnly()
         {
-            var summonerData = AssetDatabase.LoadAssetAtPath<SummonerEnemyData>("Assets/_ScriptableObjects/VoidSummonerData.asset");
+            var summonerData = AssetDatabase.LoadAssetAtPath<SummonerEnemyData>("Assets/_ScriptableObjects/Enemies/VoidSummonerData.asset");
             Assert.IsNotNull(summonerData);
 
             var (_, heroHealth, _, _, _, bus) = CreateTestHero();
@@ -623,7 +621,7 @@ namespace ProjectB.Tests.EditMode
         {
             Assert.AreEqual(3, WaveManager.GetBossIndexForWave(100, 25, 4), "Wave 100 must select index 3 (Demon Lord)");
 
-            BossData realDemon = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/DemonLordBossData.asset");
+            BossData realDemon = AssetDatabase.LoadAssetAtPath<BossData>("Assets/_ScriptableObjects/Bosses/DemonLordBossData.asset");
             Assert.IsNotNull(realDemon);
             BossData cfg = Track(Object.Instantiate(realDemon));
             cfg.hp = 400;

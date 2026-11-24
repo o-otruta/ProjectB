@@ -15,14 +15,13 @@ namespace ProjectB.EditorScripts
     /// (the runtime policy unlocks Landscape on tablets / Amazon), adds <see cref="AdaptiveCanvasScaler"/> to every
     /// CanvasScaler in MainMenu and Gameplay, and installs the Game View presets.
     /// </summary>
+    [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
     public static class Sprint14SetupTool
     {
         private const string RESOURCES_DIR = "Assets/Resources";
         private const string LAYOUT_CONFIG_PATH = RESOURCES_DIR + "/" + LayoutConfig.RESOURCE_PATH + ".asset";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
         private const string MAINMENU_SCENE_PATH = "Assets/_Scenes/MainMenu.unity";
-
-        [MenuItem("ProjectB/Setup/Run Sprint 14.1 Adaptive Foundation Setup")]
         public static void RunAll()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;

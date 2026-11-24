@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef2ffd51e5694c747b713dca256afa79, type: 3}
-  m_Name: HeroData
+  m_Name: KnightData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroData
   id: knight
   heroName: Knight

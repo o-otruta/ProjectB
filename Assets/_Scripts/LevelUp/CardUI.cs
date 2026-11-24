@@ -176,8 +176,6 @@ namespace ProjectB.LevelUp
                     return "WEAPON";
                 case StatUpgradeCardData:
                     return "STAT";
-                case SynergyCardData:
-                    return "SYNERGY";
                 default:
                     return string.Empty;
             }

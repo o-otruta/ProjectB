@@ -198,7 +198,6 @@ namespace ProjectB.Tests.PlayMode
 
             var waveConfig = Track(ScriptableObject.CreateInstance<WaveConfig>());
             waveConfig.waveDelay = 999f; // Prevent automatic background wave coroutine from interfering with manual 105-enemy stress test
-            waveConfig.difficultyPerWave = 0.1f;
             waveConfig.enemySchedule = new List<EnemyWaveEntry>
             {
                 new EnemyWaveEntry { enemy = enemyData, minWave = 1, maxWave = 0, spawnWeight = 1f, packSize = 1 }

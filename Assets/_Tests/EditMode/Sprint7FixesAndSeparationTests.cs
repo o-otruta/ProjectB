@@ -215,7 +215,7 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(config);
 
             var skeletonEntry = config.enemySchedule.Find(e => e != null && e.enemy != null && e.enemy.name == "SkeletonData");
-            var bombEntry = config.enemySchedule.Find(e => e != null && e.enemy != null && e.enemy.name == "BombBugData");
+            var bombEntry = config.enemySchedule.Find(e => e != null && e.enemy != null && e.enemy.name == "BombSlimeData");
             var goblinEntry = config.enemySchedule.Find(e => e != null && e.enemy != null && e.enemy.name == "GoblinData");
             var batEntry = config.enemySchedule.Find(e => e != null && e.enemy != null && e.enemy.name == "BatData");
             var orcEntry = config.enemySchedule.Find(e => e != null && e.enemy != null && e.enemy.name == "OrcChargerData");
@@ -458,7 +458,7 @@ namespace ProjectB.Tests.EditMode
             Physics.SyncTransforms();
 
             // 1. Knight Shield shockwave (radius 4.5m, 40 dmg, 2.5m knockback)
-            var knight = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/HeroData.asset");
+            var knight = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/KnightData.asset");
             Assert.IsNotNull(knight);
             SetHeroForUlt(ult, knight);
 
@@ -746,10 +746,10 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(report.Contains("Wave  75"));
             Assert.IsTrue(report.Contains("Wave 100"));
 
-            // Hygiene 1: DefaultVolumeProfile clean (only Bloom, Vignette, ColorAdjustments)
-            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/Settings/DefaultVolumeProfile.asset");
+            // Hygiene 1: ProjectB_PostFX clean (only Bloom, Vignette, ColorAdjustments)
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/Settings/ProjectB_PostFX.asset");
             Assert.IsNotNull(profile);
-            Assert.AreEqual(3, profile.components.Count, "DefaultVolumeProfile must contain only Bloom, Vignette, ColorAdjustments");
+            Assert.AreEqual(3, profile.components.Count, "ProjectB_PostFX must contain only Bloom, Vignette, ColorAdjustments");
             Assert.IsTrue(profile.TryGet<Bloom>(out _));
             Assert.IsTrue(profile.TryGet<Vignette>(out _));
             Assert.IsTrue(profile.TryGet<ColorAdjustments>(out _));

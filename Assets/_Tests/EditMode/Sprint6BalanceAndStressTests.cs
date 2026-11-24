@@ -144,7 +144,7 @@ namespace ProjectB.Tests.EditMode
             Physics.SyncTransforms();
 
             // 1. Knight Shield Ultimate
-            var knight = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/HeroData.asset");
+            var knight = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/KnightData.asset");
             Assert.IsNotNull(knight);
             ConfigureHeroUltimate(ult, knight, shieldVisual);
 
@@ -166,7 +166,7 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(ult.IsReady);
 
             // 2. Mage MeteorStrike Ultimate (80 base * 1.5 global * 1.5 crit = 180 damage per meteor)
-            var mage = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/MageData.asset");
+            var mage = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/MageData.asset");
             Assert.IsNotNull(mage);
             ConfigureHeroUltimate(ult, mage, shieldVisual);
 
@@ -186,7 +186,7 @@ namespace ProjectB.Tests.EditMode
             ult.ResetCooldown();
 
             // 3. Ranger ArrowRain Ultimate (50 base * 1.5 global * 1.5 crit = 112.5 -> 112 or 113 damage per wave, 3 waves + 50% slow)
-            var ranger = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/RangerData.asset");
+            var ranger = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/RangerData.asset");
             Assert.IsNotNull(ranger);
             ConfigureHeroUltimate(ult, ranger, shieldVisual);
 
@@ -202,7 +202,7 @@ namespace ProjectB.Tests.EditMode
             ult.ResetCooldown();
 
             // 4. Necromancer SoulNova Ultimate (+35% MaxHP heal = +70 HP, 12 piercing bolts * 60 base * 1.5 * 1.5 = 135 damage)
-            var necro = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/NecromancerHeroData.asset");
+            var necro = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/NecromancerHeroData.asset");
             Assert.IsNotNull(necro);
             ConfigureHeroUltimate(ult, necro, shieldVisual);
 
@@ -246,10 +246,10 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(eligible.Exists(e => e.enemy.name == "BatData"));
 
             Assert.AreEqual(4, config.GetEligibleEntriesForWave(10, eligible));
-            Assert.IsFalse(eligible.Exists(e => e.enemy.name == "BombBugData"), "BombBugData shifted to Wave 11 to avoid Mini-Boss Wave 10");
+            Assert.IsFalse(eligible.Exists(e => e.enemy.name == "BombSlimeData"), "BombSlimeData shifted to Wave 11 to avoid Mini-Boss Wave 10");
 
             Assert.AreEqual(5, config.GetEligibleEntriesForWave(11, eligible));
-            Assert.IsTrue(eligible.Exists(e => e.enemy.name == "BombBugData"));
+            Assert.IsTrue(eligible.Exists(e => e.enemy.name == "BombSlimeData"));
 
             Assert.AreEqual(6, config.GetEligibleEntriesForWave(14, eligible));
             Assert.IsTrue(eligible.Exists(e => e.enemy.name == "OrcChargerData"));
@@ -468,7 +468,7 @@ namespace ProjectB.Tests.EditMode
             {
                 var syn = AssetDatabase.LoadAssetAtPath<SynergyData>(synPath);
                 Assert.IsNotNull(syn);
-                applier.ApplyCard(syn.rewardCard, null);
+                heroAbilities.TryActivateSynergyById(syn.id, syn.synergyName);
             }
 
             for (int i = 0; i < heroAbilities.ActiveAbilities.Count; i++)
@@ -499,7 +499,7 @@ namespace ProjectB.Tests.EditMode
 
             var waveConfig = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
             using var enemyProjPool = new EnemyProjectilePool();
-            var enemyWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/EnemyShooterWeapon.asset");
+            var enemyWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/Weapons/EnemyShooterWeaponData.asset");
             enemyProjPool.Prewarm(enemyWeapon, 64);
 
             var waveGo = Track(new GameObject("Wave40Manager", typeof(WaveManager)));

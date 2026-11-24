@@ -19,7 +19,6 @@ MonoBehaviour:
   spawnRadiusMin: 10
   spawnRadiusMax: 15
   maxEnemiesPerWave: 50
-  difficultyPerWave: 0.1
   useSeparateDifficultyScaling: 1
   hpLinearPerWave: 0.12
   hpQuadraticPerWave: 0.002
