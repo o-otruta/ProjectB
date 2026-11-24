@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Crit Damage
   description: +0.1x Critical Damage multiplier per level.
   icon: {fileID: 21300000, guid: 62285931b49217f4f8c820b97fe22d0a, type: 3}
-  baseCost: 150
-  costMultiplier: 1.35
+  baseCost: 120
+  costMultiplier: 1.25
   maxLevel: 10
   effectPerLevel: 0.1
   effectType: 9

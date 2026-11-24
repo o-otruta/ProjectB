@@ -24,10 +24,13 @@ namespace ProjectB.LevelUp
         }
         [Header("Settings")]
         [Tooltip("Базовое значение XP для 1 уровня")]
-        [SerializeField] private int baseXP = 10;
+        [SerializeField] private int baseXP = 9;
 
         [Tooltip("Показатель степени кривой XP: baseXP * (level ^ xpExponent)")]
-        [SerializeField] private float xpExponent = 1.05f;
+        [SerializeField] private float xpExponent = 1.12f;
+
+        public int BaseXP => baseXP;
+        public float XpExponent => xpExponent;
         
         [Tooltip("Радиус магнита для сбора кристаллов")]
         [SerializeField] private float _magnetRadius = 3f;
@@ -188,11 +191,18 @@ namespace ProjectB.LevelUp
             eventBus?.Publish(new HeroLeveledUpEvent(CurrentLevel));
         }
 
+        public static int CalculateXPForLevel(int level, int baseXp, float exponent)
+        {
+            int safeLevel = Mathf.Max(1, level);
+            int safeBase = Mathf.Max(1, baseXp);
+            float safeExp = exponent > 0f ? exponent : 1.12f;
+            return Mathf.Max(1, Mathf.RoundToInt(safeBase * Mathf.Pow(safeLevel, safeExp)));
+        }
+
         private void CalculateXPToNextLevel()
         {
-            // Formula: baseXP * (level ^ 1.05)
-            float exp = xpExponent > 0f ? xpExponent : 1.05f;
-            XPToNextLevel = Mathf.Max(1, Mathf.RoundToInt(baseXP * Mathf.Pow(CurrentLevel, exp)));
+            // Formula: baseXP * (level ^ 1.12)
+            XPToNextLevel = CalculateXPForLevel(CurrentLevel, baseXP, xpExponent);
         }
 
         private void OnDrawGizmosSelected()

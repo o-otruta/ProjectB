@@ -17,9 +17,9 @@ MonoBehaviour:
   contactDamage: 14
   damageCooldown: 1
   contactRadius: 1.2
-  xpDrop: 4
-  coinDropChance: 0.35
-  coinDrop: 2
+  xpDrop: 5
+  coinDropChance: 0.3
+  coinDrop: 1
   modelPrefab: {fileID: 2488475599238186541, guid: 6595e4d83d3566e4684f74fed3931658, type: 3}
   chargeTriggerRange: 7
   chargeWindupDuration: 0.8

@@ -17,7 +17,7 @@ MonoBehaviour:
   contactDamage: 8
   damageCooldown: 1
   contactRadius: 1
-  xpDrop: 3
+  xpDrop: 4
   coinDropChance: 0.25
   coinDrop: 1
   modelPrefab: {fileID: 795682729957671077, guid: 89954bf483ca1bd4e84c7a3bda42eda3, type: 3}

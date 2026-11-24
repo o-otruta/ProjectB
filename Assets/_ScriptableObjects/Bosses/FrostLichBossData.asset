@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24fed005e429ecc4bab7093f9b59a455, type: 3}
   m_Name: FrostLichBossData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.BossData
-  hp: 750
+  hp: 1400
   speed: 2.4
   contactDamage: 18
   damageCooldown: 1
   contactRadius: 1.4
-  xpDrop: 8
+  xpDrop: 10
   coinDropChance: 1
   coinDrop: 5
   modelPrefab: {fileID: 5109968982087209460, guid: a72fbaf8bbae9fc448e150205b5c5791, type: 3}

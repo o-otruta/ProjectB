@@ -5,6 +5,7 @@
         "ProjectB.Data",
         "ProjectB.Meta",
         "ProjectB.Runtime",
+        "ProjectB.Editor",
         "VContainer",
         "Unity.TextMeshPro",
         "UnityEngine.UI",

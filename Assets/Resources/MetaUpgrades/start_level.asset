@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Starting Level
   description: Start with higher level.
   icon: {fileID: 21300000, guid: 657960fe31c471d4480231c5bdb2180a, type: 3}
-  baseCost: 1000
-  costMultiplier: 2
+  baseCost: 900
+  costMultiplier: 1.9
   maxLevel: 3
   effectPerLevel: 1
   effectType: 4

@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4eb70a6f3c8d47a448a76e6c0e7dd88c, type: 3}
   m_Name: WaveConfig
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.WaveConfig
-  baseEnemyCount: 5
+  baseEnemyCount: 6
   enemiesPerWaveMultiplier: 1.2
   spawnDelay: 0.5
   waveDelay: 2
   spawnRadiusMin: 10
   spawnRadiusMax: 15
   maxEnemiesPerWave: 50
-  hpLinearPerWave: 0.12
-  hpQuadraticPerWave: 0.002
+  hpLinearPerWave: 0.1
+  hpQuadraticPerWave: 0.0005
   hpCurveMultiplier:
     serializedVersion: 2
     m_Curve: []
@@ -35,6 +35,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  coinLinearPerWave: 0.015
+  maxCoinMultiplier: 2.5
   enemySchedule:
   - enemy: {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
     minWave: 1

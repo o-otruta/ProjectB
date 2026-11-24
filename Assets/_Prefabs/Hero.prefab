@@ -241,8 +241,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0071afe2b3b22ea4aab62e11ebd39cb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.HeroExperience
-  baseXP: 10
-  xpExponent: 1.05
+  baseXP: 9
+  xpExponent: 1.12
   _magnetRadius: 3
   magnetSpeed: 15
   pickupLayer:

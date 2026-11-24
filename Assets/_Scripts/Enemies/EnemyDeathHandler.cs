@@ -62,27 +62,32 @@ namespace ProjectB.Enemies
                 bool isBloodMoon = _waveEventManager != null && _waveEventManager.IsBloodMoonActive;
                 float xpMult = isBloodMoon ? _waveEventManager.BloodMoonXpMultiplier : 1f;
                 float coinMult = isBloodMoon ? _waveEventManager.BloodMoonCoinMultiplier : 1f;
+                float waveCoinMult = _waveManager?.Config != null && _waveManager.CurrentWave > 0
+                    ? _waveManager.Config.GetCoinMultiplier(_waveManager.CurrentWave)
+                    : 1f;
 
                 int xpAmount = evt.EnemyData.xpDrop > 0 ? Mathf.Max(1, Mathf.RoundToInt(evt.EnemyData.xpDrop * xpMult)) : 0;
-                int coinAmount = evt.EnemyData.coinDrop > 0 ? Mathf.Max(1, Mathf.RoundToInt(evt.EnemyData.coinDrop * coinMult)) : 0;
+                float exactCoinAmount = evt.EnemyData.coinDrop > 0 ? evt.EnemyData.coinDrop * coinMult * waveCoinMult : 0f;
                 float coinChance = Mathf.Clamp01(evt.EnemyData.coinDropChance * coinMult);
 
                 if (evt.WasBoss)
                 {
                     int xpBursts = _waveManager?.Config != null ? _waveManager.Config.bossXpBurstCount : 12;
                     int coinBursts = _waveManager?.Config != null ? _waveManager.Config.bossCoinBurstCount : 15;
-                    SpawnBurstDrops(evt.Position, xpAmount, xpBursts, coinAmount, coinBursts, 2.2f);
+                    SpawnBurstDrops(evt.Position, xpAmount, xpBursts, exactCoinAmount, coinBursts, 2.2f);
                 }
                 else if (evt.WasMiniBoss)
                 {
                     int xpBursts = _waveManager?.Config != null ? _waveManager.Config.miniBossXpBurstCount : 5;
                     int coinBursts = _waveManager?.Config != null ? _waveManager.Config.miniBossCoinBurstCount : 5;
-                    SpawnBurstDrops(evt.Position, xpAmount, xpBursts, coinAmount, coinBursts, 1.4f);
+                    SpawnBurstDrops(evt.Position, xpAmount, xpBursts, exactCoinAmount, coinBursts, 1.4f);
                 }
                 else
                 {
                     bool dropXp = _xpManager != null && xpAmount > 0;
-                    bool dropCoin = _coinManager != null && coinAmount > 0 && UnityEngine.Random.value < coinChance;
+                    bool dropCoin = _coinManager != null && exactCoinAmount > 0f && UnityEngine.Random.value < coinChance;
+                    int coinAmount = dropCoin ? RollProbabilisticAmount(exactCoinAmount) : 0;
+                    dropCoin = dropCoin && coinAmount > 0;
 
                     if (dropXp && dropCoin)
                     {
@@ -132,7 +137,19 @@ namespace ProjectB.Enemies
             }
         }
 
-        private void SpawnBurstDrops(Vector3 center, int xpAmountPerCrystal, int xpCount, int coinAmountPerDrop, int coinCount, float spreadRadius)
+        private static int RollProbabilisticAmount(float exactAmount)
+        {
+            if (exactAmount <= 0f) return 0;
+            int floor = Mathf.FloorToInt(exactAmount);
+            float frac = exactAmount - floor;
+            if (frac > 0f && UnityEngine.Random.value < frac)
+            {
+                floor++;
+            }
+            return floor;
+        }
+
+        private void SpawnBurstDrops(Vector3 center, int xpAmountPerCrystal, int xpCount, float exactCoinAmountPerDrop, int coinCount, float spreadRadius)
         {
             if (_xpManager != null && xpAmountPerCrystal > 0)
             {
@@ -143,12 +160,14 @@ namespace ProjectB.Enemies
                 }
             }
 
-            if (_coinManager != null && coinAmountPerDrop > 0)
+            if (_coinManager != null && exactCoinAmountPerDrop > 0f)
             {
                 for (int i = 0; i < coinCount; i++)
                 {
+                    int coinAmount = RollProbabilisticAmount(exactCoinAmountPerDrop);
+                    if (coinAmount <= 0) continue;
                     Vector2 rand = UnityEngine.Random.insideUnitCircle * spreadRadius;
-                    _coinManager.SpawnCoin(center + new Vector3(rand.x, 0f, rand.y), coinAmountPerDrop);
+                    _coinManager.SpawnCoin(center + new Vector3(rand.x, 0f, rand.y), coinAmount);
                 }
             }
         }

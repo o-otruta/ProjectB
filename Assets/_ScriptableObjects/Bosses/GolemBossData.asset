@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24fed005e429ecc4bab7093f9b59a455, type: 3}
   m_Name: GolemBossData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.BossData
-  hp: 600
+  hp: 950
   speed: 2
   contactDamage: 20
   damageCooldown: 1
   contactRadius: 1.65
-  xpDrop: 5
+  xpDrop: 6
   coinDropChance: 1
   coinDrop: 3
   modelPrefab: {fileID: 3563887962342572629, guid: 7fd9d0f519ea6cf4f9341b65aac6b070, type: 3}

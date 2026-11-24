@@ -88,6 +88,15 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Опциональный множитель кривой урона по номеру волны (если заданы ключи)")]
         public AnimationCurve damageCurveMultiplier = new AnimationCurve();
 
+        [Header("Coin Scaling (Sprint 12.1)")]
+        [Min(0f)]
+        [Tooltip("Линейный прирост монет с врагов и боссов за волну (0.015 = +1.5%/волна)")]
+        public float coinLinearPerWave = 0f;
+
+        [Min(0f)]
+        [Tooltip("Максимальный потолок множителя монет по волне (0 = без потолка)")]
+        public float maxCoinMultiplier = 2.5f;
+
         [Header("Phased Enemy Schedule")]
         [Tooltip("Фазовое расписание врагов: единый источник истины для WaveManager")]
         public List<EnemyWaveEntry> enemySchedule = new List<EnemyWaveEntry>();
@@ -266,6 +275,17 @@ namespace ProjectB.Data.Enemies
             if (maxDamageMultiplier > 0f)
             {
                 mult = Mathf.Min(mult, maxDamageMultiplier);
+            }
+            return Mathf.Max(1f, mult);
+        }
+
+        public float GetCoinMultiplier(int wave)
+        {
+            int w = Mathf.Max(0, wave - 1);
+            float mult = 1f + w * Mathf.Max(0f, coinLinearPerWave);
+            if (maxCoinMultiplier > 0f)
+            {
+                mult = Mathf.Min(mult, maxCoinMultiplier);
             }
             return Mathf.Max(1f, mult);
         }
