@@ -1,7 +1,7 @@
 # План реализации: ProjectB
 
-> **Единый роадмап проекта.** Ссылки: GDD — [CONTEXT.md](./CONTEXT.md), детальный технический аудит и ТЗ спринтов 7–12 — [AUDIT.md](./AUDIT.md).
-> **Статус:** фазы 0–4 (v1 MVP) и спринты 1–11 (v2 Expansion) завершены на коммите `852a2cc`. Сейчас — Спринты 12 (баланс, FTUE, локализация) и 13 (UI-редизайн), затем подготовка к релизу.
+> **Единый роадмап проекта.** Ссылки: GDD — [CONTEXT.md](./CONTEXT.md), детальный технический аудит (v3) и ТЗ спринтов 12, 14–18 — [AUDIT.md](./AUDIT.md).
+> **Статус:** фазы 0–4 (v1 MVP), спринты 1–11 (v2 Expansion), 13 (UI-редизайн), 14.1 (адаптивный фундамент) и 15.1–15.5 (стабилизация и техдолг) завершены на коммите `66073eb`. Актуальный порядок релизов (Web → Google Play) и открытые спринты 12, 14–18 см. ниже и в [AUDIT.md §5.2](./AUDIT.md).
 >
 > Легенда: `[x]` — сделано, `[ ]` — открыто, `[~]` — частично.
 
@@ -9,7 +9,7 @@
 
 ## Фаза 0: Настройка проекта
 - [x] Создать Unity 6 проект с URP (Unity `6000.5.5f1`, URP `17.5.0`)
-- [x] Настроить ориентацию: Portrait only (Player Settings → Resolution → Default Orientation)
+- [x] Настроить адаптивную ориентацию: базовый портрет (`9:16`..`9:21`) + ландшафт для Web/планшетов через `OrientationPolicy` (обновлено в 14.1 / Решении №8)
 - [x] Настроить целевую платформу: Android, API 34+
 - [x] Настроить Quality Settings под мобилку (отключить лишнее, 60 FPS target)
 - [x] Установить New Input System (`1.19.0`)
@@ -34,7 +34,7 @@
   │   ├── UI/              (HUD, меню, экраны)
   │   └── Visuals/         (VFX, числа урона, VoxelMeshAnimator)
   ├── _Prefabs/            (Abilities, Arena, Core, Decorations, Enemies, Heroes, Obstacles, Pickups, Projectiles, Secrets, UI)
-  ├── _ScriptableObjects/  (Abilities, Cards, Synergies, Talents + конфиги)
+  ├── _ScriptableObjects/  (Abilities/, Bosses/, Cards/, Enemies/, Heroes/, Synergies/, Talents/, Weapons/ + конфиги)
   ├── _Scenes/             (MainMenu, Gameplay)
   ├── _Materials/
   ├── _Shaders/            (VoxelLit.shader)
@@ -42,8 +42,8 @@
   ├── _Audio/              (Music, SFX)
   ├── _UI/
   ├── _Tests/              (EditMode, PlayMode)
-  ├── Resources/           (Achievements/, MetaUpgrades/, HeroCatalog, SynergyCatalog, TalentTree, AudioCatalog, AdConfig, DailyBonusRewardData, VContainerSettings)
-  └── Settings/            (URP, Input System, Volume Profile)
+  ├── Resources/           (Achievements/, MetaUpgrades/, CardCatalog, ComboConfig, HeroCatalog, PickupConfig, RunRulesConfig, SecretConfig, SynergyCatalog, TalentTree, AudioCatalog, AdConfig, DailyBonusRewardData, VContainerSettings)
+  └── Settings/            (URP, Input System, ProjectB_PostFX Volume Profile)
   ```
 - [x] Создать сцены: `MainMenu` (меню + все мета-экраны), `Gameplay` *(отдельная `MetaScreen` не понадобилась — мета-экраны живут в `MainMenu`)*
 - [x] Настроить Git (`.gitignore` для Unity, исключены локальные сборки)
@@ -130,7 +130,7 @@
 - [x] Сундук (много монет сразу), древний свиток (мгновенный levelup), загадочный кристалл (случайная редкая+ способность)
 - [x] Обновление статистики для ачивок при подборе (`FindSecretItem`)
 - [x] Визуальные эффекты (световой столб-маяк, вращение/покачивание, партиклы при подборе)
-- [ ] **Сделать секрет редким и убрать его из компаса** — см. Фазу 7
+- [x] **Сделать секрет редким и убрать его из компаса** — выполнено в 15.3 (`SecretConfig`, компас без секрета, цели ачивок `2 / 1 / 1`)
 
 ---
 
@@ -317,13 +317,13 @@
 
 ## Фаза 6: Спринты 12–13 — Баланс, FTUE, локализация, UI-редизайн, стресс-тест v2
 
-### Спринт 12 — Финальный баланс, FTUE, локализация, стресс-тест v2
+### Спринт 12 — Экономика и баланс, FTUE, локализация EN/UK/RU, стресс-тест v2
 
-- [ ] **12.1. Баланс-пасс** (по `BalanceCurveSimulator` и Damage Breakdown): HP/урон-кривые в `WaveConfig`, XP-кривая, экономика монет и Осколков. Цель: первые забеги 2–5 мин (W5–W12), долгий мета-прогресс без `maxLevel`, без несправедливых ваншотов.
-- [ ] **12.2. Onboarding (FTUE):** подсказка в первые 3 сек первого забега (`totalRuns == 0`) + подсветка первой готовой ульты; проверка `SafeAreaFitter` на 9:16, 9:19.5, 9:21.
-- [ ] **12.3. Локализация EN + RU:** лёгкий `LocalizationService` (словари EN/RU), переключатель языка в `SettingsPopupUI`.
-- [ ] **12.4. Стресс-тест v2** (`ReleasePlayModeStressTests`): W50+, 120 врагов + separation + `VoxelLit` + 6 способностей + синергии + Overdrive + событие волны + Demon Lord — цель `< 2.5 мс/кадр` CPU и `0 байт` GC.
-- [x] **12.5. Синхронизация документации:** `CONTEXT.md` и `IMPLEMENTATION_PLAN.md` приведены к реальному составу проекта.
+- [ ] **12.1. Экономика и баланс по модели (B1, B2, B3):** расширить `BalanceCurveSimulator` (экономика дохода vs цены меты, DPS-модель, частота LevelUp); перенастроить `MetaUpgradeData`, дропы `EnemyData`, `WaveConfig` и XP-кривую; зафиксировать таблицы «до/после» в `Docs/Balance/`.
+- [ ] **12.2. Онбординг (FTUE):** первый забег (`totalRuns == 0`) — подсказка движения, подсветка первого LevelUp и первой ульты, облегчённые волны 1–2 (`WaveConfig.ftueWaves`), бейдж-подсказка в меню после 1-й смерти.
+- [ ] **12.3. Локализация EN + UK + RU:** `LocalizationService` (`Resources/Localization/{en,uk,ru}.json`, Zero-GC кэш), `LocalizedText` на статичные тексты + локализационные ключи для SO, проверка кириллицы/украинских букв `Ґґ Єє Іі Її` в атласах, переключатель языка в `SettingsPopupUI`.
+- [ ] **12.4. Стресс-тест v2** (`ReleasePlayModeStressTests`, на устройстве после Спринта 17): W50+, `maxActiveEnemies` врагов + separation + `VoxelLit` + 6 способностей с синергиями и Overdrive + событие + Demon Lord — `< 2.5 мс` боевой логики, `0 B` GC, p95 `< 16.6 мс`, отчёт в `Docs/Perf/`.
+- [x] **12.5. Синхронизация документации:** `CONTEXT.md` и `IMPLEMENTATION_PLAN.md` приведены к реальному составу проекта (обновлено и в 15.5).
 
 ### Спринт 13 — UI/UX редизайн (параллельно со Спринтом 12; ТЗ и аудит экранов — [AUDIT.md](./AUDIT.md), разделы 3.8 и «Спринт 13»)
 
@@ -355,68 +355,81 @@
 
 ---
 
-## Фаза 7: Открытые задачи и техдолг
+## Фаза 7: Открытые задачи и техдолг (закрыто в 15.3–15.4)
 
-- [ ] **Секретные предметы — редкий шанс и без компаса:**
-  - Снизить `SecretItemSpawner.spawnChancePerRun` (сейчас `1` — секрет в каждом забеге) до очень редкого значения.
-  - Убрать секрет из Multi-POI компаса (`SecretCompassIndicatorUI`) — секрет находят, исследуя арену по световому столбу.
-  - Пересмотреть цели ачивок `Treasure Hunter` (5 сундуков), `Ancient Scholar` (3 свитка), `Secret Collector` (1 кристалл) под новую редкость.
-  - Обновить тесты, которые проверяют стрелку секрета в компасе.
-- [ ] **Удалить легаси-синергии в карточках:** 8 ассетов `SynergyCardData` и обходы `card is SynergyCardData` в `UpgradeManager` / `UpgradeApplier`.
-- [ ] **Data-Driven комбо:** вынести вехи `x15/30/50/100` и бонусы из констант `RunComboTracker` в ScriptableObject.
-- [ ] **Culling врагов** за пределами расширенной зоны камеры (из Фазы 4.5).
+- [x] **Секретные предметы — редкий шанс и без компаса (15.3):** `SecretConfig` (`10%` + `+20%` Созвездия), секрет убран из `SecretCompassIndicatorUI`, цели ачивок пересчитаны (`2 / 1 / 1`).
+- [x] **Удалить легаси-синергии в карточках (15.4):** удалены 8 ассетов `SynergyCardData` и обходы `is SynergyCardData`.
+- [x] **Data-Driven комбо и правила забега (15.4):** `ComboConfig`, `RunRulesConfig`, `PickupConfig`, `CardCatalog` в `Resources/`, инъекция через `GameLifetimeScope`.
+- [ ] **Culling врагов** за пределами расширенной зоны камеры (поднять при нехватке запаса на 12.4).
 - [ ] **DPS-метр в HUD** (опционально).
 
 ---
 
-## Фаза 8: Pre-Release (публикация в Google Play)
+## Фаза 8: Спринты 14–18 (Стабилизация, Web-релиз и Google Play)
 
-- [ ] Импортировать Google Mobile Ads Unity Plugin, добавить define `GOOGLE_MOBILE_ADS`, заполнить боевые Ad Unit IDs в `AdConfig.asset`
-- [ ] Подключить Unity IAP (`Remove Ads` $2.99, `Starter Pack` $0.99) и GameAnalytics
-- [ ] Профилировать реальный `.apk`/`.aab` на физическом Android-устройстве (стабильные 60 FPS на W50+)
-- [ ] Иконка приложения (512×512 + адаптивная)
-- [ ] Feature graphic (1024×500), 5–6 вертикальных скриншотов, 20-сек геймплей-трейлер (также для TikTok/Shorts)
-- [ ] Короткое описание (80 символов) и полное описание (4000 символов)
-- [ ] Keystore для подписи, подписанный `.aab` (API 34+, IL2CPP ARM64)
-- [ ] Аккаунт Google Play Developer ($25 одноразово)
-- [ ] Privacy Policy, Data Safety form, Content Rating questionnaire
-- [ ] Загрузить в Google Play Console → Internal Testing → Open Testing / Production
-- [ ] Ждать ревью (3–7 дней)
+> Полные ТЗ и критерии приёмки каждого подпункта — в [AUDIT.md](./AUDIT.md), раздел 6.
+
+### Спринт 15 — Стабилизация, жизненный цикл и техдолг (P0/P1)
+- [x] **15.1.** Авто-пауза при сворачивании (`OnApplicationPause`/`OnApplicationFocus`) + чекпоинт забега и восстановление при `runInProgress`.
+- [x] **15.2.** Глобальный лимит врагов (`WaveConfig.maxActiveEnemies = 300`, долг волны) + безопасный фолбэк кольца спавна + слияние пикапов при `> 300` (`PickupConfig`).
+- [x] **15.3.** `SecretConfig`, исключение секрета из компаса, перебаланс ачивок (`2 / 1 / 1`).
+- [x] **15.4.** Data-Driven конфиги через VContainer DI (`CardCatalog`, `RunRulesConfig`, `ComboConfig`, `PickupConfig`, `SecretConfig`), scoped `EnemyRuntimeModifiers`, чистка легаси и `[Obsolete]` на Setup-инструментах, раскладка `_ScriptableObjects/`, `ProjectB_PostFX`.
+- [x] **15.5.** Синхронизация документации (`AGENTS.md`, `CONTEXT.md`, `IMPLEMENTATION_PLAN.md`).
+- [ ] **15.6.** CI (GitHub Actions + GameCI + бейдж в README) — *опционально / по решению автора*.
+- [ ] **15.7.** Демо на itch.io + сбор списка тестеров + TikTok-дневник разработки.
+- [ ] **15.8.** Приёмка Спринта 15.
+
+### Спринт 14 — Мультиплатформа и Web-билд (РЕЛИЗ 1)
+- [x] **14.1.** Адаптивный фундамент (`LayoutModeService`, `InputModeService`, `AdaptiveCanvasScaler`, `ResponsiveRect`, `AdaptiveLayoutGroup`, `OrientationPolicy`).
+- [ ] **14.2.** Камера по короткой стороне (`CameraConfig`), радиус спавна от проекции фрустума + кламп компаса к HUD.
+- [ ] **14.3.** Мультиввод (`InputActionAsset`, `MoveInput`-агрегатор для Touch + клавиатуры + геймпада, подсказки и системная кнопка Back).
+- [ ] **14.4.** Ландшафтные раскладки всех экранов меню, HUD, Pause и Game Over; прогон `9:21 / 4:3 / 16:10 / 21:9` и замер draw calls (13.6).
+- [ ] **14.5.** Web-билд (Poki или CrazyGames): Build Profile `Web`, Quality `Web`, браузерный lifecycle, `IAdProvider` / `IPlatformEvents` / `ISaveStorage`.
+- [ ] **14.6.** Дешёвые порты после Google Play (Samsung Galaxy Store, TapTap, Steam; Amazon — бэклог).
+- [ ] **14.7.** Тесты `Sprint14MultiplatformTests`, скриншоты и смоук-тест Web-билда.
+
+### Спринт 16 — Глубина забега (плотность, новые враги и Ascension)
+- [ ] **16.1.** Рост плотности и перекрытие волн (`≤ 30%` живых) вместо HP-губки + «орды-коридоры» каждые ~10 волн.
+- [ ] **16.2.** Три новых врага W30–W90: W32 `Splitter Slime`, W45 `Frost Wisp`, W60 `Siege Golemite` (воксельные модели, префабы, волны знакомства).
+- [ ] **16.3.** Модификаторы волн (`WaveMutatorData` SO): `Fog`, `Elite Surge`, `Glass Horde`.
+- [ ] **16.4.** Режим `Ascension A1–A10` (`AscensionLevelData` SO) после победы над Demon Lord (допустим перенос в Post-Launch).
+- [ ] **16.5.** Тесты Спринта 16.
+
+### Спринт 17 — Релизная готовность Google Play (P0)
+- [ ] **17.0.** Закрытый тест Google Play (личный аккаунт: 15–20 тестеров с запасом, 14 дней активности + регулярные обновления сборки).
+- [ ] **17.1.** Подписанный `.aab` (`Android-GooglePlay`), актуальный Target API Play Console, проверка 16 KB page size, SemVer + auto `versionCode`, отключение неиспользуемых модулей.
+- [ ] **17.2.** Google Mobile Ads SDK (`GOOGLE_MOBILE_ADS`), UMP-согласие + кнопка privacy options в настройках, проверка всех rewarded-точек.
+- [ ] **17.3.** Unity IAP (`Remove Ads` $2.99, `Starter Pack` $0.99), восстановление покупок и экран магазина в стиле `UiTheme`.
+- [ ] **17.4.** Аналитика (`IAnalyticsService`) + таксономия событий (FTUE, забеги, реклама, покупки) и краш-репортинг (Cloud Diagnostics / Crashlytics).
+- [ ] **17.5.** Материалы магазина (иконка 512×512, feature graphic 1024×500, скриншоты, трейлер, описания EN/UK/RU), Privacy Policy, Data Safety, платёжный профиль.
+- [ ] **17.6.** Миграция сохранений (`SaveManager.Migrate`) и защита от порчи сейвов начиная с релиза 1.0.
+- [ ] **17.7–17.8.** Профилирование на устройствах (эталон + 2020 г.), стресс-тест 12.4 и приёмка Google Play.
+
+### Спринт 18 — Релизы, маркетинг-инструменты и LiveOps
+- [ ] **18.0.** Веб-релиз 1 (Poki → при отказе CrazyGames), трафик из itch.io и TikTok.
+- [ ] **18.1.** Карточка результата «Поделиться» (локальный рендер `1080×1920` на Game Over).
+- [ ] **18.2.** Инструменты записи контента для TikTok / Shorts в dev-сборках (скрытие HUD, slow-mo, свободная камера).
+- [ ] **18.3–18.4.** Опциональный Remote Config поверх SO-баланса и цикл итераций по дашборду метрик.
+- [ ] **18.5.** Google Play Production (Релиз 2) и последующие порты 14.6.
 
 ---
 
-## Фаза 9: Post-Launch и арт-полиш (бэклог)
-
-- [ ] **Арт-полиш UI:** унифицировать UI-иконки (`16×16` иконки карточек; AI-иконки нижнего меню уже перерисованы в Спринте 13) через headless Blender-рендер (`ArtSources/Blender/render_voxel_icons.py`) в `256×256`
-- [ ] **Биомы:** Scorched Desert → Frozen Caverns → Volcanic Core (отложено по решению автора)
-- [ ] **UGC:** 1-тап карточка результата (Game Over + Damage Breakdown + синергии), replay последних 10 сек
-- [ ] **Скины героев** (IAP-косметика)
-- [ ] **Ежедневный челлендж-забег** (общий seed на день + модификаторы правил)
-- [ ] Стартовые артефакты, ивенты/сезоны
-
----
-
-## Порядок зависимостей
+## Порядок выполнения (из [AUDIT.md §5.2](./AUDIT.md))
 
 ```
-Фазы 0–4 (v1 MVP) ✅
+Спринт 15 (15.1–15.5 ✅) → остаток 15 + itch.io демо / TikTok
     │
     ▼
-Фаза 5: Спринты 1–11 (v2 Expansion) ✅
+Спринт 12 (12.1–12.3: баланс → FTUE → локализация EN / UK / RU)
     │
     ▼
-Фаза 6: Спринт 13.1 (дизайн-система, шрифт) ──┐
-    │                                          ▼
-    │   Спринт 12 (баланс → FTUE → локализация → стресс-тест v2)
-    │        ↕ параллельно
-    │   Спринт 13.2–13.7 (редизайн меню, HUD, модалок)
-    │        ↕ параллельно
-    │   Фаза 7: техдолг (секреты, легаси-синергии, комбо, culling)
-    ▼
-Фаза 8: Pre-Release (SDK → IAP/аналитика → профилирование → store → .aab)
+Спринт 14 (14.2–14.5: камера/спавн, мультиввод, ландшафт, Web-билд) → РЕЛИЗ 1 (Web: Poki / CrazyGames)
     │
     ▼
-Фаза 9: Post-Launch
+Спринт 16 (плотность, 3 врага, мутаторы, Ascension) ↕ параллельно со Спринтом 17 (Google Play, SDK, IAP, закрытый тест)
+    │
+    ▼
+12.4 Стресс-тест v2 на устройстве → РЕЛИЗ 2 Google Play Production (Спринт 18) → Порты (Galaxy Store, TapTap, Steam)
 ```
 
 ---
