@@ -321,7 +321,7 @@
 
 - [x] **12.1. Экономика и баланс по модели (B1, B2, B3):** расширить `BalanceCurveSimulator` (экономика дохода vs цены меты, DPS-модель, частота LevelUp); перенастроить `MetaUpgradeData`, дропы `EnemyData`, `WaveConfig` и XP-кривую; зафиксировать таблицы «до/после» в `Docs/Balance/`.
 - [x] **12.2. Онбординг (FTUE):** первый забег (`totalRuns == 0`) — подсказка движения, подсветка первого LevelUp и первой готовой ульты (через минимальный `LocalizationService`), облегчённые волны 1–2 (`WaveConfig.ftueWaves`), бейдж-подсказка в меню после 1-й смерти (по минимальной цене из `MetaUpgradeData`).
-- [ ] **12.3. Локализация EN + UK + RU:** `LocalizationService` (`Resources/Localization/{en,uk,ru}.json`, Zero-GC кэш), `LocalizedText` на статичные тексты + локализационные ключи для SO, проверка кириллицы/украинских букв `Ґґ Єє Іі Її` в атласах, переключатель языка в `SettingsPopupUI`.
+- [x] **12.3. Локализация EN + UK + RU:** `LocalizationService` (`Resources/Localization/{en,uk,ru}.json`, Zero-GC кэш), `LocalizedText` на статичные тексты + локализационные ключи для SO, проверка кириллицы/украинских букв `Ґґ Єє Іі Її` в атласах, переключатель языка в `SettingsPopupUI`.
 - [ ] **12.4. Стресс-тест v2** (`ReleasePlayModeStressTests`, на устройстве после Спринта 17): W50+, `maxActiveEnemies` врагов + separation + `VoxelLit` + 6 способностей с синергиями и Overdrive + событие + Demon Lord — `< 2.5 мс` боевой логики, `0 B` GC, p95 `< 16.6 мс`, отчёт в `Docs/Perf/`.
 - [x] **12.5. Синхронизация документации:** `CONTEXT.md` и `IMPLEMENTATION_PLAN.md` приведены к реальному составу проекта (обновлено и в 15.5).
 

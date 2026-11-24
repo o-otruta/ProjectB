@@ -25,7 +25,7 @@
 | UI | TextMeshPro + Canvas (uGUI 2.5.0), дизайн-система `UiTheme`, адаптивные компоненты (`LayoutModeService`, `AdaptiveCanvasScaler`, `ResponsiveRect`) |
 | Управление | Unity New Input System 1.19.0 (`VirtualJoystick`; клавиатура/геймпад — в 14.3) |
 | Сцены | `MainMenu` (меню + все мета-экраны), `Gameplay` |
-| Локализация | Базовый EN; `LocalizationService` для EN + UK + RU запланирован в 12.3 |
+| Локализация | EN + UK + RU: `LocalizationService` (`Resources/Localization/{en,uk,ru}.json`), `LocalizedText`, переключатель языка в `SettingsPopupUI` |
 | Разработчик / Bundle ID | Windbag (`com.windbag.projectb`) |
 | Ассеты | Blender (`ArtSources/Blender/*.blend`) → `.obj` в `Assets/_VoxelModels/` (shared-материалы `Base_Mat` + `Glow_Mat`, `enableInstancing: 1`) |
 | Сохранения | PlayerPrefs (JSON, `IsDirty`, авто-чекпоинт забега `runInProgress`), `saveVersion = 2`; до релиза 1.0 без миграции, после 1.0 — `SaveManager.Migrate` (17.6) |
