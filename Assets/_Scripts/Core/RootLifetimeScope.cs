@@ -2,6 +2,7 @@ using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 using ProjectB.Ads;
+using ProjectB.Data.Platform;
 using ProjectB.Meta;
 
 namespace ProjectB.Core
@@ -38,6 +39,12 @@ namespace ProjectB.Core
             builder.Register<InputModeService>(Lifetime.Singleton);
             builder.RegisterEntryPoint<OrientationPolicyService>().AsSelf();
 
+            // Sprint 14.3: multi-input config and project-wide InputActionAsset service.
+            InputConfig inputConfig = Resources.Load<InputConfig>(InputConfig.RESOURCE_PATH);
+            if (inputConfig == null) inputConfig = InputConfig.CreateRuntimeDefault();
+            builder.RegisterInstance(inputConfig);
+            builder.Register<GameInputService>(Lifetime.Singleton);
+
             // Eagerly construct LocalizationService first so Current is bound to SaveManager before any UI reads or subscribes.
             builder.RegisterBuildCallback(container =>
             {
@@ -45,6 +52,7 @@ namespace ProjectB.Core
                 container.Resolve<TalentTreeManager>();
                 // Start tracking the active device from the very first frame, before any UI asks for it.
                 container.Resolve<InputModeService>();
+                container.Resolve<GameInputService>();
             });
         }
 

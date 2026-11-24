@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
@@ -39,6 +41,10 @@ namespace ProjectB.UI
         [SerializeField] private Button doubleCoinsButton;
         [SerializeField] private TextMeshProUGUI doubleCoinsButtonText;
 
+        [Header("Navigation Buttons")]
+        [SerializeField] private Button restartButton;
+        [SerializeField] private Button menuButton;
+
         [Header("Sprint 13: redesigned layout")]
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private GameObject newBestBadge;
@@ -61,6 +67,8 @@ namespace ProjectB.UI
         private RunComboTracker comboTracker;
         private SelectedHeroService selectedHeroService;
         private SaveManager saveManager;
+        private InputModeService inputModeService;
+        private Action<InputMode> cachedInputModeHandler;
         private int bestWaveBeforeRun = -1;
         private readonly char[] numberBuffer = new char[24];
         private readonly List<GameObject> spawnedAchievementRows = new List<GameObject>();
@@ -74,8 +82,10 @@ namespace ProjectB.UI
             RunStatistics runStatistics = null,
             SelectedHeroService selectedHeroService = null,
             RunComboTracker comboTracker = null,
-            SaveManager saveManager = null)
+            SaveManager saveManager = null,
+            InputModeService inputModeService = null)
         {
+            UnsubscribeInputMode();
             this.saveManager = saveManager;
             // Snapshot the record before this run so Game Over can show NEW BEST!
             // (GameManager writes bestWave before raising OnGameOver).
@@ -85,6 +95,7 @@ namespace ProjectB.UI
             this.runStatistics = runStatistics;
             this.selectedHeroService = selectedHeroService;
             this.comboTracker = comboTracker;
+            this.inputModeService = inputModeService;
 
             if (this.gameManager != null)
             {
@@ -92,6 +103,7 @@ namespace ProjectB.UI
                 this.gameManager.OnHeroRevived += Hide;
                 this.gameManager.OnCoinsDoubled += HandleCoinsDoubled;
             }
+            SubscribeInputMode();
         }
 
         private void Awake()
@@ -104,12 +116,52 @@ namespace ProjectB.UI
 
         private void OnDestroy()
         {
+            UnsubscribeInputMode();
             if (gameManager != null)
             {
                 gameManager.OnGameOver -= Show;
                 gameManager.OnHeroRevived -= Hide;
                 gameManager.OnCoinsDoubled -= HandleCoinsDoubled;
             }
+        }
+
+        private void SubscribeInputMode()
+        {
+            if (inputModeService == null) return;
+            cachedInputModeHandler ??= HandleInputModeChanged;
+            inputModeService.InputModeChanged -= cachedInputModeHandler;
+            inputModeService.InputModeChanged += cachedInputModeHandler;
+        }
+
+        private void UnsubscribeInputMode()
+        {
+            if (inputModeService != null && cachedInputModeHandler != null)
+            {
+                inputModeService.InputModeChanged -= cachedInputModeHandler;
+            }
+        }
+
+        private void HandleInputModeChanged(InputMode mode)
+        {
+            if (mode == InputMode.Touch)
+            {
+                UiFocusHelper.ClearSelection();
+            }
+            else if (panel != null && panel.activeSelf && EventSystem.current != null &&
+                     EventSystem.current.currentSelectedGameObject == null)
+            {
+                FocusPrimaryAction();
+            }
+        }
+
+        private void FocusPrimaryAction()
+        {
+            Selectable first = restartButton != null ? (Selectable)restartButton : menuButton;
+            if (first == null)
+            {
+                first = UiFocusHelper.FindFirstInteractable(panel != null ? panel.transform : transform);
+            }
+            UiFocusHelper.SetFirstSelected(first, inputModeService);
         }
 
         public void Show(int currentWave, int coinsEarned)
@@ -202,6 +254,7 @@ namespace ProjectB.UI
             PopulateDamageBreakdown();
             PopulateRunAchievements();
             RefreshAdButtons();
+            FocusPrimaryAction();
         }
 
         private void SetGrouped(TMP_Text text, int value)
@@ -622,6 +675,7 @@ namespace ProjectB.UI
             {
                 panel.SetActive(false);
             }
+            UiFocusHelper.ClearSelection();
         }
 
         public void OnRestartClicked()

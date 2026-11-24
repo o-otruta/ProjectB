@@ -110,6 +110,7 @@ namespace ProjectB.UI
         public TalentNodeData SelectedNode => selectedNode;
         public ConstellationPanZoom PanZoom => panZoom;
         public bool IsOpen => panel != null && panel.activeSelf;
+        public bool IsDetailOpen => detailSheet != null && detailSheet.activeSelf;
 
         [Inject]
         public void Construct(TalentTreeManager talentTree, SaveManager saveManager, AudioManager audioManager = null)
@@ -170,6 +171,7 @@ namespace ProjectB.UI
             CloseDetail();
             RefreshAll();
             panZoom?.ResetView();
+            UiFocusHelper.SetFirstSelected(backButton != null ? (Selectable)backButton : centerButton);
         }
 
         public void Hide()
@@ -195,7 +197,7 @@ namespace ProjectB.UI
             }
         }
 
-        private void HandleBack()
+        public void HandleBack()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             if (mainMenu != null) mainMenu.OnUpgradesClicked();

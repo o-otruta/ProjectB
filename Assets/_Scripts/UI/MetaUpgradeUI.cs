@@ -131,6 +131,23 @@ namespace ProjectB.UI
             }
         }
 
+        public Selectable GetFirstSelectable()
+        {
+            if (constellationBanner != null && constellationBanner.gameObject.activeInHierarchy && constellationBanner.interactable)
+            {
+                return constellationBanner;
+            }
+            for (int i = 0; i < spawnedItems.Count; i++)
+            {
+                if (spawnedItems[i] != null && spawnedItems[i].BuyButton != null &&
+                    spawnedItems[i].BuyButton.gameObject.activeInHierarchy && spawnedItems[i].BuyButton.interactable)
+                {
+                    return spawnedItems[i].BuyButton;
+                }
+            }
+            return UiFocusHelper.FindFirstInteractable(panel != null ? panel.transform : transform);
+        }
+
         private void RefreshAllItems()
         {
             foreach (var item in spawnedItems)

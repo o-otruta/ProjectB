@@ -1,10 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
+using TMPro;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using ProjectB.Core;
+using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.Data.Platform;
+using ProjectB.EditorScripts;
+using ProjectB.LevelUp;
+using ProjectB.Meta;
+using ProjectB.Player;
 using ProjectB.UI;
 
 namespace ProjectB.Tests.EditMode
@@ -396,6 +410,418 @@ namespace ProjectB.Tests.EditMode
 
             Assert.IsTrue(service.RegisterActivity(InputMode.KeyboardMouse, 10.0 + InputModeService.MOUSE_AFTER_TOUCH_SUPPRESS_SECONDS + 0.01));
             Assert.AreEqual(InputMode.KeyboardMouse, service.Mode);
+        }
+
+        // ───────────────────────── 14.3 Multi-Input ─────────────────────────
+
+        [Test]
+        public void InputActionsAsset_Exists_WithRequiredGameplayAndUiActions()
+        {
+            var asset = Resources.Load<InputActionAsset>(GameInputService.INPUT_ACTIONS_RESOURCE_PATH);
+            Assert.IsNotNull(asset, "Resources/ProjectB_InputActions.inputactions must exist");
+
+            InputActionMap gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: false);
+            Assert.IsNotNull(gameplay, "Gameplay action map missing");
+            Assert.IsNotNull(gameplay.FindAction("Move"), "Gameplay/Move missing");
+            Assert.IsNotNull(gameplay.FindAction("Ultimate"), "Gameplay/Ultimate missing");
+            Assert.IsNotNull(gameplay.FindAction("Pause"), "Gameplay/Pause missing");
+
+            InputActionMap ui = asset.FindActionMap("UI", throwIfNotFound: false);
+            Assert.IsNotNull(ui, "UI action map missing");
+            foreach (string actionName in new[] { "Navigate", "Submit", "Cancel", "Point", "Click", "Card1", "Card2", "Card3", "Reroll" })
+            {
+                Assert.IsNotNull(ui.FindAction(actionName), $"UI/{actionName} missing");
+            }
+        }
+
+        [Test]
+        public void InputConfig_ResourceAssetExists_WithValidDeadzone()
+        {
+            var inputCfg = Resources.Load<InputConfig>(InputConfig.RESOURCE_PATH);
+            Assert.IsNotNull(inputCfg, "Resources/InputConfig.asset must exist");
+            Assert.GreaterOrEqual(inputCfg.moveDeadzone, 0f);
+            Assert.LessOrEqual(inputCfg.moveDeadzone, 0.5f);
+            Assert.IsTrue(inputCfg.floatingJoystickInLandscape);
+        }
+
+        [Test]
+        public void MoveInputService_AggregatesNormalizesAppliesDeadzone_AndIsZeroGc()
+        {
+            const float dz = 0.15f;
+
+            // Within deadzone -> zero
+            Assert.AreEqual(Vector2.zero, MoveInputService.Aggregate(new Vector2(0.08f, 0.08f), Vector2.zero, dz));
+
+            // Full diagonal -> clamped to unit length
+            Vector2 diag = MoveInputService.Aggregate(new Vector2(1f, 1f), Vector2.zero, dz);
+            Assert.AreEqual(1f, diag.magnitude, 1e-4f);
+            Assert.AreEqual(diag.x, diag.y, 1e-4f);
+
+            // Combining keyboard + joystick never exceeds unit length
+            Vector2 combined = MoveInputService.Aggregate(new Vector2(1f, 0f), new Vector2(0.8f, 0.8f), dz);
+            Assert.LessOrEqual(combined.magnitude, 1.0001f);
+
+            // Joystick-only passes through cleanly even when action input is inside deadzone
+            Vector2 joyOnly = MoveInputService.Aggregate(new Vector2(0.05f, 0f), new Vector2(0f, 0.6f), dz);
+            Assert.AreEqual(0f, joyOnly.x, 1e-4f);
+            Assert.AreEqual(0.6f, joyOnly.y, 1e-4f);
+
+            // Zero-GC check on steady-state MoveInputService.Direction
+            using var gameInput = new GameInputService(null, cloneAsset: false);
+            var inputCfg = Track(ScriptableObject.CreateInstance<InputConfig>());
+            var moveService = new MoveInputService(gameInput, null, inputCfg);
+
+            // Warm-up
+            Vector2 warm = moveService.Direction;
+            Assert.AreEqual(Vector2.zero, warm);
+
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 500; i++)
+            {
+                Vector2 d = moveService.Direction;
+                if (d.sqrMagnitude < 0f) Assert.Fail();
+            }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.AreEqual(0L, allocated, "MoveInputService.Direction must allocate 0 bytes");
+        }
+
+        [Test]
+        public void VirtualJoystick_HidesOnKeyboardMouse_ShowsOnTouch_AndForcesFloatingInLandscape()
+        {
+            var go = Track(new GameObject("Joystick", typeof(RectTransform), typeof(CanvasGroup), typeof(VirtualJoystick)));
+            var bg = new GameObject("Bg", typeof(RectTransform));
+            bg.transform.SetParent(go.transform, false);
+            var handle = new GameObject("Handle", typeof(RectTransform));
+            handle.transform.SetParent(bg.transform, false);
+
+            var joystick = go.GetComponent<VirtualJoystick>();
+            typeof(VirtualJoystick).GetField("background", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(joystick, bg.GetComponent<RectTransform>());
+            typeof(VirtualJoystick).GetField("handle", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(joystick, handle.GetComponent<RectTransform>());
+            typeof(VirtualJoystick).GetField("canvasGroup", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(joystick, go.GetComponent<CanvasGroup>());
+            typeof(VirtualJoystick).GetField("isFloating", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(joystick, false);
+
+            using var inputMode = new InputModeService(InputMode.Touch, listenToInputSystem: false);
+            var layout = new LayoutModeService(config);
+            layout.UpdateMetrics(1080, 1920, Full(1080, 1920));
+            var inputCfg = Track(ScriptableObject.CreateInstance<InputConfig>());
+
+            joystick.BindServices(inputMode, layout, inputCfg);
+            var cg = go.GetComponent<CanvasGroup>();
+
+            Assert.IsTrue(joystick.IsVisibleForTouch);
+            Assert.IsFalse(joystick.IsFloating, "Portrait with isFloating=false stays fixed");
+            Assert.AreEqual(1f, cg.alpha, 1e-4f);
+            Assert.IsTrue(cg.blocksRaycasts);
+
+            // Switch to Landscape -> forces floating
+            layout.UpdateMetrics(1920, 1080, Full(1920, 1080));
+            Assert.IsTrue(joystick.IsFloating, "Landscape touch forces floating joystick");
+            Assert.IsFalse(bg.activeSelf, "Floating joystick hides background until touched");
+
+            // Switch to KeyboardMouse -> hidden & blocksRaycasts=false, GO remains active for future touch
+            inputMode.RegisterActivity(InputMode.KeyboardMouse, 5.0);
+            Assert.IsFalse(joystick.IsVisibleForTouch);
+            Assert.AreEqual(0f, cg.alpha, 1e-4f);
+            Assert.IsFalse(cg.blocksRaycasts);
+            Assert.IsTrue(go.activeSelf);
+
+            // Touch again -> visible
+            inputMode.RegisterActivity(InputMode.Touch, 6.0);
+            Assert.IsTrue(joystick.IsVisibleForTouch);
+            Assert.AreEqual(1f, cg.alpha, 1e-4f);
+            Assert.IsTrue(cg.blocksRaycasts);
+        }
+
+        [Test]
+        public void KeyHintBadgeUI_VisibleOnlyInKeyboardMouseMode()
+        {
+            var host = Track(new GameObject("KeyHintHost", typeof(RectTransform), typeof(KeyHintBadgeUI)));
+            var pill = new GameObject("Badge", typeof(RectTransform), typeof(Image));
+            pill.transform.SetParent(host.transform, false);
+            var txt = new GameObject("KeyLabel", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            txt.transform.SetParent(pill.transform, false);
+
+            var badge = host.GetComponent<KeyHintBadgeUI>();
+            badge.EditorSetup(pill, pill.GetComponent<Image>(), txt, "1");
+
+            using var inputMode = new InputModeService(InputMode.Touch, listenToInputSystem: false);
+            badge.Bind(inputMode);
+            Assert.IsFalse(badge.IsHintVisible, "Hidden in Touch mode");
+
+            inputMode.RegisterActivity(InputMode.KeyboardMouse, 1.0);
+            Assert.IsTrue(badge.IsHintVisible, "Visible in KeyboardMouse mode");
+
+            badge.SetAllowed(false);
+            Assert.IsFalse(badge.IsHintVisible, "Hidden when externally disallowed (e.g., disabled card)");
+
+            badge.SetAllowed(true);
+            inputMode.RegisterActivity(InputMode.Gamepad, 2.0);
+            Assert.IsFalse(badge.IsHintVisible, "Hidden in Gamepad mode");
+        }
+
+        [Test]
+        public void CardSelectionUI_Hotkeys123AndR_SelectCardsAndTriggerReroll()
+        {
+            var selRoot = Track(new GameObject("CardSelection", typeof(RectTransform), typeof(CardSelectionUI)));
+            var panel = new GameObject("Panel", typeof(RectTransform));
+            panel.transform.SetParent(selRoot.transform, false);
+
+            var slots = new CardUI[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var cardGo = new GameObject($"Card_{i}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(CardUI));
+                cardGo.transform.SetParent(panel.transform, false);
+                slots[i] = cardGo.GetComponent<CardUI>();
+            }
+
+            var rerollGo = new GameObject("Reroll", typeof(RectTransform), typeof(Image), typeof(Button));
+            rerollGo.transform.SetParent(panel.transform, false);
+
+            var selection = selRoot.GetComponent<CardSelectionUI>();
+            typeof(CardSelectionUI).GetField("selectionPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(selection, panel);
+            typeof(CardSelectionUI).GetField("cardSlots", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(selection, slots);
+            typeof(CardSelectionUI).GetField("rerollButton", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(selection, rerollGo.GetComponent<Button>());
+
+            var cardA = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+            cardA.cardName = "A";
+            var cardB = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+            cardB.cardName = "B";
+            var cardC = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+            cardC.cardName = "C";
+
+            CardData chosen = null;
+            bool rerolled = false;
+            selection.ShowCards(
+                new List<CardData> { cardA, cardB },
+                c => chosen = c,
+                (_, __) =>
+                {
+                    rerolled = true;
+                    return new List<CardData> { cardC, cardA };
+                },
+                freeRerolls: 1);
+
+            Assert.IsTrue(selection.CanRerollCurrentOffer);
+            selection.TriggerReroll();
+            Assert.IsTrue(rerolled, "Reroll action should invoke reroll callback");
+
+            Assert.IsTrue(selection.TrySelectSlotByIndex(1), "Slot 2 hotkey should select second card");
+            Assert.AreSame(cardA, chosen);
+        }
+
+        [Test]
+        public void CardUI_SubmitHandler_TriggersSelection()
+        {
+            var go = Track(new GameObject("Card", typeof(RectTransform), typeof(Image), typeof(Button), typeof(CardUI)));
+            var cardUi = go.GetComponent<CardUI>();
+            var data = Track(ScriptableObject.CreateInstance<StatUpgradeCardData>());
+            data.cardName = "MaxHP";
+
+            CardData picked = null;
+            cardUi.Setup(data, c => picked = c, requiresAd: false, canWatchAd: true);
+            cardUi.OnSubmit(null);
+            Assert.AreSame(data, picked);
+        }
+
+        [Test]
+        public void ThemedButton_HoverSelectAndDisable_UpdatesScaleCleanly()
+        {
+            var go = Track(new GameObject("Btn", typeof(RectTransform), typeof(Image), typeof(Button), typeof(ThemedButton)));
+            var btn = go.GetComponent<Button>();
+            var themed = go.GetComponent<ThemedButton>();
+
+            themed.OnPointerEnter(null);
+            Assert.IsTrue(themed.IsHovered);
+            Assert.Greater(go.transform.localScale.x, 1.01f);
+
+            themed.OnPointerExit(null);
+            Assert.IsFalse(themed.IsHovered);
+            Assert.AreEqual(1f, go.transform.localScale.x, 1e-4f);
+
+            themed.OnSelect(null);
+            Assert.IsTrue(themed.IsSelected);
+            Assert.Greater(go.transform.localScale.x, 1.01f);
+
+            btn.interactable = false;
+            themed.OnDeselect(null);
+            Assert.AreEqual(1f, go.transform.localScale.x, 1e-4f);
+        }
+
+        [Test]
+        public void PauseMenuUI_CancelAndPauseAction_ClosesModalsAndTogglesPause()
+        {
+            var bus = new GameEventBus();
+            var heroGo = Track(new GameObject("Hero"));
+            var heroHp = heroGo.AddComponent<HeroHealth>();
+            heroHp.Construct(new HeroRuntimeStats(), bus, null);
+
+            var gmGo = Track(new GameObject("GM", typeof(GameManager)));
+            var gm = gmGo.GetComponent<GameManager>();
+            gm.Construct(heroHp, null, null, null, null, bus);
+            typeof(GameManager).GetField("currentState", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(gm, GameState.Playing);
+
+            var pauseRoot = Track(new GameObject("PauseUI", typeof(RectTransform), typeof(PauseMenuUI)));
+            var pausePanel = new GameObject("PausePanel", typeof(RectTransform));
+            pausePanel.transform.SetParent(pauseRoot.transform, false);
+            pausePanel.SetActive(false);
+
+            var quitPanel = new GameObject("QuitConfirm", typeof(RectTransform));
+            quitPanel.transform.SetParent(pausePanel.transform, false);
+            quitPanel.SetActive(false);
+
+            var settingsGo = Track(new GameObject("Settings", typeof(RectTransform), typeof(SettingsPopupUI)));
+            var settingsPanel = new GameObject("SettingsPanel", typeof(RectTransform));
+            settingsPanel.transform.SetParent(settingsGo.transform, false);
+            settingsPanel.SetActive(false);
+            var settings = settingsGo.GetComponent<SettingsPopupUI>();
+            typeof(SettingsPopupUI).GetField("popupPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(settings, settingsPanel);
+
+            var pauseUi = pauseRoot.GetComponent<PauseMenuUI>();
+            typeof(PauseMenuUI).GetField("pausePanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(pauseUi, pausePanel);
+            typeof(PauseMenuUI).GetField("quitConfirmPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(pauseUi, quitPanel);
+            typeof(PauseMenuUI).GetField("settingsPopup", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(pauseUi, settings);
+            pauseUi.Construct(gm);
+
+            // Esc in Playing -> opens Pause
+            pauseUi.HandlePauseOrBackInput();
+            Assert.IsTrue(gm.IsPaused);
+            Assert.IsTrue(pauseUi.IsPanelOpen);
+
+            // Open Settings -> Esc closes Settings first, keeps Pause open
+            pauseUi.OnSettingsClicked();
+            Assert.IsTrue(settings.IsOpen);
+            pauseUi.HandlePauseOrBackInput();
+            Assert.IsFalse(settings.IsOpen);
+            Assert.IsTrue(pauseUi.IsPanelOpen);
+
+            // Open QuitConfirm -> Esc closes QuitConfirm first
+            pauseUi.OnQuitToMenuClicked();
+            Assert.IsTrue(pauseUi.IsQuitConfirmOpen);
+            pauseUi.HandlePauseOrBackInput();
+            Assert.IsFalse(pauseUi.IsQuitConfirmOpen);
+            Assert.IsTrue(pauseUi.IsPanelOpen);
+
+            // Esc in Pause -> resumes game
+            pauseUi.HandlePauseOrBackInput();
+            Assert.IsFalse(gm.IsPaused);
+            Assert.IsFalse(pauseUi.IsPanelOpen);
+        }
+
+        [Test]
+        public void MainMenuUI_CancelAction_ClosesPopupsAndReturnsToPlayTab()
+        {
+            bool hadSave = PlayerPrefs.HasKey(SaveManager.SAVE_KEY);
+            string origSave = hadSave ? PlayerPrefs.GetString(SaveManager.SAVE_KEY) : null;
+            PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+
+            try
+            {
+                using var save = new SaveManager();
+                var bonus = new DailyBonusManager(save);
+
+                var menuGo = Track(new GameObject("MainMenu", typeof(RectTransform), typeof(MainMenuUI)));
+                var playPanel = new GameObject("PlayPanel", typeof(RectTransform));
+                playPanel.transform.SetParent(menuGo.transform, false);
+
+                var settingsGo = Track(new GameObject("Settings", typeof(RectTransform), typeof(SettingsPopupUI)));
+                var settingsPanel = new GameObject("SettingsPanel", typeof(RectTransform));
+                settingsPanel.transform.SetParent(settingsGo.transform, false);
+                settingsPanel.SetActive(false);
+                var settings = settingsGo.GetComponent<SettingsPopupUI>();
+                typeof(SettingsPopupUI).GetField("popupPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(settings, settingsPanel);
+
+                var menu = menuGo.GetComponent<MainMenuUI>();
+                typeof(MainMenuUI).GetField("playScreenPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(menu, playPanel);
+                typeof(MainMenuUI).GetField("settingsPopupUI", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(menu, settings);
+                menu.Construct(save, bonus);
+
+                // Switch to Abilities tab
+                menu.OnAbilitiesClicked();
+                Assert.AreEqual(MainMenuUI.TAB_ABILITIES, menu.SelectedTab);
+
+                // Open settings -> Cancel closes settings first
+                menu.OnSettingsClicked();
+                Assert.IsTrue(settings.IsOpen);
+                menu.HandleCancelInput();
+                Assert.IsFalse(settings.IsOpen);
+                Assert.AreEqual(MainMenuUI.TAB_ABILITIES, menu.SelectedTab);
+
+                // Cancel on non-Play tab -> returns to Play tab
+                menu.HandleCancelInput();
+                Assert.AreEqual(MainMenuUI.TAB_PLAY, menu.SelectedTab);
+            }
+            finally
+            {
+                if (hadSave) PlayerPrefs.SetString(SaveManager.SAVE_KEY, origSave);
+                else PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                PlayerPrefs.Save();
+            }
+        }
+
+        [Test]
+        public void Scenes_GameplayAndMainMenu_HaveInputModuleAndKeyHintsWired()
+        {
+            var expectedAsset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(Sprint14InputWiringTool.INPUT_ACTIONS_PATH);
+            Assert.IsNotNull(expectedAsset, "ProjectB_InputActions must exist");
+
+            foreach (string scenePath in new[] { Sprint14InputWiringTool.MAIN_MENU_SCENE, Sprint14InputWiringTool.GAMEPLAY_SCENE })
+            {
+                Scene loaded = SceneManager.GetSceneByPath(scenePath);
+                bool openedHere = !loaded.isLoaded;
+                Scene scene = openedHere ? EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive) : loaded;
+                try
+                {
+                    InputSystemUIInputModule module = null;
+                    foreach (GameObject root in scene.GetRootGameObjects())
+                    {
+                        module = root.GetComponentInChildren<InputSystemUIInputModule>(true);
+                        if (module != null) break;
+                    }
+                    Assert.IsNotNull(module, $"InputSystemUIInputModule missing in {scenePath}");
+                    Assert.AreSame(expectedAsset, module.actionsAsset, $"UI InputModule must use ProjectB_InputActions in {scenePath}");
+                    Assert.IsNotNull(module.point?.action, $"UI/Point unbound in {scenePath}");
+                    Assert.IsNotNull(module.leftClick?.action, $"UI/Click unbound in {scenePath}");
+                    Assert.IsNotNull(module.move?.action, $"UI/Navigate unbound in {scenePath}");
+                    Assert.IsNotNull(module.submit?.action, $"UI/Submit unbound in {scenePath}");
+                    Assert.IsNotNull(module.cancel?.action, $"UI/Cancel unbound in {scenePath}");
+
+                    if (scenePath == Sprint14InputWiringTool.GAMEPLAY_SCENE)
+                    {
+                        VirtualJoystick joystick = null;
+                        CardSelectionUI cardSel = null;
+                        UltimateButtonUI ultBtn = null;
+                        PauseMenuUI pauseUi = null;
+                        GameOverUI gameOver = null;
+
+                        foreach (GameObject root in scene.GetRootGameObjects())
+                        {
+                            if (joystick == null) joystick = root.GetComponentInChildren<VirtualJoystick>(true);
+                            if (cardSel == null) cardSel = root.GetComponentInChildren<CardSelectionUI>(true);
+                            if (ultBtn == null) ultBtn = root.GetComponentInChildren<UltimateButtonUI>(true);
+                            if (pauseUi == null) pauseUi = root.GetComponentInChildren<PauseMenuUI>(true);
+                            if (gameOver == null) gameOver = root.GetComponentInChildren<GameOverUI>(true);
+                        }
+
+                        Assert.IsNotNull(joystick.GetComponent<CanvasGroup>(), "VirtualJoystick must have CanvasGroup");
+                        Assert.IsNotNull(typeof(UltimateButtonUI).GetField("keyHintBadge", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ultBtn), "Ultimate keyHintBadge missing");
+                        Assert.IsNotNull(typeof(PauseMenuUI).GetField("pauseKeyHint", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(pauseUi), "Pause keyHint missing");
+                        Assert.IsNotNull(typeof(CardSelectionUI).GetField("rerollKeyHint", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(cardSel), "Reroll keyHint missing");
+                        Assert.IsNotNull(typeof(GameOverUI).GetField("restartButton", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(gameOver), "GameOver restartButton missing");
+                        Assert.IsNotNull(typeof(GameOverUI).GetField("menuButton", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(gameOver), "GameOver menuButton missing");
+
+                        var slots = (CardUI[])typeof(CardSelectionUI).GetField("cardSlots", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(cardSel);
+                        Assert.AreEqual(3, slots.Length);
+                        for (int i = 0; i < slots.Length; i++)
+                        {
+                            Assert.IsNotNull(typeof(CardUI).GetField("keyHintBadge", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(slots[i]), $"Card {i} keyHintBadge missing");
+                        }
+                    }
+                }
+                finally
+                {
+                    if (openedHere) EditorSceneManager.CloseScene(scene, true);
+                }
+            }
         }
     }
 }

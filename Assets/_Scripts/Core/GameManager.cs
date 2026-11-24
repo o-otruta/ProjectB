@@ -102,6 +102,7 @@ namespace ProjectB.Core
             audioManager?.SetMusicDucked(false);
 
             achievementManager?.ClearRunUnlocks();
+            UiFocusHelper.ClearSelection();
 
             if (heroHealth != null)
             {
@@ -341,6 +342,7 @@ namespace ProjectB.Core
             currentState = GameState.Playing;
             Time.timeScale = 1f;
             audioManager?.SetMusicDucked(false);
+            UiFocusHelper.ClearSelection();
             OnPauseStateChanged?.Invoke(false);
             return true;
         }
@@ -409,6 +411,7 @@ namespace ProjectB.Core
                 audioManager?.SetMusicDucked(false);
                 heroHealth?.Revive(adManager != null ? adManager.ReviveInvulnerabilitySeconds : 3f);
                 waveManager?.ResumeAfterRevive();
+                UiFocusHelper.ClearSelection();
                 OnHeroRevived?.Invoke();
             }
 

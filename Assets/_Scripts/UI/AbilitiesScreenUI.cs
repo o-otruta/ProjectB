@@ -54,6 +54,16 @@ namespace ProjectB.UI
 
         public AbilityCollectionFilter Filter => filter;
 
+        public Selectable GetFirstSelectable()
+        {
+            if (filterButtons != null && filterButtons.Length > 0 && filterButtons[0] != null &&
+                filterButtons[0].gameObject.activeInHierarchy && filterButtons[0].interactable)
+            {
+                return filterButtons[0];
+            }
+            return UiFocusHelper.FindFirstInteractable(transform);
+        }
+
         [Inject]
         public void Construct(
             SaveManager saveManager,

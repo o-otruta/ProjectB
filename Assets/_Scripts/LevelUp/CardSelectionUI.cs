@@ -20,6 +20,7 @@ namespace ProjectB.LevelUp
         [Header("Reroll")]
         [SerializeField] private Button rerollButton;
         [SerializeField] private TMP_Text rerollButtonText;
+        [SerializeField] private KeyHintBadgeUI rerollKeyHint;
 
         [Header("Sprint 13: header")]
         [SerializeField] private TMP_Text titleText;
@@ -39,6 +40,9 @@ namespace ProjectB.LevelUp
         private HeroAbilities heroAbilities;
         private AudioManager audioManager;
         private HeroExperience heroExperience;
+        private GameInputService gameInput;
+        private InputModeService inputModeService;
+        private System.Action<InputMode> cachedInputModeHandler;
         private readonly char[] levelBuffer = new char[16];
 
         private int freeRerollsAvailable;
@@ -69,12 +73,22 @@ namespace ProjectB.LevelUp
         }
 
         [Inject]
-        public void Construct(AdManager adManager = null, HeroAbilities heroAbilities = null, AudioManager audioManager = null, HeroExperience heroExperience = null)
+        public void Construct(
+            AdManager adManager = null,
+            HeroAbilities heroAbilities = null,
+            AudioManager audioManager = null,
+            HeroExperience heroExperience = null,
+            GameInputService gameInput = null,
+            InputModeService inputModeService = null)
         {
+            UnsubscribeInputMode();
             this.adManager = adManager;
             this.heroAbilities = heroAbilities;
             this.audioManager = audioManager;
             this.heroExperience = heroExperience;
+            this.gameInput = gameInput;
+            this.inputModeService = inputModeService;
+            SubscribeInputMode();
         }
 
         private void Awake()
@@ -88,14 +102,52 @@ namespace ProjectB.LevelUp
 
         private void OnDestroy()
         {
+            UnsubscribeInputMode();
             if (rerollButton != null)
             {
                 rerollButton.onClick.RemoveListener(OnRerollClicked);
             }
         }
 
+        private void SubscribeInputMode()
+        {
+            if (inputModeService == null) return;
+            cachedInputModeHandler ??= HandleInputModeChanged;
+            inputModeService.InputModeChanged -= cachedInputModeHandler;
+            inputModeService.InputModeChanged += cachedInputModeHandler;
+        }
+
+        private void UnsubscribeInputMode()
+        {
+            if (inputModeService != null && cachedInputModeHandler != null)
+            {
+                inputModeService.InputModeChanged -= cachedInputModeHandler;
+            }
+        }
+
+        private void HandleInputModeChanged(InputMode mode)
+        {
+            if (mode == InputMode.Touch)
+            {
+                UiFocusHelper.ClearSelection();
+            }
+            else if (IsActive && UnityEngine.EventSystems.EventSystem.current != null &&
+                     UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
+            {
+                FocusFirstCard();
+            }
+        }
+
         private void Update()
         {
+            if (IsActive && onCardSelectedCallback != null && gameInput != null)
+            {
+                if (gameInput.WasCardPressedThisFrame(0)) TrySelectSlotByIndex(0);
+                else if (gameInput.WasCardPressedThisFrame(1)) TrySelectSlotByIndex(1);
+                else if (gameInput.WasCardPressedThisFrame(2)) TrySelectSlotByIndex(2);
+                else if (gameInput.WasRerollPressedThisFrame() && CanRerollCurrentOffer) OnRerollClicked();
+            }
+
             if (!isAnimatingCards || !IsActive || cardSlots == null) return;
 
             animationElapsed += Time.unscaledDeltaTime;
@@ -157,7 +209,36 @@ namespace ProjectB.LevelUp
             }
 
             StartBounceAnimation();
+            FocusFirstCard();
             OnCardsShown?.Invoke();
+        }
+
+        public bool TrySelectSlotByIndex(int slotIndex)
+        {
+            if (!IsActive || onCardSelectedCallback == null || cardSlots == null || currentCards == null) return false;
+            if (slotIndex < 0 || slotIndex >= cardSlots.Length || slotIndex >= currentCards.Count) return false;
+
+            CardUI slot = cardSlots[slotIndex];
+            if (slot == null || !slot.gameObject.activeSelf) return false;
+
+            slot.Activate();
+            return true;
+        }
+
+        private void FocusFirstCard()
+        {
+            if (cardSlots == null) return;
+            for (int i = 0; i < cardSlots.Length; i++)
+            {
+                CardUI slot = cardSlots[i];
+                if (slot == null || !slot.gameObject.activeSelf || !slot.IsInteractable) continue;
+                Button btn = slot.CardButton;
+                if (btn != null && btn.interactable)
+                {
+                    UiFocusHelper.SetFirstSelected(btn, inputModeService);
+                    return;
+                }
+            }
         }
 
         private void RefreshHeader()
@@ -178,6 +259,8 @@ namespace ProjectB.LevelUp
 
             if (selectionPanel != null)
                 selectionPanel.SetActive(false);
+
+            UiFocusHelper.ClearSelection();
         }
 
         public void TriggerReroll()
@@ -299,6 +382,10 @@ namespace ProjectB.LevelUp
             {
                 rerollButtonText.text = RerollButtonLabel;
             }
+            if (rerollKeyHint != null)
+            {
+                rerollKeyHint.SetAllowed(showButton && CanRerollCurrentOffer);
+            }
         }
 
         private void StartBounceAnimation()
@@ -379,6 +466,7 @@ namespace ProjectB.LevelUp
                 currentCards = rerolled;
                 RefreshSlots();
                 StartBounceAnimation();
+                FocusFirstCard();
             }
             RefreshRerollButton();
         }

@@ -36,6 +36,7 @@ namespace ProjectB.Core
             builder.Register<UpgradeApplier>(Lifetime.Scoped);
             builder.Register<EnemyRuntimeModifiers>(Lifetime.Scoped);
             builder.Register<EnemyProjectilePool>(Lifetime.Scoped);
+            builder.Register<MoveInputService>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
             builder.RegisterEntryPoint<MetaRunRewardsHandler>().AsSelf();
 

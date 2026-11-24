@@ -39,6 +39,7 @@ namespace ProjectB.UI
         private AchievementData currentData;
 
         public AchievementData Data => currentData;
+        public Button ItemButton => itemButton;
 
         private void Awake()
         {

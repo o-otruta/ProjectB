@@ -26,18 +26,21 @@ namespace ProjectB.UI
 
         private AudioManager audioManager;
         private LocalizationService localization;
+        private InputModeService inputModeService;
         private Action cachedLanguageChanged;
 
         public bool IsOpen => popupPanel != null && popupPanel.activeSelf;
+        public event Action OnClosed;
 
         private LocalizationService ActiveLocalization => localization ?? LocalizationService.Current;
 
         [Inject]
-        public void Construct(AudioManager audioManager, LocalizationService localization = null)
+        public void Construct(AudioManager audioManager, LocalizationService localization = null, InputModeService inputModeService = null)
         {
             UnsubscribeLanguage();
             this.audioManager = audioManager;
             this.localization = localization;
+            this.inputModeService = inputModeService;
             if (isActiveAndEnabled) SubscribeLanguage();
         }
 
@@ -88,6 +91,7 @@ namespace ProjectB.UI
             if (sfxSlider != null) sfxSlider.SetValueWithoutNotify(sfxVol);
             UpdateLabels(musicVol, sfxVol);
             RefreshLanguageButtons();
+            UiFocusHelper.SetFirstSelected(musicSlider != null ? (Selectable)musicSlider : closeButton, inputModeService);
         }
 
         public void Hide()
@@ -95,6 +99,7 @@ namespace ProjectB.UI
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             audioManager?.SaveSettings();
             if (popupPanel != null) popupPanel.SetActive(false);
+            OnClosed?.Invoke();
         }
 
         public void SelectEnglish() => SelectLanguage(SystemLanguage.English);

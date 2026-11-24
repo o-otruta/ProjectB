@@ -17,6 +17,9 @@ namespace ProjectB.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private RectTransform window;
 
+        public bool IsOpen => popupPanel != null && popupPanel.activeSelf;
+        public event System.Action OnClosed;
+
         private void Awake()
         {
             if (closeButton != null)
@@ -68,6 +71,7 @@ namespace ProjectB.UI
                 UiTween.Scale(window, Vector3.one * 0.85f, Vector3.one, UiTheme.Current.durationSlow, 0f, UiEase.OutBack);
             }
             UiAudio.Confirm();
+            UiFocusHelper.SetFirstSelected(closeButton);
         }
 
         public void Hide()
@@ -76,6 +80,7 @@ namespace ProjectB.UI
             {
                 popupPanel.SetActive(false);
             }
+            OnClosed?.Invoke();
         }
     }
 }

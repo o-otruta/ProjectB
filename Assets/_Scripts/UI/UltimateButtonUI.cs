@@ -24,6 +24,7 @@ namespace ProjectB.UI
         [Tooltip("Pulsing glow ring shown while the ultimate is ready.")]
         [SerializeField] private GameObject readyGlow;
         [SerializeField] private bool playReadySfx = true;
+        [SerializeField] private KeyHintBadgeUI keyHintBadge;
 
         private HeroUltimate heroUltimate;
         private int lastDisplayedState = -1; // 0 = ready, 1 = active, 2 = cooldown

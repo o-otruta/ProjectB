@@ -1,6 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
@@ -47,12 +48,17 @@ namespace ProjectB.UI
         [SerializeField] private Transform synergyContainer;
         [SerializeField] private GameObject synergySection;
         [SerializeField] private GameObject synergyChipTemplate;
+        [SerializeField] private KeyHintBadgeUI pauseKeyHint;
 
         private GameManager gameManager;
         private AudioManager audioManager;
         private RunStatistics runStatistics;
         private WaveManager waveManager;
         private HeroAbilities heroAbilities;
+        private GameInputService gameInput;
+        private InputModeService inputModeService;
+        private Action<InputMode> cachedInputModeHandler;
+        private Action cachedSettingsClosedHandler;
         private bool isSubscribedToGameOver;
         private bool isSubscribedToPause;
         private readonly List<AbilityHudSlotUI> buildSlots = new List<AbilityHudSlotUI>(12);
@@ -68,7 +74,9 @@ namespace ProjectB.UI
             AudioManager audioManager = null,
             RunStatistics runStatistics = null,
             WaveManager waveManager = null,
-            HeroAbilities heroAbilities = null)
+            HeroAbilities heroAbilities = null,
+            GameInputService gameInput = null,
+            InputModeService inputModeService = null)
         {
             if (this.gameManager != null)
             {
@@ -84,11 +92,15 @@ namespace ProjectB.UI
                 }
             }
 
+            UnsubscribeInputMode();
+
             this.gameManager = gameManager;
             this.audioManager = audioManager;
             this.runStatistics = runStatistics;
             this.waveManager = waveManager;
             this.heroAbilities = heroAbilities;
+            this.gameInput = gameInput;
+            this.inputModeService = inputModeService;
 
             if (this.gameManager != null)
             {
@@ -103,6 +115,8 @@ namespace ProjectB.UI
                     isSubscribedToPause = true;
                 }
             }
+
+            SubscribeInputMode();
         }
 
         private void Awake()
@@ -116,6 +130,12 @@ namespace ProjectB.UI
             if (musicSlider != null) musicSlider.onValueChanged.AddListener(OnMusicSliderChanged);
             if (sfxSlider != null) sfxSlider.onValueChanged.AddListener(OnSfxSliderChanged);
 
+            if (settingsPopup != null)
+            {
+                cachedSettingsClosedHandler ??= RestorePauseFocus;
+                settingsPopup.OnClosed += cachedSettingsClosedHandler;
+            }
+
             if (synergyChipTemplate != null) synergyChipTemplate.SetActive(false);
             if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
             if (pausePanel != null) pausePanel.SetActive(false);
@@ -123,6 +143,12 @@ namespace ProjectB.UI
 
         private void OnDestroy()
         {
+            UnsubscribeInputMode();
+            if (settingsPopup != null && cachedSettingsClosedHandler != null)
+            {
+                settingsPopup.OnClosed -= cachedSettingsClosedHandler;
+            }
+
             if (pauseButton != null) pauseButton.onClick.RemoveListener(OnPauseClicked);
             if (resumeButton != null) resumeButton.onClick.RemoveListener(OnResumeClicked);
             if (quitToMenuButton != null) quitToMenuButton.onClick.RemoveListener(OnQuitToMenuClicked);
@@ -149,24 +175,70 @@ namespace ProjectB.UI
 
         private void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (gameInput != null && (gameInput.WasPausePressedThisFrame() || gameInput.WasCancelPressedThisFrame()))
             {
-                if (settingsPopup != null && settingsPopup.IsOpen)
-                {
-                    settingsPopup.Hide();
-                }
-                else if (IsQuitConfirmOpen)
-                {
-                    OnCancelQuitClicked();
-                }
-                else if (IsPanelOpen)
-                {
-                    OnResumeClicked();
-                }
-                else if (gameManager != null && gameManager.CanPause)
-                {
-                    OnPauseClicked();
-                }
+                HandlePauseOrBackInput();
+            }
+        }
+
+        public void HandlePauseOrBackInput()
+        {
+            if (settingsPopup != null && settingsPopup.IsOpen)
+            {
+                settingsPopup.Hide();
+            }
+            else if (IsQuitConfirmOpen)
+            {
+                OnCancelQuitClicked();
+            }
+            else if (IsPanelOpen)
+            {
+                OnResumeClicked();
+            }
+            else if (gameManager != null && gameManager.CanPause)
+            {
+                OnPauseClicked();
+            }
+        }
+
+        private void SubscribeInputMode()
+        {
+            if (inputModeService == null) return;
+            cachedInputModeHandler ??= HandleInputModeChanged;
+            inputModeService.InputModeChanged -= cachedInputModeHandler;
+            inputModeService.InputModeChanged += cachedInputModeHandler;
+        }
+
+        private void UnsubscribeInputMode()
+        {
+            if (inputModeService != null && cachedInputModeHandler != null)
+            {
+                inputModeService.InputModeChanged -= cachedInputModeHandler;
+            }
+        }
+
+        private void HandleInputModeChanged(InputMode mode)
+        {
+            if (mode == InputMode.Touch)
+            {
+                UiFocusHelper.ClearSelection();
+            }
+            else if (IsPanelOpen && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
+            {
+                RestorePauseFocus();
+            }
+        }
+
+        private void RestorePauseFocus()
+        {
+            if (!IsPanelOpen) return;
+            if (IsQuitConfirmOpen)
+            {
+                UiFocusHelper.SetFirstSelected(cancelQuitButton, inputModeService);
+            }
+            else if (settingsPopup == null || !settingsPopup.IsOpen)
+            {
+                UiFocusHelper.SetFirstSelected(resumeButton, inputModeService);
             }
         }
 
@@ -220,6 +292,7 @@ namespace ProjectB.UI
             {
                 pausePanel.SetActive(true);
             }
+            UiFocusHelper.SetFirstSelected(resumeButton, inputModeService);
         }
 
         private void HidePausePanel()
@@ -230,6 +303,7 @@ namespace ProjectB.UI
             {
                 pausePanel.SetActive(false);
             }
+            UiFocusHelper.ClearSelection();
         }
 
         public void OnSettingsClicked()
@@ -244,6 +318,7 @@ namespace ProjectB.UI
             if (quitConfirmPanel != null)
             {
                 quitConfirmPanel.SetActive(true);
+                UiFocusHelper.SetFirstSelected(cancelQuitButton, inputModeService);
                 return;
             }
 
@@ -257,6 +332,7 @@ namespace ProjectB.UI
             {
                 quitConfirmPanel.SetActive(false);
             }
+            UiFocusHelper.SetFirstSelected(quitToMenuButton != null ? quitToMenuButton : resumeButton, inputModeService);
         }
 
         public void OnConfirmQuitClicked()

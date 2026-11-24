@@ -589,7 +589,7 @@
   - `CameraController`: гарантированный обзор по короткой стороне + кламп аспекта `~21:9` вместо `targetAspect` / `maintainHorizontalView`; параметры — в `CameraConfig` (SO).
   - Радиус спавна — от проекции фрустума на землю + `spawnMargin`. Кэш пересчитывается по `LayoutModeChanged` и ресайзу. Применить к волнам, Swarm Rush, призывам боссов и `VoidSummoner`.
   - Компас клампится к прямоугольнику экрана за вычетом HUD-зон текущей раскладки.
-- [ ] **14.3. Мультиввод:**
+- [x] **14.3. Мультиввод:**
   - `InputActionAsset` с картами `Gameplay` (`Move`, `Ultimate`, `Pause`) и `UI` (`Navigate`, `Submit`, `Cancel`, `Card1-3`, `Reroll`).
   - `MoveInput`-агрегатор (WASD, стрелки, левый стик, `VirtualJoystick`): нормализация, deadzone, без аллокаций. `HeroMovement` читает агрегатор.
   - Плавающий джойстик в ландшафте; скрыт, если `InputMode != Touch`.

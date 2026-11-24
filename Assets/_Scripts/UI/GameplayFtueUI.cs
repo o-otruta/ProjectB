@@ -47,6 +47,8 @@ namespace ProjectB.UI
         private HeroUltimate heroUltimate;
         private CardSelectionUI cardSelectionUI;
         private GameEventBus eventBus;
+        private MoveInputService moveInputService;
+        private InputModeService inputModeService;
 
         private Action<WaveCompletedEvent> cachedWaveCompletedHandler;
         private Action cachedUltimateChangedHandler;
@@ -84,7 +86,9 @@ namespace ProjectB.UI
             HeroMovement heroMovement = null,
             HeroUltimate heroUltimate = null,
             CardSelectionUI cardSelectionUI = null,
-            GameEventBus eventBus = null)
+            GameEventBus eventBus = null,
+            MoveInputService moveInputService = null,
+            InputModeService inputModeService = null)
         {
             this.saveManager = saveManager;
             this.localization = localization;
@@ -95,6 +99,8 @@ namespace ProjectB.UI
             this.heroUltimate = heroUltimate;
             this.cardSelectionUI = cardSelectionUI;
             this.eventBus = eventBus;
+            this.moveInputService = moveInputService;
+            this.inputModeService = inputModeService;
         }
 
         private void Start()
@@ -148,7 +154,8 @@ namespace ProjectB.UI
                 bool isPlaying = gameManager == null || gameManager.CurrentState == GameState.Playing;
                 if (isPlaying)
                 {
-                    bool joystickMoved = virtualJoystick != null && virtualJoystick.Direction.sqrMagnitude > 0.01f;
+                    bool joystickMoved = (moveInputService != null && moveInputService.Direction.sqrMagnitude > 0.01f)
+                        || (virtualJoystick != null && virtualJoystick.Direction.sqrMagnitude > 0.01f);
                     bool heroMoved = false;
                     if (!joystickMoved && heroMovement != null)
                     {

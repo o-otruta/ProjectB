@@ -1,5 +1,6 @@
 using UnityEngine;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 using ProjectB.UI;
@@ -11,6 +12,7 @@ namespace ProjectB.Player
     public class HeroMovement : MonoBehaviour, ISlowable
     {
         [SerializeField] private HeroData heroData;
+        private MoveInputService moveInput;
         private VirtualJoystick joystick;
         
         [Tooltip("Модель персонажа (должна быть дочерним объектом), чтобы вращать только визуал, не трогая физику")]
@@ -34,11 +36,16 @@ namespace ProjectB.Player
         public float EffectiveMoveSpeed => moveSpeed * CurrentSlowFactor;
 
         [Inject]
-        public void Construct(VirtualJoystick joystick, HeroRuntimeStats runtimeStats, SelectedHeroService selectedHeroService = null)
+        public void Construct(
+            MoveInputService moveInput,
+            HeroRuntimeStats runtimeStats,
+            SelectedHeroService selectedHeroService = null,
+            VirtualJoystick joystick = null)
         {
-            this.joystick = joystick;
+            this.moveInput = moveInput;
             this.runtimeStats = runtimeStats;
             this.selectedHeroService = selectedHeroService;
+            this.joystick = joystick;
         }
 
         void Start()
@@ -92,17 +99,24 @@ namespace ProjectB.Player
             moveSpeed = runtimeStats != null ? runtimeStats.GetMoveSpeed(baseSpeed) : baseSpeed;
         }
 
+        private Vector2 ReadInputDirection()
+        {
+            if (moveInput != null) return moveInput.Direction;
+            return joystick != null ? joystick.Direction : Vector2.zero;
+        }
+
         void FixedUpdate()
         {
-            if (joystick == null || rb == null) return;
+            if (rb == null || (moveInput == null && joystick == null)) return;
             if (hp != null && hp.IsDead) 
             {
                 rb.linearVelocity = Vector3.zero;
                 return;
             }
 
-            // Перемещение по XZ (джойстик X это мирской X, джойстик Y это мирской Z)
-            Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
+            // Перемещение по XZ (ввод X это мирской X, ввод Y это мирской Z)
+            Vector2 input = ReadInputDirection();
+            Vector3 moveDir = new Vector3(input.x, 0f, input.y);
             
             // Устанавливаем скорость напрямую. 
             // Это жестко контролирует движение и сбрасывает любые силы (импульсы),
@@ -123,7 +137,7 @@ namespace ProjectB.Player
             }
 
             HeroData data = activeHeroData != null ? activeHeroData : heroData;
-            if (data == null || joystick == null || Time.deltaTime <= 0f) return;
+            if (data == null || (moveInput == null && joystick == null) || Time.deltaTime <= 0f) return;
             if (hp != null && hp.IsDead)
             {
                 ClearSlow();
@@ -134,7 +148,8 @@ namespace ProjectB.Player
                 return;
             }
 
-            Vector3 moveDir = new Vector3(joystick.Direction.x, 0f, joystick.Direction.y);
+            Vector2 input = ReadInputDirection();
+            Vector3 moveDir = new Vector3(input.x, 0f, input.y);
             bool isMoving = moveDir.sqrMagnitude > 0.01f;
             
             // Плавный поворот визуальной модели в сторону движения (framerate-independent)

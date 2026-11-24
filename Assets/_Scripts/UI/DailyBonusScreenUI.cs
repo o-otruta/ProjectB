@@ -37,6 +37,19 @@ namespace ProjectB.UI
         private string cachedSecondSuffix = "s";
         private Action cachedLanguageChanged;
 
+        public Selectable GetFirstSelectable()
+        {
+            if (claimButton != null && claimButton.gameObject.activeInHierarchy && claimButton.interactable)
+            {
+                return claimButton;
+            }
+            if (claimDoubleButton != null && claimDoubleButton.gameObject.activeInHierarchy && claimDoubleButton.interactable)
+            {
+                return claimDoubleButton;
+            }
+            return UiFocusHelper.FindFirstInteractable(transform);
+        }
+
         [Inject]
         public void Construct(DailyBonusManager bonusManager, AdManager adManager = null)
         {

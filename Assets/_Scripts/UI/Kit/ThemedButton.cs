@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using ProjectB.Core;
+using ProjectB.Data.Platform;
 
 namespace ProjectB.UI
 {
@@ -14,12 +16,14 @@ namespace ProjectB.UI
 
     /// <summary>
     /// Toy-like themed button (Sprint 13.1): face tinted by <see cref="ButtonStyle"/> from <see cref="UiTheme"/>,
-    /// press-scale 0.94, click / confirm SFX, disabled state (dimmed face + label) and an error buzz + shake when
-    /// a disabled button is tapped (e.g. not enough coins). Works on top of a regular <see cref="Button"/>.
+    /// press-scale 0.94, hover/select scale (Sprint 14.3), click / confirm SFX, disabled state (dimmed face + label)
+    /// and an error buzz + shake when a disabled button is tapped (e.g. not enough coins). Works on top of a regular <see cref="Button"/>.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
-    public class ThemedButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, IPointerClickHandler
+    public class ThemedButton : MonoBehaviour,
+        IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler,
+        ISelectHandler, IDeselectHandler, ISubmitHandler
     {
         [SerializeField] private ButtonStyle style = ButtonStyle.Primary;
         [SerializeField] private Image faceImage;
@@ -29,11 +33,16 @@ namespace ProjectB.UI
         [SerializeField] private bool errorFeedbackWhenDisabled = true;
         [SerializeField] private bool tintIcon = true;
         [SerializeField] private bool keepCustomSprite;
+        [SerializeField, Range(1f, 1.15f)] private float hoverScale = 1.04f;
 
         private Button button;
         private RectTransform rectTransform;
+        private InputModeService inputModeService;
+        private InputConfig inputConfig;
         private bool lastInteractable = true;
         private bool pressed;
+        private bool hovered;
+        private bool selected;
         private Vector3 restScale = Vector3.one;
 
         public ButtonStyle Style => style;
@@ -41,6 +50,10 @@ namespace ProjectB.UI
         public TMP_Text Label => label;
         public Image Face => faceImage;
         public Image Icon => icon;
+        public bool IsHovered => hovered;
+        public bool IsSelected => selected;
+
+        private float EffectiveHoverScale => inputConfig != null ? inputConfig.buttonHoverScale : hoverScale;
 
         private void Awake()
         {
@@ -53,6 +66,11 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+            {
+                if (inputModeService == null) RootServices.TryResolve(out inputModeService);
+                if (inputConfig == null) RootServices.TryResolve(out inputConfig);
+            }
             lastInteractable = Button.interactable;
             ApplyInteractableVisuals(lastInteractable);
         }
@@ -60,6 +78,8 @@ namespace ProjectB.UI
         private void OnDisable()
         {
             pressed = false;
+            hovered = false;
+            selected = false;
             transform.localScale = restScale;
         }
 
@@ -111,7 +131,7 @@ namespace ProjectB.UI
                 ColorBlock block = button.colors;
                 block.normalColor = Color.white;
                 block.highlightedColor = theme.hoverTint;
-                block.selectedColor = Color.white;
+                block.selectedColor = Color.Lerp(Color.white, theme.gold, 0.25f);
                 block.pressedColor = theme.pressedTint;
                 block.disabledColor = theme.disabledTint;
                 block.colorMultiplier = 1f;
@@ -137,6 +157,21 @@ namespace ProjectB.UI
                 c.a = interactable ? 1f : 0.55f;
                 icon.color = c;
             }
+            if (!interactable)
+            {
+                hovered = false;
+                selected = false;
+                pressed = false;
+                transform.localScale = restScale;
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (!Button.interactable) return;
+            if (inputModeService != null && inputModeService.Mode == InputMode.Touch) return;
+            hovered = true;
+            if (!pressed) ApplyHoverOrRestScale();
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -156,17 +191,65 @@ namespace ProjectB.UI
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            hovered = false;
             if (pressed) Release();
+            else ApplyHoverOrRestScale();
+        }
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            if (!Button.interactable) return;
+            if (inputModeService != null && inputModeService.Mode == InputMode.Touch) return;
+            selected = true;
+            if (!pressed) ApplyHoverOrRestScale();
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            selected = false;
+            if (!pressed) ApplyHoverOrRestScale();
+        }
+
+        private void ApplyHoverOrRestScale()
+        {
+            Vector3 target = (hovered || selected) ? restScale * EffectiveHoverScale : restScale;
+            if (Application.isPlaying)
+            {
+                UiTween.Kill(transform, complete: false);
+                UiTween.Scale(transform, transform.localScale, target, UiTheme.Current.durationFast, 0f, UiEase.OutCubic);
+            }
+            else
+            {
+                transform.localScale = target;
+            }
         }
 
         private void Release()
         {
             if (!pressed) return;
             pressed = false;
-            UiTween.Scale(transform, transform.localScale, restScale, UiTheme.Current.durationNormal, 0f, UiEase.OutBack);
+            Vector3 target = (hovered || selected) ? restScale * EffectiveHoverScale : restScale;
+            if (Application.isPlaying)
+            {
+                UiTween.Scale(transform, transform.localScale, target, UiTheme.Current.durationNormal, 0f, UiEase.OutBack);
+            }
+            else
+            {
+                transform.localScale = target;
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
+        {
+            PlayClickFeedback();
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            PlayClickFeedback();
+        }
+
+        private void PlayClickFeedback()
         {
             if (!Button.interactable)
             {

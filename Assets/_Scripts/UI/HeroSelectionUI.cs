@@ -73,6 +73,21 @@ namespace ProjectB.UI
         private Action cachedLanguageChanged;
 
         public int CurrentIndex => currentIndex;
+        public Button StartRunButton => startRunButton;
+        public Button NextHeroButton => nextHeroButton;
+
+        public Selectable GetFirstSelectable()
+        {
+            if (startRunButton != null && startRunButton.gameObject.activeInHierarchy && startRunButton.interactable)
+            {
+                return startRunButton;
+            }
+            if (nextHeroButton != null && nextHeroButton.gameObject.activeInHierarchy && nextHeroButton.interactable)
+            {
+                return nextHeroButton;
+            }
+            return UiFocusHelper.FindFirstInteractable(transform);
+        }
 
         [Inject]
         public void Construct(

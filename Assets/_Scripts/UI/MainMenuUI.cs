@@ -1,4 +1,7 @@
+using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Core;
@@ -51,6 +54,11 @@ namespace ProjectB.UI
         private AudioManager audioManager;
         private MetaUpgradeManager metaUpgradeManager;
         private LocalizationService localization;
+        private GameInputService gameInput;
+        private InputModeService inputModeService;
+        private HeroSelectionUI heroSelectionUI;
+        private Action<InputMode> cachedInputModeHandler;
+        private Action cachedSettingsClosedHandler;
         private int previewCullingMask = -1;
         private bool previewActive = true;
         private int selectedTab = -1;
@@ -67,14 +75,19 @@ namespace ProjectB.UI
             AchievementManager achievementManager = null,
             AudioManager audioManager = null,
             MetaUpgradeManager metaUpgradeManager = null,
-            LocalizationService localization = null)
+            LocalizationService localization = null,
+            GameInputService gameInput = null,
+            InputModeService inputModeService = null)
         {
+            UnsubscribeInputMode();
             this.saveManager = saveManager;
             this.bonusManager = bonusManager;
             this.achievementManager = achievementManager;
             this.audioManager = audioManager;
             this.metaUpgradeManager = metaUpgradeManager;
             this.localization = localization;
+            this.gameInput = gameInput;
+            this.inputModeService = inputModeService;
 
             if (this.saveManager != null)
             {
@@ -102,12 +115,19 @@ namespace ProjectB.UI
                 this.localization.LanguageChanged += RefreshFtueTexts;
             }
 
+            SubscribeInputMode();
             RefreshFtueTexts();
         }
 
         private void Awake()
         {
             if (previewCamera != null) previewCullingMask = previewCamera.cullingMask;
+            if (playScreenPanel != null) heroSelectionUI = playScreenPanel.GetComponentInChildren<HeroSelectionUI>(true);
+            if (settingsPopupUI != null)
+            {
+                cachedSettingsClosedHandler ??= FocusCurrentTab;
+                settingsPopupUI.OnClosed += cachedSettingsClosedHandler;
+            }
         }
 
         private void Start()
@@ -119,8 +139,55 @@ namespace ProjectB.UI
             OpenPlayTab(playSound: false);
         }
 
+        private void Update()
+        {
+            if (gameInput != null && gameInput.WasCancelPressedThisFrame())
+            {
+                HandleCancelInput();
+            }
+        }
+
+        public void HandleCancelInput()
+        {
+            if (settingsPopupUI != null && settingsPopupUI.IsOpen)
+            {
+                settingsPopupUI.Hide();
+                return;
+            }
+
+            if (achievementScreenUI != null && achievementScreenUI.IsRewardPopupOpen)
+            {
+                achievementScreenUI.HideRewardPopup();
+                FocusCurrentTab();
+                return;
+            }
+
+            if (constellationTreeUI != null && constellationTreeUI.IsOpen)
+            {
+                if (constellationTreeUI.IsDetailOpen)
+                {
+                    constellationTreeUI.CloseDetail();
+                }
+                else
+                {
+                    constellationTreeUI.HandleBack();
+                }
+                return;
+            }
+
+            if (selectedTab != TAB_PLAY)
+            {
+                OpenPlayTab(playSound: true);
+            }
+        }
+
         private void OnDestroy()
         {
+            UnsubscribeInputMode();
+            if (settingsPopupUI != null && cachedSettingsClosedHandler != null)
+            {
+                settingsPopupUI.OnClosed -= cachedSettingsClosedHandler;
+            }
             if (saveManager != null)
             {
                 saveManager.OnDataChanged -= UpdateCoinsDisplay;
@@ -310,6 +377,7 @@ namespace ProjectB.UI
                 playScreenPanel.SetActive(true);
             }
             SetHeroPreviewActive(true);
+            FocusCurrentTab();
         }
 
         public void OnUpgradesClicked()
@@ -331,6 +399,7 @@ namespace ProjectB.UI
             {
                 Debug.LogWarning("[MainMenuUI] MetaUpgradeUI reference is missing!");
             }
+            FocusCurrentTab();
         }
 
         public void OnAbilitiesClicked()
@@ -346,6 +415,7 @@ namespace ProjectB.UI
             {
                 Debug.LogWarning("[MainMenuUI] AbilitiesScreenUI reference is missing!");
             }
+            FocusCurrentTab();
         }
 
         public void OnAchievementsClicked()
@@ -360,6 +430,7 @@ namespace ProjectB.UI
             {
                 achievementScreenUI.gameObject.SetActive(true);
             }
+            FocusCurrentTab();
         }
 
         public void OnBonusClicked()
@@ -372,6 +443,71 @@ namespace ProjectB.UI
             {
                 dailyBonusScreenUI.gameObject.SetActive(true);
             }
+            FocusCurrentTab();
+        }
+
+        private void SubscribeInputMode()
+        {
+            if (inputModeService == null) return;
+            cachedInputModeHandler ??= HandleInputModeChanged;
+            inputModeService.InputModeChanged -= cachedInputModeHandler;
+            inputModeService.InputModeChanged += cachedInputModeHandler;
+        }
+
+        private void UnsubscribeInputMode()
+        {
+            if (inputModeService != null && cachedInputModeHandler != null)
+            {
+                inputModeService.InputModeChanged -= cachedInputModeHandler;
+            }
+        }
+
+        private void HandleInputModeChanged(InputMode mode)
+        {
+            if (mode == InputMode.Touch)
+            {
+                UiFocusHelper.ClearSelection();
+            }
+            else if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
+            {
+                FocusCurrentTab();
+            }
+        }
+
+        public void FocusCurrentTab()
+        {
+            if (settingsPopupUI != null && settingsPopupUI.IsOpen) return;
+            if (constellationTreeUI != null && constellationTreeUI.IsOpen) return;
+
+            Selectable target = null;
+            switch (selectedTab)
+            {
+                case TAB_PLAY:
+                    if (heroSelectionUI == null && playScreenPanel != null)
+                    {
+                        heroSelectionUI = playScreenPanel.GetComponentInChildren<HeroSelectionUI>(true);
+                    }
+                    target = heroSelectionUI != null ? heroSelectionUI.GetFirstSelectable() : null;
+                    break;
+                case TAB_UPGRADES:
+                    target = metaUpgradeUI != null ? metaUpgradeUI.GetFirstSelectable() : null;
+                    break;
+                case TAB_ABILITIES:
+                    target = abilitiesScreenUI != null ? abilitiesScreenUI.GetFirstSelectable() : null;
+                    break;
+                case TAB_ACHIEVEMENTS:
+                    target = achievementScreenUI != null ? achievementScreenUI.GetFirstSelectable() : null;
+                    break;
+                case TAB_BONUS:
+                    target = dailyBonusScreenUI != null ? dailyBonusScreenUI.GetFirstSelectable() : null;
+                    break;
+            }
+
+            if (target == null && tabBar != null)
+            {
+                target = UiFocusHelper.FindFirstInteractable(tabBar.transform);
+            }
+            UiFocusHelper.SetFirstSelected(target, inputModeService);
         }
 
         public void OnSettingsClicked()

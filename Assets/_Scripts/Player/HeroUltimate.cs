@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using VContainer;
 using ProjectB.Combat;
 using ProjectB.Core;
@@ -43,6 +42,7 @@ namespace ProjectB.Player
         private GameEventBus eventBus;
         private HeroRuntimeStats runtimeStats;
         private RunStatistics runStatistics;
+        private GameInputService gameInput;
 
         private HeroData activeHeroData;
         private HeroUltimateType activeUltimateType;
@@ -99,7 +99,8 @@ namespace ProjectB.Player
             SelectedHeroService selectedHeroService = null,
             GameEventBus eventBus = null,
             HeroRuntimeStats runtimeStats = null,
-            RunStatistics runStatistics = null)
+            RunStatistics runStatistics = null,
+            GameInputService gameInput = null)
         {
             this.heroHealth = heroHealth;
             this.gameManager = gameManager;
@@ -107,6 +108,7 @@ namespace ProjectB.Player
             this.eventBus = eventBus;
             this.runtimeStats = runtimeStats;
             this.runStatistics = runStatistics;
+            this.gameInput = gameInput;
         }
 
         private void Awake()
@@ -186,8 +188,7 @@ namespace ProjectB.Player
             if (heroHealth != null && heroHealth.IsDead) return;
             if (gameManager != null && gameManager.CurrentState != GameState.Playing) return;
 
-            // Optional desktop/editor shortcut for testing
-            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            if (gameInput != null && gameInput.WasUltimatePressedThisFrame())
             {
                 TryActivate();
             }

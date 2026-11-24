@@ -35,6 +35,8 @@ namespace ProjectB.UI
         private readonly List<Image> segments = new List<Image>(20);
         private int lastLevel = -1;
 
+        public Button BuyButton => buyButton;
+
         public void Setup(MetaUpgradeData data, MetaUpgradeManager manager)
         {
             this.upgradeData = data;

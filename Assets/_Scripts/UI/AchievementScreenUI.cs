@@ -30,6 +30,22 @@ namespace ProjectB.UI
         private readonly List<AchievementData> sortBuffer = new List<AchievementData>(32);
         private Action cachedLanguageChanged;
 
+        public bool IsRewardPopupOpen => rewardPopup != null && rewardPopup.IsOpen;
+        public void HideRewardPopup() => rewardPopup?.Hide();
+
+        public UnityEngine.UI.Selectable GetFirstSelectable()
+        {
+            for (int i = 0; i < spawnedItems.Count; i++)
+            {
+                if (spawnedItems[i] != null && spawnedItems[i].ItemButton != null &&
+                    spawnedItems[i].ItemButton.gameObject.activeInHierarchy && spawnedItems[i].ItemButton.interactable)
+                {
+                    return spawnedItems[i].ItemButton;
+                }
+            }
+            return UiFocusHelper.FindFirstInteractable(transform);
+        }
+
         [Inject]
         public void Construct(AchievementManager achievementManager, SaveManager saveManager)
         {

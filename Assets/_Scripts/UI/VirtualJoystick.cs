@@ -1,5 +1,10 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using VContainer;
+using ProjectB.Core;
+using ProjectB.Data.Platform;
 
 namespace ProjectB.UI
 {
@@ -8,6 +13,7 @@ namespace ProjectB.UI
         [Header("Components")]
         [SerializeField] private RectTransform background;
         [SerializeField] private RectTransform handle;
+        [SerializeField] private CanvasGroup canvasGroup;
 
         [Header("Limit & Sensitivity Settings")]
         [Tooltip("Автоматически рассчитывать лимит хода ручки из радиуса фона (background.rect.width * 0.5f).")]
@@ -34,8 +40,38 @@ namespace ProjectB.UI
         [SerializeField] private bool isFloating = true;
 
         private Canvas parentCanvas;
+        private Graphic raycastGraphic;
+        private InputModeService inputModeService;
+        private LayoutModeService layoutModeService;
+        private InputConfig inputConfig;
+        private Action<InputMode> cachedInputModeHandler;
+        private Action<LayoutMode> cachedLayoutModeHandler;
 
         public Vector2 Direction { get; private set; }
+        public bool IsFloating => isFloating || (layoutModeService != null && layoutModeService.IsLandscape && (inputConfig == null || inputConfig.floatingJoystickInLandscape));
+        public bool IsVisibleForTouch => inputModeService == null || inputModeService.Mode == InputMode.Touch;
+
+        [Inject]
+        public void Construct(
+            InputModeService inputModeService = null,
+            LayoutModeService layoutModeService = null,
+            InputConfig inputConfig = null)
+        {
+            BindServices(inputModeService, layoutModeService, inputConfig);
+        }
+
+        public void BindServices(
+            InputModeService inputMode,
+            LayoutModeService layoutMode = null,
+            InputConfig config = null)
+        {
+            UnsubscribeServices();
+            inputModeService = inputMode;
+            layoutModeService = layoutMode;
+            if (config != null) inputConfig = config;
+            if (isActiveAndEnabled) SubscribeServices();
+            ApplyVisibilityAndMode();
+        }
 
         private float VisualHandleLimit
         {
@@ -84,6 +120,20 @@ namespace ProjectB.UI
         private void Awake()
         {
             parentCanvas = GetComponentInParent<Canvas>();
+            if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+            raycastGraphic = GetComponent<Graphic>();
+        }
+
+        private void OnEnable()
+        {
+            if (Application.isPlaying)
+            {
+                if (inputModeService == null) RootServices.TryResolve(out inputModeService);
+                if (layoutModeService == null) RootServices.TryResolve(out layoutModeService);
+                if (inputConfig == null) RootServices.TryResolve(out inputConfig);
+            }
+            SubscribeServices();
+            ApplyVisibilityAndMode();
         }
 
         private Canvas GetCanvas()
@@ -97,15 +147,14 @@ namespace ProjectB.UI
 
         private void Start()
         {
-            if (isFloating && background != null)
-            {
-                background.gameObject.SetActive(false);
-            }
+            ApplyVisibilityAndMode();
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (isFloating && background != null)
+            if (!IsVisibleForTouch) return;
+
+            if (IsFloating && background != null)
             {
                 background.gameObject.SetActive(true);
                 
@@ -124,6 +173,7 @@ namespace ProjectB.UI
 
         public void OnDrag(PointerEventData eventData)
         {
+            if (!IsVisibleForTouch) return;
             if (background == null || handle == null) return;
 
             // Преобразуем координаты экрана в локальные координаты фона джойстика
@@ -171,7 +221,78 @@ namespace ProjectB.UI
 
         private void OnDisable()
         {
+            UnsubscribeServices();
             ResetJoystick();
+        }
+
+        private void SubscribeServices()
+        {
+            if (inputModeService != null)
+            {
+                cachedInputModeHandler ??= HandleInputModeChanged;
+                inputModeService.InputModeChanged -= cachedInputModeHandler;
+                inputModeService.InputModeChanged += cachedInputModeHandler;
+            }
+            if (layoutModeService != null)
+            {
+                cachedLayoutModeHandler ??= HandleLayoutModeChanged;
+                layoutModeService.LayoutModeChanged -= cachedLayoutModeHandler;
+                layoutModeService.LayoutModeChanged += cachedLayoutModeHandler;
+            }
+        }
+
+        private void UnsubscribeServices()
+        {
+            if (inputModeService != null && cachedInputModeHandler != null)
+            {
+                inputModeService.InputModeChanged -= cachedInputModeHandler;
+            }
+            if (layoutModeService != null && cachedLayoutModeHandler != null)
+            {
+                layoutModeService.LayoutModeChanged -= cachedLayoutModeHandler;
+            }
+        }
+
+        private void HandleInputModeChanged(InputMode _)
+        {
+            ApplyVisibilityAndMode();
+        }
+
+        private void HandleLayoutModeChanged(LayoutMode _)
+        {
+            ApplyVisibilityAndMode();
+        }
+
+        public void ApplyVisibilityAndMode()
+        {
+            bool visible = IsVisibleForTouch;
+            if (!visible)
+            {
+                ResetJoystick();
+            }
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = visible ? 1f : 0f;
+                canvasGroup.blocksRaycasts = visible;
+                canvasGroup.interactable = visible;
+            }
+            else if (raycastGraphic != null)
+            {
+                raycastGraphic.raycastTarget = visible;
+            }
+
+            if (background != null)
+            {
+                if (!visible || IsFloating)
+                {
+                    background.gameObject.SetActive(false);
+                }
+                else
+                {
+                    background.gameObject.SetActive(true);
+                }
+            }
         }
 
         public void ResetJoystick()
@@ -183,7 +304,7 @@ namespace ProjectB.UI
                 handle.anchoredPosition = Vector2.zero;
             }
 
-            if (isFloating && background != null)
+            if ((IsFloating || !IsVisibleForTouch) && background != null)
             {
                 background.gameObject.SetActive(false);
             }

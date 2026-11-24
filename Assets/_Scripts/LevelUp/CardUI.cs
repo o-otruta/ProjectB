@@ -13,7 +13,7 @@ namespace ProjectB.LevelUp
     /// a category tag (<c>NEW ACTIVE</c> / <c>UPGRADE</c> / <c>WEAPON</c>…), a level / delta badge, a moving shine on
     /// Legendary cards and a lock + <c>▶ AD</c> badge on the rewarded third card.
     /// </summary>
-    public class CardUI : MonoBehaviour, IPointerClickHandler
+    public class CardUI : MonoBehaviour, IPointerClickHandler, ISubmitHandler
     {
         [SerializeField] private TMP_Text nameText;
         [SerializeField] private TMP_Text descriptionText;
@@ -34,6 +34,7 @@ namespace ProjectB.LevelUp
         [SerializeField] private GameObject lockOverlay;
         [SerializeField] private RectTransform shine;
         [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private KeyHintBadgeUI keyHintBadge;
 
         private CardData currentData;
         private Action<CardData> onCardClicked;
@@ -47,6 +48,7 @@ namespace ProjectB.LevelUp
 
         public bool IsInteractable => isInteractable;
         public CardData CurrentData => currentData;
+        public Button CardButton => buttonChecked ? cachedButton : (cachedButton = GetComponent<Button>());
         public string AdBadgeLabel => currentAdBadgeLabel;
         public string LevelBadgeLabel => levelBadgeText != null ? levelBadgeText.text : currentLevelBadgeLabel;
         public bool IsLevelBadgeVisible => levelBadgeObject != null
@@ -76,6 +78,10 @@ namespace ProjectB.LevelUp
             if (cachedButton != null)
             {
                 cachedButton.interactable = isInteractable;
+            }
+            if (keyHintBadge != null)
+            {
+                keyHintBadge.SetAllowed(isInteractable);
             }
 
             SetDimmed(false);
@@ -193,6 +199,16 @@ namespace ProjectB.LevelUp
         }
 
         public void OnPointerClick(PointerEventData eventData)
+        {
+            Activate();
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            Activate();
+        }
+
+        public void Activate()
         {
             if (!isInteractable)
             {
