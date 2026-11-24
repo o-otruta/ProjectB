@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Boomerang: +5 Damage'
   description: Increases Boomerang damage by 5.
+  nameKey: card.mod.boomerang_mod_damage.name
+  descriptionKey: card.mod.boomerang_mod_damage.desc
   icon: {fileID: 21300000, guid: 6113316d637140b4892241c066a84ef2, type: 3}
   rarity: 1
   isConsumable: 0

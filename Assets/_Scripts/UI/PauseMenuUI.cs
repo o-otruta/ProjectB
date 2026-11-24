@@ -334,7 +334,7 @@ namespace ProjectB.UI
                 GameObject chip = GetSynergyChip(i);
                 chip.SetActive(true);
                 var label = chip.GetComponentInChildren<TMP_Text>(true);
-                if (label != null) label.text = syn != null ? syn.synergyName : string.Empty;
+                if (label != null) label.text = syn != null ? Loc.Name(syn) : string.Empty;
                 var icons = chip.GetComponentsInChildren<Image>(true);
                 for (int k = 0; k < icons.Length; k++)
                 {

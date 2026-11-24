@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 using VContainer;
@@ -107,7 +108,7 @@ namespace ProjectB.UI
 
             if (titleText != null)
             {
-                titleText.text = data.title;
+                titleText.text = Loc.Title(data);
             }
 
             if (subtitleText != null)
@@ -118,14 +119,14 @@ namespace ProjectB.UI
 
         private static string FormatSubtitle(AchievementData data)
         {
-            if (data == null) return "Achievement Unlocked!";
+            if (data == null) return Loc.Get("ui.achievements.unlocked_title", "Achievement Unlocked!");
             if (data.rewardType == AchievementRewardType.GiveCoins)
             {
-                return $"Achievement Unlocked! +{data.rewardValue} Coins";
+                return Loc.Format("ui.achievements.unlocked_coins", data.rewardValue);
             }
 
             string formatted = RewardDisplayFormatter.FormatReward(data);
-            return !string.IsNullOrEmpty(formatted) ? formatted : "Achievement Unlocked!";
+            return !string.IsNullOrEmpty(formatted) ? formatted : Loc.Get("ui.achievements.unlocked_title", "Achievement Unlocked!");
         }
     }
 }

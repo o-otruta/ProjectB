@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.Data;
 
 namespace ProjectB.UI
@@ -41,14 +42,14 @@ namespace ProjectB.UI
         {
             if (achievement == null) return;
 
-            if (titleText != null) titleText.text = "Reward Unlocked!";
+            if (titleText != null) titleText.text = Loc.Get("ui.achievements.reward_unlocked", "Reward Unlocked!");
 
             if (descriptionText != null)
             {
                 string formatted = RewardDisplayFormatter.FormatReward(achievement, abilityCatalog);
                 descriptionText.text = !string.IsNullOrEmpty(formatted)
-                    ? $"<b>{achievement.title}</b>\n{formatted}"
-                    : "Reward Unlocked!";
+                    ? $"<b>{Loc.Title(achievement)}</b>\n{formatted}"
+                    : Loc.Get("ui.achievements.reward_unlocked", "Reward Unlocked!");
             }
 
             if (rewardIconImage != null)

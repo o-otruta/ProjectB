@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data.Enemies;
 
@@ -46,9 +47,11 @@ namespace ProjectB.Enemies
             float summonCd = data != null && data.summonCooldown > 0f ? data.summonCooldown : 10f;
             nextSummonTime = Time.time + summonCd * 0.6f;
 
-            string displayName = data != null && !string.IsNullOrEmpty(data.bossDisplayName)
-                ? data.bossDisplayName
-                : "Boss";
+            string displayName = data != null ? Loc.Name(data) : string.Empty;
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = Loc.Get("ui.hud.boss", "Boss");
+            }
 
             eventBus?.Publish(new BossSpawnedEvent(BossId, displayName, currentHp, maxHp, isMiniBoss));
         }

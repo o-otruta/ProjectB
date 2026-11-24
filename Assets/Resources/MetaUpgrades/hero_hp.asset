@@ -15,6 +15,8 @@ MonoBehaviour:
   id: hero_hp
   displayName: Hero HP
   description: Increases max health.
+  nameKey: upgrade.hero_hp.name
+  descriptionKey: upgrade.hero_hp.desc
   icon: {fileID: 21300000, guid: f3e3660be1dded24aa025c09abd355c1, type: 3}
   baseCost: 80
   costMultiplier: 1.22

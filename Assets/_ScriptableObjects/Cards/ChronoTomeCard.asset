@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Chrono Tome
   description: Reduces cooldowns of all active abilities by +10% (up to 50% total).
+  nameKey: card.ability.chrono_tome_card.name
+  descriptionKey: card.ability.chrono_tome_card.desc
   icon: {fileID: 21300000, guid: e47f4d0b997f3764f859b7e3591ceda4, type: 3}
   rarity: 1
   isConsumable: 1

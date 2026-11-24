@@ -61,10 +61,10 @@ namespace ProjectB.LevelUp
             get
             {
                 if (onRerollCallback == null) return string.Empty;
-                if (hasRerolledThisLevelUp) return "Rerolled";
-                if (freeRerollsAvailable > 0) return $"Reroll · Free ×{freeRerollsAvailable}";
-                if (adManager != null && adManager.CanShowRewarded()) return "<sprite name=\"ad\"> Reroll";
-                return "Reroll unavailable";
+                if (hasRerolledThisLevelUp) return Loc.Get("ui.levelup.rerolled", "Rerolled");
+                if (freeRerollsAvailable > 0) return Loc.Format("ui.levelup.reroll_free", freeRerollsAvailable);
+                if (adManager != null && adManager.CanShowRewarded()) return Loc.Get("ui.levelup.reroll_ad", "<sprite name=\"ad\"> Reroll");
+                return Loc.Get("ui.levelup.reroll_unavailable", "Reroll unavailable");
             }
         }
 
@@ -162,10 +162,10 @@ namespace ProjectB.LevelUp
 
         private void RefreshHeader()
         {
-            if (titleText != null) titleText.text = "LEVEL UP!";
+            if (titleText != null) titleText.text = Loc.Get("ui.levelup.title", "LEVEL UP!");
             if (levelText != null && heroExperience != null)
             {
-                int len = UiFormat.WriteString(levelBuffer, 0, "Level ");
+                int len = UiFormat.WriteString(levelBuffer, 0, Loc.Get("ui.levelup.level_prefix", "Level "));
                 len = UiFormat.WriteInt(levelBuffer, len, heroExperience.CurrentLevel);
                 levelText.SetCharArray(levelBuffer, 0, len);
             }
@@ -193,15 +193,15 @@ namespace ProjectB.LevelUp
                     if (abilityCard.abilityData != null && abilityCard.abilityData.type == AbilityType.Passive)
                     {
                         badgeColor = new Color(0.14f, 0.64f, 0.76f, 1f);
-                        return "NEW PASSIVE";
+                        return Loc.Get("ui.card.new_passive", "NEW PASSIVE");
                     }
                     if (abilityCard.abilityData != null && abilityCard.abilityData.type == AbilityType.Active)
                     {
                         badgeColor = new Color(0.86f, 0.44f, 0.14f, 1f);
-                        return "NEW ACTIVE";
+                        return Loc.Get("ui.card.new_active", "NEW ACTIVE");
                     }
                     badgeColor = new Color(0.18f, 0.72f, 0.32f, 1f);
-                    return "NEW!";
+                    return Loc.Get("ui.card.new", "NEW!");
 
                 case AbilityModifierCardData modCard:
                     badgeColor = new Color(0.16f, 0.56f, 0.88f, 1f);
@@ -214,15 +214,15 @@ namespace ProjectB.LevelUp
                         {
                             badgeColor = new Color(0.95f, 0.72f, 0.14f, 1f);
                             string tierLabel = ActiveAbility.GetOverdriveTierLabel(ActiveAbility.CalculateOverdriveTier(next));
-                            return $"Lv {cur} -> Lv {next} {tierLabel}";
+                            return Loc.Format("ui.card.lv_progress_od", cur, next, tierLabel);
                         }
-                        return $"Lv {cur} -> Lv {next}";
+                        return Loc.Format("ui.card.lv_progress", cur, next);
                     }
-                    return "UPGRADE";
+                    return Loc.Get("ui.card.upgrade", "UPGRADE");
 
                 case StatUpgradeCardData:
                     badgeColor = new Color(0.45f, 0.35f, 0.72f, 1f);
-                    return "STAT BOOST";
+                    return Loc.Get("ui.card.stat_boost", "STAT BOOST");
 
                 default:
                     badgeColor = Color.clear;

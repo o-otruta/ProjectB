@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -101,6 +102,7 @@ namespace ProjectB.UI
         private MainMenuUI mainMenu;
         private bool built;
         private TalentNodeData selectedNode;
+        private Action cachedLanguageChanged;
 
         public bool IsBuilt => built;
         public int NodeViewCount => nodeViews.Count;
@@ -132,6 +134,21 @@ namespace ProjectB.UI
             if (unlockButton != null) unlockButton.onClick.AddListener(() => TryUnlockSelected(false));
             if (unlockCoinsButton != null) unlockCoinsButton.onClick.AddListener(() => TryUnlockSelected(true));
             if (backButton != null) backButton.onClick.AddListener(HandleBack);
+        }
+
+        private void OnEnable()
+        {
+            cachedLanguageChanged ??= RefreshAll;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
         }
 
         private void OnDestroy()
@@ -395,12 +412,14 @@ namespace ProjectB.UI
             {
                 int shards = talentTree != null ? talentTree.BossShards : 0;
                 int coins = saveManager?.Data != null ? saveManager.Data.coins : 0;
-                shardsText.text = $"<color=#C59BFF>Boss Shards: {shards}</color>   <color=#FFD54A>Coins: {coins}</color>";
+                string shardsPart = Loc.Format("ui.constellation.boss_shards", shards);
+                string coinsPart = Loc.Format("ui.constellation.coins", coins);
+                shardsText.text = $"<color=#C59BFF>{shardsPart}</color>   <color=#FFD54A>{coinsPart}</color>";
             }
             if (progressText != null && talentTree != null)
             {
                 int total = Mathf.Max(0, talentTree.Nodes.Count - 1);
-                progressText.text = $"Stars lit: {talentTree.UnlockedCount}/{total}";
+                progressText.text = Loc.Format("ui.constellation.stars_lit", talentTree.UnlockedCount, total);
             }
         }
 
@@ -451,9 +470,9 @@ namespace ProjectB.UI
                 detailIcon.sprite = node.icon;
                 detailIcon.enabled = node.icon != null;
             }
-            if (detailTitle != null) detailTitle.text = node.displayName;
+            if (detailTitle != null) detailTitle.text = Loc.Name(node);
             if (detailType != null) detailType.text = DescribeType(node);
-            if (detailDescription != null) detailDescription.text = node.description;
+            if (detailDescription != null) detailDescription.text = Loc.Desc(node);
 
             bool canShards = talentTree.CanUnlock(node.id, false) == TalentUnlockResult.Success;
             bool canCoins = talentTree.CanUnlock(node.id, true) == TalentUnlockResult.Success;
@@ -462,9 +481,11 @@ namespace ProjectB.UI
             {
                 detailStatus.text = state switch
                 {
-                    TalentNodeState.Unlocked => "<color=#FFD54A>UNLOCKED</color>",
-                    TalentNodeState.Available => canShards || canCoins ? "<color=#8FD3FF>Ready to unlock</color>" : "<color=#FF8A80>Not enough Boss Shards</color>",
-                    _ => "<color=#9AA0B8>Unlock a connected star first</color>"
+                    TalentNodeState.Unlocked => $"<color=#FFD54A>{Loc.Get("ui.constellation.status_unlocked", "UNLOCKED")}</color>",
+                    TalentNodeState.Available => canShards || canCoins
+                        ? $"<color=#8FD3FF>{Loc.Get("ui.constellation.status_ready", "Ready to unlock")}</color>"
+                        : $"<color=#FF8A80>{Loc.Get("ui.constellation.status_no_shards", "Not enough Boss Shards")}</color>",
+                    _ => $"<color=#9AA0B8>{Loc.Get("ui.constellation.status_locked", "Unlock a connected star first")}</color>"
                 };
             }
 
@@ -472,7 +493,7 @@ namespace ProjectB.UI
             {
                 unlockButton.gameObject.SetActive(state != TalentNodeState.Unlocked && node.nodeType != TalentNodeType.Origin);
                 unlockButton.interactable = canShards;
-                if (unlockButtonText != null) unlockButtonText.text = $"UNLOCK  {node.shardCost} SHARDS";
+                if (unlockButtonText != null) unlockButtonText.text = Loc.Format("ui.constellation.unlock_shards", node.shardCost);
             }
 
             if (unlockCoinsButton != null)
@@ -480,7 +501,7 @@ namespace ProjectB.UI
                 bool showCoins = state != TalentNodeState.Unlocked && node.coinCost > 0;
                 unlockCoinsButton.gameObject.SetActive(showCoins);
                 unlockCoinsButton.interactable = canCoins;
-                if (unlockCoinsButtonText != null) unlockCoinsButtonText.text = $"{node.coinCost} COINS";
+                if (unlockCoinsButtonText != null) unlockCoinsButtonText.text = Loc.Format("ui.constellation.unlock_coins", node.coinCost);
             }
         }
 
@@ -504,17 +525,17 @@ namespace ProjectB.UI
         {
             string constellation = node.constellation switch
             {
-                TalentConstellation.Fury => "Constellation of Fury",
-                TalentConstellation.Bastion => "Constellation of the Bastion",
-                TalentConstellation.Fortune => "Constellation of Fortune & Chaos",
-                _ => "Core"
+                TalentConstellation.Fury => Loc.Get("ui.constellation.fury", "Constellation of Fury"),
+                TalentConstellation.Bastion => Loc.Get("ui.constellation.bastion", "Constellation of the Bastion"),
+                TalentConstellation.Fortune => Loc.Get("ui.constellation.fortune", "Constellation of Fortune & Chaos"),
+                _ => Loc.Get("ui.constellation.core", "Core")
             };
             string type = node.nodeType switch
             {
-                TalentNodeType.Synergy => "Synergy Star",
-                TalentNodeType.Keystone => "KEYSTONE",
-                TalentNodeType.Origin => "Origin",
-                _ => "Star"
+                TalentNodeType.Synergy => Loc.Get("ui.constellation.type_synergy", "Synergy Star"),
+                TalentNodeType.Keystone => Loc.Get("ui.constellation.type_keystone", "KEYSTONE"),
+                TalentNodeType.Origin => Loc.Get("ui.constellation.type_origin", "Origin"),
+                _ => Loc.Get("ui.constellation.type_star", "Star")
             };
             return $"{type}  •  {constellation}";
         }

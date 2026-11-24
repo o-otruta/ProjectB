@@ -15,6 +15,8 @@ MonoBehaviour:
   id: magnet_radius
   displayName: Magnet Radius
   description: Increases XP pickup range.
+  nameKey: upgrade.magnet_radius.name
+  descriptionKey: upgrade.magnet_radius.desc
   icon: {fileID: 21300000, guid: 89401f33e116efd4bb384f6865a3f15b, type: 3}
   baseCost: 80
   costMultiplier: 1.24

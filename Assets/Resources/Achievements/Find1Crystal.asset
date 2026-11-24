@@ -15,6 +15,8 @@ MonoBehaviour:
   id: find_1_crystal
   title: Secret Collector
   description: Find a Mystery Crystal on the arena
+  nameKey: ach.find_1_crystal.title
+  descriptionKey: ach.find_1_crystal.desc
   icon: {fileID: 21300000, guid: e3619a2f72fa86e4e9dae724ff802f18, type: 3}
   conditionType: 6
   targetValue: 1

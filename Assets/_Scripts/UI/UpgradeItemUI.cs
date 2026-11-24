@@ -40,8 +40,8 @@ namespace ProjectB.UI
             this.upgradeData = data;
             this.upgradeManager = manager;
 
-            if (nameText != null) nameText.text = data.displayName;
-            if (descriptionText != null) descriptionText.text = data.description;
+            if (nameText != null) nameText.text = Loc.Name(data);
+            if (descriptionText != null) descriptionText.text = Loc.Desc(data);
             if (iconImage != null && data.icon != null) iconImage.sprite = data.icon;
             if (segmentTemplate != null) segmentTemplate.gameObject.SetActive(false);
 
@@ -67,29 +67,33 @@ namespace ProjectB.UI
             float currentEffect = currentLevel * upgradeData.effectPerLevel;
             float nextEffect = (currentLevel + 1) * upgradeData.effectPerLevel;
 
+            string localizedName = Loc.Name(upgradeData);
+            if (descriptionText != null) descriptionText.text = Loc.Desc(upgradeData);
+
             if (deltaText != null)
             {
                 deltaText.text = FormatDelta(upgradeData.effectType, currentEffect, nextEffect, isMaxLevel);
-                if (nameText != null) nameText.text = upgradeData.displayName;
+                if (nameText != null) nameText.text = localizedName;
             }
             else if (nameText != null)
             {
                 string effectStr = isMaxLevel ? $"(+{currentEffect})" : $"(+{currentEffect} > +{nextEffect})";
-                nameText.text = $"{upgradeData.displayName} <color=#AAAAAA><size=70%>{effectStr}</size></color>";
+                nameText.text = $"{localizedName} <color=#AAAAAA><size=70%>{effectStr}</size></color>";
             }
 
             if (levelText != null)
             {
+                string lvLabel = Loc.Format("ui.upgrade.level", currentLevel, upgradeData.maxLevel);
                 levelText.text = isMaxLevel
-                    ? $"Lv {currentLevel}/{upgradeData.maxLevel}  <color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>MAX</color>"
-                    : $"Lv {currentLevel}/{upgradeData.maxLevel}";
+                    ? $"{lvLabel}  <color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>{Loc.Get("ui.common.max", "MAX")}</color>"
+                    : lvLabel;
             }
 
             RefreshSegments(currentLevel, upgradeData.maxLevel);
 
             if (costText != null)
             {
-                costText.text = isMaxLevel ? "MAX" : UiFormat.Grouped(cost);
+                costText.text = isMaxLevel ? Loc.Get("ui.common.max", "MAX") : UiFormat.Grouped(cost);
                 costText.color = isMaxLevel || canAfford ? theme.textPrimary : theme.danger;
             }
             if (costIcon != null) costIcon.gameObject.SetActive(!isMaxLevel);
@@ -149,10 +153,10 @@ namespace ProjectB.UI
                 case MetaUpgradeEffectType.CritMultiplier:
                     return $"+{number}×";
                 case MetaUpgradeEffectType.StartLevel:
-                    return $"+{number} Lv";
+                    return $"+{number} {Loc.Get("ui.unit.level_short", "Lv")}";
                 case MetaUpgradeEffectType.BonusActiveSlots:
                 case MetaUpgradeEffectType.BonusPassiveSlots:
-                    return $"+{number} slot";
+                    return $"+{number} {Loc.Get("ui.unit.slot", "slot")}";
                 default:
                     return $"+{number}%";
             }

@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Boomerang
   description: Throws piercing boomerangs that return to you.
+  nameKey: card.ability.boomerang_card.name
+  descriptionKey: card.ability.boomerang_card.desc
   icon: {fileID: 21300000, guid: c348308696bc1ff4db76cdb8b9e2d3d2, type: 3}
   rarity: 1
   isConsumable: 1

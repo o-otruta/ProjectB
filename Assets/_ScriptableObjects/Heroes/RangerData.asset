@@ -17,6 +17,13 @@ MonoBehaviour:
   role: Swift Archer
   description: Swift forest marksman firing rapid long-range arrows (9 dmg, 3.1/s,
     11m range) and deadly volleys.
+  nameKey: hero.ranger.name
+  roleKey: hero.ranger.role
+  descriptionKey: hero.ranger.desc
+  passiveNameKey: hero.ranger.passive_name
+  passiveDescriptionKey: hero.ranger.passive_desc
+  ultimateNameKey: hero.ranger.ult_name
+  ultimateDescriptionKey: hero.ranger.ult_desc
   icon: {fileID: 21300000, guid: cc364ba8396e8c949b32db8062135d69, type: 3}
   unlockedByDefault: 0
   moveSpeed: 5.6

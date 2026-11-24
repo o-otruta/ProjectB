@@ -15,6 +15,8 @@ MonoBehaviour:
   id: start_level
   displayName: Starting Level
   description: Start with higher level.
+  nameKey: upgrade.start_level.name
+  descriptionKey: upgrade.start_level.desc
   icon: {fileID: 21300000, guid: 657960fe31c471d4480231c5bdb2180a, type: 3}
   baseCost: 900
   costMultiplier: 1.9

@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Phantom Legion
   description: When a Shadow Decoy detonates it explodes into a ring of 8 dragon
     fireballs flying in every direction.
+  nameKey: synergy.phantom_legion.name
+  descriptionKey: synergy.phantom_legion.desc
   icon: {fileID: 0}
   rarity: 3
   requiredAbilityIds:
   - ShadowDecoy
   - MiniDragon
-  rewardCard: {fileID: 0}

@@ -69,6 +69,9 @@ namespace ProjectB.Data
         public string id;
         public string displayName;
         [TextArea(2, 4)] public string description;
+        [Header("Localization")]
+        public string nameKey;
+        public string descriptionKey;
         public Sprite icon;
         public TalentNodeType nodeType = TalentNodeType.Stat;
         public TalentConstellation constellation = TalentConstellation.Core;

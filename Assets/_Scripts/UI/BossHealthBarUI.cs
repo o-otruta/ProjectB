@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Core.Events;
 
 namespace ProjectB.UI
@@ -83,7 +84,7 @@ namespace ProjectB.UI
             if (bossNameText != null)
             {
                 bossNameText.text = string.IsNullOrEmpty(evt.DisplayName)
-                    ? "BOSS"
+                    ? Loc.Get("ui.hud.boss_upper", "BOSS")
                     : evt.DisplayName.ToUpperInvariant();
             }
 

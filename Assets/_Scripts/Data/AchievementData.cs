@@ -10,6 +10,9 @@ namespace ProjectB.Data
         public string title;
         [TextArea]
         public string description;
+        [Header("Localization")]
+        public string nameKey;
+        public string descriptionKey;
         public Sprite icon;
 
         [Header("Condition")]

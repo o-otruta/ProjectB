@@ -15,6 +15,9 @@ namespace ProjectB.Abilities
         public string id;
         public string abilityName;
         [TextArea] public string description;
+        [Header("Localization")]
+        public string nameKey;
+        public string descriptionKey;
         public Sprite icon;
         public AbilityType type;
         public CardRarity rarity = CardRarity.Common;

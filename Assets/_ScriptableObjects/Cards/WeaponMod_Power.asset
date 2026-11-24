@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.WeaponUpgradeCardData
   cardName: 'Weapon: Overcharge'
   description: +30% weapon damage
+  nameKey: card.weapon.weapon_mod_power.name
+  descriptionKey: card.weapon.weapon_mod_power.desc
   icon: {fileID: 21300000, guid: fa49bdc263d5dd04ab1d18fcd46e0d9d, type: 3}
   rarity: 0
   isConsumable: 0

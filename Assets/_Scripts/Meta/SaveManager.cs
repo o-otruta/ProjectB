@@ -365,6 +365,20 @@ namespace ProjectB.Meta
             CommitChange(saveImmediately);
         }
 
+        public string GetLanguageCode()
+        {
+            return Data != null ? (Data.languageCode ?? string.Empty) : string.Empty;
+        }
+
+        public void SetLanguageCode(string code, bool saveImmediately = true)
+        {
+            if (Data == null) return;
+            string normalized = code ?? string.Empty;
+            if (Data.languageCode == normalized) return;
+            Data.languageCode = normalized;
+            CommitChange(saveImmediately);
+        }
+
         public int GetBonusActiveSlots() => Data != null ? Mathf.Max(0, Data.bonusActiveSlots) : 0;
         public int GetBonusPassiveSlots() => Data != null ? Mathf.Max(0, Data.bonusPassiveSlots) : 0;
 

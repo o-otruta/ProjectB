@@ -20,6 +20,8 @@ MonoBehaviour:
     Orbital
     Sword + Guardian Shields: Knocking enemies back with Guardian Shields unleashes
     a 2.4m Phalanx shockwave toward the nearest sword.'
+  nameKey: talent.bastion_syn_aegis_phalanx.name
+  descriptionKey: talent.bastion_syn_aegis_phalanx.desc
   icon: {fileID: 21300000, guid: c8ec2e46e157d0149897d2b6611d48a3, type: 3}
   nodeType: 2
   constellation: 2

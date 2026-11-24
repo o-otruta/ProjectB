@@ -20,6 +20,8 @@ MonoBehaviour:
     Poison
     Flask + Fireball: Fireball blasts ignite Poison Puddles into exploding napalm
     fields dealing 1.6x detonation and 2x burn damage.'
+  nameKey: talent.fury_syn_toxic_inferno.name
+  descriptionKey: talent.fury_syn_toxic_inferno.desc
   icon: {fileID: 21300000, guid: 3cc53a02737a3b449b69310dd5697dd3, type: 3}
   nodeType: 2
   constellation: 1

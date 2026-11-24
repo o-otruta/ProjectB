@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Shooter
   description: Periodically fires homing projectiles at nearby enemies.
+  nameKey: card.ability.shooter_card.name
+  descriptionKey: card.ability.shooter_card.desc
   icon: {fileID: 21300000, guid: bdacd3cc4d09fdf43a1c524d4868db62, type: 3}
   rarity: 0
   isConsumable: 1

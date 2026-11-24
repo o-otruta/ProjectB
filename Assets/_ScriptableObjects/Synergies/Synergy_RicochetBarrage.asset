@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Ricochet Barrage
   description: Every critical hit of a Buzzsaw Chakram spawns a shrapnel mini-disc
     (2 ricochets) and speeds up the main disc.
+  nameKey: synergy.ricochet_barrage.name
+  descriptionKey: synergy.ricochet_barrage.desc
   icon: {fileID: 0}
   rarity: 2
   requiredAbilityIds:
   - BuzzsawChakram
   - CriticalLens
-  rewardCard: {fileID: 0}

@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Sniper Lens
   description: Grants +12% Critical Hit Chance for weapons and abilities.
+  nameKey: card.ability.critical_lens_card.name
+  descriptionKey: card.ability.critical_lens_card.desc
   icon: {fileID: 21300000, guid: ec0817aa29e06924aa2911496bab8100, type: 3}
   rarity: 2
   isConsumable: 1

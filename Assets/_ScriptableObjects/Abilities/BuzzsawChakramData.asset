@@ -15,6 +15,8 @@ MonoBehaviour:
   id: BuzzsawChakram
   abilityName: Buzzsaw Chakram
   description: Hurls a ricocheting voxel disc that bounces between 3 enemies.
+  nameKey: ability.buzzsaw_chakram.name
+  descriptionKey: ability.buzzsaw_chakram.desc
   icon: {fileID: 21300000, guid: dcd60445a17fcdd4d99bddd667ca94d1, type: 3}
   type: 0
   rarity: 1

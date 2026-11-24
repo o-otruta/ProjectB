@@ -16,6 +16,8 @@ MonoBehaviour:
   abilityName: Arcane Tornado
   description: Releases wandering voxel whirlwinds that pull enemies inward and shred
     them.
+  nameKey: ability.voxel_tornado.name
+  descriptionKey: ability.voxel_tornado.desc
   icon: {fileID: 21300000, guid: 6148afc07c9f8ec4da2b69c393d755da, type: 3}
   type: 0
   rarity: 2

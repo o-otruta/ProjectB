@@ -23,6 +23,7 @@ MonoBehaviour:
   modelPrefab: {fileID: 5109968982087209460, guid: a72fbaf8bbae9fc448e150205b5c5791, type: 3}
   bossId: frost_lich
   bossDisplayName: Frost Lich
+  nameKey: boss.frost_lich.name
   isMiniBoss: 0
   pullResistance: 0.12
   minionData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
@@ -58,3 +59,21 @@ MonoBehaviour:
   blizzardTickInterval: 0.5
   blizzardTickDamage: 14
   blizzardSlowFactor: 0.65
+  demonEnrageHpThreshold: 0.5
+  demonEnrageSpeedMultiplier: 1.35
+  demonChargeCooldown: 5.5
+  demonChargeTriggerRange: 10
+  demonChargeWindupDuration: 0.425
+  demonChargeSpeed: 13
+  demonChargeDistance: 11
+  demonChargeHitRadius: 1.45
+  demonChargeDamage: 32
+  demonFireballCooldown: 4.5
+  demonPhase1FireballCount: 8
+  demonPhase2FireballCount: 12
+  demonFireballWeaponData: {fileID: 0}
+  demonMeteorCooldown: 6.5
+  demonMeteorCount: 5
+  demonMeteorRadius: 2.6
+  demonMeteorTelegraphDuration: 1.05
+  demonMeteorDamage: 38

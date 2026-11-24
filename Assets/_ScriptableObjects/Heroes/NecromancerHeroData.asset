@@ -17,6 +17,13 @@ MonoBehaviour:
   role: Soul Reaper
   description: Master of souls firing life-draining bolts (20% chance on hit to heal
     2 HP) and harvesting essence for faster growth.
+  nameKey: hero.necromancer.name
+  roleKey: hero.necromancer.role
+  descriptionKey: hero.necromancer.desc
+  passiveNameKey: hero.necromancer.passive_name
+  passiveDescriptionKey: hero.necromancer.passive_desc
+  ultimateNameKey: hero.necromancer.ult_name
+  ultimateDescriptionKey: hero.necromancer.ult_desc
   icon: {fileID: 21300000, guid: 694976933c96f514c931e96cc3eab06f, type: 3}
   unlockedByDefault: 0
   moveSpeed: 5

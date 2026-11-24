@@ -36,6 +36,14 @@ namespace ProjectB.Data
         public string role = "Tank";
         [TextArea(2, 4)]
         public string description = "Sturdy warrior firing steady bolts (10 dmg, 2/s, 8m range) and protected by an impenetrable shield.";
+        [Header("Localization")]
+        public string nameKey;
+        public string roleKey;
+        public string descriptionKey;
+        public string passiveNameKey;
+        public string passiveDescriptionKey;
+        public string ultimateNameKey;
+        public string ultimateDescriptionKey;
         public Sprite icon;
         public bool unlockedByDefault = true;
 

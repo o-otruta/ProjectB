@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Meta;
 using ProjectB.Data;
 
@@ -28,6 +30,22 @@ namespace ProjectB.UI
         private SaveManager saveManager;
         private TalentTreeManager talentTreeManager;
         private readonly List<UpgradeItemUI> spawnedItems = new List<UpgradeItemUI>();
+        private Action cachedLanguageChanged;
+
+        private void OnEnable()
+        {
+            cachedLanguageChanged ??= RefreshAllItems;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
+        }
 
         [Inject]
         public void Construct(MetaUpgradeManager upgradeManager, SaveManager saveManager = null, TalentTreeManager talentTreeManager = null)
@@ -133,7 +151,7 @@ namespace ProjectB.UI
             }
             if (bannerProgressText != null && talentTreeManager != null)
             {
-                bannerProgressText.text = $"{talentTreeManager.UnlockedCount}/{Mathf.Max(0, talentTreeManager.Nodes.Count - 1)} stars lit";
+                bannerProgressText.text = Loc.Format("ui.constellation.stars_lit_short", talentTreeManager.UnlockedCount, Mathf.Max(0, talentTreeManager.Nodes.Count - 1));
             }
         }
     }

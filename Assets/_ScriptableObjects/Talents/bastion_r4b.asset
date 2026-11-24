@@ -15,6 +15,8 @@ MonoBehaviour:
   id: bastion_r4b
   displayName: +25% Ultimate Recharge
   description: Your hero ultimate recharges 25% faster.
+  nameKey: talent.bastion_r4b.name
+  descriptionKey: talent.bastion_r4b.desc
   icon: {fileID: 21300000, guid: 148248bb68f33ae47bf342e80bd6856a, type: 3}
   nodeType: 1
   constellation: 2

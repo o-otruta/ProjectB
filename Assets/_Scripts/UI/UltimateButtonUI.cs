@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Player;
 
 namespace ProjectB.UI
@@ -28,6 +30,8 @@ namespace ProjectB.UI
         private int lastDisplayedValue = int.MinValue;
         private bool wasReady;
         private bool readyInitialized;
+        private string cachedReadyLabel = "READY";
+        private Action cachedLanguageChanged;
 
         private static string[] BuildTenthsCache(int count)
         {
@@ -81,8 +85,33 @@ namespace ProjectB.UI
             }
         }
 
+        private void OnEnable()
+        {
+            cachedReadyLabel = Loc.Get("ui.hud.ready", "READY");
+            cachedLanguageChanged ??= HandleLanguageChanged;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
+        }
+
+        private void HandleLanguageChanged()
+        {
+            cachedReadyLabel = Loc.Get("ui.hud.ready", "READY");
+            InitializeVisuals();
+            lastDisplayedState = -1;
+            RefreshVisuals(force: true);
+        }
+
         private void Start()
         {
+            cachedReadyLabel = Loc.Get("ui.hud.ready", "READY");
             InitializeVisuals();
             RefreshVisuals(force: true);
         }
@@ -102,9 +131,10 @@ namespace ProjectB.UI
             var data = heroUltimate.ActiveHeroData;
             if (data != null)
             {
-                if (labelText != null && !string.IsNullOrEmpty(data.ultimateName))
+                string ultName = Loc.UltimateName(data);
+                if (labelText != null && !string.IsNullOrEmpty(ultName))
                 {
-                    labelText.text = data.ultimateName.ToUpperInvariant();
+                    labelText.text = ultName.ToUpperInvariant();
                 }
 
                 if (iconImage != null)
@@ -203,7 +233,7 @@ namespace ProjectB.UI
                     lastDisplayedValue = readyFlag;
                     if (button != null) button.interactable = ready;
                     if (backgroundImage != null) backgroundImage.color = ready ? UiTheme.Current.accent : UiTheme.Current.surfaceRaised;
-                    if (statusText != null) statusText.text = ready ? string.Empty : "READY";
+                    if (statusText != null) statusText.text = ready ? string.Empty : cachedReadyLabel;
                     SetReadyGlow(ready);
                 }
             }

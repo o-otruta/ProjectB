@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ProjectB.Core;
 using ProjectB.Data.Meta;
 
 namespace ProjectB.UI
@@ -31,7 +32,7 @@ namespace ProjectB.UI
             IsClaimed = isClaimed;
             IsToday = isCurrentDay;
 
-            if (dayText != null) dayText.text = $"Day {dayIndex}";
+            if (dayText != null) dayText.text = Loc.Format("ui.daily.day", dayIndex);
 
             if (iconImage != null && reward.icon != null)
             {

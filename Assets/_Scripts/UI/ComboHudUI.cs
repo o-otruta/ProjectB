@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -9,7 +10,7 @@ namespace ProjectB.UI
     public class ComboHudUI : MonoBehaviour
     {
         private static readonly string[] CachedComboLabels = BuildComboLabels(501);
-        private static readonly string[] CachedBonusLabels =
+        private readonly string[] cachedBonusLabels =
         {
             string.Empty,
             "+10% XP & COINS",
@@ -30,6 +31,7 @@ namespace ProjectB.UI
         private float punchScale = 1f;
         private int lastDisplayedCombo = -1;
         private int lastDisplayedTier = -1;
+        private Action cachedLanguageChanged;
 
         private static string[] BuildComboLabels(int count)
         {
@@ -85,6 +87,11 @@ namespace ProjectB.UI
 
         private void Subscribe()
         {
+            RefreshBonusLabels();
+            cachedLanguageChanged ??= HandleLanguageChanged;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+
             if (comboTracker != null && !isSubscribed)
             {
                 comboTracker.OnComboChanged += HandleComboChanged;
@@ -95,11 +102,30 @@ namespace ProjectB.UI
 
         private void Unsubscribe()
         {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
             if (comboTracker != null && isSubscribed)
             {
                 comboTracker.OnComboChanged -= HandleComboChanged;
                 isSubscribed = false;
             }
+        }
+
+        private void HandleLanguageChanged()
+        {
+            RefreshBonusLabels();
+            lastDisplayedTier = -1;
+            RefreshDisplay();
+        }
+
+        private void RefreshBonusLabels()
+        {
+            cachedBonusLabels[1] = Loc.Format("ui.hud.combo_bonus", 10);
+            cachedBonusLabels[2] = Loc.Format("ui.hud.combo_bonus", 15);
+            cachedBonusLabels[3] = Loc.Format("ui.hud.combo_bonus", 20);
+            cachedBonusLabels[4] = Loc.Format("ui.hud.combo_bonus", 30);
         }
 
         private void HandleComboChanged(int combo, int tier, float bonusPercent)
@@ -170,8 +196,8 @@ namespace ProjectB.UI
             if (bonusText != null && tier != lastDisplayedTier)
             {
                 lastDisplayedTier = tier;
-                string bonusLabel = tier >= 0 && tier < CachedBonusLabels.Length
-                    ? CachedBonusLabels[tier]
+                string bonusLabel = tier >= 0 && tier < cachedBonusLabels.Length
+                    ? cachedBonusLabels[tier]
                     : string.Empty;
                 bonusText.text = bonusLabel;
                 bonusText.gameObject.SetActive(!string.IsNullOrEmpty(bonusLabel));

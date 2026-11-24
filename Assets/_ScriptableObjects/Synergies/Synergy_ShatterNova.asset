@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Shatter Nova
   description: Seismic Hammer slams on frozen enemies deal 2.5x damage and burst
     them into 4 ice shards that strike neighbours.
+  nameKey: synergy.shatter_nova.name
+  descriptionKey: synergy.shatter_nova.desc
   icon: {fileID: 0}
   rarity: 3
   requiredAbilityIds:
   - GlacialShatter
   - EarthquakeSlam
-  rewardCard: {fileID: 0}

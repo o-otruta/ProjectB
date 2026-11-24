@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Steam Blast
   description: 'Fireball + Ice Aura: Hitting any slowed enemy with Fireball triggers
     a 4.2m Steam Nova dealing 1.8x bonus AoE damage and knockback.'
+  nameKey: synergy.steam_blast.name
+  descriptionKey: synergy.steam_blast.desc
   icon: {fileID: 21300000, guid: f0ecb864c6f59d54791bff6b25c11b9f, type: 3}
   rarity: 3
   requiredAbilityIds:
   - Fireball
   - IceAura
-  rewardCard: {fileID: 11400000, guid: 1b069bac9a4c20e4fa15dca10125329f, type: 2}

@@ -15,6 +15,8 @@ MonoBehaviour:
   id: SkyfallSpire
   abilityName: Skyfall Spire
   description: Drops a pillar of fire onto the densest group of enemies (3.2m blast).
+  nameKey: ability.skyfall_spire.name
+  descriptionKey: ability.skyfall_spire.desc
   icon: {fileID: 21300000, guid: e60207470ae520944a5ca12c644ea6c4, type: 3}
   type: 0
   rarity: 2

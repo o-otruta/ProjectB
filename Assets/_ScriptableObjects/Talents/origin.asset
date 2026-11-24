@@ -17,6 +17,8 @@ MonoBehaviour:
   description: The heart of your star map. Every constellation grows outward from
     here. Defeat mini-bosses (+1), bosses (+5) and clear Shrines (+2) to earn Boss
     Shards.
+  nameKey: talent.origin.name
+  descriptionKey: talent.origin.desc
   icon: {fileID: 21300000, guid: 6cff62eccbc483a4e9853daa6276fca6, type: 3}
   nodeType: 0
   constellation: 0

@@ -15,6 +15,8 @@ MonoBehaviour:
   id: bridge_fortune_fury
   displayName: +4% Crit Chance
   description: 'Bridge star: permanently +4% critical hit chance.'
+  nameKey: talent.bridge_fortune_fury.name
+  descriptionKey: talent.bridge_fortune_fury.desc
   icon: {fileID: 21300000, guid: 4d2f301d2cdb1ca45ac73311374f9cce, type: 3}
   nodeType: 1
   constellation: 0

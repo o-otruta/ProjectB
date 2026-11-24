@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Blade Storm
   description: 'Orbital Sword + Boomerang: Orbital swords launch piercing spectral
     blades every 2.8s and on every 3rd Boomerang hit.'
+  nameKey: synergy.blade_storm.name
+  descriptionKey: synergy.blade_storm.desc
   icon: {fileID: 21300000, guid: c6d8ce9261281f64aa1cd9256c91f8ca, type: 3}
   rarity: 2
   requiredAbilityIds:
   - orbital_small_sword
   - Boomerang
-  rewardCard: {fileID: 11400000, guid: d0eca806368530e4ca583d400ed3c803, type: 2}

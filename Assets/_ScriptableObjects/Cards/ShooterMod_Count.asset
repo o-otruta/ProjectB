@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Shooter: +1 Projectile'
   description: Fires 1 additional homing projectile.
+  nameKey: card.mod.shooter_mod_count.name
+  descriptionKey: card.mod.shooter_mod_count.desc
   icon: {fileID: 21300000, guid: 3718d4a66e140b94dbbe543396f344cf, type: 3}
   rarity: 1
   isConsumable: 0

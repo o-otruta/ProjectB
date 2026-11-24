@@ -20,6 +20,8 @@ MonoBehaviour:
     Black
     Hole + Arcane Tornado: Tornadoes passing through Black Hole (or expiring) destabilize
     into 6 explosive gravity shards.'
+  nameKey: talent.fortune_syn_cataclysm_vortex.name
+  descriptionKey: talent.fortune_syn_cataclysm_vortex.desc
   icon: {fileID: 21300000, guid: 7056733d6799e95479b0407c9c3d6a75, type: 3}
   nodeType: 2
   constellation: 3

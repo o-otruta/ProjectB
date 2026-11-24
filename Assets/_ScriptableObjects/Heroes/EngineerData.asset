@@ -17,6 +17,13 @@ MonoBehaviour:
   role: Turret Builder
   description: Field inventor lobbing Cluster Grenades (12 dmg, 2.2m AoE) and calling
     down empowered auto-turrets.
+  nameKey: hero.engineer.name
+  roleKey: hero.engineer.role
+  descriptionKey: hero.engineer.desc
+  passiveNameKey: hero.engineer.passive_name
+  passiveDescriptionKey: hero.engineer.passive_desc
+  ultimateNameKey: hero.engineer.ult_name
+  ultimateDescriptionKey: hero.engineer.ult_desc
   icon: {fileID: 21300000, guid: 2253006a8dd4b7943948ed7a8d0f340f, type: 3}
   unlockedByDefault: 0
   moveSpeed: 5.1

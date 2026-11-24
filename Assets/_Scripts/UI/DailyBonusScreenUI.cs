@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Ads;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 using ProjectB.Data.Meta;
@@ -28,8 +29,13 @@ namespace ProjectB.UI
 
         private DailyBonusManager bonusManager;
         private AdManager adManager;
-        private readonly char[] timerBuffer = new char[40];
+        private readonly char[] timerBuffer = new char[64];
         private int lastTimerSeconds = -1;
+        private string cachedNextRewardPrefix = "Next reward in ";
+        private string cachedHourSuffix = "h";
+        private string cachedMinuteSuffix = "m";
+        private string cachedSecondSuffix = "s";
+        private Action cachedLanguageChanged;
 
         [Inject]
         public void Construct(DailyBonusManager bonusManager, AdManager adManager = null)
@@ -49,11 +55,38 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            cachedLanguageChanged ??= HandleLanguageChanged;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+            RefreshLocalizedTimerUnits();
             lastTimerSeconds = -1;
             if (bonusManager != null)
             {
                 RefreshUI();
             }
+        }
+
+        private void OnDisable()
+        {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
+        }
+
+        private void HandleLanguageChanged()
+        {
+            RefreshLocalizedTimerUnits();
+            lastTimerSeconds = -1;
+            if (bonusManager != null) RefreshUI();
+        }
+
+        private void RefreshLocalizedTimerUnits()
+        {
+            cachedNextRewardPrefix = Loc.Get("ui.daily.next_reward_prefix", "Next reward in ");
+            cachedHourSuffix = Loc.Get("ui.unit.hours", "h");
+            cachedMinuteSuffix = Loc.Get("ui.unit.minutes", "m");
+            cachedSecondSuffix = Loc.Get("ui.unit.seconds", "s");
         }
 
         private void OnDestroy()
@@ -83,24 +116,24 @@ namespace ProjectB.UI
 
             if (bonusManager.IsRewardAvailable())
             {
-                timerText.text = "Reward ready!";
+                timerText.text = Loc.Get("ui.daily.reward_ready", "Reward ready!");
                 return;
             }
 
-            int len = UiFormat.WriteString(timerBuffer, 0, "Next reward in ");
+            int len = UiFormat.WriteString(timerBuffer, 0, cachedNextRewardPrefix);
             int hours = seconds / 3600;
             len = UiFormat.WriteInt(timerBuffer, len, hours);
-            timerBuffer[len++] = 'h';
+            len = UiFormat.WriteString(timerBuffer, len, cachedHourSuffix);
             timerBuffer[len++] = ' ';
             int minutes = (seconds % 3600) / 60;
             if (minutes < 10) timerBuffer[len++] = '0';
             len = UiFormat.WriteInt(timerBuffer, len, minutes);
-            timerBuffer[len++] = 'm';
+            len = UiFormat.WriteString(timerBuffer, len, cachedMinuteSuffix);
             timerBuffer[len++] = ' ';
             int secs = seconds % 60;
             if (secs < 10) timerBuffer[len++] = '0';
             len = UiFormat.WriteInt(timerBuffer, len, secs);
-            timerBuffer[len++] = 's';
+            len = UiFormat.WriteString(timerBuffer, len, cachedSecondSuffix);
             timerText.SetCharArray(timerBuffer, 0, len);
         }
 
@@ -115,7 +148,7 @@ namespace ProjectB.UI
         {
             int effective = Mathf.Min(Mathf.Max(0, cycleIndex), Mathf.Max(0, maxCycles));
             float multiplier = Mathf.Pow(multiplierPerCycle, effective);
-            return $"Cycle {cycleIndex + 1} · ×{multiplier.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}";
+            return Loc.Format("ui.daily.cycle", cycleIndex + 1, multiplier.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         private void RefreshUI()

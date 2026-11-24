@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Laser Turret: +1 Range'
   description: Increases turret targeting range by 1.
+  nameKey: card.mod.laser_turret_mod_radius.name
+  descriptionKey: card.mod.laser_turret_mod_radius.desc
   icon: {fileID: 21300000, guid: 5cdf7224a27844d42960236a3786c3b6, type: 3}
   rarity: 2
   isConsumable: 0

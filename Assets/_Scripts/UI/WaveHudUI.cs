@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using TMPro;
 using VContainer;
@@ -9,7 +10,8 @@ namespace ProjectB.UI
 {
     public class WaveHudUI : MonoBehaviour
     {
-        private static readonly string[] CachedWaveLabels = BuildWaveLabels(201);
+        private static readonly string[] CachedWaveLabels = BuildWaveLabels("Wave ");
+        private static SystemLanguage cachedWaveLabelsLang = SystemLanguage.English;
 
         [SerializeField] private TextMeshProUGUI waveText;
         [Tooltip("Sprint 13: append the run timer — \"Wave 12 · 03:41\".")]
@@ -17,31 +19,45 @@ namespace ProjectB.UI
         [Tooltip("Sprint 13 HUD revision: big centred run timer; waveText then shows only \"WAVE 12\".")]
         [SerializeField] private TextMeshProUGUI timerText;
         private RunStatistics runStatistics;
-        private readonly char[] labelBuffer = new char[32];
+        private readonly char[] labelBuffer = new char[48];
         private int lastDisplayedSeconds = int.MinValue;
 
         private WaveManager waveManager;
         private GameEventBus eventBus;
         private bool isSubscribed;
         private int lastDisplayedWave = int.MinValue;
+        private string cachedWavePrefix = "Wave ";
+        private string cachedWaveUpperPrefix = "WAVE ";
+        private Action cachedLanguageChanged;
 
-        private static string[] BuildWaveLabels(int count)
+        private static string[] BuildWaveLabels(string prefix)
         {
-            var arr = new string[count];
-            for (int i = 0; i < count; i++)
+            var arr = new string[201];
+            for (int i = 0; i < arr.Length; i++)
             {
-                arr[i] = $"Wave {i}";
+                arr[i] = $"{prefix}{i}";
             }
             return arr;
         }
 
         public static string GetCachedWaveText(int wave)
         {
+            SystemLanguage lang = LocalizationService.Current.CurrentLanguage;
+            if (cachedWaveLabelsLang != lang)
+            {
+                cachedWaveLabelsLang = lang;
+                string prefix = Loc.Get("ui.hud.wave_prefix", "Wave ");
+                for (int i = 0; i < CachedWaveLabels.Length; i++)
+                {
+                    CachedWaveLabels[i] = $"{prefix}{i}";
+                }
+            }
+
             if (wave >= 0 && wave < CachedWaveLabels.Length)
             {
                 return CachedWaveLabels[wave];
             }
-            return $"Wave {wave}";
+            return Loc.Format("ui.hud.wave_title", wave);
         }
 
         [Inject]
@@ -73,6 +89,11 @@ namespace ProjectB.UI
 
         private void Subscribe()
         {
+            RefreshPrefixes();
+            cachedLanguageChanged ??= HandleLanguageChanged;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+
             if (eventBus != null && !isSubscribed)
             {
                 eventBus.Subscribe<WaveCompletedEvent>(OnWaveCompleted);
@@ -85,11 +106,29 @@ namespace ProjectB.UI
 
         private void Unsubscribe()
         {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
             if (eventBus != null && isSubscribed)
             {
                 eventBus.Unsubscribe<WaveCompletedEvent>(OnWaveCompleted);
                 isSubscribed = false;
             }
+        }
+
+        private void HandleLanguageChanged()
+        {
+            RefreshPrefixes();
+            lastDisplayedWave = int.MinValue;
+            int currentWave = waveManager != null ? waveManager.CurrentWave : 1;
+            UpdateWaveText(currentWave);
+        }
+
+        private void RefreshPrefixes()
+        {
+            cachedWavePrefix = Loc.Get("ui.hud.wave_prefix", "Wave ");
+            cachedWaveUpperPrefix = Loc.Get("ui.hud.wave_upper_prefix", "WAVE ");
         }
 
         private void OnWaveCompleted(WaveCompletedEvent evt)
@@ -121,7 +160,7 @@ namespace ProjectB.UI
                 lastDisplayedWave = wave;
                 if (timerText != null)
                 {
-                    int len = UiFormat.WriteString(labelBuffer, 0, "WAVE ");
+                    int len = UiFormat.WriteString(labelBuffer, 0, cachedWaveUpperPrefix);
                     len = UiFormat.WriteInt(labelBuffer, len, Mathf.Max(0, wave));
                     waveText.SetCharArray(labelBuffer, 0, len);
                     if (Application.isPlaying && wave > 1) UiTween.Punch(waveText.transform, 0.2f, 0.3f);
@@ -142,7 +181,7 @@ namespace ProjectB.UI
         private void WriteLabel(int wave, int seconds)
         {
             lastDisplayedSeconds = seconds;
-            int len = UiFormat.WriteString(labelBuffer, 0, "Wave ");
+            int len = UiFormat.WriteString(labelBuffer, 0, cachedWavePrefix);
             len = UiFormat.WriteInt(labelBuffer, len, Mathf.Max(0, wave));
             labelBuffer[len++] = ' ';
             labelBuffer[len++] = '•';

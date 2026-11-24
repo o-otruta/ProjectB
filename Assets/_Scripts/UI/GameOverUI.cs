@@ -122,7 +122,7 @@ namespace ProjectB.UI
             UiTheme theme = UiTheme.Current;
             if (titleText != null)
             {
-                titleText.text = "DEFEATED";
+                titleText.text = Loc.Get("ui.gameover.defeated", "DEFEATED");
                 titleText.color = theme.danger;
                 UiTween.Scale(titleText.transform, Vector3.one * 1.6f, Vector3.one, theme.durationSlow, 0f, UiEase.OutBack);
             }
@@ -130,7 +130,9 @@ namespace ProjectB.UI
 
             if (waveText != null)
             {
-                waveText.text = titleText != null ? $"WAVE {currentWave}" : $"Wave Reached: {currentWave}";
+                waveText.text = titleText != null
+                    ? Loc.Format("ui.gameover.wave_upper", currentWave)
+                    : Loc.Format("ui.gameover.wave_reached", currentWave);
             }
 
             bool isNewBest = bestWaveBeforeRun >= 0 && currentWave > bestWaveBeforeRun;
@@ -175,9 +177,10 @@ namespace ProjectB.UI
             if (coinsText != null)
             {
                 int shards = runStatistics != null ? runStatistics.BossShardsEarned : 0;
+                string coinsEarnedStr = Loc.Format("ui.gameover.coins_earned", coinsEarned);
                 coinsText.text = shards > 0
-                    ? $"Coins Earned: {coinsEarned}   <color=#B98CFF>Boss Shards: +{shards}</color>"
-                    : $"Coins Earned: {coinsEarned}";
+                    ? $"{coinsEarnedStr}   <color=#B98CFF>{Loc.Format("ui.gameover.boss_shards_plus", shards)}</color>"
+                    : coinsEarnedStr;
             }
 
             if (statsText != null)
@@ -190,9 +193,10 @@ namespace ProjectB.UI
                     runStatistics != null ? runStatistics.BestCombo : 0,
                     comboTracker != null ? comboTracker.BestCombo : 0);
 
+                string timeClock = $"{mins:00}:{secs:00}";
                 statsText.text = bestCombo >= 2
-                    ? $"Kills: {kills}   •   Time: {mins:00}:{secs:00}   •   Best Combo: x{bestCombo}"
-                    : $"Kills: {kills}   •   Time: {mins:00}:{secs:00}";
+                    ? Loc.Format("ui.gameover.stats_with_combo", kills, timeClock, bestCombo)
+                    : Loc.Format("ui.gameover.stats_no_combo", kills, timeClock);
             }
 
             PopulateDamageBreakdown();
@@ -294,8 +298,8 @@ namespace ProjectB.UI
             if (sourceId == DamageSourceIds.Weapon)
             {
                 displayName = hero != null && !string.IsNullOrEmpty(hero.heroName)
-                    ? $"{hero.heroName} Weapon"
-                    : "Base Weapon";
+                    ? Loc.Format("ui.gameover.hero_weapon", Loc.Name(hero))
+                    : Loc.Get("ui.gameover.base_weapon", "Base Weapon");
                 icon = hero != null ? hero.icon : null;
                 barColor = UiTheme.Current.gold;
                 return;
@@ -304,8 +308,8 @@ namespace ProjectB.UI
             if (sourceId == DamageSourceIds.Ultimate)
             {
                 displayName = hero != null && !string.IsNullOrEmpty(hero.ultimateName)
-                    ? $"Ult: {hero.ultimateName}"
-                    : "Ultimate";
+                    ? Loc.Format("ui.gameover.ult_prefix", Loc.UltimateName(hero))
+                    : Loc.Get("ui.gameover.ultimate", "Ultimate");
                 icon = hero != null ? (hero.ultimateIcon != null ? hero.ultimateIcon : hero.icon) : null;
                 barColor = UiTheme.Current.rarityEpic;
                 return;
@@ -313,7 +317,7 @@ namespace ProjectB.UI
 
             if (sourceId == DamageSourceIds.Barrel)
             {
-                displayName = "Explosive Barrel";
+                displayName = Loc.Get("ui.gameover.barrel", "Explosive Barrel");
                 barColor = UiTheme.Current.warning;
                 return;
             }
@@ -323,7 +327,7 @@ namespace ProjectB.UI
                 SynergyData syn = synCatalog.GetById(sourceId);
                 if (syn != null)
                 {
-                    displayName = $"{syn.synergyName} (Synergy)";
+                    displayName = Loc.Format("ui.gameover.synergy_suffix", Loc.Name(syn));
                     icon = syn.icon;
                     barColor = UiTheme.Current.shard;
                     return;
@@ -337,7 +341,7 @@ namespace ProjectB.UI
                     AbilityData ab = abCatalog.abilities[i];
                     if (ab != null && ab.id == sourceId)
                     {
-                        displayName = ab.abilityName;
+                        displayName = Loc.Name(ab);
                         icon = ab.icon;
                         barColor = AbilityHudSlotUI.GetRarityColor(ab.rarity);
                         return;
@@ -459,7 +463,8 @@ namespace ProjectB.UI
             int pct = Mathf.RoundToInt(entry.Share * 100f);
             string dmgStr = RewardDisplayFormatter.FormatCompactNumber(entry.TotalDamage);
             string dpsStr = RewardDisplayFormatter.FormatCompactNumber(Mathf.RoundToInt(entry.Dps));
-            statsTmp.text = $"{dmgStr}  •  {dpsStr}/s  ({pct}%)";
+            string dpsUnit = Loc.Get("ui.unit.per_second", "/s");
+            statsTmp.text = $"{dmgStr}  •  {dpsStr}{dpsUnit}  ({pct}%)";
             statsTmp.fontSize = 19f;
             statsTmp.fontStyle = FontStyles.Bold;
             statsTmp.alignment = TextAlignmentOptions.MidlineRight;
@@ -513,8 +518,8 @@ namespace ProjectB.UI
             if (doubleCoinsButtonText != null)
             {
                 doubleCoinsButtonText.text = (gameManager != null && gameManager.HasDoubledCoinsThisRun)
-                    ? "DOUBLED!"
-                    : "<sprite name=\"ad\"> x2 Coins";
+                    ? Loc.Get("ui.gameover.doubled", "DOUBLED!")
+                    : Loc.Get("ui.gameover.double_coins", "<sprite name=\"ad\"> x2 Coins");
             }
         }
 
@@ -522,7 +527,7 @@ namespace ProjectB.UI
         {
             if (coinsText != null)
             {
-                coinsText.text = $"Coins Earned: {newTotal} (x2!)";
+                coinsText.text = Loc.Format("ui.gameover.coins_doubled", newTotal);
             }
             if (coinsLabel != null) coinsLabel.SetValue(newTotal, animate: true);
             UiAudio.Play(SfxType.CoinPickup);
@@ -587,9 +592,10 @@ namespace ProjectB.UI
 
             var tmp = txtGo.GetComponent<TextMeshProUGUI>();
             string rewardStr = FormatReward(ach, abilityCatalog, heroCatalog);
+            string achTitle = Loc.Title(ach);
             tmp.text = string.IsNullOrEmpty(rewardStr)
-                ? $"<b>{ach.title}</b>"
-                : $"<b>{ach.title}</b>  <color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>({rewardStr})</color>";
+                ? $"<b>{achTitle}</b>"
+                : $"<b>{achTitle}</b>  <color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>({rewardStr})</color>";
             tmp.fontSize = 22f;
             tmp.alignment = TextAlignmentOptions.MidlineLeft;
             tmp.color = theme.textPrimary;

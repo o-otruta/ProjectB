@@ -16,6 +16,8 @@ MonoBehaviour:
   abilityName: Dragon Whelp
   description: Summons a loyal dragon minion that trails behind you and breathes
     a 3-bolt flame cone.
+  nameKey: ability.mini_dragon.name
+  descriptionKey: ability.mini_dragon.desc
   icon: {fileID: 21300000, guid: 99fb5ffa161e9d7479eefee4af4866a5, type: 3}
   type: 0
   rarity: 2

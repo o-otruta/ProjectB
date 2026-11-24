@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Dragon Lord
   description: 'Dragon Whelp + Battle Fury: Dragon Whelps breathe Fury flames that
     pierce 3 enemies and leave burning embers underneath hit targets.'
+  nameKey: synergy.dragon_lord.name
+  descriptionKey: synergy.dragon_lord.desc
   icon: {fileID: 21300000, guid: 1a6a9475851ec334889d1dc6fe335acf, type: 3}
   rarity: 3
   requiredAbilityIds:
   - MiniDragon
   - BattleFury
-  rewardCard: {fileID: 11400000, guid: c23eb6b33b6f3c24f8a93279eed2ebe3, type: 2}

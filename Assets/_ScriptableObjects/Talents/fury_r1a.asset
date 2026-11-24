@@ -16,6 +16,8 @@ MonoBehaviour:
   displayName: +6% Crit Chance
   description: 'Permanently +6% critical hit chance. (Inner ring: also purchasable
     with coins.)'
+  nameKey: talent.fury_r1a.name
+  descriptionKey: talent.fury_r1a.desc
   icon: {fileID: 21300000, guid: 3cc0e1fc9f2afe246a70ef4419aaf8fd, type: 3}
   nodeType: 1
   constellation: 1

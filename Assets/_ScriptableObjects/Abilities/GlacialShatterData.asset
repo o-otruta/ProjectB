@@ -16,6 +16,8 @@ MonoBehaviour:
   abilityName: Glacial Shatter
   description: A frost wave freezes nearby enemies; still-frozen enemies shatter
     into shrapnel.
+  nameKey: ability.glacial_shatter.name
+  descriptionKey: ability.glacial_shatter.desc
   icon: {fileID: 21300000, guid: 90b94dec820a32b42b8b68de30543f58, type: 3}
   type: 0
   rarity: 1

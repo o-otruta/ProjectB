@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.LevelUp;
 
 namespace ProjectB.UI
@@ -68,33 +69,38 @@ namespace ProjectB.UI
                 }
             }
 
+            string localizedName = Loc.Name(data);
+            string localizedDesc = Loc.Desc(data);
+
             if (initialsText != null)
             {
                 initialsText.gameObject.SetActive(!hasIcon);
                 if (!hasIcon)
                 {
-                    initialsText.text = AbilityHudSlotUI.GetInitials(data.abilityName);
+                    initialsText.text = AbilityHudSlotUI.GetInitials(localizedName);
                     initialsText.color = isUnlocked ? rarityColor : theme.textDisabled;
                 }
             }
 
             if (nameText != null)
             {
-                nameText.text = data.abilityName;
+                nameText.text = localizedName;
                 nameText.color = isUnlocked ? theme.textPrimary : theme.textSecondary;
             }
 
             if (metaTagText != null)
             {
-                metaTagText.text = $"{data.type} • {data.rarity}";
+                string typeLabel = data.type == AbilityType.Passive ? Loc.Get("ui.abilities.passive", "Passive") : Loc.Get("ui.abilities.active", "Active");
+                string rarityLabel = Loc.Get($"ui.rarity.{data.rarity.ToString().ToLowerInvariant()}", data.rarity.ToString());
+                metaTagText.text = $"{typeLabel} • {rarityLabel}";
                 metaTagText.color = isUnlocked ? rarityColor : theme.textDisabled;
             }
 
             if (descriptionText != null)
             {
                 descriptionText.text = string.IsNullOrEmpty(synergyHint)
-                    ? data.description
-                    : $"{data.description}\n<color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>{synergyHint}</color>";
+                    ? localizedDesc
+                    : $"{localizedDesc}\n<color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>{synergyHint}</color>";
                 descriptionText.color = isUnlocked ? theme.textSecondary : theme.textDisabled;
             }
 
@@ -102,7 +108,7 @@ namespace ProjectB.UI
             {
                 if (isUnlocked)
                 {
-                    statusText.text = "Unlocked";
+                    statusText.text = Loc.Get("ui.common.unlocked", "Unlocked");
                     statusText.color = theme.success;
                     statusText.gameObject.SetActive(!SupportsSynergyChips);
                 }
@@ -110,7 +116,7 @@ namespace ProjectB.UI
                 {
                     statusText.gameObject.SetActive(true);
                     statusText.text = string.IsNullOrEmpty(unlockRequirementText)
-                        ? "Locked"
+                        ? Loc.Get("ui.common.locked", "Locked")
                         : $"<sprite name=\"lock\"> {unlockRequirementText}";
                     statusText.color = theme.warning;
                 }
@@ -142,43 +148,45 @@ namespace ProjectB.UI
                 }
             }
 
+            string localizedSynergyName = Loc.Name(synergy);
+            string localizedSynergyDesc = Loc.Desc(synergy);
+
             if (initialsText != null)
             {
                 initialsText.gameObject.SetActive(!hasIcon);
                 if (!hasIcon)
                 {
-                    initialsText.text = AbilityHudSlotUI.GetInitials(synergy.synergyName);
+                    initialsText.text = AbilityHudSlotUI.GetInitials(localizedSynergyName);
                     initialsText.color = accentColor;
                 }
             }
 
             if (nameText != null)
             {
-                nameText.text = synergy.synergyName;
+                nameText.text = localizedSynergyName;
                 nameText.color = isUnlocked ? theme.textPrimary : theme.textSecondary;
             }
 
             if (metaTagText != null)
             {
                 metaTagText.text = SupportsSynergyChips || string.IsNullOrEmpty(comboPairLabel)
-                    ? "Reactive Synergy"
-                    : $"Synergy • {comboPairLabel}";
+                    ? Loc.Get("ui.abilities.reactive_synergy", "Reactive Synergy")
+                    : $"{Loc.Get("ui.abilities.synergy_tag", "Synergy")} • {comboPairLabel}";
                 metaTagText.color = accentColor;
             }
 
             if (descriptionText != null)
             {
-                string desc = !string.IsNullOrEmpty(synergy.description)
-                    ? synergy.description
-                    : string.Empty;
-                descriptionText.text = desc;
+                descriptionText.text = localizedSynergyDesc;
                 descriptionText.color = isUnlocked ? theme.textSecondary : theme.textDisabled;
             }
 
             if (statusText != null)
             {
                 statusText.gameObject.SetActive(true);
-                statusText.text = isUnlocked ? "Auto-activates in run" : "<sprite name=\"lock\"> Unlock in the Constellation Tree";
+                statusText.text = isUnlocked
+                    ? Loc.Get("ui.abilities.synergy_auto", "Auto-activates in run")
+                    : Loc.Get("ui.abilities.synergy_unlock_hint", "<sprite name=\"lock\"> Unlock in the Constellation Tree");
                 statusText.color = isUnlocked ? theme.success : theme.warning;
             }
         }

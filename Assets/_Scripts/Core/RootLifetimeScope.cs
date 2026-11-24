@@ -38,9 +38,10 @@ namespace ProjectB.Core
             builder.Register<InputModeService>(Lifetime.Singleton);
             builder.RegisterEntryPoint<OrientationPolicyService>().AsSelf();
 
-            // Eagerly construct the tree so it registers its slot bonuses with AbilitySlotService before any UI reads them.
+            // Eagerly construct LocalizationService first so Current is bound to SaveManager before any UI reads or subscribes.
             builder.RegisterBuildCallback(container =>
             {
+                container.Resolve<LocalizationService>();
                 container.Resolve<TalentTreeManager>();
                 // Start tracking the active device from the very first frame, before any UI asks for it.
                 container.Resolve<InputModeService>();

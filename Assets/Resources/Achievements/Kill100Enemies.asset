@@ -15,6 +15,8 @@ MonoBehaviour:
   id: kill_100_enemies
   title: Slayer
   description: Kill 100 enemies cumulatively
+  nameKey: ach.kill_100_enemies.title
+  descriptionKey: ach.kill_100_enemies.desc
   icon: {fileID: 21300000, guid: b4b5e18bd9bfe1e488967befb38cbdc7, type: 3}
   conditionType: 1
   targetValue: 100

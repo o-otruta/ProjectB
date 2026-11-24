@@ -16,6 +16,8 @@ MonoBehaviour:
   displayName: Collector's Greed
   description: 'KEYSTONE: +1 Passive ability slot and +5 coins for every 25 XP crystals
     collected.'
+  nameKey: talent.fortune_keystone.name
+  descriptionKey: talent.fortune_keystone.desc
   icon: {fileID: 21300000, guid: 11a0cdaa766c18445914a29cd61a3055, type: 3}
   nodeType: 3
   constellation: 3

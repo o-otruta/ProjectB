@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: +Vampiric Fang
   description: Heal 2 HP every 8 kills.
+  nameKey: card.ability.vampiric_fang_card.name
+  descriptionKey: card.ability.vampiric_fang_card.desc
   icon: {fileID: 21300000, guid: 1ab243f342b66634a9318545787cf780, type: 3}
   rarity: 2
   isConsumable: 1

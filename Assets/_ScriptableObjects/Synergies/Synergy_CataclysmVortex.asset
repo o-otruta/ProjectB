@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Cataclysm Vortex
   description: 'Black Hole + Arcane Tornado: Tornadoes passing through Black Hole
     (or expiring) destabilize into 6 explosive gravity shards.'
+  nameKey: synergy.cataclysm_vortex.name
+  descriptionKey: synergy.cataclysm_vortex.desc
   icon: {fileID: 21300000, guid: 21f020ae2de5d4e49b56e20676acdd88, type: 3}
   rarity: 3
   requiredAbilityIds:
   - BlackHole
   - VoxelTornado
-  rewardCard: {fileID: 11400000, guid: 2cf3fc9498f485e4d9fcb7a9dbc30a9f, type: 2}

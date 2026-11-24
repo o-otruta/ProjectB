@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Battle Fury: +10% Damage'
   description: Further increases all damage by +10%.
+  nameKey: card.mod.battle_fury_mod.name
+  descriptionKey: card.mod.battle_fury_mod.desc
   icon: {fileID: 21300000, guid: 360a5cdf20a36dd4c820ff298719a659, type: 3}
   rarity: 0
   isConsumable: 0

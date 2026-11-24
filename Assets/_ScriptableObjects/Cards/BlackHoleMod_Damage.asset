@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Black Hole: +5 Damage'
   description: Increases Black Hole tick damage by 5.
+  nameKey: card.mod.black_hole_mod_damage.name
+  descriptionKey: card.mod.black_hole_mod_damage.desc
   icon: {fileID: 21300000, guid: ccb5939995e3bfe49a3ec96e13a17836, type: 3}
   rarity: 2
   isConsumable: 0

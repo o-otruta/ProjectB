@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Combat;
+using ProjectB.Core;
 using ProjectB.Data.Enemies;
 using ProjectB.Core.Events;
 
@@ -350,9 +351,10 @@ namespace ProjectB.Enemies
             transform.localScale = baseLocalScale * activeScaleMultiplier;
 
             activeBossId = $"miniboss_{(enemyData != null ? enemyData.name.ToLowerInvariant() : "enemy")}";
+            string rawName = enemyData != null ? enemyData.name.Replace("Data", "") : "Brute";
             string label = !string.IsNullOrEmpty(displayName)
                 ? displayName
-                : $"Mini-Boss: {(enemyData != null ? enemyData.name.Replace("Data", "") : "Brute")}";
+                : Loc.Format("ui.hud.miniboss_prefix", rawName);
 
             ApplyVisualState(hitFlashTimer > 0f ? Mathf.Clamp01(hitFlashTimer / HIT_FLASH_DURATION) : 0f);
             eventBus?.Publish(new BossSpawnedEvent(activeBossId, label, currentHp, maxHp, isMiniBoss: true));

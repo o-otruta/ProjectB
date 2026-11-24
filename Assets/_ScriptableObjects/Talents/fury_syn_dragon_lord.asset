@@ -20,6 +20,8 @@ MonoBehaviour:
     Dragon Whelp +
     Battle Fury: Dragon Whelps breathe Fury flames that pierce 3 enemies and leave
     burning embers underneath hit targets.'
+  nameKey: talent.fury_syn_dragon_lord.name
+  descriptionKey: talent.fury_syn_dragon_lord.desc
   icon: {fileID: 21300000, guid: e907072af886b784aa84979a980f6b7e, type: 3}
   nodeType: 2
   constellation: 1

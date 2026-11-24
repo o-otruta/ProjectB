@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 using VContainer;
@@ -26,6 +28,7 @@ namespace ProjectB.UI
 
         private readonly List<AchievementItemUI> spawnedItems = new List<AchievementItemUI>();
         private readonly List<AchievementData> sortBuffer = new List<AchievementData>(32);
+        private Action cachedLanguageChanged;
 
         [Inject]
         public void Construct(AchievementManager achievementManager, SaveManager saveManager)
@@ -40,6 +43,9 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            cachedLanguageChanged ??= RefreshUI;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
             if (achievementManager != null && saveManager != null)
             {
                 RefreshUI();
@@ -47,6 +53,14 @@ namespace ProjectB.UI
             if (contentContainer != null)
             {
                 UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(contentContainer.GetComponent<RectTransform>());
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
             }
         }
 
@@ -90,7 +104,7 @@ namespace ProjectB.UI
                 spawnedItems.Add(item);
             }
 
-            if (summaryText != null) summaryText.text = $"{completed} / {sortBuffer.Count} completed";
+            if (summaryText != null) summaryText.text = Loc.Format("ui.achievements.summary", completed, sortBuffer.Count);
         }
 
         /// <summary>In progress (highest ratio first) → not started → completed.</summary>

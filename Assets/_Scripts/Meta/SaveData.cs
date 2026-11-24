@@ -46,6 +46,7 @@ namespace ProjectB.Meta
         // --- Настройки ---
         public float musicVolume = 1f;
         public float sfxVolume = 1f;
+        public string languageCode = "";
 
         // --- Реклама и IAP ---
         public int rewardedAdsWatchedToday;

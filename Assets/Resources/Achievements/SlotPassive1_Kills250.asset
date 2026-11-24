@@ -15,6 +15,8 @@ MonoBehaviour:
   id: unlock_passive_slot_1
   title: Tactician
   description: Kill 250 enemies cumulatively to unlock +1 Passive Ability Slot
+  nameKey: ach.unlock_passive_slot_1.title
+  descriptionKey: ach.unlock_passive_slot_1.desc
   icon: {fileID: 21300000, guid: fed25a2249dc6b84a8d73c080dfa3612, type: 3}
   conditionType: 1
   targetValue: 250

@@ -16,6 +16,8 @@ MonoBehaviour:
   displayName: Second Wind
   description: 'KEYSTONE: once per run survive a lethal hit with 30% HP, 2.5s of
     invulnerability and a knockback wave.'
+  nameKey: talent.bastion_keystone.name
+  descriptionKey: talent.bastion_keystone.desc
   icon: {fileID: 21300000, guid: 13033613a89992b468ef3240443ecf46, type: 3}
   nodeType: 3
   constellation: 2

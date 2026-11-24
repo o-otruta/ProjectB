@@ -20,6 +20,8 @@ MonoBehaviour:
     0.3s
     before a Skyfall Spire lands, an eclipse pulse drags enemies into the strike
     point; the strike deals +35% damage and blinds survivors.'
+  nameKey: talent.fortune_syn_solar_eclipse.name
+  descriptionKey: talent.fortune_syn_solar_eclipse.desc
   icon: {fileID: 21300000, guid: eb3bca30044e8cf45b442d70c33e7374, type: 3}
   nodeType: 2
   constellation: 3

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.Data;
 using System;
 
@@ -70,8 +71,8 @@ namespace ProjectB.UI
             bool themed = rewardText != null;
 
             if (iconImage != null) iconImage.sprite = data.icon;
-            if (titleText != null) titleText.text = data.title;
-            if (descriptionText != null) descriptionText.text = data.description;
+            if (titleText != null) titleText.text = Loc.Title(data);
+            if (descriptionText != null) descriptionText.text = Loc.Desc(data);
 
             if (rewardText != null) rewardText.text = RewardDisplayFormatter.FormatRewardShort(data, abilityCatalog);
             if (rewardIcon != null)
@@ -87,7 +88,9 @@ namespace ProjectB.UI
 
             if (isCompleted)
             {
-                if (progressText != null) progressText.text = themed ? "Completed" : "Completed!";
+                if (progressText != null) progressText.text = themed
+                    ? Loc.Get("ui.achievements.completed", "Completed")
+                    : Loc.Get("ui.achievements.completed_exclaim", "Completed!");
                 if (progressBarFill != null) progressBarFill.gameObject.SetActive(themed);
                 if (progressBarFill != null && themed)
                 {

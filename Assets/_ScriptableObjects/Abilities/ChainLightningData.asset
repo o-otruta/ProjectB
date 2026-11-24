@@ -16,6 +16,8 @@ MonoBehaviour:
   abilityName: Chain Lightning
   description: Strikes the closest enemy with lightning that jumps between nearby
     targets.
+  nameKey: ability.chain_lightning.name
+  descriptionKey: ability.chain_lightning.desc
   icon: {fileID: 21300000, guid: de328bed50c67144cb9c16904d2e81d3, type: 3}
   type: 0
   rarity: 1

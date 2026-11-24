@@ -16,6 +16,8 @@ MonoBehaviour:
   displayName: +5% Damage
   description: 'Permanently +5% damage for weapon and abilities. (Inner ring: also
     purchasable with coins.)'
+  nameKey: talent.fury_r1b.name
+  descriptionKey: talent.fury_r1b.desc
   icon: {fileID: 21300000, guid: e10ca7822aede6943861299e68eeedb4, type: 3}
   nodeType: 1
   constellation: 1

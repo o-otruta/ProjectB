@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Toxic Inferno
   description: 'Poison Flask + Fireball: Fireball blasts ignite Poison Puddles into
     exploding napalm fields dealing 1.6x detonation and 2x burn damage.'
+  nameKey: synergy.toxic_inferno.name
+  descriptionKey: synergy.toxic_inferno.desc
   icon: {fileID: 21300000, guid: db0794754470b2946a7b70835db06db2, type: 3}
   rarity: 2
   requiredAbilityIds:
   - PoisonAlchemist
   - Fireball
-  rewardCard: {fileID: 11400000, guid: c9a9e6d68bbc85d47a33a3c4dd0d7cb3, type: 2}

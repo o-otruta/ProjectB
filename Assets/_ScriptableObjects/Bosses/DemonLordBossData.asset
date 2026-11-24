@@ -23,6 +23,7 @@ MonoBehaviour:
   modelPrefab: {fileID: 5060843028107403187, guid: c13e3352d678bb246ad3749e1e4d6863, type: 3}
   bossId: demon_lord
   bossDisplayName: Demon Lord
+  nameKey: boss.demon_lord.name
   isMiniBoss: 0
   pullResistance: 0.1
   minionData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}

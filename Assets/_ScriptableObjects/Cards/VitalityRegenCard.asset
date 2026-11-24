@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: Vitality Regen
   description: Continuously restores 3 HP every second.
+  nameKey: card.ability.vitality_regen_card.name
+  descriptionKey: card.ability.vitality_regen_card.desc
   icon: {fileID: 21300000, guid: c1fe0dfd177a68e43a44862a0be8b0e3, type: 3}
   rarity: 1
   isConsumable: 1

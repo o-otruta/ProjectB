@@ -15,6 +15,8 @@ MonoBehaviour:
   id: orbital_small_sword
   abilityName: Orbital Sword
   description: Summons swords that orbit around you and slice enemies.
+  nameKey: ability.orbital_small_sword.name
+  descriptionKey: ability.orbital_small_sword.desc
   icon: {fileID: 21300000, guid: 1332a237a558782408d1a648c266af86, type: 3}
   type: 0
   rarity: 0

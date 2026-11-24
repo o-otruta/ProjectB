@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Shooter: Rapid Fire'
   description: Reduces fire cooldown by 0.18s.
+  nameKey: card.mod.shooter_mod_cooldown.name
+  descriptionKey: card.mod.shooter_mod_cooldown.desc
   icon: {fileID: 21300000, guid: 42521c357169362419aff03c8834c838, type: 3}
   rarity: 0
   isConsumable: 0

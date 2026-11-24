@@ -27,6 +27,9 @@ namespace ProjectB.Data
         public string displayName;
         [TextArea(2, 4)]
         public string description;
+        [Header("Localization")]
+        public string nameKey;
+        public string descriptionKey;
         public Sprite icon;
 
         [Header("Cost Calculation")]

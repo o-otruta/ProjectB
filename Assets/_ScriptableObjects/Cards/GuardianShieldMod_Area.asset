@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Guardian Shields: Heavy Knockback'
   description: Increases enemy knockback distance by +0.5m.
+  nameKey: card.mod.guardian_shield_mod_area.name
+  descriptionKey: card.mod.guardian_shield_mod_area.desc
   icon: {fileID: 21300000, guid: 99e7c9adae1fe8a4eac62d54245422ee, type: 3}
   rarity: 0
   isConsumable: 0

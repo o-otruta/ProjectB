@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System;
+using ProjectB.Core;
 using ProjectB.UI;
 
 namespace ProjectB.LevelUp
@@ -79,8 +80,8 @@ namespace ProjectB.LevelUp
 
             SetDimmed(false);
 
-            if (nameText != null) nameText.text = data.cardName;
-            if (descriptionText != null) descriptionText.text = data.description;
+            if (nameText != null) nameText.text = Loc.Name(data);
+            if (descriptionText != null) descriptionText.text = Loc.Desc(data);
 
             if (iconImage != null)
             {
@@ -101,7 +102,9 @@ namespace ProjectB.LevelUp
             }
             if (adBadgeText != null && requiresAd)
             {
-                adBadgeText.text = canWatchAd ? "<sprite name=\"ad\"> AD" : "NO AD";
+                adBadgeText.text = canWatchAd
+                    ? Loc.Get("ui.card.ad_badge", "<sprite name=\"ad\"> AD")
+                    : Loc.Get("ui.card.no_ad", "NO AD");
             }
             if (lockOverlay != null) lockOverlay.SetActive(requiresAd);
 
@@ -158,7 +161,10 @@ namespace ProjectB.LevelUp
 
         public static bool IsLevelProgressLabel(string label)
         {
-            return !string.IsNullOrEmpty(label) && label.StartsWith("Lv", StringComparison.Ordinal);
+            return !string.IsNullOrEmpty(label)
+                && (label.StartsWith("Lv", StringComparison.Ordinal)
+                    || label.IndexOf("->", StringComparison.Ordinal) >= 0
+                    || label.IndexOf('→') >= 0);
         }
 
         /// <summary>Category chip shown on the card.</summary>
@@ -168,14 +174,14 @@ namespace ProjectB.LevelUp
             {
                 case AbilityCardData abilityCard:
                     return abilityCard.abilityData != null && abilityCard.abilityData.type == ProjectB.Abilities.AbilityType.Passive
-                        ? "NEW PASSIVE"
-                        : "NEW ACTIVE";
+                        ? Loc.Get("ui.card.new_passive", "NEW PASSIVE")
+                        : Loc.Get("ui.card.new_active", "NEW ACTIVE");
                 case AbilityModifierCardData:
-                    return "UPGRADE";
+                    return Loc.Get("ui.card.upgrade", "UPGRADE");
                 case WeaponUpgradeCardData:
-                    return "WEAPON";
+                    return Loc.Get("ui.card.weapon", "WEAPON");
                 case StatUpgradeCardData:
-                    return "STAT";
+                    return Loc.Get("ui.card.stat", "STAT");
                 default:
                     return string.Empty;
             }

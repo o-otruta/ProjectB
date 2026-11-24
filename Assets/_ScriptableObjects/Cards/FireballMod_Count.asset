@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Fireball: +1 Fireball'
   description: Launches 1 additional explosive fireball.
+  nameKey: card.mod.fireball_mod_count.name
+  descriptionKey: card.mod.fireball_mod_count.desc
   icon: {fileID: 21300000, guid: 651af4c2f5f151948874926d9da30cde, type: 3}
   rarity: 1
   isConsumable: 0

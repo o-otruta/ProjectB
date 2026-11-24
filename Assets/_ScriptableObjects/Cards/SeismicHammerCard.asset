@@ -15,6 +15,8 @@ MonoBehaviour:
   cardName: Seismic Hammer
   description: Unleashes a crushing shockwave around you, dealing massive AoE damage
     and slowing enemies by 80%.
+  nameKey: card.ability.seismic_hammer_card.name
+  descriptionKey: card.ability.seismic_hammer_card.desc
   icon: {fileID: 21300000, guid: 61fc263411a2ff641bfa53663cf2c50d, type: 3}
   rarity: 3
   isConsumable: 1

@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Tome: Expanded Margins'
   description: +6% global area
+  nameKey: card.mod.area_tome_mod.name
+  descriptionKey: card.mod.area_tome_mod.desc
   icon: {fileID: 21300000, guid: d3222922c380f9344a69f08f93452e3a, type: 3}
   rarity: 1
   isConsumable: 0

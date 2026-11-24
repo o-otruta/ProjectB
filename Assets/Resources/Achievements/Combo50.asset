@@ -15,6 +15,8 @@ MonoBehaviour:
   id: combo_50
   title: Combo Artist
   description: Reach a x50 kill combo to unlock Shadow Decoy
+  nameKey: ach.combo_50.title
+  descriptionKey: ach.combo_50.desc
   icon: {fileID: 21300000, guid: 0aca199f0b22a154eaa0ad43513a263d, type: 3}
   conditionType: 8
   targetValue: 50

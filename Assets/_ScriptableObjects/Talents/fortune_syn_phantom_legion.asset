@@ -20,6 +20,8 @@ MonoBehaviour:
     When
     a Shadow Decoy detonates it explodes into a ring of 8 dragon fireballs flying
     in every direction.'
+  nameKey: talent.fortune_syn_phantom_legion.name
+  descriptionKey: talent.fortune_syn_phantom_legion.desc
   icon: {fileID: 21300000, guid: d32aa398bdfa8b046b77957760b31685, type: 3}
   nodeType: 2
   constellation: 3

@@ -20,6 +20,8 @@ MonoBehaviour:
     Orbital
     Sword + Boomerang: Orbital swords launch piercing spectral blades every 2.8s
     and on every 3rd Boomerang hit.'
+  nameKey: talent.fury_syn_blade_storm.name
+  descriptionKey: talent.fury_syn_blade_storm.desc
   icon: {fileID: 21300000, guid: 8e553610727b88e4f92b5ffd936cd84f, type: 3}
   nodeType: 2
   constellation: 1

@@ -20,6 +20,8 @@ MonoBehaviour:
     Fireball + Ice
     Aura: Hitting any slowed enemy with Fireball triggers a 4.2m Steam Nova dealing
     1.8x bonus AoE damage and knockback.'
+  nameKey: talent.bastion_syn_steam_blast.name
+  descriptionKey: talent.bastion_syn_steam_blast.desc
   icon: {fileID: 21300000, guid: 1439459fc181141489555466a648432e, type: 3}
   nodeType: 2
   constellation: 2

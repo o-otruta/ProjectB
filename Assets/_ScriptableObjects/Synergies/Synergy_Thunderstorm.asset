@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Thunderstorm
   description: 'Chain Lightning + Ice Aura: Striking slowed enemies triggers a 90%
     deep freeze (0.65s) and fires 2 extra icy lightning arcs.'
+  nameKey: synergy.thunder_storm.name
+  descriptionKey: synergy.thunder_storm.desc
   icon: {fileID: 21300000, guid: 2717d45e80020bb49b06f30223b3b611, type: 3}
   rarity: 3
   requiredAbilityIds:
   - ChainLightning
   - IceAura
-  rewardCard: {fileID: 11400000, guid: 3b6a7e22d3089724eb9435e88a0b50e6, type: 2}

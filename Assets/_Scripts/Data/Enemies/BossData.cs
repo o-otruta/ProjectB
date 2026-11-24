@@ -9,6 +9,7 @@ namespace ProjectB.Data.Enemies
         [Header("Boss Identity")]
         public string bossId = "golem";
         public string bossDisplayName = "Stone Golem";
+        public string nameKey;
         public bool isMiniBoss = false;
         [Range(0f, 1f)]
         [Tooltip("Multiplier applied to external pull forces like Black Hole (0 = immune, 1 = full pull)")]

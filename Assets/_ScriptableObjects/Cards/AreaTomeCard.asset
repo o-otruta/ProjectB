@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: +Area Tome
   description: +12% global radius / area.
+  nameKey: card.ability.area_tome_card.name
+  descriptionKey: card.ability.area_tome_card.desc
   icon: {fileID: 21300000, guid: 47273f092f37e5f4ab6280624fdff3fa, type: 3}
   rarity: 1
   isConsumable: 1

@@ -15,6 +15,8 @@ MonoBehaviour:
   id: kill_1000_enemies
   title: Exterminator
   description: Kill 1,000 enemies cumulatively to unlock Arcane Tornado
+  nameKey: ach.kill_1000_enemies.title
+  descriptionKey: ach.kill_1000_enemies.desc
   icon: {fileID: 21300000, guid: 05550b1d50dc75c48a817e7e5a1e9da2, type: 3}
   conditionType: 1
   targetValue: 1000

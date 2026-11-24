@@ -20,6 +20,8 @@ MonoBehaviour:
     Every
     critical hit of a Buzzsaw Chakram spawns a shrapnel mini-disc (2 ricochets) and
     speeds up the main disc.'
+  nameKey: talent.fury_syn_ricochet_barrage.name
+  descriptionKey: talent.fury_syn_ricochet_barrage.desc
   icon: {fileID: 21300000, guid: 530d0500e29a6844d8fa291d0e845a14, type: 3}
   nodeType: 2
   constellation: 1

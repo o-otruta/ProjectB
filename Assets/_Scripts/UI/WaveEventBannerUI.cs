@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data.Enemies;
 using ProjectB.Enemies;
@@ -14,8 +16,8 @@ namespace ProjectB.UI
     /// </summary>
     public class WaveEventBannerUI : MonoBehaviour
     {
-        private static readonly string[] CachedSecondsLabels = BuildSecondsLabels(61);
-        private static readonly string[] CachedAmbushLabels =
+        private readonly string[] cachedSecondsLabels = new string[61];
+        private readonly string[] cachedAmbushLabels =
         {
             "CLEARED!",
             "1/3 LEFT",
@@ -39,24 +41,36 @@ namespace ProjectB.UI
         private float punchScale = 1f;
         private int lastDisplayedSeconds = -1;
         private int lastDisplayedRemainingElites = -1;
+        private Action cachedLanguageChanged;
 
-        private static string[] BuildSecondsLabels(int count)
+        public string GetCachedSecondsLabel(int seconds)
         {
-            var arr = new string[count];
-            for (int i = 0; i < count; i++)
+            if (string.IsNullOrEmpty(cachedSecondsLabels[0])) RefreshLocalizedLabels();
+            if (seconds >= 0 && seconds < cachedSecondsLabels.Length)
             {
-                arr[i] = $"{i}s";
+                return cachedSecondsLabels[seconds];
             }
-            return arr;
+            return cachedSecondsLabels[cachedSecondsLabels.Length - 1];
         }
 
-        public static string GetCachedSecondsLabel(int seconds)
+        private void RefreshLocalizedLabels()
         {
-            if (seconds >= 0 && seconds < CachedSecondsLabels.Length)
+            string secUnit = Loc.Get("ui.unit.seconds", "s");
+            for (int i = 0; i < cachedSecondsLabels.Length; i++)
             {
-                return CachedSecondsLabels[seconds];
+                cachedSecondsLabels[i] = $"{i}{secUnit}";
             }
-            return CachedSecondsLabels[CachedSecondsLabels.Length - 1];
+            cachedAmbushLabels[0] = Loc.Get("event.ambush.cleared", "CLEARED!");
+            cachedAmbushLabels[1] = Loc.Format("event.ambush.left", 1);
+            cachedAmbushLabels[2] = Loc.Format("event.ambush.left", 2);
+            cachedAmbushLabels[3] = Loc.Format("event.ambush.left", 3);
+        }
+
+        private void HandleLanguageChanged()
+        {
+            RefreshLocalizedLabels();
+            lastDisplayedSeconds = -1;
+            lastDisplayedRemainingElites = -1;
         }
 
         [Inject]
@@ -100,6 +114,11 @@ namespace ProjectB.UI
 
         private void Subscribe()
         {
+            RefreshLocalizedLabels();
+            cachedLanguageChanged ??= HandleLanguageChanged;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
+
             if (eventBus != null && !isSubscribed)
             {
                 eventBus.Subscribe<WaveEventStartedEvent>(OnWaveEventStarted);
@@ -111,6 +130,10 @@ namespace ProjectB.UI
 
         private void Unsubscribe()
         {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
             if (eventBus != null && isSubscribed)
             {
                 eventBus.Unsubscribe<WaveEventStartedEvent>(OnWaveEventStarted);
@@ -144,7 +167,7 @@ namespace ProjectB.UI
             }
             if (titleText != null)
             {
-                titleText.text = string.IsNullOrEmpty(evt.Title) ? "WAVE EVENT" : evt.Title;
+                titleText.text = string.IsNullOrEmpty(evt.Title) ? Loc.Get("event.default_title", "WAVE EVENT") : evt.Title;
                 titleText.color = accent;
             }
             if (subtitleText != null)
@@ -194,12 +217,12 @@ namespace ProjectB.UI
 
             if (activeType == WaveEventType.EliteAmbush)
             {
-                int remaining = Mathf.Clamp(waveEventManager.AmbushRemainingElites, 0, CachedAmbushLabels.Length - 1);
+                int remaining = Mathf.Clamp(waveEventManager.AmbushRemainingElites, 0, cachedAmbushLabels.Length - 1);
                 int total = Mathf.Max(1, waveEventManager.AmbushTotalElites);
                 if (statusText != null && remaining != lastDisplayedRemainingElites)
                 {
                     lastDisplayedRemainingElites = remaining;
-                    statusText.text = CachedAmbushLabels[remaining];
+                    statusText.text = cachedAmbushLabels[remaining];
                 }
                 if (progressFillImage != null)
                 {

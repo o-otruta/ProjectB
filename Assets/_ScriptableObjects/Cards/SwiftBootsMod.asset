@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Swift Boots: +0.5 Speed'
   description: Further increases movement speed by +0.5.
+  nameKey: card.mod.swift_boots_mod.name
+  descriptionKey: card.mod.swift_boots_mod.desc
   icon: {fileID: 21300000, guid: 3cba34f00ecc5b94c9061b98f746aa8e, type: 3}
   rarity: 1
   isConsumable: 0

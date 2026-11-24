@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
 
@@ -68,6 +70,7 @@ namespace ProjectB.UI
         private Canvas parentCanvas;
         private readonly List<Image> paginationDots = new List<Image>(8);
         private MaterialPropertyBlock silhouetteBlock;
+        private Action cachedLanguageChanged;
 
         public int CurrentIndex => currentIndex;
 
@@ -118,6 +121,9 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            cachedLanguageChanged ??= RefreshUI;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
             SyncIndexToSelectedHero();
             RefreshUI();
         }
@@ -125,6 +131,10 @@ namespace ProjectB.UI
         private void OnDisable()
         {
             isTrackingSwipe = false;
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -260,26 +270,34 @@ namespace ProjectB.UI
             bool isUnlocked = selectedHeroService.IsHeroUnlocked(hero);
             string requirement = isUnlocked ? string.Empty : FindHeroUnlockRequirement(hero.id);
 
+            string localizedHeroName = Loc.Name(hero);
+            string localizedRole = Loc.Role(hero);
+            string localizedPassiveName = Loc.PassiveName(hero);
+            string localizedPassiveDesc = Loc.PassiveDesc(hero);
+            string localizedUltimateName = Loc.UltimateName(hero);
+            string localizedUltimateDesc = Loc.UltimateDesc(hero);
+
             if (heroNameText != null)
             {
-                heroNameText.text = hero.heroName.ToUpperInvariant();
+                heroNameText.text = localizedHeroName.ToUpperInvariant();
             }
 
             if (roleText != null)
             {
-                roleText.text = string.IsNullOrEmpty(hero.role) ? string.Empty : hero.role.ToUpperInvariant();
+                roleText.text = string.IsNullOrEmpty(localizedRole) ? string.Empty : localizedRole.ToUpperInvariant();
             }
 
             if (heroStatusText != null)
             {
                 if (isUnlocked)
                 {
-                    heroStatusText.text = "READY FOR BATTLE";
+                    heroStatusText.text = Loc.Get("ui.hero.ready", "READY FOR BATTLE");
                     heroStatusText.color = theme.success;
                 }
                 else
                 {
-                    heroStatusText.text = string.IsNullOrEmpty(requirement) ? "LOCKED" : $"LOCKED — {requirement}";
+                    string lockedLabel = Loc.Get("ui.common.locked_upper", "LOCKED");
+                    heroStatusText.text = string.IsNullOrEmpty(requirement) ? lockedLabel : $"{lockedLabel} — {requirement}";
                     heroStatusText.color = theme.warning;
                 }
             }
@@ -287,18 +305,18 @@ namespace ProjectB.UI
             if (lockOverlay != null) lockOverlay.SetActive(!isUnlocked);
             if (lockRequirementText != null)
             {
-                lockRequirementText.text = string.IsNullOrEmpty(requirement) ? "Locked" : requirement;
+                lockRequirementText.text = string.IsNullOrEmpty(requirement) ? Loc.Get("ui.common.locked", "Locked") : requirement;
             }
 
-            SplitPassiveDescription(hero.passiveDescription, out string passiveLine, out string weaponLine);
+            SplitPassiveDescription(localizedPassiveDesc, out string passiveLine, out string weaponLine);
 
             if (passiveText != null)
             {
                 passiveText.text = passiveNameText != null
                     ? passiveLine
-                    : $"<b>Passive:</b> {hero.passiveName} — {hero.passiveDescription}";
+                    : Loc.Format("ui.hero.passive_inline", localizedPassiveName, localizedPassiveDesc);
             }
-            if (passiveNameText != null) passiveNameText.text = hero.passiveName;
+            if (passiveNameText != null) passiveNameText.text = localizedPassiveName;
             if (passiveIcon != null)
             {
                 passiveIcon.sprite = hero.icon;
@@ -308,16 +326,16 @@ namespace ProjectB.UI
             if (weaponNameText != null || weaponDescriptionText != null)
             {
                 SplitWeapon(weaponLine, out string weaponName, out string weaponDetails);
-                if (weaponNameText != null) weaponNameText.text = string.IsNullOrEmpty(weaponName) ? "Weapon" : weaponName;
+                if (weaponNameText != null) weaponNameText.text = string.IsNullOrEmpty(weaponName) ? Loc.Get("ui.hero.weapon", "Weapon") : weaponName;
                 if (weaponDescriptionText != null) weaponDescriptionText.text = weaponDetails;
             }
 
             if (ultimateText != null && ultimateNameText == null)
             {
-                ultimateText.text = $"<b>Ultimate:</b> {hero.ultimateName} — {hero.ultimateDescription} ({hero.ultimateCooldown:0}s CD)";
+                ultimateText.text = Loc.Format("ui.hero.ultimate_inline", localizedUltimateName, localizedUltimateDesc, $"{hero.ultimateCooldown:0}");
             }
-            if (ultimateNameText != null) ultimateNameText.text = $"{hero.ultimateName}  <color=#{ColorUtility.ToHtmlStringRGB(theme.textSecondary)}><size=80%>{hero.ultimateCooldown:0}s</size></color>";
-            if (ultimateDescriptionText != null) ultimateDescriptionText.text = hero.ultimateDescription;
+            if (ultimateNameText != null) ultimateNameText.text = $"{localizedUltimateName}  <color=#{ColorUtility.ToHtmlStringRGB(theme.textSecondary)}><size=80%>{hero.ultimateCooldown:0}{Loc.Get("ui.unit.seconds", "s")}</size></color>";
+            if (ultimateDescriptionText != null) ultimateDescriptionText.text = localizedUltimateDesc;
             if (ultimateIcon != null)
             {
                 ultimateIcon.sprite = hero.ultimateIcon;
@@ -329,7 +347,7 @@ namespace ProjectB.UI
 
             if (statsText != null)
             {
-                statsText.text = $"HP: {effectiveHp}   •   Speed: {effectiveSpeed:0.0}";
+                statsText.text = Loc.Format("ui.hero.stats_inline", effectiveHp, effectiveSpeed.ToString("0.0"));
             }
             if (hpValueText != null) hpValueText.text = effectiveHp.ToString();
             if (speedValueText != null) speedValueText.text = effectiveSpeed.ToString("0.0");
@@ -341,7 +359,7 @@ namespace ProjectB.UI
 
             if (startButtonText != null)
             {
-                startButtonText.text = isUnlocked ? "START" : "LOCKED";
+                startButtonText.text = isUnlocked ? Loc.Get("ui.hero.start", "START") : Loc.Get("ui.common.locked_upper", "LOCKED");
             }
 
             if (startPulse != null) startPulse.enabled = isUnlocked;
@@ -373,6 +391,8 @@ namespace ProjectB.UI
             return hero.moveSpeed * passiveSpeedMult * metaSpeedMult;
         }
 
+        private static readonly string[] WeaponMarkers = { "<b>Weapon:</b>", "<b>Зброя:</b>", "<b>Оружие:</b>" };
+
         /// <summary>Hero passive descriptions embed the weapon as "…\n&lt;b&gt;Weapon:&lt;/b&gt; Name (details)".</summary>
         public static void SplitPassiveDescription(string description, out string passive, out string weapon)
         {
@@ -380,11 +400,21 @@ namespace ProjectB.UI
             weapon = string.Empty;
             if (string.IsNullOrEmpty(description)) return;
 
-            const string marker = "<b>Weapon:</b>";
-            int idx = description.IndexOf(marker, System.StringComparison.OrdinalIgnoreCase);
+            int idx = -1;
+            int markerLen = 0;
+            for (int i = 0; i < WeaponMarkers.Length; i++)
+            {
+                int found = description.IndexOf(WeaponMarkers[i], System.StringComparison.OrdinalIgnoreCase);
+                if (found >= 0)
+                {
+                    idx = found;
+                    markerLen = WeaponMarkers[i].Length;
+                    break;
+                }
+            }
             if (idx < 0) return;
             passive = description.Substring(0, idx).Trim();
-            weapon = description.Substring(idx + marker.Length).Replace('\n', ' ').Trim();
+            weapon = description.Substring(idx + markerLen).Replace('\n', ' ').Trim();
             while (weapon.Contains("  ")) weapon = weapon.Replace("  ", " ");
         }
 
@@ -508,7 +538,8 @@ namespace ProjectB.UI
                 if (ach == null) continue;
                 if (ach.rewardType == AchievementRewardType.UnlockHero && ach.rewardId == heroId)
                 {
-                    return !string.IsNullOrEmpty(ach.description) ? ach.description : ach.title;
+                    string desc = Loc.Desc(ach);
+                    return !string.IsNullOrEmpty(desc) ? desc : Loc.Title(ach);
                 }
             }
 

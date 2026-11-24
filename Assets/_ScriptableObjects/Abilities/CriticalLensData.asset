@@ -15,6 +15,8 @@ MonoBehaviour:
   id: CriticalLens
   abilityName: Sniper Lens
   description: Grants +12% Critical Hit Chance for weapons and abilities.
+  nameKey: ability.critical_lens.name
+  descriptionKey: ability.critical_lens.desc
   icon: {fileID: 21300000, guid: ec0817aa29e06924aa2911496bab8100, type: 3}
   type: 1
   rarity: 2

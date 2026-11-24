@@ -9,6 +9,9 @@ namespace ProjectB.LevelUp
         public string id;
         public string synergyName;
         [TextArea] public string description;
+        [Header("Localization")]
+        public string nameKey;
+        public string descriptionKey;
         public Sprite icon;
         public CardRarity rarity = CardRarity.Legendary;
         [Tooltip("All ability IDs the hero must own for this synergy to auto-activate")]

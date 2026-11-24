@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Chain Lightning: +6 Damage'
   description: Increases lightning bolt damage by 6.
+  nameKey: card.mod.chain_lightning_mod_damage.name
+  descriptionKey: card.mod.chain_lightning_mod_damage.desc
   icon: {fileID: 21300000, guid: feea333eaca18ef43a8d0bb3715e19c0, type: 3}
   rarity: 0
   isConsumable: 0

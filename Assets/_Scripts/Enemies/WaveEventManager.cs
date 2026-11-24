@@ -370,7 +370,11 @@ namespace ProjectB.Enemies
                 waveManager.SpawnEventEnemy(swarmEnemy, safePos);
             }
 
-            BeginEventState(WaveEventType.SwarmRush, cfg.swarmRushDuration, "SWARM RUSH!", "SURVIVE THE SURROUNDING HORDE!");
+            BeginEventState(
+                WaveEventType.SwarmRush,
+                cfg.swarmRushDuration,
+                Loc.Get("event.swarm_rush.title", "SWARM RUSH!"),
+                Loc.Get("event.swarm_rush.subtitle", "SURVIVE THE SURROUNDING HORDE!"));
             return true;
         }
 
@@ -388,7 +392,11 @@ namespace ProjectB.Enemies
             activeGoldGoblin.OnDied -= cachedGoblinDiedHandler;
             activeGoldGoblin.OnDied += cachedGoblinDiedHandler;
 
-            BeginEventState(WaveEventType.GoldGoblin, cfg.goldGoblinDuration, "GOLD GOBLIN!", "SLAY IT BEFORE IT ESCAPES!");
+            BeginEventState(
+                WaveEventType.GoldGoblin,
+                cfg.goldGoblinDuration,
+                Loc.Get("event.gold_goblin.title", "GOLD GOBLIN!"),
+                Loc.Get("event.gold_goblin.subtitle", "SLAY IT BEFORE IT ESCAPES!"));
             return true;
         }
 
@@ -397,7 +405,11 @@ namespace ProjectB.Enemies
             CaptureLightBaseIfNeeded();
             EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
             if (mods != null) mods.EventSpeedMultiplier = Mathf.Max(1f, cfg.bloodMoonEnemySpeedMultiplier);
-            BeginEventState(WaveEventType.BloodMoon, cfg.bloodMoonDuration, "BLOOD MOON!", "x2 XP & COINS  •  +20% ENEMY SPEED");
+            BeginEventState(
+                WaveEventType.BloodMoon,
+                cfg.bloodMoonDuration,
+                Loc.Get("event.blood_moon.title", "BLOOD MOON!"),
+                Loc.Get("event.blood_moon.subtitle", "x2 XP & COINS  •  +20% ENEMY SPEED"));
             return true;
         }
 
@@ -438,7 +450,11 @@ namespace ProjectB.Enemies
 
             ambushTotalElites = ambushElites.Count;
             nextAmbushPruneTime = 0.25f;
-            BeginEventState(WaveEventType.EliteAmbush, 0f, "ELITE AMBUSH!", "DEFEAT 3 ELITES FOR MAGNET & COINS!");
+            BeginEventState(
+                WaveEventType.EliteAmbush,
+                0f,
+                Loc.Get("event.elite_ambush.title", "ELITE AMBUSH!"),
+                Loc.Get("event.elite_ambush.subtitle", "DEFEAT 3 ELITES FOR MAGNET & COINS!"));
             return true;
         }
 

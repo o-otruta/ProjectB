@@ -1,12 +1,15 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using ProjectB.Core;
 
 namespace ProjectB.UI
 {
     public class XpBarUI : MonoBehaviour
     {
-        private static readonly string[] CachedLevelLabels = BuildLevelLabels(201);
+        private static readonly string[] CachedLevelLabels = BuildLevelLabels("Lv ");
+        private static SystemLanguage cachedLevelLabelsLang = SystemLanguage.English;
 
         private LevelUp.HeroExperience heroExperience;
         [SerializeField] private Slider xpSlider;
@@ -15,27 +18,40 @@ namespace ProjectB.UI
         [SerializeField] private ProgressBarUI progressBar;
         [Tooltip("Sprint 13: \"LV 2\" label centred inside the XP bar.")]
         [SerializeField] private TMPro.TextMeshProUGUI levelBadgeText;
-        private readonly char[] levelBuffer = new char[12];
+        private readonly char[] levelBuffer = new char[20];
         private bool isInitialized = false;
         private int lastDisplayedLevel = int.MinValue;
+        private string cachedLvUpperPrefix = "LV ";
+        private Action cachedLanguageChanged;
 
-        private static string[] BuildLevelLabels(int count)
+        private static string[] BuildLevelLabels(string prefix)
         {
-            var arr = new string[count];
-            for (int i = 0; i < count; i++)
+            var arr = new string[201];
+            for (int i = 0; i < arr.Length; i++)
             {
-                arr[i] = $"Lv {i}";
+                arr[i] = $"{prefix}{i}";
             }
             return arr;
         }
 
         public static string GetCachedLevelText(int level)
         {
+            SystemLanguage lang = LocalizationService.Current.CurrentLanguage;
+            if (cachedLevelLabelsLang != lang)
+            {
+                cachedLevelLabelsLang = lang;
+                string prefix = Loc.Get("ui.hud.lv_prefix", "Lv ");
+                for (int i = 0; i < CachedLevelLabels.Length; i++)
+                {
+                    CachedLevelLabels[i] = $"{prefix}{i}";
+                }
+            }
+
             if (level >= 0 && level < CachedLevelLabels.Length)
             {
                 return CachedLevelLabels[level];
             }
-            return $"Lv {level}";
+            return Loc.Format("ui.hud.lv_title", level);
         }
 
         [Inject]
@@ -51,6 +67,10 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            RefreshPrefix();
+            cachedLanguageChanged ??= HandleLanguageChanged;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
             if (isInitialized)
             {
                 Subscribe();
@@ -59,11 +79,30 @@ namespace ProjectB.UI
 
         private void OnDisable()
         {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            }
             if (heroExperience != null)
             {
                 heroExperience.OnXPChanged -= UpdateXpBar;
                 heroExperience.OnLevelUp -= UpdateLevelText;
             }
+        }
+
+        private void HandleLanguageChanged()
+        {
+            RefreshPrefix();
+            lastDisplayedLevel = int.MinValue;
+            if (heroExperience != null)
+            {
+                UpdateLevelText(heroExperience.CurrentLevel);
+            }
+        }
+
+        private void RefreshPrefix()
+        {
+            cachedLvUpperPrefix = Loc.Get("ui.hud.lv_upper_prefix", "LV ");
         }
 
         private void Start()
@@ -110,7 +149,7 @@ namespace ProjectB.UI
             }
             if (levelBadgeText != null)
             {
-                int len = UiFormat.WriteString(levelBuffer, 0, "LV ");
+                int len = UiFormat.WriteString(levelBuffer, 0, cachedLvUpperPrefix);
                 len = UiFormat.WriteInt(levelBuffer, len, Mathf.Max(0, newLevel));
                 if (progressBar != null && progressBar.HasSplitLabel && progressBar.Label == levelBadgeText)
                 {

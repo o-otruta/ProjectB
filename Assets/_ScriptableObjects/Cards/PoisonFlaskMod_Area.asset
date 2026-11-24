@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Poison Flask: Wider Puddle'
   description: Increases puddle radius by +1.0m.
+  nameKey: card.mod.poison_flask_mod_area.name
+  descriptionKey: card.mod.poison_flask_mod_area.desc
   icon: {fileID: 21300000, guid: 21d5ab872a2fe374d9a1a07d5df7014c, type: 3}
   rarity: 0
   isConsumable: 0

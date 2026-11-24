@@ -15,6 +15,8 @@ MonoBehaviour:
   id: ChronoTome
   abilityName: Chrono Tome
   description: Reduces cooldowns of all active abilities by +10% (up to 50% total).
+  nameKey: ability.chrono_tome.name
+  descriptionKey: ability.chrono_tome.desc
   icon: {fileID: 21300000, guid: e47f4d0b997f3764f859b7e3591ceda4, type: 3}
   type: 1
   rarity: 1

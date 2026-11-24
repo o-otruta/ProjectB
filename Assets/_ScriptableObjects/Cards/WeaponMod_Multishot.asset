@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.WeaponUpgradeCardData
   cardName: 'Weapon: Multishot'
   description: +1 projectile fired in a fan at another target
+  nameKey: card.weapon.weapon_mod_multishot.name
+  descriptionKey: card.weapon.weapon_mod_multishot.desc
   icon: {fileID: 21300000, guid: 022581b07865a2c418db1acb2e2c7170, type: 3}
   rarity: 2
   isConsumable: 0

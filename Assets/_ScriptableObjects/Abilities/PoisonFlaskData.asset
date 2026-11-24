@@ -16,6 +16,8 @@ MonoBehaviour:
   abilityName: Poison Flask
   description: Hurls toxic flasks that leave boiling acid puddles dealing periodic
     damage.
+  nameKey: ability.poison_alchemist.name
+  descriptionKey: ability.poison_alchemist.desc
   icon: {fileID: 21300000, guid: d26960326b7e0c84e8af9848b35a3631, type: 3}
   type: 0
   rarity: 1

@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Orbital Sword: +1 Sword'
   description: Adds one extra orbiting sword.
+  nameKey: card.mod.orbital_sword_plus1sphere.name
+  descriptionKey: card.mod.orbital_sword_plus1sphere.desc
   icon: {fileID: 21300000, guid: ab15a06af2a27304ebbd857a511451db, type: 3}
   rarity: 1
   isConsumable: 0

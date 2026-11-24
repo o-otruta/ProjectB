@@ -17,6 +17,13 @@ MonoBehaviour:
   role: Area Caster
   description: Arcane spellcaster firing explosive AoE bolts (14 dmg, 1.5m splash
     radius) and channeling devastating elemental power.
+  nameKey: hero.mage.name
+  roleKey: hero.mage.role
+  descriptionKey: hero.mage.desc
+  passiveNameKey: hero.mage.passive_name
+  passiveDescriptionKey: hero.mage.passive_desc
+  ultimateNameKey: hero.mage.ult_name
+  ultimateDescriptionKey: hero.mage.ult_desc
   icon: {fileID: 21300000, guid: 14d7f06af2b5c2b4d845325d4e6263dd, type: 3}
   unlockedByDefault: 0
   moveSpeed: 5.2

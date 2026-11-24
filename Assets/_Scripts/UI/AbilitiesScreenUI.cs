@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
@@ -48,6 +50,7 @@ namespace ProjectB.UI
         private readonly List<AbilityCollectionFilter> spawnedCategories = new List<AbilityCollectionFilter>();
         private AbilityCollectionFilter filter = AbilityCollectionFilter.Active;
         private bool listenersAdded;
+        private Action cachedLanguageChanged;
 
         public AbilityCollectionFilter Filter => filter;
 
@@ -88,6 +91,9 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            cachedLanguageChanged ??= RefreshUI;
+            LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
+            LocalizationService.Current.LanguageChanged += cachedLanguageChanged;
             if (saveManager != null)
             {
                 RefreshUI();
@@ -95,6 +101,14 @@ namespace ProjectB.UI
             if (contentContainer != null)
             {
                 LayoutRebuilder.ForceRebuildLayoutImmediate(contentContainer.GetComponent<RectTransform>());
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (cachedLanguageChanged != null)
+            {
+                LocalizationService.Current.LanguageChanged -= cachedLanguageChanged;
             }
         }
 
@@ -210,16 +224,16 @@ namespace ProjectB.UI
             int pas = abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : AbilitySlotService.BASE_PASSIVE_SLOTS;
 
             if (collectedChipText != null) collectedChipText.text = $"{unlockedCount}/{totalCount}";
-            if (synergiesChipText != null) synergiesChipText.text = $"Synergies {unlockedSynergies}/{synergyCount}";
+            if (synergiesChipText != null) synergiesChipText.text = Loc.Format("ui.abilities.synergies_chip", unlockedSynergies, synergyCount);
             if (slotsChipText != null)
             {
-                slotsChipText.text = $"Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS} · {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}";
+                slotsChipText.text = Loc.Format("ui.abilities.slots_chip", $"{act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}", $"{pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}");
             }
 
             if (headerText != null)
             {
                 headerText.text = collectedChipText != null
-                    ? "ABILITIES"
+                    ? Loc.Get("ui.abilities.title", "ABILITIES")
                     : (synergyCount > 0
                         ? $"Abilities ({unlockedCount}/{totalCount})  •  {synergyCount} Synergies  •  Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}A {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}P"
                         : $"Abilities ({unlockedCount}/{totalCount})  •  Slots {act}/{AbilitySlotService.MAX_ACTIVE_SLOTS}A {pas}/{AbilitySlotService.MAX_PASSIVE_SLOTS}P");
@@ -255,7 +269,7 @@ namespace ProjectB.UI
                 {
                     leftIcon = FindAbilityIcon(abilityId),
                     rightIcon = FindAbilityIcon(partnerId),
-                    name = syn.synergyName,
+                    name = Loc.Name(syn),
                     unlocked = unlocked
                 });
             }
@@ -269,7 +283,7 @@ namespace ProjectB.UI
             {
                 leftIcon = FindAbilityIcon(a),
                 rightIcon = FindAbilityIcon(b),
-                name = syn.synergyName,
+                name = Loc.Name(syn),
                 unlocked = unlocked
             };
         }
@@ -305,10 +319,10 @@ namespace ProjectB.UI
                     partnerNames = string.IsNullOrEmpty(partnerNames) ? partnerName : $"{partnerNames} + {partnerName}";
                 }
 
-                if (sb == null) sb = new StringBuilder("Synergy: ");
+                if (sb == null) sb = new StringBuilder(Loc.Get("ui.abilities.synergy_prefix", "Synergy: "));
                 else sb.Append("; ");
 
-                sb.Append('+').Append(partnerNames).Append(" -> ").Append(syn.synergyName);
+                sb.Append('+').Append(partnerNames).Append(" -> ").Append(Loc.Name(syn));
             }
 
             return sb != null ? sb.ToString() : string.Empty;
@@ -345,7 +359,8 @@ namespace ProjectB.UI
                 if (ach == null) continue;
                 if (ach.rewardType == AchievementRewardType.UnlockAbility && ach.rewardId == abilityId)
                 {
-                    return !string.IsNullOrEmpty(ach.description) ? ach.description : ach.title;
+                    string desc = Loc.Desc(ach);
+                    return !string.IsNullOrEmpty(desc) ? desc : Loc.Title(ach);
                 }
             }
 

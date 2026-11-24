@@ -35,6 +35,16 @@ namespace ProjectB.EditorScripts.UiKit
             for (uint c = 0x410; c <= 0x44F; c++) set.Add(c);
             set.Add(0x401); // Ё
             set.Add(0x451); // ё
+            // Ukrainian letters (Sprint 12.3)
+            set.Add(0x0404); // Є
+            set.Add(0x0454); // є
+            set.Add(0x0406); // І
+            set.Add(0x0456); // і
+            set.Add(0x0407); // Ї
+            set.Add(0x0457); // ї
+            set.Add(0x0490); // Ґ
+            set.Add(0x0491); // ґ
+            set.Add(0x02BC); // ʼ
             foreach (char c in "×→←↑↓•…№–—«»‘’“”‹›€₽‑ ") set.Add(c);
             set.Add(0x202F); // narrow no-break space (thousands separator)
             return new List<uint>(set).ToArray();
@@ -77,7 +87,6 @@ namespace ProjectB.EditorScripts.UiKit
                 return null;
             }
 
-            var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
             TMP_FontAsset asset = TMP_FontAsset.CreateFontAsset(font, samplingSize, padding, GlyphRenderMode.SDFAA, atlasSize, atlasSize, AtlasPopulationMode.Dynamic, enableMultiAtlasSupport: false);
             if (asset == null)
             {
@@ -87,29 +96,6 @@ namespace ProjectB.EditorScripts.UiKit
 
             string baseName = System.IO.Path.GetFileNameWithoutExtension(assetPath);
             asset.name = baseName;
-
-            if (existing != null)
-            {
-                // Rebuild in place to keep the GUID that scenes reference.
-                EditorUtility.CopySerialized(asset, existing);
-                foreach (Object sub in AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath))
-                {
-                    if (sub is Texture2D || sub is Material) AssetDatabase.RemoveObjectFromAsset(sub);
-                }
-                asset = existing;
-                asset.name = baseName;
-            }
-            else
-            {
-                AssetDatabase.CreateAsset(asset, assetPath);
-            }
-
-            Texture2D atlas = asset.atlasTextures[0];
-            atlas.name = baseName + " Atlas";
-            AssetDatabase.AddObjectToAsset(atlas, asset);
-            Material material = asset.material;
-            material.name = baseName + " Material";
-            AssetDatabase.AddObjectToAsset(material, asset);
 
             asset.TryAddCharacters(BuildCharacterSet(), out uint[] missing);
             if (missing != null && missing.Length > 0)
@@ -124,7 +110,77 @@ namespace ProjectB.EditorScripts.UiKit
             {
                 asset.fallbackFontAssetTable = new List<TMP_FontAsset> { fallback };
             }
-            EditorUtility.SetDirty(asset);
+
+            Texture2D builtAtlas = asset.atlasTextures[0];
+            builtAtlas.Apply(false, false);
+            Material builtMat = asset.material;
+
+            var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
+            if (existing != null)
+            {
+                Texture2D existingAtlas = null;
+                Material existingMat = null;
+                foreach (Object sub in AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath))
+                {
+                    if (existingAtlas == null && sub is Texture2D tex) existingAtlas = tex;
+                    else if (existingMat == null && sub is Material mat) existingMat = mat;
+                    else if (sub is Texture2D || sub is Material) AssetDatabase.RemoveObjectFromAsset(sub);
+                }
+
+                EditorUtility.CopySerialized(asset, existing);
+                existing.name = baseName;
+
+                if (existingAtlas != null)
+                {
+                    EditorUtility.CopySerialized(builtAtlas, existingAtlas);
+                    existingAtlas.name = baseName + " Atlas";
+                    Object.DestroyImmediate(builtAtlas);
+                }
+                else
+                {
+                    existingAtlas = builtAtlas;
+                    existingAtlas.name = baseName + " Atlas";
+                    AssetDatabase.AddObjectToAsset(existingAtlas, existing);
+                }
+
+                if (existingMat != null)
+                {
+                    existingMat.shader = builtMat.shader;
+                    existingMat.CopyPropertiesFromMaterial(builtMat);
+                    existingMat.name = baseName + " Material";
+                    Object.DestroyImmediate(builtMat);
+                }
+                else
+                {
+                    existingMat = builtMat;
+                    existingMat.name = baseName + " Material";
+                    AssetDatabase.AddObjectToAsset(existingMat, existing);
+                }
+
+                existingMat.SetTexture(ShaderUtilities.ID_MainTex, existingAtlas);
+                existing.atlasTextures = new[] { existingAtlas };
+                existing.material = existingMat;
+                existing.ReadFontAssetDefinition();
+
+                EditorUtility.SetDirty(existingAtlas);
+                EditorUtility.SetDirty(existingMat);
+                EditorUtility.SetDirty(existing);
+
+                Object.DestroyImmediate(asset);
+                asset = existing;
+            }
+            else
+            {
+                AssetDatabase.CreateAsset(asset, assetPath);
+                builtAtlas.name = baseName + " Atlas";
+                AssetDatabase.AddObjectToAsset(builtAtlas, asset);
+                builtMat.name = baseName + " Material";
+                builtMat.SetTexture(ShaderUtilities.ID_MainTex, builtAtlas);
+                AssetDatabase.AddObjectToAsset(builtMat, asset);
+                asset.ReadFontAssetDefinition();
+                EditorUtility.SetDirty(asset);
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(assetPath);
             return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);

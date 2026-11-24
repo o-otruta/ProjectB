@@ -15,6 +15,8 @@ MonoBehaviour:
   id: defeat_golem
   title: Golem Breaker
   description: Defeat the Stone Golem to unlock Black Hole
+  nameKey: ach.defeat_golem.title
+  descriptionKey: ach.defeat_golem.desc
   icon: {fileID: 21300000, guid: 5bd30fe27af23a845a1915d5ca133dd9, type: 3}
   conditionType: 2
   targetValue: 1

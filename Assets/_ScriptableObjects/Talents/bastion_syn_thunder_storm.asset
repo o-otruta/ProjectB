@@ -20,6 +20,8 @@ MonoBehaviour:
     Chain
     Lightning + Ice Aura: Striking slowed enemies triggers a 90% deep freeze (0.65s)
     and fires 2 extra icy lightning arcs.'
+  nameKey: talent.bastion_syn_thunder_storm.name
+  descriptionKey: talent.bastion_syn_thunder_storm.desc
   icon: {fileID: 21300000, guid: 8cfdf27c60d378040aa284081652304a, type: 3}
   nodeType: 2
   constellation: 2

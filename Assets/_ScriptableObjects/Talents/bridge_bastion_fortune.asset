@@ -15,6 +15,8 @@ MonoBehaviour:
   id: bridge_bastion_fortune
   displayName: +6% Max HP
   description: 'Bridge star: permanently +6% maximum health.'
+  nameKey: talent.bridge_bastion_fortune.name
+  descriptionKey: talent.bridge_bastion_fortune.desc
   icon: {fileID: 21300000, guid: 648b1c6d26f26ac439298ad18f47cb02, type: 3}
   nodeType: 1
   constellation: 0

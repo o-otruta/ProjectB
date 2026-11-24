@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityCardData
   cardName: +Skyfall Spire
   description: Pillar of fire on the densest enemy group.
+  nameKey: card.ability.skyfall_spire_card.name
+  descriptionKey: card.ability.skyfall_spire_card.desc
   icon: {fileID: 21300000, guid: e60207470ae520944a5ca12c644ea6c4, type: 3}
   rarity: 2
   isConsumable: 1

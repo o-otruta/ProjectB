@@ -16,9 +16,10 @@ MonoBehaviour:
   synergyName: Solar Eclipse
   description: 0.3s before a Skyfall Spire lands, an eclipse pulse drags enemies
     into the strike point; the strike deals +35% damage and blinds survivors.
+  nameKey: synergy.solar_eclipse.name
+  descriptionKey: synergy.solar_eclipse.desc
   icon: {fileID: 0}
   rarity: 3
   requiredAbilityIds:
   - SkyfallSpire
   - BlackHole
-  rewardCard: {fileID: 0}

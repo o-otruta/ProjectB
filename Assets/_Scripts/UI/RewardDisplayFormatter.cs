@@ -1,6 +1,7 @@
 using System.Text;
 using UnityEngine;
 using ProjectB.Abilities;
+using ProjectB.Core;
 using ProjectB.Data;
 
 namespace ProjectB.UI
@@ -22,7 +23,8 @@ namespace ProjectB.UI
                     AbilityData ab = catalog.abilities[i];
                     if (ab != null && ab.id == abilityId)
                     {
-                        return !string.IsNullOrEmpty(ab.abilityName) ? ab.abilityName : HumanizeIdentifier(abilityId);
+                        string resolved = Loc.Name(ab);
+                        return !string.IsNullOrEmpty(resolved) ? resolved : HumanizeIdentifier(abilityId);
                     }
                 }
             }
@@ -50,7 +52,7 @@ namespace ProjectB.UI
                 HeroData hero = catalog.GetById(heroId);
                 if (hero != null && !string.IsNullOrEmpty(hero.heroName))
                 {
-                    return hero.heroName;
+                    return Loc.Name(hero);
                 }
             }
 
@@ -66,15 +68,15 @@ namespace ProjectB.UI
 
             return ach.rewardType switch
             {
-                AchievementRewardType.GiveCoins => $"+{ach.rewardValue} Coins",
+                AchievementRewardType.GiveCoins => Loc.Format("ui.reward.coins_long", ach.rewardValue),
                 AchievementRewardType.UnlockAbility => !string.IsNullOrEmpty(ach.rewardId)
-                    ? $"Unlocked: {ResolveAbilityName(ach.rewardId, abilityCatalog)}"
-                    : "New Ability Unlocked!",
+                    ? Loc.Format("ui.reward.unlocked_item", ResolveAbilityName(ach.rewardId, abilityCatalog))
+                    : Loc.Get("ui.reward.new_ability", "New Ability Unlocked!"),
                 AchievementRewardType.UnlockHero => !string.IsNullOrEmpty(ach.rewardId)
-                    ? $"Hero: {ResolveHeroName(ach.rewardId, heroCatalog)}"
-                    : "New Hero Unlocked!",
-                AchievementRewardType.UnlockActiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Active Slot",
-                AchievementRewardType.UnlockPassiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Passive Slot",
+                    ? Loc.Format("ui.reward.hero_item", ResolveHeroName(ach.rewardId, heroCatalog))
+                    : Loc.Get("ui.reward.new_hero", "New Hero Unlocked!"),
+                AchievementRewardType.UnlockActiveSlot => Loc.Format("ui.reward.active_slot_long", Mathf.Max(1, ach.rewardValue)),
+                AchievementRewardType.UnlockPassiveSlot => Loc.Format("ui.reward.passive_slot_long", Mathf.Max(1, ach.rewardValue)),
                 _ => string.Empty
             };
         }
@@ -124,8 +126,8 @@ namespace ProjectB.UI
                 AchievementRewardType.GiveCoins => $"+{ach.rewardValue}",
                 AchievementRewardType.UnlockAbility => ResolveAbilityName(ach.rewardId, abilityCatalog),
                 AchievementRewardType.UnlockHero => ResolveHeroName(ach.rewardId, heroCatalog),
-                AchievementRewardType.UnlockActiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Active",
-                AchievementRewardType.UnlockPassiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Passive",
+                AchievementRewardType.UnlockActiveSlot => Loc.Format("ui.reward.active_slot_short", Mathf.Max(1, ach.rewardValue)),
+                AchievementRewardType.UnlockPassiveSlot => Loc.Format("ui.reward.passive_slot_short", Mathf.Max(1, ach.rewardValue)),
                 _ => string.Empty
             };
         }

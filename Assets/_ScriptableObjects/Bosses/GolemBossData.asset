@@ -23,6 +23,7 @@ MonoBehaviour:
   modelPrefab: {fileID: 3563887962342572629, guid: 7fd9d0f519ea6cf4f9341b65aac6b070, type: 3}
   bossId: golem
   bossDisplayName: Stone Golem
+  nameKey: boss.golem.name
   isMiniBoss: 0
   pullResistance: 0.1
   minionData: {fileID: 11400000, guid: edbd56fa5d7cbde47a45b21408a41300, type: 2}
@@ -41,3 +42,38 @@ MonoBehaviour:
   volleyProjectileCount: 5
   volleySpreadAngle: 55
   volleyCooldown: 3.2
+  frostStopDistance: 7.5
+  spikeCooldown: 5.5
+  spikeTelegraphDuration: 1
+  spikeLineCount: 6
+  spikeLineLength: 10
+  spikeLineHalfWidth: 0.85
+  spikeDamage: 35
+  spikeSlowFactor: 0.55
+  spikeSlowDuration: 2.5
+  blizzardCooldown: 9
+  blizzardTelegraphDuration: 1.15
+  blizzardActiveDuration: 3.2
+  blizzardSafeInnerRadius: 3
+  blizzardOuterRadius: 9
+  blizzardTickInterval: 0.5
+  blizzardTickDamage: 14
+  blizzardSlowFactor: 0.65
+  demonEnrageHpThreshold: 0.5
+  demonEnrageSpeedMultiplier: 1.35
+  demonChargeCooldown: 5.5
+  demonChargeTriggerRange: 10
+  demonChargeWindupDuration: 0.425
+  demonChargeSpeed: 13
+  demonChargeDistance: 11
+  demonChargeHitRadius: 1.45
+  demonChargeDamage: 32
+  demonFireballCooldown: 4.5
+  demonPhase1FireballCount: 8
+  demonPhase2FireballCount: 12
+  demonFireballWeaponData: {fileID: 0}
+  demonMeteorCooldown: 6.5
+  demonMeteorCount: 5
+  demonMeteorRadius: 2.6
+  demonMeteorTelegraphDuration: 1.05
+  demonMeteorDamage: 38

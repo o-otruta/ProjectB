@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Spire: Meteor Shower'
   description: +1 spire per cast
+  nameKey: card.mod.skyfall_spire_mod_count.name
+  descriptionKey: card.mod.skyfall_spire_mod_count.desc
   icon: {fileID: 21300000, guid: 2eacdb7510eaa9e4f8e73686c113b733, type: 3}
   rarity: 2
   isConsumable: 0

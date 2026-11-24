@@ -20,6 +20,8 @@ MonoBehaviour:
     Laser
     Turret + Shooter: Active turrets link via high-voltage laser fences (<=12m),
     while passing Shooter projectiles gain +2 pierce.'
+  nameKey: talent.fortune_syn_overcharged_grid.name
+  descriptionKey: talent.fortune_syn_overcharged_grid.desc
   icon: {fileID: 21300000, guid: 1be1aac575aae1740bf1b9f168c03560, type: 3}
   nodeType: 2
   constellation: 3

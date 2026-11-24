@@ -16,6 +16,8 @@ MonoBehaviour:
   title: Untouchable
   description: Complete 5 consecutive waves without taking damage to unlock Sniper
     Lens
+  nameKey: ach.no_damage_5_waves.title
+  descriptionKey: ach.no_damage_5_waves.desc
   icon: {fileID: 21300000, guid: 4d9b5331714194b43bcb1d22caf43b4c, type: 3}
   conditionType: 5
   targetValue: 5

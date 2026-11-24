@@ -20,6 +20,8 @@ MonoBehaviour:
     Seismic
     Hammer slams on frozen enemies deal 2.5x damage and burst them into 4 ice shards
     that strike neighbours.'
+  nameKey: talent.bastion_syn_shatter_nova.name
+  descriptionKey: talent.bastion_syn_shatter_nova.desc
   icon: {fileID: 21300000, guid: f991ad4aba7c5c34e8087db51b0bd150, type: 3}
   nodeType: 2
   constellation: 2

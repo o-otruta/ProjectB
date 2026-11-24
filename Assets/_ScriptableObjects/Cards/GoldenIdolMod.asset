@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.LevelUp.AbilityModifierCardData
   cardName: 'Golden Idol: +20% Coin Gain'
   description: Increases coin gain by an extra +20%.
+  nameKey: card.mod.golden_idol_mod.name
+  descriptionKey: card.mod.golden_idol_mod.desc
   icon: {fileID: 21300000, guid: d8ba5175a1c39814496db9a11a8cc2b1, type: 3}
   rarity: 1
   isConsumable: 0
