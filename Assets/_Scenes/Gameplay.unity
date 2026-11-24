@@ -9190,6 +9190,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.CoinManager
   coinPrefab: {fileID: 1890652934616229860, guid: 70e06d167a33860498003564519b7145, type: 3}
+  pickupConfig: {fileID: 0}
 --- !u!1 &577221677
 GameObject:
   m_ObjectHideFlags: 0
@@ -18260,6 +18261,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.XpManager
   xpCrystalPrefab: {fileID: 5822715672098073702, guid: cd3eb7faf8300f74684a612567f04873, type: 3}
+  pickupConfig: {fileID: 0}
 --- !u!4 &1067613431
 Transform:
   m_ObjectHideFlags: 0
@@ -29031,11 +29033,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2554cb482467d4946ac23433cdc49951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Arena.SecretItemSpawner
+  secretConfig: {fileID: 11400000, guid: 6a99be79e92863a479c442b09ddba028, type: 2}
   secretItemPrefabs:
   - {fileID: 3379810263749753943, guid: ba9ca0bd18e81fd4999c898ce926c7a7, type: 3}
   - {fileID: 2997210071286978446, guid: b4c851292476a694e85e1b0fa4947a5e, type: 3}
   - {fileID: 857153807870195851, guid: a15afbc38bc88ed488a86931d60ec6a7, type: 3}
-  spawnChancePerRun: 1
+  spawnChancePerRun: 0.1
   minDistanceFromCenter: 28
   maxDistanceFromCenter: 60
   arenaPadding: 6

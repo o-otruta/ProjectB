@@ -4,6 +4,7 @@ using VContainer;
 using ProjectB.Abilities;
 using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
 using ProjectB.Player;
@@ -16,19 +17,24 @@ namespace ProjectB.Arena
     /// </summary>
     public class SecretItemSpawner : MonoBehaviour
     {
+        [Header("Configuration")]
+        [SerializeField] private SecretConfig secretConfig;
+
         [Header("Secret Prefabs")]
         [SerializeField] private List<InteractableItem> secretItemPrefabs = new List<InteractableItem>();
 
-        [Header("Spawn Settings")]
+        [Header("Spawn Settings (Fallback if SecretConfig is unset)")]
         [Range(0f, 1f)]
-        [SerializeField] private float spawnChancePerRun = 1f;
+        [SerializeField] private float spawnChancePerRun = 0.10f;
         [SerializeField] private float minDistanceFromCenter = 28f;
         [SerializeField] private float maxDistanceFromCenter = 60f;
         [SerializeField] private float arenaPadding = 6f;
 
-        [Header("Reward Tuning")]
+        [Header("Reward Tuning (Fallback if SecretConfig is unset)")]
         [SerializeField] private int chestCoinReward = 100;
         [SerializeField] private int crystalFallbackCoins = 150;
+
+        private SecretConfig cachedDefaultConfig;
 
         private ArenaGenerator arenaGenerator;
         private HeroHealth heroHealth;
@@ -45,6 +51,36 @@ namespace ProjectB.Arena
         private int debugSpawnCycleIndex;
 
         public InteractableItem ActiveItem => activeItem;
+
+        public float EffectiveSpawnChance
+        {
+            get
+            {
+                bool hasTalent = runtimeStats != null && runtimeStats.HasSecretAndShrineTalent;
+                SecretConfig cfg = ResolveConfig();
+                if (cfg != null)
+                {
+                    return cfg.GetEffectiveSpawnChance(hasTalent);
+                }
+
+                return Mathf.Clamp01(spawnChancePerRun + (hasTalent ? 0.20f : 0f));
+            }
+        }
+
+        public void SetConfig(SecretConfig config)
+        {
+            secretConfig = config;
+        }
+
+        private SecretConfig ResolveConfig()
+        {
+            if (secretConfig != null) return secretConfig;
+            if (cachedDefaultConfig == null)
+            {
+                cachedDefaultConfig = Resources.Load<SecretConfig>(SecretConfig.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedDefaultConfig;
+        }
 
         [Inject]
         public void Construct(
@@ -73,18 +109,21 @@ namespace ProjectB.Arena
             TrySpawnSecretForRun();
         }
 
-        public void TrySpawnSecretForRun()
+        public bool TrySpawnSecretForRun(float? overrideRoll = null)
         {
-            if (hasSpawnedThisRun) return;
-            if (secretItemPrefabs == null || secretItemPrefabs.Count == 0) return;
-            if (Random.value > spawnChancePerRun) return;
+            if (hasSpawnedThisRun) return false;
+            if (secretItemPrefabs == null || secretItemPrefabs.Count == 0) return false;
+
+            float roll = overrideRoll ?? Random.value;
+            if (roll >= EffectiveSpawnChance) return false;
 
             var prefab = secretItemPrefabs[Random.Range(0, secretItemPrefabs.Count)];
-            if (prefab == null) return;
+            if (prefab == null) return false;
 
             Vector3 spawnPos = FindFarSpawnPosition();
             SpawnSpecificItem(prefab, spawnPos);
             hasSpawnedThisRun = true;
+            return true;
         }
 
         public InteractableItem SpawnRandomNearHero(float distance = 4.5f)
@@ -123,8 +162,10 @@ namespace ProjectB.Arena
 
         private Vector3 GetClampedPositionNear(Vector3 center, float angleRad, float distance)
         {
+            SecretConfig cfg = ResolveConfig();
+            float padding = cfg != null ? cfg.arenaPadding : arenaPadding;
             float halfArena = arenaGenerator != null ? arenaGenerator.ArenaSize * 0.5f : 100f;
-            float maxAllowed = Mathf.Max(5f, halfArena - arenaPadding);
+            float maxAllowed = Mathf.Max(5f, halfArena - padding);
 
             Vector3 pos = center + new Vector3(Mathf.Cos(angleRad), 0f, Mathf.Sin(angleRad)) * distance;
             pos.y = 0f;
@@ -145,10 +186,15 @@ namespace ProjectB.Arena
 
         private Vector3 FindFarSpawnPosition()
         {
+            SecretConfig cfg = ResolveConfig();
+            float padding = cfg != null ? cfg.arenaPadding : arenaPadding;
+            float minFromCenter = cfg != null ? cfg.minDistanceFromCenter : minDistanceFromCenter;
+            float maxFromCenter = cfg != null ? cfg.maxDistanceFromCenter : maxDistanceFromCenter;
+
             float halfArena = arenaGenerator != null ? arenaGenerator.ArenaSize * 0.5f : 100f;
-            float maxAllowedRadius = Mathf.Max(10f, halfArena - arenaPadding);
-            float minDist = Mathf.Min(minDistanceFromCenter, maxAllowedRadius * 0.6f);
-            float maxDist = Mathf.Min(maxDistanceFromCenter, maxAllowedRadius);
+            float maxAllowedRadius = Mathf.Max(10f, halfArena - padding);
+            float minDist = Mathf.Min(minFromCenter, maxAllowedRadius * 0.6f);
+            float maxDist = Mathf.Clamp(maxFromCenter, minDist, maxAllowedRadius);
 
             for (int attempt = 0; attempt < 20; attempt++)
             {
@@ -180,10 +226,12 @@ namespace ProjectB.Arena
 
         public string ApplySecretReward(SecretItemType type)
         {
+            SecretConfig cfg = ResolveConfig();
             switch (type)
             {
                 case SecretItemType.TreasureChest:
-                    int chestCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(chestCoinReward) : chestCoinReward;
+                    int baseChestCoins = cfg != null ? cfg.chestCoinReward : chestCoinReward;
+                    int chestCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(baseChestCoins) : baseChestCoins;
                     heroEconomy?.AddCoin(chestCoins);
                     return $"+{chestCoins} Coins";
 
@@ -197,7 +245,8 @@ namespace ProjectB.Arena
                     {
                         return $"Unlocked: {granted.abilityName}";
                     }
-                    int crystalCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(crystalFallbackCoins) : crystalFallbackCoins;
+                    int baseCrystalCoins = cfg != null ? cfg.crystalFallbackCoins : crystalFallbackCoins;
+                    int crystalCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(baseCrystalCoins) : baseCrystalCoins;
                     heroEconomy?.AddCoin(crystalCoins);
                     return $"+{crystalCoins} Coins";
 

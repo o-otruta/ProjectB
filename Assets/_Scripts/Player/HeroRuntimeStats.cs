@@ -45,6 +45,7 @@ namespace ProjectB.Player
         public float BonusIFrameSeconds { get; private set; }
         public float UltimateCooldownMultiplier { get; private set; } = 1f;
         public float SecretRewardMultiplier { get; private set; } = 1f;
+        public bool HasSecretAndShrineTalent { get; private set; }
         public int BarrelRespawnBonus { get; private set; }
         public int FreeRerollBonus { get; private set; }
         public bool HasSecondWind { get; private set; }
@@ -150,6 +151,7 @@ namespace ProjectB.Player
                 TalentAreaPercent = 0f;
                 TalentHpMultiplier = TalentSpeedMultiplier = TalentXpMultiplier = TalentDamageMultiplier = 1f;
                 HealingMultiplier = BossDamageMultiplier = UltimateCooldownMultiplier = SecretRewardMultiplier = 1f;
+                HasSecretAndShrineTalent = false;
                 BonusIFrameSeconds = 0f;
                 BarrelRespawnBonus = FreeRerollBonus = CrystalCoinBonus = 0;
                 HasSecondWind = false;
@@ -168,6 +170,7 @@ namespace ProjectB.Player
                 BonusIFrameSeconds = Mathf.Max(0f, talentTree.GetTotalEffect(TalentEffectType.IFrameSeconds));
                 UltimateCooldownMultiplier = Mathf.Clamp(1f - talentTree.GetTotalEffect(TalentEffectType.UltimateCooldownPercent) / 100f, 0.4f, 1f);
                 SecretRewardMultiplier = 1f + talentTree.GetTotalEffect(TalentEffectType.SecretAndShrineRewardPercent) / 100f;
+                HasSecretAndShrineTalent = talentTree.HasEffect(TalentEffectType.SecretAndShrineRewardPercent);
                 BarrelRespawnBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.BarrelRespawnBonus)));
                 FreeRerollBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.FreeRerolls)));
                 CrystalCoinBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.CrystalCoinBonus)));

@@ -311,16 +311,17 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(3, compass.ActiveVisibleSlotCount);
             Assert.AreEqual(CompassPoiType.GoldGoblin, compass.GetSlotPoiType(0));
             Assert.AreEqual(CompassPoiType.ChallengeShrine, compass.GetSlotPoiType(1));
-            Assert.AreEqual(CompassPoiType.Secret, compass.GetSlotPoiType(2));
+            Assert.AreEqual(CompassPoiType.VacuumMagnet, compass.GetSlotPoiType(2));
             Assert.AreEqual(SecretCompassIndicatorUI.GetPoiColor(CompassPoiType.GoldGoblin), compass.GetSlotArrowColor(0));
             Assert.AreEqual(SecretCompassIndicatorUI.GetPoiColor(CompassPoiType.ChallengeShrine), compass.GetSlotArrowColor(1));
-            Assert.AreEqual(SecretCompassIndicatorUI.GetPoiColor(CompassPoiType.Secret), compass.GetSlotArrowColor(2));
+            Assert.AreEqual(SecretCompassIndicatorUI.GetPoiColor(CompassPoiType.VacuumMagnet), compass.GetSlotArrowColor(2));
 
-            // Removing GoldGoblin reveals VacuumMagnet in slot 2
+            // Removing GoldGoblin leaves only ChallengeShrine and VacuumMagnet (Secret stays excluded)
             SecretCompassIndicatorUI.UnregisterDynamicPoi(goblinGo.transform);
             compass.RefreshIndicators();
-            Assert.AreEqual(3, compass.ActiveVisibleSlotCount);
-            Assert.AreEqual(CompassPoiType.VacuumMagnet, compass.GetSlotPoiType(2));
+            Assert.AreEqual(2, compass.ActiveVisibleSlotCount);
+            Assert.AreEqual(CompassPoiType.ChallengeShrine, compass.GetSlotPoiType(0));
+            Assert.AreEqual(CompassPoiType.VacuumMagnet, compass.GetSlotPoiType(1));
         }
 
         [Test]

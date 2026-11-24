@@ -18,7 +18,8 @@ namespace ProjectB.UI
 
     /// <summary>
     /// Multi-POI off-screen edge compass displaying up to 3 simultaneous color-coded pointers
-    /// (Secret Item - purple, Challenge Shrine - crimson, Vacuum Magnet - cyan, Gold Goblin - gold).
+    /// (Challenge Shrine - crimson, Vacuum Magnet - cyan, Gold Goblin - gold).
+    /// Secret items are intentionally excluded so players discover them via their light beacon.
     /// Zero GC allocations in LateUpdate.
     /// </summary>
     public class SecretCompassIndicatorUI : MonoBehaviour
@@ -150,7 +151,7 @@ namespace ProjectB.UI
 
         public static void RegisterDynamicPoi(Transform target, CompassPoiType type, float maxDistance = 70f)
         {
-            if (target == null) return;
+            if (target == null || type == CompassPoiType.Secret) return;
 
             for (int i = 0; i < dynamicPoiCount; i++)
             {
@@ -336,17 +337,7 @@ namespace ProjectB.UI
             Vector3 heroPos = heroHealth.transform.position;
             int candidateCount = 0;
 
-            // 1. Secret Item
-            if (secretItemSpawner != null)
-            {
-                InteractableItem activeItem = secretItemSpawner.ActiveItem;
-                if (activeItem != null && !activeItem.IsCollected && activeItem.gameObject.activeInHierarchy)
-                {
-                    TryAddCandidate(CompassPoiType.Secret, heroPos, activeItem.transform.position, revealDistance, cam, canvasSize, ref candidateCount);
-                }
-            }
-
-            // 2. Challenge Shrine (unactivated)
+            // 1. Challenge Shrine (unactivated)
             if (arenaGenerator != null)
             {
                 ChallengeShrine shrine = arenaGenerator.ActiveShrine;
