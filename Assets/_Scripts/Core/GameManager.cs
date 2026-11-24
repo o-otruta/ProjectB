@@ -40,6 +40,7 @@ namespace ProjectB.Core
         private bool hasRevivedThisRun;
         private bool hasDoubledCoinsThisRun;
         private bool hasCountedRunInTotals;
+        private bool hasNotifiedAdRunCompleted;
         private int recordedCoinsThisRun;
         private int recordedShardsThisRun;
         private int recordedKillsThisRun;
@@ -126,6 +127,51 @@ namespace ProjectB.Core
             }
         }
 
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                HandleApplicationBackgrounded();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                HandleApplicationBackgrounded();
+            }
+        }
+
+        public void HandleApplicationBackgrounded()
+        {
+            if (currentState == GameState.GameOver)
+            {
+                saveManager?.SaveIfDirty();
+                return;
+            }
+
+            if (currentState == GameState.Playing)
+            {
+                PauseGame();
+            }
+
+            CheckpointRunProgress();
+        }
+
+        public void CheckpointRunProgress()
+        {
+            if (currentState == GameState.GameOver)
+            {
+                saveManager?.SaveIfDirty();
+                return;
+            }
+
+            int wave = waveManager != null ? waveManager.CurrentWave : 1;
+            int coins = runStatistics != null ? runStatistics.CoinsEarned : 0;
+            RecordRunProgressToSave(wave, coins, notifyAdRunCompleted: false, isCheckpoint: true);
+        }
+
         private void HandleHeroDeath()
         {
             if (currentState == GameState.GameOver) return;
@@ -145,57 +191,107 @@ namespace ProjectB.Core
             eventBus?.Publish(new GameOverEvent(wave, coins));
         }
 
-        private void RecordRunProgressToSave(int wave, int coins, bool notifyAdRunCompleted)
+        private void RecordRunProgressToSave(int wave, int coins, bool notifyAdRunCompleted, bool isCheckpoint = false)
         {
+            int deltaCoins = 0;
+            int deltaShards = 0;
+            int deltaKills = 0;
+            float deltaTime = 0f;
+
+            if (runStatistics != null)
+            {
+                deltaCoins = Mathf.Max(0, coins - recordedCoinsThisRun);
+                deltaShards = Mathf.Max(0, runStatistics.BossShardsEarned - recordedShardsThisRun);
+                deltaKills = Mathf.Max(0, runStatistics.EnemiesKilled - recordedKillsThisRun);
+                deltaTime = Mathf.Max(0f, runStatistics.PlayTime - recordedPlayTimeThisRun);
+            }
+
+            if (isCheckpoint)
+            {
+                if (saveManager == null) return;
+                if (runStatistics == null)
+                {
+                    saveManager.SaveIfDirty();
+                    return;
+                }
+
+                bool? markInProgress = hasCountedRunInTotals ? (bool?)null : true;
+                saveManager.ApplyRunProgressDelta(
+                    wave,
+                    deltaCoins,
+                    deltaShards,
+                    deltaKills,
+                    deltaTime,
+                    setRunInProgress: markInProgress,
+                    saveImmediately: true);
+
+                UpdateRecordedProgress(coins);
+                return;
+            }
+
+            if (notifyAdRunCompleted && !hasNotifiedAdRunCompleted)
+            {
+                hasNotifiedAdRunCompleted = true;
+                adManager?.NotifyRunCompleted();
+            }
+
             if (!hasCountedRunInTotals)
             {
                 hasCountedRunInTotals = true;
-                if (notifyAdRunCompleted)
-                {
-                    adManager?.NotifyRunCompleted();
-                }
 
                 if (runStatistics != null && saveManager != null)
                 {
                     RunResult result = new RunResult
                     {
                         waveReached = wave,
-                        enemiesKilled = runStatistics.EnemiesKilled,
-                        coinsEarned = coins,
-                        playTime = runStatistics.PlayTime,
-                        bossShardsEarned = runStatistics.BossShardsEarned
+                        enemiesKilled = deltaKills,
+                        coinsEarned = deltaCoins,
+                        playTime = deltaTime,
+                        bossShardsEarned = deltaShards
                     };
 
                     saveManager.RecordRunResult(result);
-                    recordedShardsThisRun = runStatistics.BossShardsEarned;
-                    recordedCoinsThisRun = coins;
-                    recordedKillsThisRun = runStatistics.EnemiesKilled;
-                    recordedPlayTimeThisRun = runStatistics.PlayTime;
+                    UpdateRecordedProgress(coins);
                 }
-                else
+                else if (saveManager != null)
                 {
-                    saveManager?.SaveIfDirty();
+                    if (saveManager.Data != null && saveManager.Data.runInProgress)
+                    {
+                        saveManager.Data.runInProgress = false;
+                        saveManager.Save();
+                    }
+                    else
+                    {
+                        saveManager.SaveIfDirty();
+                    }
                 }
             }
             else if (runStatistics != null && saveManager != null)
             {
-                int deltaCoins = Mathf.Max(0, coins - recordedCoinsThisRun);
-                int deltaKills = Mathf.Max(0, runStatistics.EnemiesKilled - recordedKillsThisRun);
-                float deltaTime = Mathf.Max(0f, runStatistics.PlayTime - recordedPlayTimeThisRun);
+                saveManager.ApplyRunProgressDelta(
+                    wave,
+                    deltaCoins,
+                    deltaShards,
+                    deltaKills,
+                    deltaTime,
+                    setRunInProgress: false,
+                    saveImmediately: true);
 
-                int deltaShards = Mathf.Max(0, runStatistics.BossShardsEarned - recordedShardsThisRun);
-                if (deltaCoins > 0) saveManager.AddCoins(deltaCoins, saveImmediately: false);
-                if (deltaShards > 0) saveManager.AddBossShards(deltaShards, saveImmediately: false);
-                recordedShardsThisRun = runStatistics.BossShardsEarned;
-                saveManager.Data.totalKills += deltaKills;
-                saveManager.Data.totalPlayTime += deltaTime;
-                if (wave > saveManager.Data.bestWave) saveManager.Data.bestWave = wave;
-                saveManager.Save();
-
-                recordedCoinsThisRun = coins;
-                recordedKillsThisRun = runStatistics.EnemiesKilled;
-                recordedPlayTimeThisRun = runStatistics.PlayTime;
+                UpdateRecordedProgress(coins);
             }
+            else
+            {
+                saveManager?.SaveIfDirty();
+            }
+        }
+
+        private void UpdateRecordedProgress(int coins)
+        {
+            if (runStatistics == null) return;
+            recordedShardsThisRun = runStatistics.BossShardsEarned;
+            recordedCoinsThisRun = coins;
+            recordedKillsThisRun = runStatistics.EnemiesKilled;
+            recordedPlayTimeThisRun = runStatistics.PlayTime;
         }
 
         public void SaveAbandonedRunProgress()

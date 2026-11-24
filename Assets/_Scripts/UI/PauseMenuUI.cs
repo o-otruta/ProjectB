@@ -54,6 +54,7 @@ namespace ProjectB.UI
         private WaveManager waveManager;
         private HeroAbilities heroAbilities;
         private bool isSubscribedToGameOver;
+        private bool isSubscribedToPause;
         private readonly List<AbilityHudSlotUI> buildSlots = new List<AbilityHudSlotUI>(12);
         private readonly List<GameObject> synergyChips = new List<GameObject>(8);
         private readonly char[] buffer = new char[16];
@@ -69,10 +70,18 @@ namespace ProjectB.UI
             WaveManager waveManager = null,
             HeroAbilities heroAbilities = null)
         {
-            if (this.gameManager != null && isSubscribedToGameOver)
+            if (this.gameManager != null)
             {
-                this.gameManager.OnGameOver -= HandleGameOver;
-                isSubscribedToGameOver = false;
+                if (isSubscribedToGameOver)
+                {
+                    this.gameManager.OnGameOver -= HandleGameOver;
+                    isSubscribedToGameOver = false;
+                }
+                if (isSubscribedToPause)
+                {
+                    this.gameManager.OnPauseStateChanged -= HandlePauseStateChanged;
+                    isSubscribedToPause = false;
+                }
             }
 
             this.gameManager = gameManager;
@@ -81,10 +90,18 @@ namespace ProjectB.UI
             this.waveManager = waveManager;
             this.heroAbilities = heroAbilities;
 
-            if (this.gameManager != null && !isSubscribedToGameOver)
+            if (this.gameManager != null)
             {
-                this.gameManager.OnGameOver += HandleGameOver;
-                isSubscribedToGameOver = true;
+                if (!isSubscribedToGameOver)
+                {
+                    this.gameManager.OnGameOver += HandleGameOver;
+                    isSubscribedToGameOver = true;
+                }
+                if (!isSubscribedToPause)
+                {
+                    this.gameManager.OnPauseStateChanged += HandlePauseStateChanged;
+                    isSubscribedToPause = true;
+                }
             }
         }
 
@@ -115,10 +132,18 @@ namespace ProjectB.UI
             if (musicSlider != null) musicSlider.onValueChanged.RemoveListener(OnMusicSliderChanged);
             if (sfxSlider != null) sfxSlider.onValueChanged.RemoveListener(OnSfxSliderChanged);
 
-            if (gameManager != null && isSubscribedToGameOver)
+            if (gameManager != null)
             {
-                gameManager.OnGameOver -= HandleGameOver;
-                isSubscribedToGameOver = false;
+                if (isSubscribedToGameOver)
+                {
+                    gameManager.OnGameOver -= HandleGameOver;
+                    isSubscribedToGameOver = false;
+                }
+                if (isSubscribedToPause)
+                {
+                    gameManager.OnPauseStateChanged -= HandlePauseStateChanged;
+                    isSubscribedToPause = false;
+                }
             }
         }
 
@@ -147,9 +172,45 @@ namespace ProjectB.UI
 
         public void OnPauseClicked()
         {
-            if (gameManager != null && !gameManager.PauseGame()) return;
+            if (gameManager != null)
+            {
+                if (!gameManager.PauseGame()) return;
+                audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+                return;
+            }
 
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            ShowPausePanel();
+        }
+
+        public void OnResumeClicked()
+        {
+            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            audioManager?.SaveSettings();
+
+            if (gameManager != null)
+            {
+                gameManager.ResumeGame();
+                return;
+            }
+
+            HidePausePanel();
+        }
+
+        private void HandlePauseStateChanged(bool paused)
+        {
+            if (paused)
+            {
+                ShowPausePanel();
+            }
+            else
+            {
+                HidePausePanel();
+            }
+        }
+
+        private void ShowPausePanel()
+        {
             SyncAudioControls();
             RefreshSummary();
             RefreshBuild();
@@ -161,19 +222,14 @@ namespace ProjectB.UI
             }
         }
 
-        public void OnResumeClicked()
+        private void HidePausePanel()
         {
-            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            audioManager?.SaveSettings();
-
             if (settingsPopup != null && settingsPopup.IsOpen) settingsPopup.Hide();
             if (quitConfirmPanel != null) quitConfirmPanel.SetActive(false);
             if (pausePanel != null)
             {
                 pausePanel.SetActive(false);
             }
-
-            gameManager?.ResumeGame();
         }
 
         public void OnSettingsClicked()

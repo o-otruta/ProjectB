@@ -35,6 +35,8 @@ namespace ProjectB.Meta
         public int totalRuns;
         public int bestWave;
         public float totalPlayTime; // секунды
+        // Sprint 15.1: чекпоинт активного забега, чтобы при холодном старте после выгрузки ОС не задвоить totalRuns
+        public bool runInProgress;
 
         // --- Ежедневный бонус ---
         public int dailyBonusDay = 1;      // текущий день цикла (1-7)

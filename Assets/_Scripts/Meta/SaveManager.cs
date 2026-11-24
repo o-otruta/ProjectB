@@ -11,6 +11,7 @@ namespace ProjectB.Meta
         
         public SaveData Data { get; private set; }
         public bool IsDirty { get; private set; }
+        public bool WasInterruptedRunRecovered { get; private set; }
         public event Action OnDataChanged;
 
         public SaveManager()
@@ -42,6 +43,8 @@ namespace ProjectB.Meta
 
         public void Load()
         {
+            WasInterruptedRunRecovered = false;
+
             if (PlayerPrefs.HasKey(SAVE_KEY))
             {
                 try
@@ -64,6 +67,16 @@ namespace ProjectB.Meta
             else
             {
                 Data = new SaveData();
+            }
+
+            if (Data.runInProgress)
+            {
+                Data.totalRuns++;
+                Data.runInProgress = false;
+                WasInterruptedRunRecovered = true;
+                DevLog.Log("[SaveManager] Recovered interrupted run checkpoint.");
+                Save();
+                return;
             }
             
             DevLog.Log("[SaveManager] Data Loaded.");
@@ -111,6 +124,7 @@ namespace ProjectB.Meta
 
         public void ResetAll()
         {
+            WasInterruptedRunRecovered = false;
             Data = new SaveData();
             Save();
             DevLog.Log("[SaveManager] Save Data Reset.");
@@ -191,8 +205,71 @@ namespace ProjectB.Meta
             {
                 Data.bestWave = result.waveReached;
             }
-            
+
+            Data.runInProgress = false;
             Save();
+        }
+
+        public bool ApplyRunProgressDelta(
+            int wave,
+            int deltaCoins,
+            int deltaShards,
+            int deltaKills,
+            float deltaPlayTime,
+            bool? setRunInProgress = null,
+            bool saveImmediately = true)
+        {
+            if (Data == null) return false;
+
+            bool changed = false;
+
+            if (deltaCoins > 0)
+            {
+                Data.coins += deltaCoins;
+                changed = true;
+            }
+
+            if (deltaShards > 0)
+            {
+                Data.bossShards += deltaShards;
+                Data.totalBossShardsEarned += deltaShards;
+                changed = true;
+            }
+
+            if (deltaKills > 0)
+            {
+                Data.totalKills += deltaKills;
+                changed = true;
+            }
+
+            if (deltaPlayTime > 0f)
+            {
+                Data.totalPlayTime += deltaPlayTime;
+                changed = true;
+            }
+
+            if (wave > Data.bestWave)
+            {
+                Data.bestWave = wave;
+                changed = true;
+            }
+
+            if (setRunInProgress.HasValue && Data.runInProgress != setRunInProgress.Value)
+            {
+                Data.runInProgress = setRunInProgress.Value;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                CommitChange(saveImmediately);
+            }
+            else if (saveImmediately)
+            {
+                SaveIfDirty();
+            }
+
+            return changed;
         }
 
         public void SetMetaUpgradeLevel(string id, int level, bool saveImmediately = true)
