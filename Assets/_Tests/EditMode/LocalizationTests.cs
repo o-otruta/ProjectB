@@ -222,6 +222,13 @@ namespace ProjectB.Tests.EditMode
                 var boss = AssetDatabase.LoadAssetAtPath<BossData>(AssetDatabase.GUIDToAssetPath(guid));
                 AssertKeyPresent(boss.nameKey, $"BossData:{boss.name}");
             }
+
+            foreach (string guid in AssetDatabase.FindAssets("t:WaveMutatorData"))
+            {
+                var mutator = AssetDatabase.LoadAssetAtPath<WaveMutatorData>(AssetDatabase.GUIDToAssetPath(guid));
+                AssertKeyPresent(mutator.titleKey, $"WaveMutatorData:{mutator.name}");
+                AssertKeyPresent(mutator.subtitleKey, $"WaveMutatorData:{mutator.name}");
+            }
         }
 
         [Test]

@@ -59,9 +59,8 @@ namespace ProjectB.Enemies
         {
             if (evt.EnemyData != null)
             {
-                bool isBloodMoon = _waveEventManager != null && _waveEventManager.IsBloodMoonActive;
-                float xpMult = isBloodMoon ? _waveEventManager.BloodMoonXpMultiplier : 1f;
-                float coinMult = isBloodMoon ? _waveEventManager.BloodMoonCoinMultiplier : 1f;
+                float xpMult = _waveEventManager != null ? _waveEventManager.ActiveXpMultiplier : 1f;
+                float coinMult = _waveEventManager != null ? _waveEventManager.ActiveCoinMultiplier : 1f;
                 float waveCoinMult = _waveManager?.Config != null && _waveManager.CurrentWave > 0
                     ? _waveManager.Config.GetCoinMultiplier(_waveManager.CurrentWave)
                     : 1f;

@@ -343,6 +343,39 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Weak horde enemy spawned during Corridor Horde (defaults to SwarmRush / Skeleton)")]
         public EnemyData corridorHordeEnemyData;
 
+        [Header("Wave Mutators (Sprint 16.3)")]
+        [Tooltip("Enable periodic Wave Mutators on W30+ (Fog, Elite Surge, Glass Horde)")]
+        public bool waveMutatorsEnabled = true;
+
+        [Min(1)]
+        [Tooltip("Minimum wave number on which Wave Mutators can trigger")]
+        public int firstWaveMutatorWave = 30;
+
+        [Min(1)]
+        [Tooltip("Minimum waves between Wave Mutators")]
+        public int minWavesBetweenMutators = 3;
+
+        [Min(1)]
+        [Tooltip("Maximum waves between Wave Mutators")]
+        public int maxWavesBetweenMutators = 5;
+
+        [Tooltip("Configured Wave Mutator SO assets")]
+        public List<WaveMutatorData> waveMutators = new List<WaveMutatorData>();
+
+        public WaveMutatorData FindMutatorByType(WaveMutatorType type)
+        {
+            if (type == WaveMutatorType.None || waveMutators == null) return null;
+            for (int i = 0; i < waveMutators.Count; i++)
+            {
+                WaveMutatorData m = waveMutators[i];
+                if (m != null && m.mutatorType == type)
+                {
+                    return m;
+                }
+            }
+            return null;
+        }
+
         public int FtueWaveCount => ftueWaves != null ? ftueWaves.Count : 0;
 
         public bool TryGetFtueWave(int wave, out FtueWaveOverride ftueWave)

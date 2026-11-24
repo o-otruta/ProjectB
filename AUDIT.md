@@ -569,11 +569,11 @@
   - **W46 `Frost Wisp`** (`FrostWispEnemy` / `FrostWispEnemyData`) — летающий (игнорирует наземные препятствия), при смерти оставляет пулированную зону замедления героя (`FrostSlowZone`). Поощряет дальние атаки.
   - **W61 `Siege Golemite`** (`SiegeGolemiteEnemy` / `SiegeGolemiteEnemyData`) — двухфазный: Фаза 1 «Каменный панцирь» (`shellHp` поверх HP + `shellFlatArmor` с минимумом `15%`, скейлинг от волны); при пробитии — разлёт частиц, лёгкий hit-stop/shake и переключение на дочернюю модель быстрого ядра (`×2.0` скорости, Фаза 2 без брони).
   - Воксельные модели (`.blend` в `ArtSources/Blender/` + `.obj` в `Assets/_VoxelModels/`), `EnemyData.icon` (64×64 иконки всех врагов в `VoxelIconGenerator`), префабы и 11 записей в `WaveConfig.enemySchedule`.
-- [ ] **16.3. Модификаторы волн (Wave Mutators)** — расширение `WaveEventManager` на W30+:
-  - `Fog` — сокращённый обзор, больше XP;
+- [x] **16.3. Модификаторы волн (Wave Mutators)** — расширение `WaveEventManager` на W30+:
+  - `Fog` — сокращённый обзор (`RenderSettings.fog` + `WaveMutatorFogOverlayUI`), `+50%` XP;
   - `Elite Surge` — двойной шанс элит, двойные Осколки с мини-босса;
-  - `Glass Horde` — враги ×0.5 HP, ×2 количество.
-  - Data-Driven (`WaveMutatorData` SO), баннер — через существующий `WaveEventBannerUI`.
+  - `Glass Horde` — враги `×0.5` HP, `×2` количество.
+  - Data-Driven (`WaveMutatorData` SO в `Assets/_ScriptableObjects/WaveMutators/`), баннер — через существующий `WaveEventBannerUI`.
 - [ ] **16.4. Ascension (режим вызова после W100)** — *можно перенести в Post-Launch, если сроки поджимают*:
   - Открывается после первой победы над Demon Lord. Уровни `A1–A10`, каждый добавляет модификатор (враги +10% скорости, −1 бесплатный реролл, элиты с W1 …) и `+X%` Осколков и монет.
   - Выбор уровня — на экране Play; рекорд по уровню — в `SaveData`; ачивки за `A5` и `A10`.

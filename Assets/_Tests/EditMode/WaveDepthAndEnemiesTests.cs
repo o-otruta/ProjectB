@@ -4,20 +4,47 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using VContainer;
+using VContainer.Unity;
 using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data;
 using ProjectB.Data.Enemies;
 using ProjectB.Enemies;
+using ProjectB.LevelUp;
+using ProjectB.Meta;
 using ProjectB.Player;
+using ProjectB.UI;
 
 namespace ProjectB.Tests.EditMode
 {
     public class WaveDepthAndEnemiesTests
     {
         private readonly List<UnityEngine.Object> tracked = new List<UnityEngine.Object>();
+        private bool savedFogEnabled;
+        private FogMode savedFogMode;
+        private Color savedFogColor;
+        private float savedFogStart;
+        private float savedFogEnd;
+        private float savedFogDensity;
+
+        [SetUp]
+        public void SetUp()
+        {
+            savedFogEnabled = RenderSettings.fog;
+            savedFogMode = RenderSettings.fogMode;
+            savedFogColor = RenderSettings.fogColor;
+            savedFogStart = RenderSettings.fogStartDistance;
+            savedFogEnd = RenderSettings.fogEndDistance;
+            savedFogDensity = RenderSettings.fogDensity;
+        }
 
         [TearDown]
         public void TearDown()
@@ -30,6 +57,12 @@ namespace ProjectB.Tests.EditMode
                 }
             }
             tracked.Clear();
+            RenderSettings.fog = savedFogEnabled;
+            RenderSettings.fogMode = savedFogMode;
+            RenderSettings.fogColor = savedFogColor;
+            RenderSettings.fogStartDistance = savedFogStart;
+            RenderSettings.fogEndDistance = savedFogEnd;
+            RenderSettings.fogDensity = savedFogDensity;
             Physics.SyncTransforms();
         }
 
@@ -504,6 +537,525 @@ namespace ProjectB.Tests.EditMode
                 var enemy = AssetDatabase.LoadAssetAtPath<EnemyData>(AssetDatabase.GUIDToAssetPath(guid));
                 Assert.IsNotNull(enemy);
                 Assert.IsNotNull(enemy.icon, $"EnemyData '{enemy.name}' is missing collection icon");
+            }
+        }
+
+        // --- Sprint 16.3: Wave Mutators (Fog, Elite Surge, Glass Horde) ---
+
+        private WaveMutatorData CreateTestMutator(WaveMutatorType type)
+        {
+            var m = Track(ScriptableObject.CreateInstance<WaveMutatorData>());
+            m.mutatorType = type;
+            m.minWave = 30;
+            m.selectionWeight = 1f;
+            m.durationWaves = 1;
+            switch (type)
+            {
+                case WaveMutatorType.Fog:
+                    m.mutatorId = "fog";
+                    m.titleKey = "mutator.fog.title";
+                    m.subtitleKey = "mutator.fog.subtitle";
+                    m.titleFallback = "DENSE FOG!";
+                    m.subtitleFallback = "REDUCED VISIBILITY  •  +50% XP";
+                    m.xpMultiplier = 1.5f;
+                    m.enableFogVisuals = true;
+                    m.fogStartDistance = 12f;
+                    m.fogEndDistance = 26f;
+                    m.fogOverlayAlpha = 0.88f;
+                    break;
+                case WaveMutatorType.EliteSurge:
+                    m.mutatorId = "elite_surge";
+                    m.titleKey = "mutator.elite_surge.title";
+                    m.subtitleKey = "mutator.elite_surge.subtitle";
+                    m.titleFallback = "ELITE SURGE!";
+                    m.subtitleFallback = "x2 ELITE CHANCE  •  x2 MINI-BOSS SHARDS";
+                    m.eliteChanceMultiplier = 2f;
+                    m.miniBossShardMultiplier = 2;
+                    break;
+                case WaveMutatorType.GlassHorde:
+                    m.mutatorId = "glass_horde";
+                    m.titleKey = "mutator.glass_horde.title";
+                    m.subtitleKey = "mutator.glass_horde.subtitle";
+                    m.titleFallback = "GLASS HORDE!";
+                    m.subtitleFallback = "x0.5 ENEMY HP  •  x2 ENEMY COUNT";
+                    m.enemyHpMultiplier = 0.5f;
+                    m.enemyCountMultiplier = 2f;
+                    break;
+            }
+            return m;
+        }
+
+        [Test]
+        public void WaveMutators_AssetsSceneAndDi_AreValidAndWired()
+        {
+            var fog = AssetDatabase.LoadAssetAtPath<WaveMutatorData>("Assets/_ScriptableObjects/WaveMutators/Mutator_Fog.asset");
+            var elite = AssetDatabase.LoadAssetAtPath<WaveMutatorData>("Assets/_ScriptableObjects/WaveMutators/Mutator_EliteSurge.asset");
+            var glass = AssetDatabase.LoadAssetAtPath<WaveMutatorData>("Assets/_ScriptableObjects/WaveMutators/Mutator_GlassHorde.asset");
+
+            Assert.IsNotNull(fog);
+            Assert.IsNotNull(elite);
+            Assert.IsNotNull(glass);
+            Assert.AreEqual(WaveMutatorType.Fog, fog.mutatorType);
+            Assert.AreEqual(1.5f, fog.xpMultiplier, 0.001f);
+            Assert.IsTrue(fog.enableFogVisuals);
+            Assert.AreEqual(WaveMutatorType.EliteSurge, elite.mutatorType);
+            Assert.AreEqual(2f, elite.eliteChanceMultiplier, 0.001f);
+            Assert.AreEqual(2, elite.miniBossShardMultiplier);
+            Assert.AreEqual(WaveMutatorType.GlassHorde, glass.mutatorType);
+            Assert.AreEqual(0.5f, glass.enemyHpMultiplier, 0.001f);
+            Assert.AreEqual(2f, glass.enemyCountMultiplier, 0.001f);
+
+            var cfg = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
+            Assert.IsNotNull(cfg);
+            Assert.IsTrue(cfg.waveMutatorsEnabled);
+            Assert.AreEqual(30, cfg.firstWaveMutatorWave);
+            Assert.AreEqual(3, cfg.waveMutators.Count);
+            Assert.AreSame(fog, cfg.FindMutatorByType(WaveMutatorType.Fog));
+            Assert.AreSame(elite, cfg.FindMutatorByType(WaveMutatorType.EliteSurge));
+            Assert.AreSame(glass, cfg.FindMutatorByType(WaveMutatorType.GlassHorde));
+
+            Scene gameplayScene = SceneManager.GetSceneByPath("Assets/_Scenes/Gameplay.unity");
+            bool openedAdditively = !gameplayScene.isLoaded;
+            if (openedAdditively)
+            {
+                gameplayScene = EditorSceneManager.OpenScene("Assets/_Scenes/Gameplay.unity", OpenSceneMode.Additive);
+            }
+
+            var rootGo = Track(new GameObject("MutatorTestRootScope"));
+            rootGo.SetActive(false);
+            var rootScope = rootGo.AddComponent<RootLifetimeScope>();
+            GameLifetimeScope gameScope = null;
+            try
+            {
+                WaveMutatorFogOverlayUI fogOverlay = null;
+                foreach (GameObject root in gameplayScene.GetRootGameObjects())
+                {
+                    if (fogOverlay == null) fogOverlay = root.GetComponentInChildren<WaveMutatorFogOverlayUI>(true);
+                    if (gameScope == null) gameScope = root.GetComponentInChildren<GameLifetimeScope>(true);
+                }
+
+                Assert.IsNotNull(fogOverlay, "Gameplay.unity must contain FogMutatorOverlay with WaveMutatorFogOverlayUI");
+                Assert.IsNotNull(fogOverlay.FogImage);
+                Assert.IsFalse(fogOverlay.FogImage.raycastTarget);
+                Assert.IsFalse(fogOverlay.FogImage.enabled, "Fog overlay image must start disabled");
+                Assert.AreSame(UiTheme.Current.vignetteSprite, fogOverlay.FogImage.sprite);
+
+                Assert.IsNotNull(gameScope);
+                using (LifetimeScope.EnqueueParent(null))
+                {
+                    rootScope.Build();
+                }
+                using (LifetimeScope.EnqueueParent(rootScope))
+                {
+                    gameScope.Build();
+                }
+
+                Assert.IsNotNull(gameScope.Container.Resolve(typeof(WaveMutatorFogOverlayUI)));
+            }
+            finally
+            {
+                gameScope?.DisposeCore();
+                rootScope?.DisposeCore();
+                if (openedAdditively && gameplayScene.IsValid() && gameplayScene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(gameplayScene, true);
+                }
+            }
+        }
+
+        [Test]
+        public void WaveMutators_Scheduling_StartsAtW30_AllowsMiniBoss_SkipsBossAndIntroWaves()
+        {
+            var realCfg = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
+            Assert.IsNotNull(realCfg);
+
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 1));
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 29));
+            Assert.IsTrue(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 30), "W30 (mini-boss) must allow mutators");
+            Assert.IsTrue(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 31));
+            Assert.IsTrue(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 35), "W35 (mini-boss) must allow mutators");
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 32), "Intro wave W32 must be skipped");
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 46), "Intro wave W46 must be skipped");
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 61), "Intro wave W61 must be skipped");
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 50), "Boss wave W50 must be skipped");
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 75), "Boss wave W75 must be skipped");
+            Assert.IsFalse(WaveEventManager.CanTriggerMutatorOnWave(realCfg, 100), "Boss wave W100 must be skipped");
+        }
+
+        [Test]
+        public void WaveMutator_Fog_BoostsXp_DrivesFogVisualsAndOverlay_AndRestoresCleanlyWithoutLeaks()
+        {
+            RenderSettings.fog = false;
+            RenderSettings.fogColor = Color.gray;
+
+            var enemyData = Track(ScriptableObject.CreateInstance<EnemyData>());
+            enemyData.hp = 100;
+            enemyData.speed = 3f;
+            enemyData.contactDamage = 5;
+            enemyData.xpDrop = 10;
+            enemyData.coinDrop = 0;
+
+            var cfg = CreateMinimalWaveConfig(enemyData);
+            cfg.waveEventsEnabled = false;
+            cfg.corridorHordeEnabled = false;
+            cfg.waveMutatorsEnabled = true;
+            cfg.firstWaveMutatorWave = 30;
+            cfg.waveMutators = new List<WaveMutatorData> { CreateTestMutator(WaveMutatorType.Fog) };
+
+            var (heroGo, heroHealth, _, bus) = CreateHero();
+            var heroExp = heroGo.AddComponent<HeroExperience>();
+            heroExp.Construct(new HeroRuntimeStats(), bus, null);
+            heroExp.EnsureStatsInitialized();
+
+            var xpGo = Track(new GameObject("FogXpMgr"));
+            var xpMgr = xpGo.AddComponent<XpManager>();
+            var xpSo = new SerializedObject(xpMgr);
+            xpSo.FindProperty("xpCrystalPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Pickups/XpCrystal.prefab");
+            xpSo.ApplyModifiedPropertiesWithoutUndo();
+            xpMgr.Construct(heroHealth, heroExp);
+            xpMgr.EnsureInitialized();
+
+            var waveGo = Track(new GameObject("FogWaveMgr", typeof(WaveManager)));
+            var waveMgr = waveGo.GetComponent<WaveManager>();
+            SetPrivateField(waveMgr, "waveConfig", cfg);
+            waveMgr.Construct(heroHealth, null, bus, null);
+
+            var lightGo = Track(new GameObject("FogDirLight"));
+            var dirLight = lightGo.AddComponent<Light>();
+            dirLight.type = LightType.Directional;
+            dirLight.color = Color.white;
+            dirLight.intensity = 1.2f;
+
+            var evtGo = Track(new GameObject("FogEventMgr", typeof(WaveEventManager)));
+            var evtMgr = evtGo.AddComponent<WaveEventManager>();
+            SetPrivateField(evtMgr, "overrideConfig", cfg);
+            evtMgr.SetDirectionalLight(dirLight);
+            evtMgr.Construct(waveMgr, heroHealth, null, null, null, bus, null, waveMgr.RuntimeModifiers);
+
+            var overlayGo = Track(new GameObject("FogOverlayTest", typeof(RectTransform), typeof(Image), typeof(WaveMutatorFogOverlayUI)));
+            var overlay = overlayGo.GetComponent<WaveMutatorFogOverlayUI>();
+            SetPrivateField(overlay, "fogImage", overlayGo.GetComponent<Image>());
+            overlay.Construct(evtMgr);
+            Assert.IsFalse(overlay.FogImage.enabled);
+
+            var deathHandler = new EnemyDeathHandler(xpMgr, null, new RunStatistics(), null, bus, waveMgr, null, null, evtMgr);
+            deathHandler.Start();
+
+            try
+            {
+                bus.Publish(new WaveCompletedEvent(29, 30));
+                Assert.AreEqual(WaveMutatorType.Fog, evtMgr.ActiveMutatorType);
+                Assert.AreEqual(1.5f, evtMgr.ActiveXpMultiplier, 0.001f);
+
+                evtMgr.TickEvent(1.0f);
+                overlay.TickOverlay();
+                Assert.IsTrue(RenderSettings.fog);
+                Assert.AreEqual(1f, evtMgr.FogBlend, 0.001f);
+                Assert.IsTrue(overlay.FogImage.enabled);
+                Assert.Greater(overlay.CurrentAlpha, 0.8f);
+                Assert.Less(dirLight.intensity, 1.0f);
+
+                bus.Publish(new EnemyDiedEvent(Vector3.zero, enemyData, wasElite: false));
+                Assert.AreEqual(1, xpMgr.ActiveCount);
+                XpCrystal spawnedCrystal = null;
+                foreach (XpCrystal c in xpMgr.ActiveCrystals)
+                {
+                    spawnedCrystal = c;
+                    break;
+                }
+                Assert.IsNotNull(spawnedCrystal);
+                int boostedXp = (int)typeof(XpCrystal).GetField("xpAmount", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(spawnedCrystal);
+                Assert.AreEqual(15, boostedXp, "Fog mutator must grant 1.5x XP");
+
+                // Completing wave 30 ends 1-wave Fog and fades visuals + restores RenderSettings
+                bus.Publish(new WaveCompletedEvent(30, 31));
+                Assert.AreEqual(WaveMutatorType.None, evtMgr.ActiveMutatorType);
+                evtMgr.TickEvent(1.0f);
+                overlay.TickOverlay();
+                Assert.IsFalse(RenderSettings.fog);
+                Assert.AreEqual(0f, evtMgr.FogBlend, 0.001f);
+                Assert.IsFalse(overlay.FogImage.enabled);
+                Assert.AreEqual(1.2f, dirLight.intensity, 0.01f);
+
+                // Re-trigger and verify GameOverEvent immediately restores fog & modifiers
+                Assert.IsTrue(evtMgr.StartMutator(WaveMutatorType.Fog));
+                evtMgr.TickEvent(1.0f);
+                Assert.IsTrue(RenderSettings.fog);
+                bus.Publish(new GameOverEvent(31, 0));
+                Assert.AreEqual(WaveMutatorType.None, evtMgr.ActiveMutatorType);
+                Assert.IsFalse(RenderSettings.fog);
+                Assert.AreEqual(1f, waveMgr.RuntimeModifiers.MutatorXpMultiplier, 0.001f);
+            }
+            finally
+            {
+                deathHandler.Dispose();
+            }
+        }
+
+        [Test]
+        public void WaveMutator_EliteSurge_DoublesEliteChance_AndDoublesMiniBossShardsAcrossWaveOverlap()
+        {
+            var enemyData = Track(ScriptableObject.CreateInstance<EnemyData>());
+            enemyData.hp = 100;
+            enemyData.speed = 3f;
+            enemyData.contactDamage = 5;
+
+            var cfg = CreateMinimalWaveConfig(enemyData);
+            cfg.waveEventsEnabled = false;
+            cfg.corridorHordeEnabled = false;
+            cfg.waveMutatorsEnabled = true;
+            cfg.firstWaveMutatorWave = 30;
+            cfg.minWaveForElites = 10;
+            cfg.eliteChancePerWave = 0.025f;
+            cfg.maxEliteChance = 0.35f;
+            cfg.miniBossInterval = 5;
+            cfg.bossInterval = 25;
+            cfg.miniBossShardReward = 1;
+            cfg.waveMutators = new List<WaveMutatorData> { CreateTestMutator(WaveMutatorType.EliteSurge) };
+
+            var (_, heroHealth, _, bus) = CreateHero();
+            var runStats = new RunStatistics();
+            var waveGo = Track(new GameObject("EliteSurgeWaveMgr", typeof(WaveManager)));
+            var waveMgr = waveGo.GetComponent<WaveManager>();
+            SetPrivateField(waveMgr, "waveConfig", cfg);
+            waveMgr.Construct(heroHealth, null, bus, null);
+            waveMgr.EnsurePoolsInitialized();
+
+            var evtGo = Track(new GameObject("EliteSurgeEventMgr", typeof(WaveEventManager)));
+            var evtMgr = evtGo.AddComponent<WaveEventManager>();
+            SetPrivateField(evtMgr, "overrideConfig", cfg);
+            evtMgr.Construct(waveMgr, heroHealth, null, null, null, bus, null, waveMgr.RuntimeModifiers);
+
+            var rewardsHandler = new MetaRunRewardsHandler(bus, runStats, waveMgr, null, null, null, waveMgr.RuntimeModifiers, null);
+            rewardsHandler.Start();
+
+            try
+            {
+                bus.Publish(new WaveCompletedEvent(29, 30));
+                Assert.AreEqual(WaveMutatorType.EliteSurge, evtMgr.ActiveMutatorType);
+                Assert.AreEqual(2f, waveMgr.RuntimeModifiers.MutatorEliteChanceMultiplier, 0.001f);
+                Assert.AreEqual(2, waveMgr.RuntimeModifiers.MutatorMiniBossShardMultiplier);
+
+                // Spawn W30 mini-boss while Elite Surge is active
+                SetPrivateField(waveMgr, "currentWave", 30);
+                typeof(WaveManager).GetMethod("SpawnMiniBoss", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(waveMgr, null);
+                EnemyBase miniBossA = null;
+                foreach (var e in waveMgr.ActiveEnemies)
+                {
+                    if (e != null && e.IsMiniBoss) { miniBossA = e; break; }
+                }
+                Assert.IsNotNull(miniBossA);
+                Assert.AreEqual(2, miniBossA.ShardRewardMultiplier);
+
+                // Even if wave 30 ends via wave overlap before mini-boss dies, its stamped ShardRewardMultiplier yields 2 shards!
+                bus.Publish(new WaveCompletedEvent(30, 31));
+                Assert.AreEqual(WaveMutatorType.None, evtMgr.ActiveMutatorType);
+                Assert.AreEqual(1, waveMgr.RuntimeModifiers.MutatorMiniBossShardMultiplier);
+
+                miniBossA.TakeDamage(99999);
+                Assert.AreEqual(2, runStats.BossShardsEarned, "Mini-boss spawned during Elite Surge must still drop 2x shards");
+
+                // Pooled reuse outside Elite Surge must reset ShardRewardMultiplier to 1
+                SetPrivateField(waveMgr, "currentWave", 35);
+                typeof(WaveManager).GetMethod("SpawnMiniBoss", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(waveMgr, null);
+                EnemyBase miniBossB = null;
+                foreach (var e in waveMgr.ActiveEnemies)
+                {
+                    if (e != null && e.IsMiniBoss) { miniBossB = e; break; }
+                }
+                Assert.IsNotNull(miniBossB);
+                Assert.AreEqual(1, miniBossB.ShardRewardMultiplier);
+                miniBossB.TakeDamage(99999);
+                Assert.AreEqual(3, runStats.BossShardsEarned, "Normal mini-boss after Elite Surge must drop 1 shard");
+            }
+            finally
+            {
+                rewardsHandler.Dispose();
+            }
+        }
+
+        [Test]
+        public void WaveMutator_GlassHorde_HalvesEnemyHp_DoublesWaveCount_RespectsGlobalCap_AndResetsCleanly()
+        {
+            var enemyData = Track(ScriptableObject.CreateInstance<EnemyData>());
+            enemyData.hp = 100;
+            enemyData.speed = 2f;
+            enemyData.contactDamage = 5;
+
+            var cfg = CreateMinimalWaveConfig(enemyData);
+            cfg.baseEnemyCount = 10;
+            cfg.enemiesPerWaveMultiplier = 1f;
+            cfg.maxEnemiesPerWave = 50;
+            cfg.maxActiveEnemies = 16; // test global cap enforcement under x2 count (10 * 2 = 20 -> capped to 16)
+            cfg.hpLinearPerWave = 0f;
+            cfg.hpQuadraticPerWave = 0f;
+            cfg.eliteChancePerWave = 0f;
+            cfg.maxEliteChance = 0f;
+            cfg.waveEventsEnabled = false;
+            cfg.corridorHordeEnabled = false;
+            cfg.waveMutatorsEnabled = true;
+            cfg.firstWaveMutatorWave = 30;
+            cfg.waveMutators = new List<WaveMutatorData> { CreateTestMutator(WaveMutatorType.GlassHorde) };
+
+            var (_, heroHealth, _, bus) = CreateHero();
+            var waveGo = Track(new GameObject("GlassWaveMgr", typeof(WaveManager)));
+            var waveMgr = waveGo.GetComponent<WaveManager>();
+            SetPrivateField(waveMgr, "waveConfig", cfg);
+            waveMgr.Construct(heroHealth, null, bus, null);
+            waveMgr.EnsurePoolsInitialized();
+
+            var evtGo = Track(new GameObject("GlassEventMgr", typeof(WaveEventManager)));
+            var evtMgr = evtGo.AddComponent<WaveEventManager>();
+            SetPrivateField(evtMgr, "overrideConfig", cfg);
+            evtMgr.Construct(waveMgr, heroHealth, null, null, null, bus, null, waveMgr.RuntimeModifiers);
+
+            bus.Publish(new WaveCompletedEvent(30, 31));
+            Assert.AreEqual(WaveMutatorType.GlassHorde, evtMgr.ActiveMutatorType);
+
+            SetPrivateField(waveMgr, "currentWave", 31);
+            MethodInfo spawnWave = typeof(WaveManager).GetMethod("SpawnWaveCoroutine", BindingFlags.Instance | BindingFlags.NonPublic);
+            IEnumerator routine = (IEnumerator)spawnWave.Invoke(waveMgr, null);
+            for (int i = 0; i < 40; i++)
+            {
+                if (!routine.MoveNext()) break;
+            }
+
+            Assert.AreEqual(16, waveMgr.EnemiesAlive, "Glass Horde doubles 10 -> 20, clamped cleanly to MaxActiveEnemies=16");
+            foreach (var e in waveMgr.ActiveEnemies)
+            {
+                Assert.AreEqual(50, e.MaxHp, "Glass Horde must halve enemy HP (100 * 0.5 = 50)");
+            }
+
+            // Despawn all W31 enemies -> CheckWaveEnd advances to W32 and ends Glass Horde cleanly
+            var w31Enemies = new List<EnemyBase>(waveMgr.ActiveEnemies);
+            for (int i = 0; i < w31Enemies.Count; i++)
+            {
+                waveMgr.DespawnTrackedEnemy(w31Enemies[i]);
+            }
+            Assert.AreEqual(0, waveMgr.EnemiesAlive);
+            Assert.AreEqual(32, waveMgr.CurrentWave);
+            Assert.AreEqual(WaveMutatorType.None, evtMgr.ActiveMutatorType);
+
+            IEnumerator routineNext = (IEnumerator)spawnWave.Invoke(waveMgr, null);
+            for (int i = 0; i < 30; i++)
+            {
+                if (!routineNext.MoveNext()) break;
+            }
+
+            Assert.AreEqual(10, waveMgr.EnemiesAlive);
+            foreach (var e in waveMgr.ActiveEnemies)
+            {
+                Assert.AreEqual(100, e.MaxHp);
+            }
+        }
+
+        [Test]
+        public void WaveEventBannerUI_DisplaysAndHidesWaveMutators_WithZeroGcRefresh()
+        {
+            var bus = new GameEventBus();
+            var cfg = CreateMinimalWaveConfig(Track(ScriptableObject.CreateInstance<EnemyData>()));
+            cfg.waveMutators = new List<WaveMutatorData> { CreateTestMutator(WaveMutatorType.GlassHorde) };
+
+            var (_, heroHealth, _, _) = CreateHero();
+            var waveGo = Track(new GameObject("BannerWaveMgr", typeof(WaveManager)));
+            var waveMgr = waveGo.GetComponent<WaveManager>();
+            SetPrivateField(waveMgr, "waveConfig", cfg);
+            waveMgr.Construct(heroHealth, null, bus, null);
+
+            var evtGo = Track(new GameObject("BannerEventMgr", typeof(WaveEventManager)));
+            var evtMgr = evtGo.AddComponent<WaveEventManager>();
+            SetPrivateField(evtMgr, "overrideConfig", cfg);
+            evtMgr.Construct(waveMgr, heroHealth, null, null, null, bus, null, waveMgr.RuntimeModifiers);
+
+            var bannerGo = Track(new GameObject("BannerRoot", typeof(RectTransform)));
+            var contentGo = Track(new GameObject("Content", typeof(RectTransform), typeof(Image), typeof(Outline)));
+            contentGo.transform.SetParent(bannerGo.transform, false);
+            var titleGo = Track(new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI)));
+            titleGo.transform.SetParent(contentGo.transform, false);
+            var subGo = Track(new GameObject("Sub", typeof(RectTransform), typeof(TextMeshProUGUI)));
+            subGo.transform.SetParent(contentGo.transform, false);
+            var statusGo = Track(new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI)));
+            statusGo.transform.SetParent(contentGo.transform, false);
+            var fillGo = Track(new GameObject("Fill", typeof(RectTransform), typeof(Image)));
+            fillGo.transform.SetParent(contentGo.transform, false);
+
+            var banner = bannerGo.AddComponent<WaveEventBannerUI>();
+            SetPrivateField(banner, "bannerRoot", contentGo);
+            SetPrivateField(banner, "backgroundImage", contentGo.GetComponent<Image>());
+            SetPrivateField(banner, "borderOutline", contentGo.GetComponent<Outline>());
+            SetPrivateField(banner, "titleText", titleGo.GetComponent<TextMeshProUGUI>());
+            SetPrivateField(banner, "subtitleText", subGo.GetComponent<TextMeshProUGUI>());
+            SetPrivateField(banner, "statusText", statusGo.GetComponent<TextMeshProUGUI>());
+            SetPrivateField(banner, "progressFillImage", fillGo.GetComponent<Image>());
+            banner.Construct(evtMgr, bus);
+
+            Assert.IsTrue(evtMgr.StartMutator(WaveMutatorType.GlassHorde));
+            Assert.IsTrue(contentGo.activeSelf);
+            Assert.AreEqual("GLASS HORDE!", titleGo.GetComponent<TextMeshProUGUI>().text);
+            Assert.AreEqual("1 WAVE", statusGo.GetComponent<TextMeshProUGUI>().text);
+
+            MethodInfo refreshMethod = typeof(WaveEventBannerUI).GetMethod("RefreshStatusText", BindingFlags.Instance | BindingFlags.NonPublic);
+            refreshMethod.Invoke(banner, null); // warmup
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 64; i++)
+            {
+                refreshMethod.Invoke(banner, null);
+            }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.AreEqual(0L, allocated, "WaveEventBannerUI mutator status refresh must be Zero-GC");
+
+            evtMgr.EndCurrentMutator(completed: true);
+            Assert.IsFalse(contentGo.activeSelf);
+        }
+
+        [Test]
+        public void GraphicsSettings_FogStripping_IsCustomLinearOnly()
+        {
+            var gs = GraphicsSettings.GetGraphicsSettings();
+            Assert.IsNotNull(gs);
+            var so = new SerializedObject(gs);
+            Assert.AreEqual(1, so.FindProperty("m_FogStripping").intValue, "Fog Modes must be Custom (1) so Linear fog variants are not stripped in builds");
+            Assert.IsTrue(so.FindProperty("m_FogKeepLinear").boolValue, "Linear fog shader variants must be kept");
+            Assert.IsFalse(so.FindProperty("m_FogKeepExp").boolValue, "Exp fog variants should be stripped");
+            Assert.IsFalse(so.FindProperty("m_FogKeepExp2").boolValue, "Exp2 fog variants should be stripped");
+        }
+
+        [Test]
+        public void WaveMutators_EliteSurge_OnlySelectedOnMiniBossWaves()
+        {
+            var dummyEnemy = Track(ScriptableObject.CreateInstance<EnemyData>());
+            var cfg = CreateMinimalWaveConfig(dummyEnemy);
+            cfg.miniBossInterval = 5;
+            cfg.bossInterval = 25;
+            cfg.firstWaveMutatorWave = 30;
+
+            WaveMutatorData eliteSurge = CreateTestMutator(WaveMutatorType.EliteSurge);
+            eliteSurge.selectionWeight = 100f;
+            WaveMutatorData fog = CreateTestMutator(WaveMutatorType.Fog);
+            fog.selectionWeight = 1f;
+            WaveMutatorData glass = CreateTestMutator(WaveMutatorType.GlassHorde);
+            glass.selectionWeight = 1f;
+
+            var evtGo = Track(new GameObject("EliteSurgeFilterMgr", typeof(WaveEventManager)));
+            var evtMgr = evtGo.AddComponent<WaveEventManager>();
+            MethodInfo pickMethod = typeof(WaveEventManager).GetMethod("PickNextMutator", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(pickMethod);
+
+            // Only EliteSurge configured -> returns null on non-mini-boss waves, EliteSurge on mini-boss waves
+            cfg.waveMutators = new List<WaveMutatorData> { eliteSurge };
+            Assert.IsNull(pickMethod.Invoke(evtMgr, new object[] { cfg, 31 }));
+            Assert.IsNull(pickMethod.Invoke(evtMgr, new object[] { cfg, 33 }));
+            Assert.IsNull(pickMethod.Invoke(evtMgr, new object[] { cfg, 34 }));
+            Assert.AreSame(eliteSurge, pickMethod.Invoke(evtMgr, new object[] { cfg, 30 }));
+            Assert.AreSame(eliteSurge, pickMethod.Invoke(evtMgr, new object[] { cfg, 35 }));
+
+            // With all 3 mutators and overwhelming weight (100 vs 1), EliteSurge must never be chosen on a non-mini-boss wave
+            cfg.waveMutators = new List<WaveMutatorData> { eliteSurge, fog, glass };
+            for (int i = 0; i < 50; i++)
+            {
+                var picked = pickMethod.Invoke(evtMgr, new object[] { cfg, 31 }) as WaveMutatorData;
+                Assert.IsNotNull(picked);
+                Assert.AreNotEqual(WaveMutatorType.EliteSurge, picked.mutatorType, "Elite Surge must not be selected on non-mini-boss waves");
             }
         }
     }

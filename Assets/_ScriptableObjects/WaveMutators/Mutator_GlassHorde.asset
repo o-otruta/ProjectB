@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc74d8db94f51fc44aa22a66c7e20a6c, type: 3}
+  m_Name: Mutator_GlassHorde
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Enemies.WaveMutatorData
+  mutatorId: glass_horde
+  mutatorType: 3
+  titleFallback: GLASS HORDE!
+  subtitleFallback: "x0.5 ENEMY HP  \u2022  x2 ENEMY COUNT"
+  titleKey: mutator.glass_horde.title
+  subtitleKey: mutator.glass_horde.subtitle
+  minWave: 30
+  selectionWeight: 1
+  durationWaves: 1
+  enemyHpMultiplier: 0.5
+  enemyCountMultiplier: 2
+  eliteChanceMultiplier: 1
+  xpMultiplier: 1
+  coinMultiplier: 1
+  miniBossShardMultiplier: 1
+  enableFogVisuals: 0
+  fogColor: {r: 0.1, g: 0.13, b: 0.22, a: 1}
+  fogStartDistance: 12
+  fogEndDistance: 26
+  fogOverlayAlpha: 0.88
+  directionalLightTint: {r: 0.68, g: 0.78, b: 0.96, a: 1}
+  directionalLightIntensityScale: 0.68

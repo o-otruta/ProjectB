@@ -484,6 +484,11 @@ namespace ProjectB.Enemies
             if (waveConfig != null)
             {
                 float targetDelay = waveConfig.GetWaveSpawnDelay(wave, isFtueRun);
+                float countMult = ResolveEnemyModifiers().MutatorEnemyCountMultiplier;
+                if (countMult > 1.01f)
+                {
+                    targetDelay = Mathf.Max(0.08f, targetDelay / countMult);
+                }
                 if (cachedWaveSpawnWait == null || !Mathf.Approximately(cachedWaveSpawnDelay, targetDelay))
                 {
                     cachedWaveSpawnDelay = targetDelay;
@@ -536,7 +541,9 @@ namespace ProjectB.Enemies
                 yield break;
             }
 
-            int enemiesToSpawn = waveConfig.GetWaveEnemyCount(waveNumber, isFtueRun);
+            int baseEnemiesToSpawn = waveConfig.GetWaveEnemyCount(waveNumber, isFtueRun);
+            float countMult = ResolveEnemyModifiers().MutatorEnemyCountMultiplier;
+            int enemiesToSpawn = Mathf.Clamp(Mathf.RoundToInt(baseEnemiesToSpawn * countMult), 1, MaxActiveEnemies);
             WaitForSeconds activeSpawnWait = GetSpawnDelayWaitForWave(waveNumber);
 
             EnemyWaveEntry introEntry = waveConfig.GetIntroEntryForWave(waveNumber);
@@ -755,12 +762,12 @@ namespace ProjectB.Enemies
             return selected;
         }
 
-        private void GetWaveDifficultyMultipliers(out float hpMult, out float dmgMult)
+        private void GetWaveDifficultyMultipliers(out float hpMult, out float dmgMult, bool applyMutatorHp = true)
         {
-            GetWaveDifficultyMultipliersForWave(currentWave, out hpMult, out dmgMult);
+            GetWaveDifficultyMultipliersForWave(currentWave, out hpMult, out dmgMult, applyMutatorHp);
         }
 
-        private void GetWaveDifficultyMultipliersForWave(int wave, out float hpMult, out float dmgMult)
+        private void GetWaveDifficultyMultipliersForWave(int wave, out float hpMult, out float dmgMult, bool applyMutatorHp = true)
         {
             int targetWave = Mathf.Max(1, wave);
             if (waveConfig != null)
@@ -773,6 +780,11 @@ namespace ProjectB.Enemies
                 float fallback = 1f + (targetWave - 1) * 0.1f;
                 hpMult = fallback;
                 dmgMult = fallback;
+            }
+
+            if (applyMutatorHp)
+            {
+                hpMult = Mathf.Max(0.1f, hpMult * ResolveEnemyModifiers().MutatorEnemyHpMultiplier);
             }
         }
 
@@ -812,7 +824,8 @@ namespace ProjectB.Enemies
                 bool elitesAllowed = waveConfig != null && !waveConfig.IsFtueProtectedWave(currentWave, isFtueRun);
                 if (elitesAllowed && !spawnedEliteInPack && currentWave >= waveConfig.minWaveForElites)
                 {
-                    float chance = waveConfig.GetEliteChanceForWave(currentWave);
+                    float eliteMult = ResolveEnemyModifiers().MutatorEliteChanceMultiplier;
+                    float chance = Mathf.Clamp01(waveConfig.GetEliteChanceForWave(currentWave) * eliteMult);
                     if (Random.value < chance)
                     {
                         enemy.MakeElite(PickEliteArchetype(Random.value), waveConfig);
@@ -1067,6 +1080,7 @@ namespace ProjectB.Enemies
                 waveConfig.miniBossHpMultiplier,
                 waveConfig.miniBossDamageMultiplier,
                 waveConfig.miniBossScale);
+            enemy.SetShardRewardMultiplier(ResolveEnemyModifiers().MutatorMiniBossShardMultiplier);
         }
 
         public EnemyBase SpawnChallengeElite(Vector3 position, EliteArchetype? overrideArchetype = null)
@@ -1096,7 +1110,7 @@ namespace ProjectB.Enemies
             EnemyBase enemy = pool.Get();
             enemy.transform.position = GetValidSpawnPosition();
 
-            GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
+            GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier, applyMutatorHp: false);
             enemy.SetRuntimeModifiers(ResolveEnemyModifiers());
 
             if (enemy is BossBase boss)

@@ -41,6 +41,7 @@ namespace ProjectB.Enemies
 
         private readonly List<EnemyBase> ambushElites = new List<EnemyBase>(4);
         private readonly WaveEventType[] eligibleTypesBuffer = new WaveEventType[4];
+        private readonly List<WaveMutatorData> eligibleMutatorsBuffer = new List<WaveMutatorData>(8);
         private Action<EnemyBase> cachedGoblinDiedHandler;
         private Action<EnemyBase> cachedAmbushEliteDiedHandler;
 
@@ -59,11 +60,27 @@ namespace ProjectB.Enemies
         private int corridorSpawnedTotal;
         private bool isSubscribed;
 
+        private WaveMutatorData activeMutator;
+        private WaveMutatorType lastTriggeredMutatorType = WaveMutatorType.None;
+        private int mutatorWavesRemaining;
+        private int mutatorTotalWaves;
+        private int nextScheduledMutatorWave = 30;
+
         private bool hasSearchedForLight;
         private bool hasCapturedLightBase;
         private Color originalLightColor = Color.white;
         private float originalLightIntensity = 1f;
         private float bloodMoonBlend;
+
+        private float fogBlend;
+        private bool hasCapturedFogBase;
+        private bool originalFogEnabled;
+        private FogMode originalFogMode;
+        private Color originalFogColor;
+        private float originalFogStartDistance;
+        private float originalFogEndDistance;
+        private float originalFogDensity;
+        private WaveMutatorData lastFogVisualMutator;
 
         public WaveEventType ActiveEventType => activeEventType;
         public bool IsEventActive => activeEventType != WaveEventType.None;
@@ -79,6 +96,20 @@ namespace ProjectB.Enemies
         public Vector3 ActiveCorridorDirection => activeCorridorDirection;
         public int CorridorSpawnedTotal => corridorSpawnedTotal;
         public Light ArenaDirectionalLight => arenaDirectionalLight;
+
+        public WaveMutatorData ActiveMutator => activeMutator;
+        public WaveMutatorType ActiveMutatorType => activeMutator != null ? activeMutator.mutatorType : WaveMutatorType.None;
+        public bool IsMutatorActive => activeMutator != null && activeMutator.mutatorType != WaveMutatorType.None;
+        public int MutatorWavesRemaining => mutatorWavesRemaining;
+        public int MutatorTotalWaves => mutatorTotalWaves;
+        public int NextScheduledMutatorWave => nextScheduledMutatorWave;
+        public float FogBlend => fogBlend;
+        public float FogOverlayTargetAlpha => lastFogVisualMutator != null ? Mathf.Clamp01(lastFogVisualMutator.fogOverlayAlpha) * fogBlend : 0f;
+
+        public float ActiveMutatorXpMultiplier => activeMutator != null ? Mathf.Max(0.1f, activeMutator.xpMultiplier) : 1f;
+        public float ActiveMutatorCoinMultiplier => activeMutator != null ? Mathf.Max(0.1f, activeMutator.coinMultiplier) : 1f;
+        public float ActiveXpMultiplier => (IsBloodMoonActive ? BloodMoonXpMultiplier : 1f) * ActiveMutatorXpMultiplier;
+        public float ActiveCoinMultiplier => (IsBloodMoonActive ? BloodMoonCoinMultiplier : 1f) * ActiveMutatorCoinMultiplier;
 
         public float BloodMoonXpMultiplier
         {
@@ -160,6 +191,36 @@ namespace ProjectB.Enemies
             return true;
         }
 
+        public static bool CanTriggerMutatorOnWave(WaveConfig config, int wave, bool isFtueRun = false)
+        {
+            if (config == null || !config.waveMutatorsEnabled || config.waveMutators == null || config.waveMutators.Count == 0)
+            {
+                return false;
+            }
+
+            if (wave < Mathf.Max(1, config.firstWaveMutatorWave))
+            {
+                return false;
+            }
+
+            if (config.IsFtueProtectedWave(wave, isFtueRun))
+            {
+                return false;
+            }
+
+            if (config.bosses != null && config.bosses.Count > 0 && WaveManager.IsBossWave(wave, config.bossInterval))
+            {
+                return false;
+            }
+
+            if (config.GetIntroEntryForWave(wave) != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         [Inject]
         public void Construct(
             WaveManager waveManager,
@@ -186,6 +247,7 @@ namespace ProjectB.Enemies
             {
                 nextScheduledEventWave = Mathf.Max(1, cfg.firstWaveEventWave);
                 nextCorridorHordeWave = Mathf.Max(1, cfg.firstCorridorHordeWave);
+                nextScheduledMutatorWave = Mathf.Max(1, cfg.firstWaveMutatorWave);
             }
 
             if (isActiveAndEnabled)
@@ -215,7 +277,11 @@ namespace ProjectB.Enemies
             cachedGoblinDiedHandler = HandleGoldGoblinDied;
             cachedAmbushEliteDiedHandler = HandleAmbushEliteDied;
             EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
-            if (mods != null) mods.EventSpeedMultiplier = 1f;
+            if (mods != null)
+            {
+                mods.EventSpeedMultiplier = 1f;
+                mods.ResetMutatorModifiers();
+            }
         }
 
         private void Start()
@@ -225,6 +291,7 @@ namespace ProjectB.Enemies
             {
                 nextScheduledEventWave = Mathf.Max(1, cfg.firstWaveEventWave);
                 nextCorridorHordeWave = Mathf.Max(1, cfg.firstCorridorHordeWave);
+                nextScheduledMutatorWave = Mathf.Max(1, cfg.firstWaveMutatorWave);
             }
             ResolveDirectionalLight();
             Subscribe();
@@ -242,10 +309,16 @@ namespace ProjectB.Enemies
 
         private void OnDestroy()
         {
+            EndCurrentMutator(completed: false);
             Unsubscribe();
             EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
-            if (mods != null) mods.EventSpeedMultiplier = 1f;
+            if (mods != null)
+            {
+                mods.EventSpeedMultiplier = 1f;
+                mods.ResetMutatorModifiers();
+            }
             RestoreLightImmediate();
+            RestoreFogImmediate();
             CleanupTrackedEntities();
         }
 
@@ -277,7 +350,8 @@ namespace ProjectB.Enemies
         {
             if (deltaTime < 0f) return;
 
-            UpdateBloodMoonLighting(deltaTime);
+            UpdateFogVisuals(deltaTime);
+            UpdateAtmosphereLighting(deltaTime);
 
             if (activeEventType == WaveEventType.None) return;
 
@@ -322,9 +396,21 @@ namespace ProjectB.Enemies
         {
             if (heroHealth != null && heroHealth.IsDead) return;
             WaveConfig cfg = ActiveConfig;
-            if (cfg == null || activeEventType != WaveEventType.None) return;
+            if (cfg == null) return;
 
             bool isFtueRun = waveManager != null && waveManager.IsFtueRun;
+            bool nextIsBossWave = cfg.bosses != null && cfg.bosses.Count > 0 && WaveManager.IsBossWave(evt.NextWave, cfg.bossInterval);
+
+            if (activeMutator != null)
+            {
+                mutatorWavesRemaining--;
+                if (mutatorWavesRemaining <= 0 || nextIsBossWave)
+                {
+                    EndCurrentMutator(completed: true);
+                }
+            }
+
+            if (activeEventType != WaveEventType.None || activeMutator != null) return;
 
             if (cfg.corridorHordeEnabled && evt.NextWave >= nextCorridorHordeWave)
             {
@@ -333,6 +419,22 @@ namespace ProjectB.Enemies
                     nextCorridorHordeWave = evt.NextWave + Mathf.Max(2, cfg.corridorHordeInterval);
                     nextScheduledEventWave = Mathf.Max(nextScheduledEventWave, evt.NextWave + Mathf.Max(1, cfg.minWavesBetweenEvents));
                     return;
+                }
+            }
+
+            if (cfg.waveMutatorsEnabled && evt.NextWave >= nextScheduledMutatorWave)
+            {
+                if (CanTriggerMutatorOnWave(cfg, evt.NextWave, isFtueRun))
+                {
+                    WaveMutatorData chosenMutator = PickNextMutator(cfg, evt.NextWave);
+                    if (chosenMutator != null && StartMutator(chosenMutator, evt.NextWave))
+                    {
+                        int minGap = Mathf.Max(1, cfg.minWavesBetweenMutators);
+                        int maxGap = Mathf.Max(minGap, cfg.maxWavesBetweenMutators);
+                        nextScheduledMutatorWave = evt.NextWave + UnityEngine.Random.Range(minGap, maxGap + 1);
+                        nextScheduledEventWave = Mathf.Max(nextScheduledEventWave, evt.NextWave + 1);
+                        return;
+                    }
                 }
             }
 
@@ -346,6 +448,135 @@ namespace ProjectB.Enemies
                 int maxGap = Mathf.Max(minGap, cfg.maxWavesBetweenEvents);
                 nextScheduledEventWave = evt.NextWave + UnityEngine.Random.Range(minGap, maxGap + 1);
             }
+        }
+
+        private WaveMutatorData PickNextMutator(WaveConfig cfg, int wave)
+        {
+            if (cfg == null || cfg.waveMutators == null || cfg.waveMutators.Count == 0) return null;
+
+            bool isMiniBossWave = WaveManager.IsMiniBossWave(wave, cfg.miniBossInterval, cfg.bossInterval);
+
+            eligibleMutatorsBuffer.Clear();
+            for (int i = 0; i < cfg.waveMutators.Count; i++)
+            {
+                WaveMutatorData candidate = cfg.waveMutators[i];
+                if (candidate == null || !candidate.IsEligibleForWave(wave)) continue;
+                if (candidate.mutatorType == WaveMutatorType.EliteSurge && !isMiniBossWave) continue;
+                if (candidate.mutatorType == lastTriggeredMutatorType) continue;
+                eligibleMutatorsBuffer.Add(candidate);
+            }
+
+            if (eligibleMutatorsBuffer.Count == 0)
+            {
+                for (int i = 0; i < cfg.waveMutators.Count; i++)
+                {
+                    WaveMutatorData candidate = cfg.waveMutators[i];
+                    if (candidate == null || !candidate.IsEligibleForWave(wave)) continue;
+                    if (candidate.mutatorType == WaveMutatorType.EliteSurge && !isMiniBossWave) continue;
+                    eligibleMutatorsBuffer.Add(candidate);
+                }
+            }
+
+            if (eligibleMutatorsBuffer.Count == 0) return null;
+
+            float totalWeight = 0f;
+            for (int i = 0; i < eligibleMutatorsBuffer.Count; i++)
+            {
+                totalWeight += Mathf.Max(0.01f, eligibleMutatorsBuffer[i].selectionWeight);
+            }
+
+            float roll = UnityEngine.Random.Range(0f, totalWeight);
+            float acc = 0f;
+            for (int i = 0; i < eligibleMutatorsBuffer.Count; i++)
+            {
+                WaveMutatorData m = eligibleMutatorsBuffer[i];
+                acc += Mathf.Max(0.01f, m.selectionWeight);
+                if (roll <= acc)
+                {
+                    return m;
+                }
+            }
+
+            return eligibleMutatorsBuffer[eligibleMutatorsBuffer.Count - 1];
+        }
+
+        public bool StartMutator(WaveMutatorType type)
+        {
+            if (type == WaveMutatorType.None) return false;
+            WaveConfig cfg = ActiveConfig;
+            WaveMutatorData mutator = cfg != null ? cfg.FindMutatorByType(type) : null;
+            if (mutator == null) return false;
+            int currentWave = waveManager != null ? waveManager.CurrentWave : Mathf.Max(1, mutator.minWave);
+            return StartMutator(mutator, currentWave);
+        }
+
+        public bool StartMutator(WaveMutatorData mutator, int startWaveOverride = -1)
+        {
+            if (mutator == null || mutator.mutatorType == WaveMutatorType.None) return false;
+
+            if (activeEventType != WaveEventType.None)
+            {
+                EndCurrentEvent(completed: false, Vector3.zero);
+            }
+            if (activeMutator != null)
+            {
+                EndCurrentMutator(completed: false);
+            }
+
+            activeMutator = mutator;
+            lastTriggeredMutatorType = mutator.mutatorType;
+            mutatorTotalWaves = Mathf.Max(1, mutator.durationWaves);
+            mutatorWavesRemaining = mutatorTotalWaves;
+
+            EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
+            if (mods != null)
+            {
+                mods.MutatorEnemyHpMultiplier = mutator.enemyHpMultiplier;
+                mods.MutatorEnemyCountMultiplier = mutator.enemyCountMultiplier;
+                mods.MutatorEliteChanceMultiplier = mutator.eliteChanceMultiplier;
+                mods.MutatorXpMultiplier = mutator.xpMultiplier;
+                mods.MutatorCoinMultiplier = mutator.coinMultiplier;
+                mods.MutatorMiniBossShardMultiplier = mutator.miniBossShardMultiplier;
+            }
+
+            if (mutator.enableFogVisuals)
+            {
+                CaptureLightBaseIfNeeded();
+                CaptureFogBaseIfNeeded();
+                lastFogVisualMutator = mutator;
+            }
+
+            int startWave = startWaveOverride > 0
+                ? startWaveOverride
+                : (waveManager != null ? waveManager.CurrentWave : Mathf.Max(1, mutator.minWave));
+
+            string title = !string.IsNullOrEmpty(mutator.titleKey)
+                ? Loc.Get(mutator.titleKey, mutator.titleFallback)
+                : mutator.titleFallback;
+            string subtitle = !string.IsNullOrEmpty(mutator.subtitleKey)
+                ? Loc.Get(mutator.subtitleKey, mutator.subtitleFallback)
+                : mutator.subtitleFallback;
+
+            eventBus?.Publish(new WaveMutatorStartedEvent(
+                mutator.mutatorType,
+                title,
+                subtitle,
+                mutatorTotalWaves,
+                startWave));
+            return true;
+        }
+
+        public void EndCurrentMutator(bool completed)
+        {
+            if (activeMutator == null) return;
+
+            WaveMutatorType endedType = activeMutator.mutatorType;
+            activeMutator = null;
+            mutatorWavesRemaining = 0;
+            mutatorTotalWaves = 0;
+
+            ResolveEnemyModifiers()?.ResetMutatorModifiers();
+            eventBus?.Publish(new WaveMutatorEndedEvent(endedType, completed));
         }
 
         private WaveEventType PickNextEventType(WaveConfig cfg)
@@ -399,6 +630,10 @@ namespace ProjectB.Enemies
             if (activeEventType != WaveEventType.None)
             {
                 EndCurrentEvent(completed: false, Vector3.zero);
+            }
+            if (activeMutator != null)
+            {
+                EndCurrentMutator(completed: false);
             }
 
             switch (type)
@@ -721,7 +956,9 @@ namespace ProjectB.Enemies
         private void OnGameOver(GameOverEvent _)
         {
             EndCurrentEvent(completed: false, Vector3.zero);
+            EndCurrentMutator(completed: false);
             RestoreLightImmediate();
+            RestoreFogImmediate();
         }
 
         private void CleanupTrackedEntities()
@@ -793,18 +1030,35 @@ namespace ProjectB.Enemies
             }
         }
 
-        private void UpdateBloodMoonLighting(float deltaTime)
+        private void UpdateAtmosphereLighting(float deltaTime)
         {
             if (arenaDirectionalLight == null) return;
             CaptureLightBaseIfNeeded();
             if (!hasCapturedLightBase) return;
 
-            float target = activeEventType == WaveEventType.BloodMoon ? 1f : 0f;
-            if (Mathf.Approximately(bloodMoonBlend, target)) return;
+            float bloodTarget = activeEventType == WaveEventType.BloodMoon ? 1f : 0f;
+            if (!Mathf.Approximately(bloodMoonBlend, bloodTarget))
+            {
+                bloodMoonBlend = Mathf.MoveTowards(bloodMoonBlend, bloodTarget, deltaTime * 2.5f);
+            }
 
-            bloodMoonBlend = Mathf.MoveTowards(bloodMoonBlend, target, deltaTime * 2.5f);
-            arenaDirectionalLight.color = Color.Lerp(originalLightColor, BloodMoonLightColor, bloodMoonBlend);
-            arenaDirectionalLight.intensity = Mathf.Lerp(originalLightIntensity, originalLightIntensity * 0.85f, bloodMoonBlend);
+            Color targetColor = originalLightColor;
+            float targetIntensity = originalLightIntensity;
+
+            if (fogBlend > 0.001f && lastFogVisualMutator != null)
+            {
+                targetColor = Color.Lerp(targetColor, lastFogVisualMutator.directionalLightTint, fogBlend);
+                targetIntensity = Mathf.Lerp(targetIntensity, originalLightIntensity * lastFogVisualMutator.directionalLightIntensityScale, fogBlend);
+            }
+
+            if (bloodMoonBlend > 0.001f)
+            {
+                targetColor = Color.Lerp(targetColor, BloodMoonLightColor, bloodMoonBlend);
+                targetIntensity = Mathf.Lerp(targetIntensity, originalLightIntensity * 0.85f, bloodMoonBlend);
+            }
+
+            arenaDirectionalLight.color = targetColor;
+            arenaDirectionalLight.intensity = targetIntensity;
         }
 
         private void RestoreLightImmediate()
@@ -815,6 +1069,70 @@ namespace ProjectB.Enemies
                 arenaDirectionalLight.color = originalLightColor;
                 arenaDirectionalLight.intensity = originalLightIntensity;
             }
+        }
+
+        private void CaptureFogBaseIfNeeded()
+        {
+            if (hasCapturedFogBase) return;
+            hasCapturedFogBase = true;
+            originalFogEnabled = RenderSettings.fog;
+            originalFogMode = RenderSettings.fogMode;
+            originalFogColor = RenderSettings.fogColor;
+            originalFogStartDistance = RenderSettings.fogStartDistance;
+            originalFogEndDistance = RenderSettings.fogEndDistance;
+            originalFogDensity = RenderSettings.fogDensity;
+        }
+
+        private void UpdateFogVisuals(float deltaTime)
+        {
+            bool wantFog = activeMutator != null && activeMutator.enableFogVisuals;
+            if (wantFog)
+            {
+                CaptureFogBaseIfNeeded();
+                lastFogVisualMutator = activeMutator;
+            }
+
+            float target = wantFog ? 1f : 0f;
+            if (Mathf.Approximately(fogBlend, target))
+            {
+                if (!wantFog && hasCapturedFogBase && fogBlend <= 0.0001f)
+                {
+                    RestoreFogImmediate();
+                }
+                return;
+            }
+
+            fogBlend = Mathf.MoveTowards(fogBlend, target, deltaTime * 2.0f);
+
+            if (fogBlend > 0.001f && lastFogVisualMutator != null)
+            {
+                RenderSettings.fog = true;
+                RenderSettings.fogMode = FogMode.Linear;
+                Color baseColor = hasCapturedFogBase && originalFogEnabled ? originalFogColor : lastFogVisualMutator.fogColor;
+                RenderSettings.fogColor = Color.Lerp(baseColor, lastFogVisualMutator.fogColor, fogBlend);
+                float baseStart = hasCapturedFogBase && originalFogEnabled ? originalFogStartDistance : Mathf.Max(lastFogVisualMutator.fogEndDistance * 2.5f, 45f);
+                float baseEnd = hasCapturedFogBase && originalFogEnabled ? originalFogEndDistance : Mathf.Max(lastFogVisualMutator.fogEndDistance * 3.5f, 75f);
+                RenderSettings.fogStartDistance = Mathf.Lerp(baseStart, Mathf.Max(1f, lastFogVisualMutator.fogStartDistance), fogBlend);
+                RenderSettings.fogEndDistance = Mathf.Lerp(baseEnd, Mathf.Max(lastFogVisualMutator.fogStartDistance + 1f, lastFogVisualMutator.fogEndDistance), fogBlend);
+            }
+            else if (!wantFog && fogBlend <= 0.001f)
+            {
+                RestoreFogImmediate();
+            }
+        }
+
+        private void RestoreFogImmediate()
+        {
+            fogBlend = 0f;
+            lastFogVisualMutator = null;
+            if (!hasCapturedFogBase) return;
+            RenderSettings.fog = originalFogEnabled;
+            RenderSettings.fogMode = originalFogMode;
+            RenderSettings.fogColor = originalFogColor;
+            RenderSettings.fogStartDistance = originalFogStartDistance;
+            RenderSettings.fogEndDistance = originalFogEndDistance;
+            RenderSettings.fogDensity = originalFogDensity;
+            hasCapturedFogBase = false;
         }
     }
 }

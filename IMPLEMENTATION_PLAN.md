@@ -391,7 +391,7 @@
 ### Спринт 16 — Глубина забега (плотность, новые враги и Ascension)
 - [x] **16.1.** Рост плотности, ускорение спавна (`0.50s → 0.16s`), перекрытие волн (`≤ 30%` живых), рост стай и смягчение HP-губки + «орды-коридоры» (`CorridorHorde`) каждые ~10 волн начиная с W19.
 - [x] **16.2.** Три новых врага W30–W90: W32 `Splitter Slime`, W46 `Frost Wisp`, W61 `Siege Golemite` (двухфазный «Каменный панцирь → Ядро»), воксельные модели, префабы, волны знакомства и `EnemyData.icon` (`VoxelIconGenerator`).
-- [ ] **16.3.** Модификаторы волн (`WaveMutatorData` SO): `Fog`, `Elite Surge`, `Glass Horde`.
+- [x] **16.3.** Модификаторы волн (`WaveMutatorData` SO): `Fog`, `Elite Surge`, `Glass Horde`.
 - [ ] **16.4.** Режим `Ascension A1–A10` (`AscensionLevelData` SO) после победы над Demon Lord (допустим перенос в Post-Launch).
 - [ ] **16.5.** Тесты Спринта 16.
 

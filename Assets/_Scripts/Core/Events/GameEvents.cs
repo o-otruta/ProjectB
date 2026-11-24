@@ -51,6 +51,7 @@ namespace ProjectB.Core.Events
         public bool WasBoss;
         public string BossId;
         public EliteArchetype EliteArchetype;
+        public int ShardMultiplier;
 
         public EnemyDiedEvent(
             Vector3 position,
@@ -59,7 +60,8 @@ namespace ProjectB.Core.Events
             bool wasMiniBoss = false,
             bool wasBoss = false,
             string bossId = null,
-            EliteArchetype eliteArchetype = EliteArchetype.None)
+            EliteArchetype eliteArchetype = EliteArchetype.None,
+            int shardMultiplier = 1)
         {
             Position = position;
             EnemyData = enemyData;
@@ -68,6 +70,7 @@ namespace ProjectB.Core.Events
             WasBoss = wasBoss;
             BossId = bossId;
             EliteArchetype = eliteArchetype;
+            ShardMultiplier = shardMultiplier > 1 ? shardMultiplier : 1;
         }
     }
 
@@ -686,6 +689,47 @@ namespace ProjectB.Core.Events
         {
             Position = position;
             Scale = scale;
+        }
+    }
+
+    /// <summary>
+    /// Sprint 16.3: A wave mutator (Fog, Elite Surge, Glass Horde) started for N waves.
+    /// </summary>
+    public struct WaveMutatorStartedEvent
+    {
+        public WaveMutatorType MutatorType;
+        public string Title;
+        public string Subtitle;
+        public int DurationWaves;
+        public int StartWave;
+
+        public WaveMutatorStartedEvent(
+            WaveMutatorType mutatorType,
+            string title,
+            string subtitle,
+            int durationWaves,
+            int startWave)
+        {
+            MutatorType = mutatorType;
+            Title = title;
+            Subtitle = subtitle;
+            DurationWaves = durationWaves;
+            StartWave = startWave;
+        }
+    }
+
+    /// <summary>
+    /// Sprint 16.3: Active wave mutator ended cleanly.
+    /// </summary>
+    public struct WaveMutatorEndedEvent
+    {
+        public WaveMutatorType MutatorType;
+        public bool Completed;
+
+        public WaveMutatorEndedEvent(WaveMutatorType mutatorType, bool completed)
+        {
+            MutatorType = mutatorType;
+            Completed = completed;
         }
     }
 }

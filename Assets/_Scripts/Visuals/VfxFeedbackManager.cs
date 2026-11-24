@@ -455,6 +455,8 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<AbilitySfxEvent>(OnAbilitySfx);
                 eventBus.Subscribe<WaveEventStartedEvent>(OnWaveEventStarted);
                 eventBus.Subscribe<WaveEventEndedEvent>(OnWaveEventEnded);
+                eventBus.Subscribe<WaveMutatorStartedEvent>(OnWaveMutatorStarted);
+                eventBus.Subscribe<WaveMutatorEndedEvent>(OnWaveMutatorEnded);
                 eventBus.Subscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
                 eventBus.Subscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
                 eventBus.Subscribe<AbilityVfxEvent>(OnAbilityVfx);
@@ -509,6 +511,8 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<AbilitySfxEvent>(OnAbilitySfx);
                 eventBus.Unsubscribe<WaveEventStartedEvent>(OnWaveEventStarted);
                 eventBus.Unsubscribe<WaveEventEndedEvent>(OnWaveEventEnded);
+                eventBus.Unsubscribe<WaveMutatorStartedEvent>(OnWaveMutatorStarted);
+                eventBus.Unsubscribe<WaveMutatorEndedEvent>(OnWaveMutatorEnded);
                 eventBus.Unsubscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
                 eventBus.Unsubscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
                 eventBus.Unsubscribe<AbilityVfxEvent>(OnAbilityVfx);
@@ -667,6 +671,23 @@ namespace ProjectB.Visuals
             Color accent = ProjectB.UI.WaveEventBannerUI.GetEventAccentColor(evt.EventType);
             EmitExplosionRing(evt.RewardPosition + Vector3.up * 0.6f, 2.6f, accent, CoinSparkColor, 22, 8, 6.0f, 0.3f);
             audioManager?.PlaySfx(SfxType.SynergyFanfare, volumeScale: 0.85f, randomizePitch: false);
+        }
+
+        private void OnWaveMutatorStarted(WaveMutatorStartedEvent evt)
+        {
+            Vector3 heroPos = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            Color accent = ProjectB.UI.WaveEventBannerUI.GetMutatorAccentColor(evt.MutatorType);
+            EmitExplosionRing(heroPos + Vector3.up * 0.7f, 3.0f, accent, LevelUpColor, 20, 6, 5.8f, 0.28f);
+            audioManager?.PlaySfx(SfxType.ShrineStart, volumeScale: 0.9f, randomizePitch: false);
+            cameraController?.Shake(0.18f, 0.14f);
+        }
+
+        private void OnWaveMutatorEnded(WaveMutatorEndedEvent evt)
+        {
+            if (!evt.Completed) return;
+            Vector3 heroPos = heroHealth != null ? heroHealth.transform.position : Vector3.zero;
+            Color accent = ProjectB.UI.WaveEventBannerUI.GetMutatorAccentColor(evt.MutatorType);
+            EmitExplosionRing(heroPos + Vector3.up * 0.6f, 2.4f, accent, CoinSparkColor, 16, 6, 5.2f, 0.24f);
         }
 
         private void OnEnemySummonHeal(EnemySummonHealEvent evt)

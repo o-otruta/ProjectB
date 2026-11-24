@@ -207,3 +207,11 @@ MonoBehaviour:
   corridorHordeHpMultiplier: 0.55
   corridorHordeCorridorHalfWidth: 3.5
   corridorHordeEnemyData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
+  waveMutatorsEnabled: 1
+  firstWaveMutatorWave: 30
+  minWavesBetweenMutators: 3
+  maxWavesBetweenMutators: 5
+  waveMutators:
+  - {fileID: 11400000, guid: 9cbbac016adb78e4b830b8731fc99106, type: 2}
+  - {fileID: 11400000, guid: 8af9f0bba59529341ac857ffc9c77b4c, type: 2}
+  - {fileID: 11400000, guid: 799bafb326bbb3a4ca399e32ae525177, type: 2}

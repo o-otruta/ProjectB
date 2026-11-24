@@ -99,7 +99,12 @@ namespace ProjectB.Core
             }
             else if (evt.WasMiniBoss)
             {
-                GrantShards(MiniBossShards, evt.Position);
+                int shardMult = Mathf.Max(1, evt.ShardMultiplier);
+                if (enemyRuntimeModifiers != null)
+                {
+                    shardMult = Mathf.Max(shardMult, enemyRuntimeModifiers.MutatorMiniBossShardMultiplier);
+                }
+                GrantShards(MiniBossShards * shardMult, evt.Position);
             }
         }
 

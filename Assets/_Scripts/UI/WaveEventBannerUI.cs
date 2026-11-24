@@ -17,6 +17,7 @@ namespace ProjectB.UI
     public class WaveEventBannerUI : MonoBehaviour
     {
         private readonly string[] cachedSecondsLabels = new string[61];
+        private readonly string[] cachedMutatorWaveLabels = new string[8];
         private readonly string[] cachedAmbushLabels =
         {
             "CLEARED!",
@@ -38,9 +39,11 @@ namespace ProjectB.UI
         private GameEventBus eventBus;
         private bool isSubscribed;
         private WaveEventType activeType = WaveEventType.None;
+        private WaveMutatorType activeMutatorType = WaveMutatorType.None;
         private float punchScale = 1f;
         private int lastDisplayedSeconds = -1;
         private int lastDisplayedRemainingElites = -1;
+        private int lastDisplayedRemainingWaves = -1;
         private Action cachedLanguageChanged;
 
         public string GetCachedSecondsLabel(int seconds)
@@ -53,12 +56,28 @@ namespace ProjectB.UI
             return cachedSecondsLabels[cachedSecondsLabels.Length - 1];
         }
 
+        public string GetCachedMutatorWaveLabel(int waves)
+        {
+            if (string.IsNullOrEmpty(cachedMutatorWaveLabels[0])) RefreshLocalizedLabels();
+            if (waves >= 0 && waves < cachedMutatorWaveLabels.Length)
+            {
+                return cachedMutatorWaveLabels[waves];
+            }
+            return cachedMutatorWaveLabels[cachedMutatorWaveLabels.Length - 1];
+        }
+
         private void RefreshLocalizedLabels()
         {
             string secUnit = Loc.Get("ui.unit.seconds", "s");
             for (int i = 0; i < cachedSecondsLabels.Length; i++)
             {
                 cachedSecondsLabels[i] = $"{i}{secUnit}";
+            }
+            for (int i = 0; i < cachedMutatorWaveLabels.Length; i++)
+            {
+                cachedMutatorWaveLabels[i] = i == 1
+                    ? Loc.Format("mutator.waves_left.one", i)
+                    : Loc.Format("mutator.waves_left.many", i);
             }
             cachedAmbushLabels[0] = Loc.Get("event.ambush.cleared", "CLEARED!");
             cachedAmbushLabels[1] = Loc.Format("event.ambush.left", 1);
@@ -71,6 +90,7 @@ namespace ProjectB.UI
             RefreshLocalizedLabels();
             lastDisplayedSeconds = -1;
             lastDisplayedRemainingElites = -1;
+            lastDisplayedRemainingWaves = -1;
         }
 
         [Inject]
@@ -123,6 +143,8 @@ namespace ProjectB.UI
             {
                 eventBus.Subscribe<WaveEventStartedEvent>(OnWaveEventStarted);
                 eventBus.Subscribe<WaveEventEndedEvent>(OnWaveEventEnded);
+                eventBus.Subscribe<WaveMutatorStartedEvent>(OnWaveMutatorStarted);
+                eventBus.Subscribe<WaveMutatorEndedEvent>(OnWaveMutatorEnded);
                 eventBus.Subscribe<GameOverEvent>(OnGameOver);
                 isSubscribed = true;
             }
@@ -138,6 +160,8 @@ namespace ProjectB.UI
             {
                 eventBus.Unsubscribe<WaveEventStartedEvent>(OnWaveEventStarted);
                 eventBus.Unsubscribe<WaveEventEndedEvent>(OnWaveEventEnded);
+                eventBus.Unsubscribe<WaveMutatorStartedEvent>(OnWaveMutatorStarted);
+                eventBus.Unsubscribe<WaveMutatorEndedEvent>(OnWaveMutatorEnded);
                 eventBus.Unsubscribe<GameOverEvent>(OnGameOver);
                 isSubscribed = false;
             }
@@ -145,9 +169,11 @@ namespace ProjectB.UI
 
         private void OnWaveEventStarted(WaveEventStartedEvent evt)
         {
+            activeMutatorType = WaveMutatorType.None;
             activeType = evt.EventType;
             lastDisplayedSeconds = -1;
             lastDisplayedRemainingElites = -1;
+            lastDisplayedRemainingWaves = -1;
             punchScale = 1.12f;
 
             if (bannerRoot != null)
@@ -185,7 +211,69 @@ namespace ProjectB.UI
 
         private void OnWaveEventEnded(WaveEventEndedEvent _)
         {
-            Hide();
+            if (activeMutatorType == WaveMutatorType.None)
+            {
+                Hide();
+            }
+            else
+            {
+                activeType = WaveEventType.None;
+                lastDisplayedSeconds = -1;
+                lastDisplayedRemainingElites = -1;
+            }
+        }
+
+        private void OnWaveMutatorStarted(WaveMutatorStartedEvent evt)
+        {
+            activeType = WaveEventType.None;
+            activeMutatorType = evt.MutatorType;
+            lastDisplayedSeconds = -1;
+            lastDisplayedRemainingElites = -1;
+            lastDisplayedRemainingWaves = -1;
+            punchScale = 1.12f;
+
+            if (bannerRoot != null)
+            {
+                bannerRoot.SetActive(true);
+                bannerRoot.transform.localScale = new Vector3(punchScale, punchScale, 1f);
+            }
+
+            Color accent = GetMutatorAccentColor(evt.MutatorType);
+            if (borderOutline != null) borderOutline.effectColor = accent;
+            if (backgroundImage != null)
+            {
+                UiTheme theme = UiTheme.Current;
+                backgroundImage.color = UiTheme.WithAlpha(theme.surfaceRaised, 0.94f);
+            }
+            if (titleText != null)
+            {
+                titleText.text = string.IsNullOrEmpty(evt.Title) ? Loc.Get("event.default_title", "WAVE EVENT") : evt.Title;
+                titleText.color = accent;
+            }
+            if (subtitleText != null)
+            {
+                subtitleText.text = evt.Subtitle ?? string.Empty;
+            }
+            if (progressFillImage != null)
+            {
+                progressFillImage.color = accent;
+                progressFillImage.fillAmount = 1f;
+            }
+
+            RefreshStatusText();
+        }
+
+        private void OnWaveMutatorEnded(WaveMutatorEndedEvent _)
+        {
+            if (activeType == WaveEventType.None)
+            {
+                Hide();
+            }
+            else
+            {
+                activeMutatorType = WaveMutatorType.None;
+                lastDisplayedRemainingWaves = -1;
+            }
         }
 
         private void OnGameOver(GameOverEvent _)
@@ -195,7 +283,7 @@ namespace ProjectB.UI
 
         private void Update()
         {
-            if (activeType == WaveEventType.None || bannerRoot == null || !bannerRoot.activeSelf) return;
+            if ((activeType == WaveEventType.None && activeMutatorType == WaveMutatorType.None) || bannerRoot == null || !bannerRoot.activeSelf) return;
 
             if (punchScale > 1.001f)
             {
@@ -214,6 +302,22 @@ namespace ProjectB.UI
         private void RefreshStatusText()
         {
             if (waveEventManager == null) return;
+
+            if (activeMutatorType != WaveMutatorType.None)
+            {
+                int remaining = Mathf.Max(0, waveEventManager.MutatorWavesRemaining);
+                int total = Mathf.Max(1, waveEventManager.MutatorTotalWaves);
+                if (statusText != null && remaining != lastDisplayedRemainingWaves)
+                {
+                    lastDisplayedRemainingWaves = remaining;
+                    statusText.text = GetCachedMutatorWaveLabel(remaining);
+                }
+                if (progressFillImage != null)
+                {
+                    progressFillImage.fillAmount = Mathf.Clamp01((float)remaining / total);
+                }
+                return;
+            }
 
             if (activeType == WaveEventType.EliteAmbush)
             {
@@ -246,14 +350,28 @@ namespace ProjectB.UI
         public void Hide()
         {
             activeType = WaveEventType.None;
+            activeMutatorType = WaveMutatorType.None;
             lastDisplayedSeconds = -1;
             lastDisplayedRemainingElites = -1;
+            lastDisplayedRemainingWaves = -1;
             punchScale = 1f;
             if (bannerRoot != null)
             {
                 bannerRoot.transform.localScale = Vector3.one;
                 bannerRoot.SetActive(false);
             }
+        }
+
+        public static Color GetMutatorAccentColor(WaveMutatorType type)
+        {
+            UiTheme theme = UiTheme.Current;
+            return type switch
+            {
+                WaveMutatorType.Fog => theme.passiveSlot,
+                WaveMutatorType.EliteSurge => theme.rarityEpic,
+                WaveMutatorType.GlassHorde => theme.warning,
+                _ => theme.textPrimary
+            };
         }
 
         public static Color GetEventAccentColor(WaveEventType type)

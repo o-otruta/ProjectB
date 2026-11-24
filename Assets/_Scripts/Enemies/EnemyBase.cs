@@ -63,6 +63,7 @@ namespace ProjectB.Enemies
         private float hitFlashTimer;
         protected bool isMiniBoss;
         protected string activeBossId;
+        private int shardRewardMultiplier = 1;
         private EnemyRuntimeModifiers runtimeModifiers;
 
         protected float EventSpeedMultiplier => runtimeModifiers != null ? runtimeModifiers.EventSpeedMultiplier : 1f;
@@ -95,9 +96,15 @@ namespace ProjectB.Enemies
         public bool IsElite => isElite;
         public EliteArchetype EliteType => eliteArchetype;
         public bool IsMiniBoss => isMiniBoss;
+        public int ShardRewardMultiplier => shardRewardMultiplier;
         public virtual bool IsBoss => false;
         public virtual bool CanBeLeashed => true;
         public virtual string BossId => activeBossId;
+
+        public void SetShardRewardMultiplier(int mult)
+        {
+            shardRewardMultiplier = Mathf.Max(1, mult);
+        }
         public bool IsHitFlashing => hitFlashTimer > 0f;
         public int CurrentHp => currentHp;
         public int MaxHp => maxHp;
@@ -194,6 +201,7 @@ namespace ProjectB.Enemies
             hitFlashTimer = 0f;
             isMiniBoss = false;
             activeBossId = null;
+            shardRewardMultiplier = 1;
 
             ClearTint();
         }
@@ -760,7 +768,8 @@ namespace ProjectB.Enemies
                 wasMiniBoss: isMiniBoss,
                 wasBoss: IsBoss,
                 bossId: BossId,
-                eliteArchetype: eliteArchetype));
+                eliteArchetype: eliteArchetype,
+                shardMultiplier: shardRewardMultiplier));
 
             OnBeforeDeathBroadcast();
             OnDied?.Invoke(this);

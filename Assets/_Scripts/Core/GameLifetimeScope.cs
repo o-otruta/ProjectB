@@ -67,6 +67,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<UltimateButtonUI>();
             builder.RegisterComponentInHierarchy<SecretCompassIndicatorUI>();
             builder.RegisterComponentInHierarchy<DamageVignetteUI>();
+            builder.RegisterComponentInHierarchy<WaveMutatorFogOverlayUI>();
             builder.RegisterComponentInHierarchy<DebugCheatMenu>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             builder.RegisterComponentInHierarchy<PauseMenuUI>();
