@@ -126,12 +126,13 @@ namespace ProjectB.Tests.EditMode
             var economy = heroGo.AddComponent<HeroEconomy>();
             var exp = heroGo.AddComponent<HeroExperience>();
 
-            new SerializedObject(health).ApplyModifiedPropertiesWithoutUndo();
             var healthSo = new SerializedObject(health);
             healthSo.FindProperty("heroData").objectReferenceValue = heroData;
-            healthSo.FindProperty("postHitInvulnerabilityDuration").floatValue = 0f;
             healthSo.ApplyModifiedPropertiesWithoutUndo();
 
+            var zeroIframeRules = Track(ScriptableObject.CreateInstance<RunRulesConfig>());
+            zeroIframeRules.postHitInvulnerabilityDuration = 0f;
+            health.SetRunRulesConfig(zeroIframeRules);
             health.Construct(runtimeStats, bus, null);
             typeof(HeroHealth).GetMethod("Start", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(health, null);
 

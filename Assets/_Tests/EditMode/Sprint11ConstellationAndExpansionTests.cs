@@ -128,8 +128,10 @@ namespace ProjectB.Tests.EditMode
             var health = go.AddComponent<HeroHealth>();
             var so = new SerializedObject(health);
             so.FindProperty("heroData").objectReferenceValue = heroData;
-            so.FindProperty("postHitInvulnerabilityDuration").floatValue = 0f;
             so.ApplyModifiedPropertiesWithoutUndo();
+            var zeroIframeRules = Track(ScriptableObject.CreateInstance<RunRulesConfig>());
+            zeroIframeRules.postHitInvulnerabilityDuration = 0f;
+            health.SetRunRulesConfig(zeroIframeRules);
             health.Construct(stats, bus, null);
             typeof(HeroHealth).GetMethod("Start", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(health, null);
             return health;

@@ -103,7 +103,6 @@ namespace ProjectB.EditorScripts
                 new EnemyWaveEntry { enemy = orcData, minWave = 14, maxWave = 0, spawnWeight = 0.65f, packSize = 1, triggerIntroWave = true, introSpawnShare = 0.5f },
             };
 
-            waveConfig.useSeparateDifficultyScaling = true;
             waveConfig.hpLinearPerWave = 0.12f;
             waveConfig.hpQuadraticPerWave = 0.002f;
             waveConfig.damageLinearPerWave = 0.05f;

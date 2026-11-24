@@ -12,28 +12,16 @@ namespace ProjectB.Core
     /// </summary>
     public sealed class RunComboTracker
     {
-        public const float COMBO_WINDOW_SECONDS = 3.0f;
-        public const int MILESTONE_1 = 15;
-        public const int MILESTONE_2 = 30;
-        public const int MILESTONE_3 = 50;
-        public const int MILESTONE_4 = 100;
-
         private readonly GameEventBus eventBus;
         private readonly RunStatistics runStatistics;
         private ComboConfig comboConfig;
-        private bool triedLoadDefaultConfig;
 
         public int CurrentCombo { get; private set; }
         public int BestCombo { get; private set; }
         public float RemainingTime { get; private set; }
-        public float ComboWindowSeconds
-        {
-            get
-            {
-                ComboConfig cfg = ResolveConfig();
-                return cfg != null && cfg.comboWindowSeconds > 0.05f ? cfg.comboWindowSeconds : COMBO_WINDOW_SECONDS;
-            }
-        }
+        public float ComboWindowSeconds => comboConfig != null && comboConfig.comboWindowSeconds > 0.05f
+            ? comboConfig.comboWindowSeconds
+            : ComboConfig.DEFAULT_COMBO_WINDOW_SECONDS;
         public float NormalizedRemainingTime => CurrentCombo > 0 ? Mathf.Clamp01(RemainingTime / ComboWindowSeconds) : 0f;
         public int CurrentMilestoneTier { get; private set; }
         public float RewardBonusPercent => GetBonusPercentForTierInstance(CurrentMilestoneTier);
@@ -42,12 +30,7 @@ namespace ProjectB.Core
         public event Action<int, int, float> OnComboChanged;
 
         [Inject]
-        public RunComboTracker(GameEventBus eventBus = null, RunStatistics runStatistics = null)
-            : this(eventBus, runStatistics, null)
-        {
-        }
-
-        public RunComboTracker(GameEventBus eventBus, RunStatistics runStatistics, ComboConfig comboConfig)
+        public RunComboTracker(GameEventBus eventBus = null, RunStatistics runStatistics = null, ComboConfig comboConfig = null)
         {
             this.eventBus = eventBus;
             this.runStatistics = runStatistics;
@@ -57,17 +40,6 @@ namespace ProjectB.Core
         public void SetConfig(ComboConfig config)
         {
             comboConfig = config;
-        }
-
-        private ComboConfig ResolveConfig()
-        {
-            if (comboConfig != null) return comboConfig;
-            if (!triedLoadDefaultConfig)
-            {
-                triedLoadDefaultConfig = true;
-                comboConfig = Resources.Load<ComboConfig>(ComboConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return comboConfig;
         }
 
         public void RegisterKill()
@@ -123,35 +95,12 @@ namespace ProjectB.Core
 
         private int GetTierForComboInstance(int combo)
         {
-            ComboConfig cfg = ResolveConfig();
-            return cfg != null ? cfg.GetTierForCombo(combo) : GetTierForCombo(combo);
+            return comboConfig != null ? comboConfig.GetTierForCombo(combo) : ComboConfig.GetDefaultTierForCombo(combo);
         }
 
         private float GetBonusPercentForTierInstance(int tier)
         {
-            ComboConfig cfg = ResolveConfig();
-            return cfg != null ? cfg.GetBonusPercentForTier(tier) : GetBonusPercentForTier(tier);
-        }
-
-        public static int GetTierForCombo(int combo)
-        {
-            if (combo >= MILESTONE_4) return 4;
-            if (combo >= MILESTONE_3) return 3;
-            if (combo >= MILESTONE_2) return 2;
-            if (combo >= MILESTONE_1) return 1;
-            return 0;
-        }
-
-        public static float GetBonusPercentForTier(int tier)
-        {
-            return tier switch
-            {
-                1 => 10f,
-                2 => 15f,
-                3 => 20f,
-                4 => 30f,
-                _ => 0f
-            };
+            return comboConfig != null ? comboConfig.GetBonusPercentForTier(tier) : ComboConfig.GetDefaultBonusPercentForTier(tier);
         }
     }
 }

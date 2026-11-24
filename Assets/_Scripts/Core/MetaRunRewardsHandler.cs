@@ -17,8 +17,6 @@ namespace ProjectB.Core
     /// </summary>
     public sealed class MetaRunRewardsHandler : IStartable, IDisposable
     {
-        public const int CRYSTALS_PER_GREED_BONUS = 25;
-
         private readonly GameEventBus eventBus;
         private readonly RunStatistics runStatistics;
         private readonly WaveManager waveManager;
@@ -26,8 +24,7 @@ namespace ProjectB.Core
         private readonly HeroEconomy heroEconomy;
         private readonly AchievementManager achievementManager;
         private readonly EnemyRuntimeModifiers enemyRuntimeModifiers;
-        private RunRulesConfig runRulesConfig;
-        private bool triedLoadRules;
+        private readonly RunRulesConfig runRulesConfig;
 
         private bool started;
         private int crystalsCollected;
@@ -42,20 +39,8 @@ namespace ProjectB.Core
             HeroRuntimeStats runtimeStats = null,
             HeroEconomy heroEconomy = null,
             AchievementManager achievementManager = null,
-            EnemyRuntimeModifiers enemyRuntimeModifiers = null)
-            : this(eventBus, runStatistics, waveManager, runtimeStats, heroEconomy, achievementManager, enemyRuntimeModifiers, null)
-        {
-        }
-
-        public MetaRunRewardsHandler(
-            GameEventBus eventBus,
-            RunStatistics runStatistics,
-            WaveManager waveManager,
-            HeroRuntimeStats runtimeStats,
-            HeroEconomy heroEconomy,
-            AchievementManager achievementManager,
-            EnemyRuntimeModifiers enemyRuntimeModifiers,
-            RunRulesConfig runRulesConfig)
+            EnemyRuntimeModifiers enemyRuntimeModifiers = null,
+            RunRulesConfig runRulesConfig = null)
         {
             this.eventBus = eventBus;
             this.runStatistics = runStatistics;
@@ -67,25 +52,9 @@ namespace ProjectB.Core
             this.runRulesConfig = runRulesConfig;
         }
 
-        private RunRulesConfig ResolveRunRulesConfig()
-        {
-            if (runRulesConfig != null) return runRulesConfig;
-            if (!triedLoadRules)
-            {
-                triedLoadRules = true;
-                runRulesConfig = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return runRulesConfig;
-        }
-
-        private int CrystalsPerGreedBonus
-        {
-            get
-            {
-                RunRulesConfig cfg = ResolveRunRulesConfig();
-                return cfg != null && cfg.crystalsPerGreedBonus > 0 ? cfg.crystalsPerGreedBonus : CRYSTALS_PER_GREED_BONUS;
-            }
-        }
+        private int CrystalsPerGreedBonus => runRulesConfig != null && runRulesConfig.crystalsPerGreedBonus > 0
+            ? runRulesConfig.crystalsPerGreedBonus
+            : RunRulesConfig.DEFAULT_CRYSTALS_PER_GREED_BONUS;
 
         public void Start()
         {

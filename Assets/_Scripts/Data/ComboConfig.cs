@@ -17,13 +17,9 @@ namespace ProjectB.Data
     public class ComboConfig : ScriptableObject
     {
         public const string DEFAULT_RESOURCE_PATH = "ComboConfig";
+        public const float DEFAULT_COMBO_WINDOW_SECONDS = 3.0f;
 
-        [Min(0.1f)]
-        [Tooltip("Окно в секундах до сброса счётчика комбо.")]
-        public float comboWindowSeconds = 3.0f;
-
-        [Tooltip("Отсортированные по возрастанию вехи комбо и их бонусы в % к XP и монетам.")]
-        public ComboMilestoneConfig[] milestones = new ComboMilestoneConfig[]
+        private static readonly ComboMilestoneConfig[] DefaultMilestones = new ComboMilestoneConfig[]
         {
             new ComboMilestoneConfig { killsRequired = 15, rewardBonusPercent = 10f },
             new ComboMilestoneConfig { killsRequired = 30, rewardBonusPercent = 15f },
@@ -31,14 +27,34 @@ namespace ProjectB.Data
             new ComboMilestoneConfig { killsRequired = 100, rewardBonusPercent = 30f }
         };
 
-        public int GetTierForCombo(int combo)
+        private static ComboMilestoneConfig[] CreateDefaultMilestones()
         {
-            if (milestones == null || milestones.Length == 0 || combo <= 0) return 0;
+            return (ComboMilestoneConfig[])DefaultMilestones.Clone();
+        }
+
+        [Min(0.1f)]
+        [Tooltip("Окно в секундах до сброса счётчика комбо.")]
+        public float comboWindowSeconds = DEFAULT_COMBO_WINDOW_SECONDS;
+
+        [Tooltip("Отсортированные по возрастанию вехи комбо и их бонусы в % к XP и монетам.")]
+        public ComboMilestoneConfig[] milestones = CreateDefaultMilestones();
+
+        public int GetTierForCombo(int combo) => GetTierForCombo(milestones, combo);
+
+        public float GetBonusPercentForTier(int tier) => GetBonusPercentForTier(milestones, tier);
+
+        public static int GetDefaultTierForCombo(int combo) => GetTierForCombo(DefaultMilestones, combo);
+
+        public static float GetDefaultBonusPercentForTier(int tier) => GetBonusPercentForTier(DefaultMilestones, tier);
+
+        private static int GetTierForCombo(ComboMilestoneConfig[] list, int combo)
+        {
+            if (list == null || list.Length == 0 || combo <= 0) return 0;
 
             int tier = 0;
-            for (int i = 0; i < milestones.Length; i++)
+            for (int i = 0; i < list.Length; i++)
             {
-                if (combo >= milestones[i].killsRequired)
+                if (combo >= list[i].killsRequired)
                 {
                     tier = i + 1;
                 }
@@ -46,10 +62,10 @@ namespace ProjectB.Data
             return tier;
         }
 
-        public float GetBonusPercentForTier(int tier)
+        private static float GetBonusPercentForTier(ComboMilestoneConfig[] list, int tier)
         {
-            if (milestones == null || tier <= 0 || tier > milestones.Length) return 0f;
-            return Mathf.Max(0f, milestones[tier - 1].rewardBonusPercent);
+            if (list == null || tier <= 0 || tier > list.Length) return 0f;
+            return Mathf.Max(0f, list[tier - 1].rewardBonusPercent);
         }
     }
 }

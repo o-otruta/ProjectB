@@ -88,7 +88,6 @@ namespace ProjectB.EditorScripts
             var sb = new StringBuilder(2048);
             sb.AppendLine("=== ProjectB Balance Curve Simulation ===");
             sb.AppendLine(
-                $"SeparateScaling={config.useSeparateDifficultyScaling}, " +
                 $"HpLinear={config.hpLinearPerWave:F3}, HpQuad={config.hpQuadraticPerWave:F4}, " +
                 $"DmgLinear={config.damageLinearPerWave:F3}, MaxDmgMult={config.maxDamageMultiplier:F2}");
             sb.AppendLine();

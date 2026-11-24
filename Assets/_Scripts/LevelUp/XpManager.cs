@@ -8,13 +8,10 @@ namespace ProjectB.LevelUp
 {
     public class XpManager : MonoBehaviour
     {
-        public const int DEFAULT_MAX_ACTIVE_CRYSTALS = 300;
-
         [SerializeField] private GameObject xpCrystalPrefab;
-        [SerializeField] private PickupConfig pickupConfig;
+        private PickupConfig pickupConfig;
         private Transform heroTarget;
         private HeroExperience heroExperience;
-        private PickupConfig cachedDefaultConfig;
 
         private IObjectPool<XpCrystal> xpPool;
         private Transform poolContainer;
@@ -25,14 +22,9 @@ namespace ProjectB.LevelUp
         private readonly List<XpCrystal> magnetizeBuffer = new List<XpCrystal>(256);
 
         public int ActiveCount => activeCrystals.Count;
-        public int MaxActiveCrystals
-        {
-            get
-            {
-                PickupConfig cfg = ResolveConfig();
-                return cfg != null && cfg.maxActiveXpCrystals > 0 ? cfg.maxActiveXpCrystals : DEFAULT_MAX_ACTIVE_CRYSTALS;
-            }
-        }
+        public int MaxActiveCrystals => pickupConfig != null && pickupConfig.maxActiveXpCrystals > 0
+            ? pickupConfig.maxActiveXpCrystals
+            : PickupConfig.DEFAULT_MAX_ACTIVE_XP_CRYSTALS;
         public IReadOnlyCollection<XpCrystal> ActiveCrystals => activeCrystals;
 
         public void SetConfig(PickupConfig config)
@@ -40,24 +32,15 @@ namespace ProjectB.LevelUp
             pickupConfig = config;
         }
 
-        private PickupConfig ResolveConfig()
-        {
-            if (pickupConfig != null) return pickupConfig;
-            if (cachedDefaultConfig == null)
-            {
-                cachedDefaultConfig = Resources.Load<PickupConfig>(PickupConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return cachedDefaultConfig;
-        }
-
         [Inject]
-        public void Construct(ProjectB.Player.HeroHealth heroHealth, HeroExperience heroExperience)
+        public void Construct(ProjectB.Player.HeroHealth heroHealth, HeroExperience heroExperience, PickupConfig pickupConfig = null)
         {
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
             }
             this.heroExperience = heroExperience;
+            if (pickupConfig != null) this.pickupConfig = pickupConfig;
         }
 
         private void Start()
@@ -210,10 +193,9 @@ namespace ProjectB.LevelUp
 
             if (amount > 0)
             {
-                PickupConfig cfg = ResolveConfig();
-                float scaleMult = cfg != null
-                    ? cfg.EvaluateMergedScaleMultiplier(target.MergeCount + 1)
-                    : Mathf.Min(2f, 1f + Mathf.Log(2f + target.MergeCount, 2f) * 0.15f);
+                float scaleMult = pickupConfig != null
+                    ? pickupConfig.EvaluateMergedScaleMultiplier(target.MergeCount + 1)
+                    : PickupConfig.EvaluateDefaultMergedScaleMultiplier(target.MergeCount + 1);
                 target.AddMergedAmount(amount, scaleMult);
             }
             return true;

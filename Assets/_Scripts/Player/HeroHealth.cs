@@ -14,20 +14,11 @@ namespace ProjectB.Player
         private const float HERO_HIT_FLASH_DURATION = 0.14f;
 
         [SerializeField] private HeroData heroData;
-        [SerializeField] private RunRulesConfig runRulesConfig;
-        [SerializeField] [Min(0f)] private float postHitInvulnerabilityDuration = 0.18f;
-
-        [Header("Keystone: Second Wind (Constellation Tree)")]
-        [SerializeField] [Range(0.05f, 1f)] private float secondWindHpPercent = 0.3f;
-        [SerializeField] [Min(0f)] private float secondWindInvulnerability = 2.5f;
-        [SerializeField] [Min(0f)] private float secondWindKnockbackRadius = 5f;
-        [SerializeField] [Min(0f)] private float secondWindKnockbackDistance = 3f;
 
         private static readonly Collider[] secondWindBuffer = new Collider[96];
         private bool secondWindUsed;
         private float regenAccumulator;
-        private RunRulesConfig cachedDefaultRules;
-        private bool triedLoadDefaultRules;
+        private RunRulesConfig runRulesConfig;
 
         public event System.Action<int, int> OnHealthChanged;
         public event System.Action<int> OnDamageTaken;
@@ -54,34 +45,15 @@ namespace ProjectB.Player
         public float PostHitInvulnerabilityDuration => BasePostHitInvulnerabilityDuration + (runtimeStats != null ? runtimeStats.BonusIFrameSeconds : 0f);
         public bool HasSecondWindAvailable => runtimeStats != null && runtimeStats.HasSecondWind && !secondWindUsed;
         public bool SecondWindUsed => secondWindUsed;
-        public float SecondWindHpPercent => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindHpPercent : secondWindHpPercent;
-        public float SecondWindInvulnerability => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindInvulnerability : secondWindInvulnerability;
-        public float SecondWindKnockbackRadius => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindKnockbackRadius : secondWindKnockbackRadius;
-        public float SecondWindKnockbackDistance => ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.secondWindKnockbackDistance : secondWindKnockbackDistance;
-        private float BasePostHitInvulnerabilityDuration
-        {
-            get
-            {
-                if (runRulesConfig != null) return runRulesConfig.postHitInvulnerabilityDuration;
-                if (!Mathf.Approximately(postHitInvulnerabilityDuration, 0.18f)) return postHitInvulnerabilityDuration;
-                return ResolveRunRulesConfig() is RunRulesConfig cfg ? cfg.postHitInvulnerabilityDuration : postHitInvulnerabilityDuration;
-            }
-        }
+        public float SecondWindHpPercent => runRulesConfig != null ? runRulesConfig.secondWindHpPercent : RunRulesConfig.DEFAULT_SECOND_WIND_HP_PERCENT;
+        public float SecondWindInvulnerability => runRulesConfig != null ? runRulesConfig.secondWindInvulnerability : RunRulesConfig.DEFAULT_SECOND_WIND_INVULNERABILITY;
+        public float SecondWindKnockbackRadius => runRulesConfig != null ? runRulesConfig.secondWindKnockbackRadius : RunRulesConfig.DEFAULT_SECOND_WIND_KNOCKBACK_RADIUS;
+        public float SecondWindKnockbackDistance => runRulesConfig != null ? runRulesConfig.secondWindKnockbackDistance : RunRulesConfig.DEFAULT_SECOND_WIND_KNOCKBACK_DISTANCE;
+        private float BasePostHitInvulnerabilityDuration => runRulesConfig != null ? runRulesConfig.postHitInvulnerabilityDuration : RunRulesConfig.DEFAULT_POST_HIT_IFRAMES;
 
         public void SetRunRulesConfig(RunRulesConfig rules)
         {
             runRulesConfig = rules;
-        }
-
-        private RunRulesConfig ResolveRunRulesConfig()
-        {
-            if (runRulesConfig != null) return runRulesConfig;
-            if (!triedLoadDefaultRules)
-            {
-                triedLoadDefaultRules = true;
-                cachedDefaultRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return cachedDefaultRules;
         }
         public bool IsGodMode => isGodMode;
         public int CurrentHp => currentHp;
@@ -90,11 +62,16 @@ namespace ProjectB.Player
         public HeroData ActiveHeroData => selectedHeroService?.GetSelectedHero() ?? heroData;
 
         [Inject]
-        public void Construct(HeroRuntimeStats runtimeStats, GameEventBus eventBus, SelectedHeroService selectedHeroService = null)
+        public void Construct(
+            HeroRuntimeStats runtimeStats,
+            GameEventBus eventBus,
+            SelectedHeroService selectedHeroService = null,
+            RunRulesConfig runRulesConfig = null)
         {
             this.runtimeStats = runtimeStats;
             this.eventBus = eventBus;
             this.selectedHeroService = selectedHeroService;
+            if (runRulesConfig != null) this.runRulesConfig = runRulesConfig;
         }
 
         private void Start()

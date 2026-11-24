@@ -211,11 +211,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Player.HeroHealth
   heroData: {fileID: 11400000, guid: 16d952ca2481f154ab1f0c676e8a63b7, type: 2}
-  postHitInvulnerabilityDuration: 0.18
-  secondWindHpPercent: 0.3
-  secondWindInvulnerability: 2.5
-  secondWindKnockbackRadius: 5
-  secondWindKnockbackDistance: 3
 --- !u!114 &8303522582818779037
 MonoBehaviour:
   m_ObjectHideFlags: 0

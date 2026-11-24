@@ -388,7 +388,7 @@ namespace ProjectB.Enemies
 
         private bool StartBloodMoon(WaveConfig cfg)
         {
-            ResolveDirectionalLight();
+            CaptureLightBaseIfNeeded();
             EnemyRuntimeModifiers mods = ResolveEnemyModifiers();
             if (mods != null) mods.EventSpeedMultiplier = Mathf.Max(1f, cfg.bloodMoonEnemySpeedMultiplier);
             BeginEventState(WaveEventType.BloodMoon, cfg.bloodMoonDuration, "BLOOD MOON!", "x2 XP & COINS  •  +20% ENEMY SPEED");
@@ -633,6 +633,11 @@ namespace ProjectB.Enemies
                 }
             }
 
+            CaptureLightBaseIfNeeded();
+        }
+
+        private void CaptureLightBaseIfNeeded()
+        {
             if (arenaDirectionalLight != null && !hasCapturedLightBase)
             {
                 hasCapturedLightBase = true;
@@ -644,7 +649,7 @@ namespace ProjectB.Enemies
         private void UpdateBloodMoonLighting(float deltaTime)
         {
             if (arenaDirectionalLight == null) return;
-            if (!hasCapturedLightBase) ResolveDirectionalLight();
+            CaptureLightBaseIfNeeded();
             if (!hasCapturedLightBase) return;
 
             float target = activeEventType == WaveEventType.BloodMoon ? 1f : 0f;

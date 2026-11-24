@@ -6,6 +6,11 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
+using UnityEditor.SceneManagement;
+using VContainer;
+using VContainer.Unity;
+using ProjectB.Arena;
 using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data;
@@ -252,6 +257,94 @@ namespace ProjectB.Tests.EditMode
             Assert.IsFalse(save.Data.completedAchievements.Contains("reach_wave_10"));
             achMgr.OnWaveReached(10);
             Assert.IsTrue(save.Data.completedAchievements.Contains("reach_wave_10"));
+        }
+
+        [Test]
+        public void GameLifetimeScope_InjectsAllDataConfigs_AndWaveEventManagerHasSceneDirectionalLight()
+        {
+            const string gameplayScenePath = "Assets/_Scenes/Gameplay.unity";
+            Scene gameplayScene = SceneManager.GetSceneByPath(gameplayScenePath);
+            bool openedAdditively = false;
+            if (!gameplayScene.isLoaded)
+            {
+                gameplayScene = EditorSceneManager.OpenScene(gameplayScenePath, OpenSceneMode.Additive);
+                openedAdditively = true;
+            }
+
+            var rootGo = Track(new GameObject("DIValidationRootScope"));
+            rootGo.SetActive(false);
+            var rootScope = rootGo.AddComponent<RootLifetimeScope>();
+
+            GameLifetimeScope gameScope = null;
+            try
+            {
+                using (LifetimeScope.EnqueueParent(null))
+                {
+                    rootScope.Build();
+                }
+
+                GameObject[] roots = gameplayScene.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                {
+                    gameScope = roots[i].GetComponentInChildren<GameLifetimeScope>(true);
+                    if (gameScope != null) break;
+                }
+                Assert.IsNotNull(gameScope, "Gameplay.unity must contain GameLifetimeScope");
+
+                using (LifetimeScope.EnqueueParent(rootScope))
+                {
+                    gameScope.Build();
+                }
+
+                var expectedRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
+                var expectedCombo = Resources.Load<ComboConfig>(ComboConfig.DEFAULT_RESOURCE_PATH);
+                var expectedPickup = Resources.Load<PickupConfig>(PickupConfig.DEFAULT_RESOURCE_PATH);
+                var expectedSecret = Resources.Load<SecretConfig>(SecretConfig.DEFAULT_RESOURCE_PATH);
+                var expectedCatalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+
+                Assert.AreSame(expectedRules, gameScope.Container.Resolve<RunRulesConfig>());
+                Assert.AreSame(expectedCombo, gameScope.Container.Resolve<ComboConfig>());
+                Assert.AreSame(expectedPickup, gameScope.Container.Resolve<PickupConfig>());
+                Assert.AreSame(expectedSecret, gameScope.Container.Resolve<SecretConfig>());
+                Assert.AreSame(expectedCatalog, gameScope.Container.Resolve<CardCatalog>());
+
+                var upgradeMgr = gameScope.Container.Resolve<UpgradeManager>();
+                var heroHealth = gameScope.Container.Resolve<HeroHealth>();
+                var waveMgr = gameScope.Container.Resolve<WaveManager>();
+                var secretSpawner = gameScope.Container.Resolve<SecretItemSpawner>();
+                var xpMgr = gameScope.Container.Resolve<XpManager>();
+                var coinMgr = gameScope.Container.Resolve<CoinManager>();
+                var rewardsHandler = gameScope.Container.Resolve<MetaRunRewardsHandler>();
+                var comboTracker = gameScope.Container.Resolve<RunComboTracker>();
+                var waveEventMgr = gameScope.Container.Resolve<WaveEventManager>();
+
+                Assert.AreSame(expectedCatalog, GetPrivateField<CardCatalog>(upgradeMgr, "cardCatalog"));
+                Assert.AreSame(expectedRules, GetPrivateField<RunRulesConfig>(upgradeMgr, "runRulesConfig"));
+                Assert.AreSame(expectedRules, GetPrivateField<RunRulesConfig>(heroHealth, "runRulesConfig"));
+                Assert.AreSame(expectedRules, GetPrivateField<RunRulesConfig>(waveMgr, "runRulesConfig"));
+                Assert.AreSame(expectedRules, GetPrivateField<RunRulesConfig>(rewardsHandler, "runRulesConfig"));
+                Assert.AreSame(expectedSecret, GetPrivateField<SecretConfig>(secretSpawner, "secretConfig"));
+                Assert.AreSame(expectedPickup, GetPrivateField<PickupConfig>(xpMgr, "pickupConfig"));
+                Assert.AreSame(expectedPickup, GetPrivateField<PickupConfig>(coinMgr, "pickupConfig"));
+                Assert.AreSame(expectedCombo, GetPrivateField<ComboConfig>(comboTracker, "comboConfig"));
+                Assert.IsNotNull(waveEventMgr.ArenaDirectionalLight, "WaveEventManager.arenaDirectionalLight must be wired in Gameplay.unity");
+            }
+            finally
+            {
+                gameScope?.DisposeCore();
+                rootScope?.DisposeCore();
+                if (openedAdditively && gameplayScene.IsValid() && gameplayScene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(gameplayScene, true);
+                }
+            }
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName) where T : class
+        {
+            FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {target.GetType().Name}");
+            return field.GetValue(target) as T;
         }
     }
 }

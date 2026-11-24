@@ -17,25 +17,10 @@ namespace ProjectB.Arena
     /// </summary>
     public class SecretItemSpawner : MonoBehaviour
     {
-        [Header("Configuration")]
-        [SerializeField] private SecretConfig secretConfig;
-
         [Header("Secret Prefabs")]
         [SerializeField] private List<InteractableItem> secretItemPrefabs = new List<InteractableItem>();
 
-        [Header("Spawn Settings (Fallback if SecretConfig is unset)")]
-        [Range(0f, 1f)]
-        [SerializeField] private float spawnChancePerRun = 0.10f;
-        [SerializeField] private float minDistanceFromCenter = 28f;
-        [SerializeField] private float maxDistanceFromCenter = 60f;
-        [SerializeField] private float arenaPadding = 6f;
-
-        [Header("Reward Tuning (Fallback if SecretConfig is unset)")]
-        [SerializeField] private int chestCoinReward = 100;
-        [SerializeField] private int crystalFallbackCoins = 150;
-
-        private SecretConfig cachedDefaultConfig;
-
+        private SecretConfig secretConfig;
         private ArenaGenerator arenaGenerator;
         private HeroHealth heroHealth;
         private HeroEconomy heroEconomy;
@@ -57,29 +42,21 @@ namespace ProjectB.Arena
             get
             {
                 bool hasTalent = runtimeStats != null && runtimeStats.HasSecretAndShrineTalent;
-                SecretConfig cfg = ResolveConfig();
-                if (cfg != null)
+                if (secretConfig != null)
                 {
-                    return cfg.GetEffectiveSpawnChance(hasTalent);
+                    return secretConfig.GetEffectiveSpawnChance(hasTalent);
                 }
 
-                return Mathf.Clamp01(spawnChancePerRun + (hasTalent ? 0.20f : 0f));
+                return SecretConfig.GetEffectiveSpawnChance(
+                    SecretConfig.DEFAULT_BASE_SPAWN_CHANCE,
+                    SecretConfig.DEFAULT_CONSTELLATION_BONUS,
+                    hasTalent);
             }
         }
 
         public void SetConfig(SecretConfig config)
         {
             secretConfig = config;
-        }
-
-        private SecretConfig ResolveConfig()
-        {
-            if (secretConfig != null) return secretConfig;
-            if (cachedDefaultConfig == null)
-            {
-                cachedDefaultConfig = Resources.Load<SecretConfig>(SecretConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return cachedDefaultConfig;
         }
 
         [Inject]
@@ -91,7 +68,8 @@ namespace ProjectB.Arena
             UpgradeManager upgradeManager,
             AchievementManager achievementManager = null,
             GameEventBus eventBus = null,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            SecretConfig secretConfig = null)
         {
             this.runtimeStats = runtimeStats;
             this.arenaGenerator = arenaGenerator;
@@ -101,6 +79,7 @@ namespace ProjectB.Arena
             this.upgradeManager = upgradeManager;
             this.achievementManager = achievementManager;
             this.eventBus = eventBus;
+            if (secretConfig != null) this.secretConfig = secretConfig;
         }
 
         private void Start()
@@ -162,8 +141,7 @@ namespace ProjectB.Arena
 
         private Vector3 GetClampedPositionNear(Vector3 center, float angleRad, float distance)
         {
-            SecretConfig cfg = ResolveConfig();
-            float padding = cfg != null ? cfg.arenaPadding : arenaPadding;
+            float padding = secretConfig != null ? secretConfig.arenaPadding : SecretConfig.DEFAULT_ARENA_PADDING;
             float halfArena = arenaGenerator != null ? arenaGenerator.ArenaSize * 0.5f : 100f;
             float maxAllowed = Mathf.Max(5f, halfArena - padding);
 
@@ -186,10 +164,9 @@ namespace ProjectB.Arena
 
         private Vector3 FindFarSpawnPosition()
         {
-            SecretConfig cfg = ResolveConfig();
-            float padding = cfg != null ? cfg.arenaPadding : arenaPadding;
-            float minFromCenter = cfg != null ? cfg.minDistanceFromCenter : minDistanceFromCenter;
-            float maxFromCenter = cfg != null ? cfg.maxDistanceFromCenter : maxDistanceFromCenter;
+            float padding = secretConfig != null ? secretConfig.arenaPadding : SecretConfig.DEFAULT_ARENA_PADDING;
+            float minFromCenter = secretConfig != null ? secretConfig.minDistanceFromCenter : SecretConfig.DEFAULT_MIN_DISTANCE;
+            float maxFromCenter = secretConfig != null ? secretConfig.maxDistanceFromCenter : SecretConfig.DEFAULT_MAX_DISTANCE;
 
             float halfArena = arenaGenerator != null ? arenaGenerator.ArenaSize * 0.5f : 100f;
             float maxAllowedRadius = Mathf.Max(10f, halfArena - padding);
@@ -226,11 +203,10 @@ namespace ProjectB.Arena
 
         public string ApplySecretReward(SecretItemType type)
         {
-            SecretConfig cfg = ResolveConfig();
             switch (type)
             {
                 case SecretItemType.TreasureChest:
-                    int baseChestCoins = cfg != null ? cfg.chestCoinReward : chestCoinReward;
+                    int baseChestCoins = secretConfig != null ? secretConfig.chestCoinReward : SecretConfig.DEFAULT_CHEST_COINS;
                     int chestCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(baseChestCoins) : baseChestCoins;
                     heroEconomy?.AddCoin(chestCoins);
                     return $"+{chestCoins} Coins";
@@ -245,7 +221,7 @@ namespace ProjectB.Arena
                     {
                         return $"Unlocked: {granted.abilityName}";
                     }
-                    int baseCrystalCoins = cfg != null ? cfg.crystalFallbackCoins : crystalFallbackCoins;
+                    int baseCrystalCoins = secretConfig != null ? secretConfig.crystalFallbackCoins : SecretConfig.DEFAULT_CRYSTAL_FALLBACK_COINS;
                     int crystalCoins = runtimeStats != null ? runtimeStats.ApplySecretRewardMultiplier(baseCrystalCoins) : baseCrystalCoins;
                     heroEconomy?.AddCoin(crystalCoins);
                     return $"+{crystalCoins} Coins";

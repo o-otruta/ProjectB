@@ -658,6 +658,9 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(upgradeMgr);
                 Assert.GreaterOrEqual(upgradeMgr.synergies.Count, 8, "Expected 3 MVP + 5 Sprint 3 synergies");
 
+                CardCatalog cardCatalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+                Assert.IsNotNull(cardCatalog, "Missing Resources/CardCatalog.asset");
+
                 var expectedCardNames = new[]
                 {
                     "ChainLightningCard", "PoisonFlaskCard", "GuardianShieldCard",
@@ -665,12 +668,12 @@ namespace ProjectB.Tests.EditMode
                     "ChronoTomeCard", "CriticalLensCard", "TitanHeartCard", "GoldenIdolCard"
                 };
 
-                var resolvedPool = new List<CardData>(upgradeMgr.ResolvedCardPool);
+                var catalogCards = new List<CardData>(cardCatalog.cards);
                 foreach (var cardName in expectedCardNames)
                 {
                     var card = AssetDatabase.LoadAssetAtPath<AbilityCardData>($"Assets/_ScriptableObjects/Cards/{cardName}.asset");
                     Assert.IsNotNull(card, $"Missing card asset {cardName}");
-                    Assert.Contains(card, resolvedPool, $"Gameplay UpgradeManager.ResolvedCardPool missing {cardName}");
+                    Assert.Contains(card, catalogCards, $"Resources/CardCatalog missing {cardName}");
                 }
             }
             finally
@@ -764,7 +767,9 @@ namespace ProjectB.Tests.EditMode
                 }
 
                 Assert.IsNotNull(sceneMgr);
-                realCardPool = new List<CardData>(sceneMgr.ResolvedCardPool);
+                CardCatalog catalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+                Assert.IsNotNull(catalog);
+                realCardPool = new List<CardData>(catalog.cards);
             }
             finally
             {

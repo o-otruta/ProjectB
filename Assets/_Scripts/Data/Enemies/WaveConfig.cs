@@ -66,9 +66,6 @@ namespace ProjectB.Data.Enemies
         public int maxEnemiesPerWave = 50;
 
         [Header("Difficulty Scaling Curves")]
-        [Tooltip("Использовать раздельные кривые роста HP и урона врагов")]
-        public bool useSeparateDifficultyScaling = true;
-
         [Min(0f)]
         [Tooltip("Линейный прирост HP врагов за волну (0.12 = +12%/волна)")]
         public float hpLinearPerWave = 0.12f;

@@ -13,20 +13,15 @@ namespace ProjectB.LevelUp
 {
     public class UpgradeManager : MonoBehaviour
     {
-        [Header("Catalog & Rules")]
-        [SerializeField] private CardCatalog cardCatalog;
-        [SerializeField] private RunRulesConfig runRulesConfig;
-
         [Tooltip("Количество карточек на выбор при повышении уровня")]
         public int maxCardsToOffer = 3;
 
-        [Tooltip("Количество бесплатных рероллов карточек за забег (fallback, если RunRulesConfig не задан)")]
-        [SerializeField] private int freeRerollsPerRun = 1;
-        
-        public List<CardData> cardPool; // Fallback/override pool for tests; production reads CardCatalog
+        [System.NonSerialized] public List<CardData> cardPool; // Test override pool; production reads injected CardCatalog
         public List<SynergyData> synergies = new List<SynergyData>(); // Синергии способностей
         private List<CardData> dynamicPool = new List<CardData>(); // Пул добавленных модификаторов
-        
+
+        private CardCatalog cardCatalog;
+        private RunRulesConfig runRulesConfig;
         private CardSelectionUI cardUI;
         private HeroExperience heroExp;
         private GameManager gameManager;
@@ -35,8 +30,6 @@ namespace ProjectB.LevelUp
         private SaveManager saveManager;
         private HeroRuntimeStats runtimeStats;
         private ProjectB.Combat.HeroCombat heroCombat;
-        private CardCatalog cachedDefaultCatalog;
-        private RunRulesConfig cachedDefaultRules;
         
         private int pendingLevelUps = 0;
         private int freeRerollsRemaining = 0;
@@ -48,8 +41,7 @@ namespace ProjectB.LevelUp
             get
             {
                 if (cardPool != null && cardPool.Count > 0) return cardPool;
-                CardCatalog catalog = ResolveCardCatalog();
-                return catalog != null ? catalog.cards : null;
+                return cardCatalog != null ? cardCatalog.cards : null;
             }
         }
 
@@ -63,26 +55,6 @@ namespace ProjectB.LevelUp
             runRulesConfig = rules;
         }
 
-        private CardCatalog ResolveCardCatalog()
-        {
-            if (cardCatalog != null) return cardCatalog;
-            if (cachedDefaultCatalog == null)
-            {
-                cachedDefaultCatalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
-            }
-            return cachedDefaultCatalog;
-        }
-
-        private RunRulesConfig ResolveRunRulesConfig()
-        {
-            if (runRulesConfig != null) return runRulesConfig;
-            if (cachedDefaultRules == null)
-            {
-                cachedDefaultRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return cachedDefaultRules;
-        }
-
         [Inject]
         public void Construct(
             GameManager gameManager,
@@ -92,7 +64,9 @@ namespace ProjectB.LevelUp
             UpgradeApplier upgradeApplier,
             SaveManager saveManager,
             HeroRuntimeStats runtimeStats = null,
-            ProjectB.Combat.HeroCombat heroCombat = null)
+            ProjectB.Combat.HeroCombat heroCombat = null,
+            CardCatalog cardCatalog = null,
+            RunRulesConfig runRulesConfig = null)
         {
             this.runtimeStats = runtimeStats;
             this.heroCombat = heroCombat;
@@ -102,6 +76,8 @@ namespace ProjectB.LevelUp
             this.heroAbilities = heroAbilities;
             this.upgradeApplier = upgradeApplier;
             this.saveManager = saveManager;
+            if (cardCatalog != null) this.cardCatalog = cardCatalog;
+            if (runRulesConfig != null) this.runRulesConfig = runRulesConfig;
         }
 
         private void Start()
@@ -133,8 +109,7 @@ namespace ProjectB.LevelUp
         public void InitializeRunPool()
         {
             dynamicPool.Clear();
-            RunRulesConfig rules = ResolveRunRulesConfig();
-            int baseFreeRerolls = rules != null ? rules.freeRerollsPerRun : freeRerollsPerRun;
+            int baseFreeRerolls = runRulesConfig != null ? runRulesConfig.freeRerollsPerRun : RunRulesConfig.DEFAULT_FREE_REROLLS_PER_RUN;
             freeRerollsRemaining = Mathf.Max(0, baseFreeRerolls) + (runtimeStats != null ? runtimeStats.FreeRerollBonus : 0);
 
             IReadOnlyList<CardData> sourcePool = ResolvedCardPool;

@@ -706,7 +706,6 @@ namespace ProjectB.Tests.EditMode
         {
             var config = AssetDatabase.LoadAssetAtPath<WaveConfig>("Assets/_ScriptableObjects/WaveConfig.asset");
             Assert.IsNotNull(config);
-            Assert.IsTrue(config.useSeparateDifficultyScaling);
 
             float hp1 = config.GetHpDifficultyMultiplier(1);
             float dmg1 = config.GetDamageDifficultyMultiplier(1);

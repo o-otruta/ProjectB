@@ -12,6 +12,7 @@ using ProjectB.Meta;
 using ProjectB.Core.Events;
 using ProjectB.Combat;
 using ProjectB.Arena;
+using ProjectB.Data;
 using ProjectB.Visuals;
 
 namespace ProjectB.Core
@@ -20,6 +21,13 @@ namespace ProjectB.Core
     {
         protected override void Configure(IContainerBuilder builder)
         {
+            // Register ScriptableObject Configs (single source of truth via DI)
+            RegisterResourceConfig<RunRulesConfig>(builder, RunRulesConfig.DEFAULT_RESOURCE_PATH);
+            RegisterResourceConfig<ComboConfig>(builder, ComboConfig.DEFAULT_RESOURCE_PATH);
+            RegisterResourceConfig<PickupConfig>(builder, PickupConfig.DEFAULT_RESOURCE_PATH);
+            RegisterResourceConfig<SecretConfig>(builder, SecretConfig.DEFAULT_RESOURCE_PATH);
+            RegisterResourceConfig<CardCatalog>(builder, CardCatalog.DEFAULT_RESOURCE_PATH);
+
             // Register Core Systems
             builder.Register<RunStatistics>(Lifetime.Scoped);
             builder.Register<RunComboTracker>(Lifetime.Scoped);
@@ -78,6 +86,19 @@ namespace ProjectB.Core
 
             // Explicitly inject into all scene components
             // (Removed explicit RegisterBuildCallback to prevent double injection)
+        }
+
+        private static void RegisterResourceConfig<T>(IContainerBuilder builder, string resourcePath) where T : ScriptableObject
+        {
+            T asset = Resources.Load<T>(resourcePath);
+            if (asset != null)
+            {
+                builder.RegisterInstance(asset);
+            }
+            else
+            {
+                Debug.LogWarning($"[GameLifetimeScope] Config asset '{resourcePath}' ({typeof(T).Name}) not found in Resources; consumers will use default constants.");
+            }
         }
     }
 }

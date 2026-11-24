@@ -16,11 +16,8 @@ namespace ProjectB.Enemies
 {
     public class WaveManager : MonoBehaviour
     {
-        private const int MAX_ACTIVE_ENEMIES_FOR_SUMMON = 80;
-
         [SerializeField] private WaveConfig waveConfig;
-        [SerializeField] private RunRulesConfig runRulesConfig;
-        
+
         private HeroHealth heroHealth;
         private Transform heroTarget;
         private ProjectB.Meta.AchievementManager achievementManager;
@@ -31,8 +28,7 @@ namespace ProjectB.Enemies
         private VacuumMagnetSpawner vacuumMagnetSpawner;
         private IObjectResolver objectResolver;
         private EnemyRuntimeModifiers enemyRuntimeModifiers;
-        private RunRulesConfig cachedDefaultRules;
-        private bool triedLoadDefaultRules;
+        private RunRulesConfig runRulesConfig;
 
         private Transform enemyContainer;
         private Dictionary<EnemyData, IObjectPool<EnemyBase>> enemyPools;
@@ -106,7 +102,8 @@ namespace ProjectB.Enemies
             ArenaGenerator arenaGenerator = null,
             CoinManager coinManager = null,
             IObjectResolver resolver = null,
-            EnemyRuntimeModifiers enemyRuntimeModifiers = null)
+            EnemyRuntimeModifiers enemyRuntimeModifiers = null,
+            RunRulesConfig runRulesConfig = null)
         {
             this.heroHealth = heroHealth;
             if (heroHealth != null)
@@ -120,22 +117,12 @@ namespace ProjectB.Enemies
             this.coinManager = coinManager;
             this.objectResolver = resolver;
             this.enemyRuntimeModifiers = enemyRuntimeModifiers;
+            if (runRulesConfig != null) this.runRulesConfig = runRulesConfig;
         }
 
         public void SetRunRulesConfig(RunRulesConfig rules)
         {
             runRulesConfig = rules;
-        }
-
-        private RunRulesConfig ResolveRunRulesConfig()
-        {
-            if (runRulesConfig != null) return runRulesConfig;
-            if (!triedLoadDefaultRules)
-            {
-                triedLoadDefaultRules = true;
-                cachedDefaultRules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
-            }
-            return cachedDefaultRules;
         }
 
         private EnemyRuntimeModifiers ResolveEnemyModifiers()
@@ -928,10 +915,9 @@ namespace ProjectB.Enemies
         private void SpawnSummonedMinion(EnemyData minionData, Vector3 nearPosition)
         {
             if (heroHealth != null && heroHealth.IsDead) return;
-            RunRulesConfig rules = ResolveRunRulesConfig();
-            int configuredSummonCap = rules != null && rules.maxActiveEnemiesForSummon > 0
-                ? rules.maxActiveEnemiesForSummon
-                : MAX_ACTIVE_ENEMIES_FOR_SUMMON;
+            int configuredSummonCap = runRulesConfig != null && runRulesConfig.maxActiveEnemiesForSummon > 0
+                ? runRulesConfig.maxActiveEnemiesForSummon
+                : RunRulesConfig.DEFAULT_MAX_ACTIVE_ENEMIES_FOR_SUMMON;
             int summonCap = Mathf.Min(configuredSummonCap, MaxActiveEnemies);
             if (activeEnemies.Count >= summonCap) return;
 
@@ -1089,9 +1075,8 @@ namespace ProjectB.Enemies
             enemyIterationBuffer.Clear();
 
             Vector3 heroPos = heroTarget != null ? heroTarget.position : Vector3.zero;
-            RunRulesConfig rules = ResolveRunRulesConfig();
-            float safeRadius = rules != null ? rules.reviveSafeRadius : 4.5f;
-            float pushDistance = rules != null ? rules.revivePushDistance : 5.5f;
+            float safeRadius = runRulesConfig != null ? runRulesConfig.reviveSafeRadius : RunRulesConfig.DEFAULT_REVIVE_SAFE_RADIUS;
+            float pushDistance = runRulesConfig != null ? runRulesConfig.revivePushDistance : RunRulesConfig.DEFAULT_REVIVE_PUSH_DISTANCE;
             float safeRadiusSq = safeRadius * safeRadius;
 
             if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;

@@ -763,7 +763,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.Enemies.WaveManager
   waveConfig: {fileID: 11400000, guid: 53fc3e9edb0905f468b0c71baab59c15, type: 2}
-  runRulesConfig: {fileID: 11400000, guid: d2126e625194a9d46a043ab117f1cd86, type: 2}
 --- !u!4 &34485523
 Transform:
   m_ObjectHideFlags: 0
@@ -9021,11 +9020,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16df537d4c04a2842b47d633acf59d90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.UpgradeManager
-  cardCatalog: {fileID: 11400000, guid: e6915ea339a6be740a56ca257c4c80b7, type: 2}
-  runRulesConfig: {fileID: 11400000, guid: d2126e625194a9d46a043ab117f1cd86, type: 2}
   maxCardsToOffer: 3
-  freeRerollsPerRun: 1
-  cardPool: []
   synergies:
   - {fileID: 11400000, guid: cb3e10fd0e9e41946bc370c2d3a79475, type: 2}
   - {fileID: 11400000, guid: d6e014313b8309c459d5ab811f8ce6ee, type: 2}
@@ -9169,7 +9164,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.CoinManager
   coinPrefab: {fileID: 1890652934616229860, guid: 70e06d167a33860498003564519b7145, type: 3}
-  pickupConfig: {fileID: 0}
 --- !u!1 &577221677
 GameObject:
   m_ObjectHideFlags: 0
@@ -18240,7 +18234,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectB.LevelUp.XpManager
   xpCrystalPrefab: {fileID: 5822715672098073702, guid: cd3eb7faf8300f74684a612567f04873, type: 3}
-  pickupConfig: {fileID: 0}
 --- !u!4 &1067613431
 Transform:
   m_ObjectHideFlags: 0
@@ -29012,17 +29005,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2554cb482467d4946ac23433cdc49951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Arena.SecretItemSpawner
-  secretConfig: {fileID: 11400000, guid: 6a99be79e92863a479c442b09ddba028, type: 2}
   secretItemPrefabs:
   - {fileID: 3379810263749753943, guid: ba9ca0bd18e81fd4999c898ce926c7a7, type: 3}
   - {fileID: 2997210071286978446, guid: b4c851292476a694e85e1b0fa4947a5e, type: 3}
   - {fileID: 857153807870195851, guid: a15afbc38bc88ed488a86931d60ec6a7, type: 3}
-  spawnChancePerRun: 0.1
-  minDistanceFromCenter: 28
-  maxDistanceFromCenter: 60
-  arenaPadding: 6
-  chestCoinReward: 100
-  crystalFallbackCoins: 150
 --- !u!1 &1804709482
 GameObject:
   m_ObjectHideFlags: 0
@@ -33430,10 +33416,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2444728233847287419, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
-      propertyPath: runRulesConfig
-      value: 
-      objectReference: {fileID: 11400000, guid: d2126e625194a9d46a043ab117f1cd86, type: 2}
     - target: {fileID: 3655051533755666143, guid: d0fb1468e6e152d47a7b178171496033, type: 3}
       propertyPath: m_Name
       value: Hero
