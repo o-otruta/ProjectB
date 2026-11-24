@@ -263,13 +263,13 @@ namespace ProjectB.UI
 
         private void BuildOverlayUI()
         {
-            // 1. Compact "DEV" toggle button in bottom-left corner
+            // 1. Compact "DEV" toggle button in bottom-left corner, above the ability slot rows
             var toggleGo = CreateButton(transform, "CheatToggleBtn", "DEV", new Color(0.16f, 0.18f, 0.24f, 0.85f), 26, ToggleMenu);
             var toggleRt = toggleGo.GetComponent<RectTransform>();
             toggleRt.anchorMin = new Vector2(0f, 0f);
             toggleRt.anchorMax = new Vector2(0f, 0f);
             toggleRt.pivot = new Vector2(0f, 0f);
-            toggleRt.anchoredPosition = new Vector2(28f, 140f);
+            toggleRt.anchoredPosition = new Vector2(28f, 200f);
             toggleRt.sizeDelta = new Vector2(124f, 68f);
 
             // 2. Cheat menu panel (centered upper-mid)

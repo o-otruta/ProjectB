@@ -479,9 +479,16 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(abilityHud.transform.Find("PassiveSlots"));
                 Assert.IsNotNull(GetPrivateField(abilityHud, "activeSlotsContainer"), "AbilityHudUI.activeSlotsContainer must be wired");
                 Assert.IsNotNull(GetPrivateField(abilityHud, "passiveSlotsContainer"), "AbilityHudUI.passiveSlotsContainer must be wired");
+                // Ability rows live at the bottom-left so the top band stays free for boss HP and wave events.
+                var abilityRect = (RectTransform)abilityHud.transform;
+                Assert.AreEqual(Vector2.zero, abilityRect.anchorMin, "AbilityHud must be anchored to the bottom-left corner");
+                Assert.AreEqual(Vector2.zero, abilityRect.anchorMax, "AbilityHud must be anchored to the bottom-left corner");
                 var bossBar = safeArea.Find("BossHealthBar") as RectTransform;
                 Assert.IsNotNull(bossBar);
-                Assert.LessOrEqual(bossBar.anchoredPosition.y, -225f, "BossHealthBar must sit cleanly below the AbilityHud rows");
+                Assert.LessOrEqual(bossBar.anchoredPosition.y, -225f, "BossHealthBar must sit cleanly below the HP bar");
+                var combo = safeArea.GetComponentInChildren<ComboHudUI>(true);
+                Assert.IsNotNull(combo);
+                Assert.IsNull(GetPrivateField(combo, "backgroundImage"), "Combo HUD is drawn without a background panel");
             }
             finally
             {
