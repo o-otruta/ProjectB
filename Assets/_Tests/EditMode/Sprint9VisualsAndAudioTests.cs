@@ -387,7 +387,8 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(catalog);
 
             var sfxValues = System.Enum.GetValues(typeof(SfxType));
-            Assert.AreEqual(20, sfxValues.Length);
+            // 20 gameplay SFX + 3 UI sounds added in Sprint 13 (UiConfirm, UiError, UltReady).
+            Assert.AreEqual(23, sfxValues.Length);
             foreach (SfxType sfx in sfxValues)
             {
                 Assert.IsNotNull(catalog.GetSfxClip(sfx), $"Missing SFX clip for {sfx}");

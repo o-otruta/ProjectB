@@ -61,6 +61,10 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<DebugCheatMenu>();
             builder.RegisterComponentInHierarchy<AchievementPopupUI>();
             builder.RegisterComponentInHierarchy<PauseMenuUI>();
+            // Sprint 13: modal HUD fade + shared settings popup (opened from Pause).
+            builder.RegisterComponentInHierarchy<HudVisibilityController>();
+            builder.RegisterComponentInHierarchy<KillCounterHudUI>();
+            builder.RegisterComponentInHierarchy<SettingsPopupUI>();
             
             // Register Player
             builder.RegisterComponentInHierarchy<HeroHealth>();

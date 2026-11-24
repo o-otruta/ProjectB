@@ -6,6 +6,10 @@ using ProjectB.LevelUp;
 
 namespace ProjectB.UI
 {
+    /// <summary>
+    /// One HUD ability socket. Sprint 13: frame tinted by rarity, level badge in the corner and Overdrive tiers —
+    /// Lv 10 gold frame, Lv 20 pulsing glow, Lv 30+ iridescent frame (animated on unscaled time only for tier ≥ 2).
+    /// </summary>
     public class AbilityHudSlotUI : MonoBehaviour
     {
         [SerializeField] private Image borderImage;
@@ -14,10 +18,17 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI initialsText;
         [SerializeField] private TextMeshProUGUI levelText;
         [SerializeField] private Sprite lockedIconSprite;
+        [Tooltip("Sprint 13: Overdrive glow behind the frame (tier 2+).")]
+        [SerializeField] private Image glowImage;
+
+        private readonly char[] levelBuffer = new char[8];
+        private int overdriveTier;
+        private float animTime;
 
         public AbilityData CurrentData { get; private set; }
         public bool IsLocked { get; private set; }
         public bool IsEmpty => CurrentData == null && !IsLocked;
+        public int OverdriveTier => overdriveTier;
 
         public void SetAbility(AbilityData data, int level)
         {
@@ -27,17 +38,26 @@ namespace ProjectB.UI
                 return;
             }
 
+            UiTheme theme = UiTheme.Current;
             CurrentData = data;
             IsLocked = false;
             gameObject.SetActive(true);
 
-            Color rarityColor = GetRarityColor(data.rarity);
-            if (borderImage != null) borderImage.color = rarityColor;
+            Color rarityColor = theme.GetRarityColor(data.rarity);
+            overdriveTier = data.type == AbilityType.Active ? ActiveAbility.CalculateOverdriveTier(level) : 0;
+            Color frameColor = theme.GetOverdriveColor(overdriveTier, rarityColor);
+
+            if (borderImage != null) borderImage.color = frameColor;
             if (backgroundImage != null)
             {
-                backgroundImage.color = data.type == AbilityType.Passive
-                    ? new Color(0.09f, 0.16f, 0.21f, 0.94f)
-                    : new Color(0.14f, 0.13f, 0.19f, 0.94f);
+                backgroundImage.color = UiTheme.WithAlpha(
+                    data.type == AbilityType.Passive ? UiTheme.Shade(theme.passiveSlot, 0.25f) : theme.surface, 0.94f);
+            }
+            if (glowImage != null)
+            {
+                bool glow = overdriveTier >= 2;
+                glowImage.gameObject.SetActive(glow);
+                if (glow) glowImage.color = UiTheme.WithAlpha(frameColor, 0.6f);
             }
 
             bool hasIcon = data.icon != null;
@@ -64,38 +84,31 @@ namespace ProjectB.UI
             SetLevelBadgeVisible(true);
             if (levelText != null)
             {
-                levelText.text = $"Lv{level}";
-                if (data.type == AbilityType.Active && level >= 20)
-                {
-                    levelText.color = new Color(0.42f, 0.96f, 1f, 1f);
-                }
-                else if (data.type == AbilityType.Active && level >= 10)
-                {
-                    levelText.color = new Color(1f, 0.86f, 0.24f, 1f);
-                }
-                else
-                {
-                    levelText.color = Color.white;
-                }
+                levelBuffer[0] = 'L';
+                levelBuffer[1] = 'v';
+                int len = UiFormat.WriteInt(levelBuffer, 2, Mathf.Max(0, level));
+                levelText.SetCharArray(levelBuffer, 0, len);
+                levelText.color = overdriveTier > 0 ? theme.GetOverdriveColor(overdriveTier, theme.textPrimary) : theme.textPrimary;
             }
         }
 
         public void SetEmpty(AbilityType slotType)
         {
+            UiTheme theme = UiTheme.Current;
             CurrentData = null;
             IsLocked = false;
+            overdriveTier = 0;
             gameObject.SetActive(true);
 
             if (borderImage != null)
             {
-                borderImage.color = slotType == AbilityType.Passive
-                    ? new Color(0.24f, 0.78f, 0.88f, 0.34f)
-                    : new Color(0.95f, 0.58f, 0.2f, 0.34f);
+                borderImage.color = UiTheme.WithAlpha(slotType == AbilityType.Passive ? theme.passiveSlot : theme.activeSlot, 0.35f);
             }
             if (backgroundImage != null)
             {
-                backgroundImage.color = new Color(0.08f, 0.1f, 0.15f, 0.42f);
+                backgroundImage.color = UiTheme.WithAlpha(theme.surfaceSunken, 0.55f);
             }
+            if (glowImage != null) glowImage.gameObject.SetActive(false);
             if (iconImage != null)
             {
                 iconImage.gameObject.SetActive(false);
@@ -109,27 +122,31 @@ namespace ProjectB.UI
 
         public void SetLocked(AbilityType slotType)
         {
+            UiTheme theme = UiTheme.Current;
             CurrentData = null;
             IsLocked = true;
+            overdriveTier = 0;
             gameObject.SetActive(true);
 
             if (borderImage != null)
             {
-                borderImage.color = new Color(0.32f, 0.36f, 0.44f, 0.32f);
+                borderImage.color = UiTheme.WithAlpha(theme.outline, 0.35f);
             }
             if (backgroundImage != null)
             {
-                backgroundImage.color = new Color(0.05f, 0.06f, 0.09f, 0.58f);
+                backgroundImage.color = UiTheme.WithAlpha(theme.surfaceSunken, 0.6f);
             }
+            if (glowImage != null) glowImage.gameObject.SetActive(false);
 
-            bool hasLockSprite = lockedIconSprite != null;
+            Sprite lockSprite = lockedIconSprite != null ? lockedIconSprite : theme.iconLock;
+            bool hasLockSprite = lockSprite != null;
             if (iconImage != null)
             {
                 iconImage.gameObject.SetActive(hasLockSprite);
                 if (hasLockSprite)
                 {
-                    iconImage.sprite = lockedIconSprite;
-                    iconImage.color = new Color(0.62f, 0.68f, 0.78f, 0.75f);
+                    iconImage.sprite = lockSprite;
+                    iconImage.color = UiTheme.WithAlpha(theme.textSecondary, 0.75f);
                 }
             }
             if (initialsText != null)
@@ -138,10 +155,30 @@ namespace ProjectB.UI
                 if (!hasLockSprite)
                 {
                     initialsText.text = "LK";
-                    initialsText.color = new Color(0.55f, 0.6f, 0.68f, 0.75f);
+                    initialsText.color = UiTheme.WithAlpha(theme.textDisabled, 0.75f);
                 }
             }
             SetLevelBadgeVisible(false);
+        }
+
+        private void Update()
+        {
+            if (overdriveTier < 2 || CurrentData == null) return;
+            animTime += Time.unscaledDeltaTime;
+
+            if (glowImage != null && glowImage.gameObject.activeSelf)
+            {
+                Color g = glowImage.color;
+                g.a = 0.35f + 0.35f * (Mathf.Sin(animTime * 4f) + 1f) * 0.5f;
+                glowImage.color = g;
+            }
+
+            if (overdriveTier >= 3 && borderImage != null)
+            {
+                // Iridescent frame: hue cycles around the tier-3 colour.
+                Color.RGBToHSV(UiTheme.Current.overdriveTier3, out float h, out float s, out float v);
+                borderImage.color = Color.HSVToRGB(Mathf.Repeat(h + animTime * 0.25f, 1f), s, v);
+            }
         }
 
         private void SetLevelBadgeVisible(bool visible)
@@ -154,16 +191,10 @@ namespace ProjectB.UI
             levelText.gameObject.SetActive(visible);
         }
 
+        /// <summary>Rarity colour from the active <see cref="UiTheme"/> (kept for older call sites).</summary>
         public static Color GetRarityColor(CardRarity rarity)
         {
-            return rarity switch
-            {
-                CardRarity.Common => new Color(0.75f, 0.78f, 0.82f, 1f),
-                CardRarity.Rare => new Color(0.25f, 0.6f, 1f, 1f),
-                CardRarity.Epic => new Color(0.72f, 0.32f, 0.95f, 1f),
-                CardRarity.Legendary => new Color(1f, 0.78f, 0.2f, 1f),
-                _ => Color.white
-            };
+            return UiTheme.Current.GetRarityColor(rarity);
         }
 
         public static string GetInitials(string displayName)

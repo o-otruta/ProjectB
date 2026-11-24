@@ -1,11 +1,17 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using VContainer;
 using ProjectB.Meta;
 using ProjectB.Data;
 
 namespace ProjectB.UI
 {
+    /// <summary>
+    /// Upgrades tab. Sprint 13.2: a wide Constellation banner (starfield + Boss Shard counter) above the list
+    /// replaces the clipped STARS button; rows refresh whenever the coin balance changes.
+    /// </summary>
     public class MetaUpgradeUI : MonoBehaviour
     {
         [Header("References")]
@@ -13,18 +19,32 @@ namespace ProjectB.UI
         [SerializeField] private Transform itemsContainer;
         [SerializeField] private UpgradeItemUI itemPrefab;
 
+        [Header("Sprint 13: Constellation banner")]
+        [SerializeField] private Button constellationBanner;
+        [SerializeField] private TMP_Text bannerShardsText;
+        [SerializeField] private TMP_Text bannerProgressText;
+
         private MetaUpgradeManager upgradeManager;
-        private List<UpgradeItemUI> spawnedItems = new List<UpgradeItemUI>();
+        private SaveManager saveManager;
+        private TalentTreeManager talentTreeManager;
+        private readonly List<UpgradeItemUI> spawnedItems = new List<UpgradeItemUI>();
 
         [Inject]
-        public void Construct(MetaUpgradeManager upgradeManager)
+        public void Construct(MetaUpgradeManager upgradeManager, SaveManager saveManager = null, TalentTreeManager talentTreeManager = null)
         {
             this.upgradeManager = upgradeManager;
-            
+            this.saveManager = saveManager;
+            this.talentTreeManager = talentTreeManager;
+
             if (this.upgradeManager != null)
             {
                 this.upgradeManager.OnUpgradePurchased += HandleUpgradePurchased;
                 InitializeList();
+            }
+
+            if (this.saveManager != null)
+            {
+                this.saveManager.OnDataChanged += HandleDataChanged;
             }
         }
 
@@ -34,11 +54,14 @@ namespace ProjectB.UI
             {
                 upgradeManager.OnUpgradePurchased -= HandleUpgradePurchased;
             }
+            if (saveManager != null)
+            {
+                saveManager.OnDataChanged -= HandleDataChanged;
+            }
         }
 
         private void InitializeList()
         {
-            // Очищаем старые элементы, если есть
             foreach (var item in spawnedItems)
             {
                 if (item != null) Destroy(item.gameObject);
@@ -51,7 +74,6 @@ namespace ProjectB.UI
                 return;
             }
 
-            // Спавним UI элементы для каждого апгрейда
             var upgrades = upgradeManager.GetAllUpgrades();
             foreach (var upgradeData in upgrades)
             {
@@ -63,10 +85,12 @@ namespace ProjectB.UI
 
         private void HandleUpgradePurchased(string upgradeId)
         {
-            // Обновляем все элементы, так как покупка одного может повлиять на возможность купить другие 
-            // (из-за того, что изменилось количество денег).
-            // В идеале SaveManager кидает ивент изменения денег, и мы слушаем его.
             RefreshAllItems();
+        }
+
+        private void HandleDataChanged()
+        {
+            if (panel != null && panel.activeInHierarchy) RefreshAllItems();
         }
 
         public void Show()
@@ -79,7 +103,7 @@ namespace ProjectB.UI
         {
             if (panel != null) panel.SetActive(false);
         }
-        
+
         public void Toggle()
         {
             if (panel != null)
@@ -97,6 +121,19 @@ namespace ProjectB.UI
                 {
                     item.Refresh();
                 }
+            }
+            RefreshBanner();
+        }
+
+        private void RefreshBanner()
+        {
+            if (bannerShardsText != null && saveManager != null && saveManager.Data != null)
+            {
+                bannerShardsText.text = UiFormat.Grouped(saveManager.Data.bossShards);
+            }
+            if (bannerProgressText != null && talentTreeManager != null)
+            {
+                bannerProgressText.text = $"{talentTreeManager.UnlockedCount}/{Mathf.Max(0, talentTreeManager.Nodes.Count - 1)} stars lit";
             }
         }
     }

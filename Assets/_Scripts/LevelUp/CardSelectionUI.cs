@@ -7,6 +7,7 @@ using ProjectB.Abilities;
 using ProjectB.Ads;
 using ProjectB.Core;
 using ProjectB.Data;
+using ProjectB.UI;
 
 namespace ProjectB.LevelUp
 {
@@ -20,10 +21,16 @@ namespace ProjectB.LevelUp
         [SerializeField] private Button rerollButton;
         [SerializeField] private TMP_Text rerollButtonText;
 
+        [Header("Sprint 13: header")]
+        [SerializeField] private TMP_Text titleText;
+        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private CanvasGroup panelGroup;
+
         [Header("Animation")]
         [SerializeField] private float cardBounceDuration = 0.28f;
         [SerializeField] private float cardStaggerDelay = 0.06f;
         [SerializeField] private float cardOvershootScale = 1.08f;
+        [SerializeField] private float selectFeedbackDuration = 0.18f;
 
         private System.Action<CardData> onCardSelectedCallback;
         private System.Func<List<CardData>, bool, List<CardData>> onRerollCallback;
@@ -31,6 +38,8 @@ namespace ProjectB.LevelUp
         private AdManager adManager;
         private HeroAbilities heroAbilities;
         private AudioManager audioManager;
+        private HeroExperience heroExperience;
+        private readonly char[] levelBuffer = new char[16];
 
         private int freeRerollsAvailable;
         private bool hasRerolledThisLevelUp;
@@ -49,19 +58,20 @@ namespace ProjectB.LevelUp
             get
             {
                 if (onRerollCallback == null) return string.Empty;
-                if (hasRerolledThisLevelUp) return "REROLLED";
-                if (freeRerollsAvailable > 0) return $"REROLL (FREE x{freeRerollsAvailable})";
-                if (adManager != null && adManager.CanShowRewarded()) return "REROLL (WATCH AD)";
-                return "REROLL UNAVAILABLE";
+                if (hasRerolledThisLevelUp) return "Rerolled";
+                if (freeRerollsAvailable > 0) return $"Reroll · Free ×{freeRerollsAvailable}";
+                if (adManager != null && adManager.CanShowRewarded()) return "<sprite name=\"ad\"> Reroll";
+                return "Reroll unavailable";
             }
         }
 
         [Inject]
-        public void Construct(AdManager adManager = null, HeroAbilities heroAbilities = null, AudioManager audioManager = null)
+        public void Construct(AdManager adManager = null, HeroAbilities heroAbilities = null, AudioManager audioManager = null, HeroExperience heroExperience = null)
         {
             this.adManager = adManager;
             this.heroAbilities = heroAbilities;
             this.audioManager = audioManager;
+            this.heroExperience = heroExperience;
         }
 
         private void Awake()
@@ -128,11 +138,33 @@ namespace ProjectB.LevelUp
 
             RefreshSlots();
             RefreshRerollButton();
+            RefreshHeader();
 
             if (selectionPanel != null)
                 selectionPanel.SetActive(true);
 
+            if (panelGroup != null)
+            {
+                panelGroup.interactable = true;
+                UiTween.Fade(panelGroup, 0f, 1f, UiTheme.Current.durationNormal);
+            }
+            if (titleText != null && Application.isPlaying)
+            {
+                UiTween.Scale(titleText.transform, Vector3.one * 0.6f, Vector3.one, UiTheme.Current.durationSlow, 0f, UiEase.OutBack);
+            }
+
             StartBounceAnimation();
+        }
+
+        private void RefreshHeader()
+        {
+            if (titleText != null) titleText.text = "LEVEL UP!";
+            if (levelText != null && heroExperience != null)
+            {
+                int len = UiFormat.WriteString(levelBuffer, 0, "Level ");
+                len = UiFormat.WriteInt(levelBuffer, len, heroExperience.CurrentLevel);
+                levelText.SetCharArray(levelBuffer, 0, len);
+            }
         }
 
         public void Hide()
@@ -386,6 +418,36 @@ namespace ProjectB.LevelUp
             freeRerollsAvailable = 0;
             hasRerolledThisLevelUp = false;
 
+            if (Application.isPlaying && isActiveAndEnabled && selectFeedbackDuration > 0f)
+            {
+                PlaySelectFeedback(card);
+                StartCoroutine(FinishSelectionAfterFeedback(callback, card));
+                return;
+            }
+
+            Hide();
+            callback.Invoke(card);
+        }
+
+        /// <summary>Chosen card "punches", the others fade (Sprint 13.4).</summary>
+        private void PlaySelectFeedback(CardData card)
+        {
+            isAnimatingCards = false;
+            ResetSlotScales();
+            if (panelGroup != null) panelGroup.interactable = false;
+            if (cardSlots == null) return;
+            for (int i = 0; i < cardSlots.Length; i++)
+            {
+                CardUI slot = cardSlots[i];
+                if (slot == null || !slot.gameObject.activeSelf) continue;
+                if (slot.CurrentData == card) UiTween.Punch(slot.transform, 0.1f, selectFeedbackDuration);
+                else slot.SetDimmed(true);
+            }
+        }
+
+        private System.Collections.IEnumerator FinishSelectionAfterFeedback(System.Action<CardData> callback, CardData card)
+        {
+            yield return new WaitForSecondsRealtime(selectFeedbackDuration);
             Hide();
             callback.Invoke(card);
         }

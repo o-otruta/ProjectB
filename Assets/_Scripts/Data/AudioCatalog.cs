@@ -23,7 +23,10 @@ namespace ProjectB.Data
         IceShatter = 16,
         BossDeath = 17,
         ShrineStart = 18,
-        ComboMilestone = 19
+        ComboMilestone = 19,
+        UiConfirm = 20,
+        UiError = 21,
+        UltReady = 22
     }
 
     public enum MusicType
@@ -59,6 +62,11 @@ namespace ProjectB.Data
         public AudioClip shrineStartClip;
         public AudioClip comboMilestoneClip;
 
+        [Header("UI (Sprint 13)")]
+        public AudioClip uiConfirmClip;
+        public AudioClip uiErrorClip;
+        public AudioClip ultReadyClip;
+
         [Header("Music")]
         public AudioClip menuMusicClip;
         public AudioClip gameplayMusicClip;
@@ -92,6 +100,9 @@ namespace ProjectB.Data
                 SfxType.BossDeath => bossDeathClip,
                 SfxType.ShrineStart => shrineStartClip,
                 SfxType.ComboMilestone => comboMilestoneClip,
+                SfxType.UiConfirm => uiConfirmClip != null ? uiConfirmClip : uiClickClip,
+                SfxType.UiError => uiErrorClip,
+                SfxType.UltReady => ultReadyClip,
                 _ => null
             };
         }

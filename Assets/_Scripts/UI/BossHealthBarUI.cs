@@ -13,10 +13,8 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI hpValueText;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private Image fillImage;
-
-        [Header("Colors")]
-        [SerializeField] private Color bossFillColor = new Color(0.86f, 0.14f, 0.2f, 1f);
-        [SerializeField] private Color miniBossFillColor = new Color(0.95f, 0.52f, 0.14f, 1f);
+        [Tooltip("Sprint 13: themed bar with a damage ghost-trail (replaces the Slider when assigned).")]
+        [SerializeField] private ProgressBarUI progressBar;
 
         private GameEventBus eventBus;
         private string activeBossId;
@@ -91,7 +89,12 @@ namespace ProjectB.UI
 
             if (fillImage != null)
             {
-                fillImage.color = evt.IsMiniBoss ? miniBossFillColor : bossFillColor;
+                fillImage.color = evt.IsMiniBoss ? UiTheme.Current.warning : UiTheme.Current.danger;
+            }
+            if (progressBar != null)
+            {
+                progressBar.SetFillColor(evt.IsMiniBoss ? UiColor.Warning : UiColor.Danger);
+                progressBar.SetValue(evt.CurrentHp, Mathf.Max(1, evt.MaxHp), instant: true);
             }
 
             UpdateBar(evt.CurrentHp, evt.MaxHp);
@@ -127,6 +130,10 @@ namespace ProjectB.UI
             {
                 hpSlider.maxValue = safeMax;
                 hpSlider.value = safeCur;
+            }
+            if (progressBar != null)
+            {
+                progressBar.SetValue(safeCur, safeMax);
             }
 
             if (hpValueText != null && (safeCur != lastDisplayedCur || safeMax != lastDisplayedMax))

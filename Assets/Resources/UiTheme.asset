@@ -1,0 +1,134 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2e57d0cf500cde45a698810fe4cc834, type: 3}
+  m_Name: UiTheme
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.UI.UiTheme
+  background: {r: 0.078431375, g: 0.07450981, b: 0.15294118, a: 1}
+  surface: {r: 0.13725491, g: 0.13333334, b: 0.27450982, a: 1}
+  surfaceRaised: {r: 0.1882353, g: 0.18431373, b: 0.36862746, a: 1}
+  surfaceSunken: {r: 0.05490196, g: 0.050980393, b: 0.11764706, a: 1}
+  outline: {r: 0.2901961, g: 0.28235295, b: 0.5254902, a: 1}
+  overlay: {r: 0.03, g: 0.03, b: 0.08, a: 0.78}
+  textPrimary: {r: 0.95686275, g: 0.94509804, b: 1, a: 1}
+  textSecondary: {r: 0.6627451, g: 0.6509804, b: 0.8392157, a: 1}
+  textDisabled: {r: 0.38431373, g: 0.37254903, b: 0.5568628, a: 1}
+  accent: {r: 0.4862745, g: 0.36078432, b: 1, a: 1}
+  success: {r: 0.27058825, g: 0.83137256, b: 0.5137255, a: 1}
+  danger: {r: 1, g: 0.3019608, b: 0.41568628, a: 1}
+  warning: {r: 1, g: 0.63529414, b: 0.22745098, a: 1}
+  gold: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
+  shard: {r: 0.24705882, g: 0.8784314, b: 0.8156863, a: 1}
+  ad: {r: 0.18431373, g: 0.65882355, b: 1, a: 1}
+  white: {r: 1, g: 1, b: 1, a: 1}
+  rarityCommon: {r: 0.7254902, g: 0.7607843, b: 0.8156863, a: 1}
+  rarityRare: {r: 0.23921569, g: 0.60784316, b: 1, a: 1}
+  rarityEpic: {r: 0.7137255, g: 0.36078432, b: 1, a: 1}
+  rarityLegendary: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
+  activeSlot: {r: 1, g: 0.5882353, b: 0.2509804, a: 1}
+  passiveSlot: {r: 0.23529412, g: 0.78431374, b: 0.8784314, a: 1}
+  hpFill: {r: 1, g: 0.3019608, b: 0.41568628, a: 1}
+  xpFill: {r: 0.43137255, g: 0.85882354, b: 0.23529412, a: 1}
+  ghost: {r: 1, g: 0.8901961, b: 0.6392157, a: 1}
+  overdriveTier1: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
+  overdriveTier2: {r: 0.36078432, g: 0.95686275, b: 1, a: 1}
+  overdriveTier3: {r: 1, g: 0.41568628, b: 0.9019608, a: 1}
+  primaryButton:
+    face: 8
+    label: 25
+  secondaryButton:
+    face: 2
+    label: 4
+  dangerButton:
+    face: 9
+    label: 25
+  adButton:
+    face: 13
+    label: 25
+  iconButton:
+    face: 2
+    label: 4
+  successButton:
+    face: 11
+    label: 0
+  pressScale: 0.94
+  disabledTint: {r: 0.55, g: 0.55, b: 0.62, a: 0.85}
+  hoverTint: {r: 0.94, g: 0.95, b: 1, a: 1}
+  pressedTint: {r: 0.82, g: 0.82, b: 0.86, a: 1}
+  displayFont: {fileID: 11400000, guid: 622c72345b40b35498079399153ed250, type: 2}
+  bodyFont: {fileID: 11400000, guid: 08f47e1d20a54a5479988adef3f50071, type: 2}
+  bodyBoldFont: {fileID: 11400000, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
+  titleMaterial: {fileID: 2100000, guid: 953e76034f8fdc94881ccf7f8c5d73bf, type: 2}
+  numberMaterial: {fileID: 2100000, guid: 6b1e2bd59d78a294ba59ea59d26a059b, type: 2}
+  bodyMaterial: {fileID: 2100000, guid: 9fafc264980f6f24392350755d09efe2, type: 2}
+  displaySize: 96
+  h1Size: 64
+  h2Size: 44
+  bodySize: 32
+  captionSize: 24
+  numberSize: 40
+  buttonSize: 40
+  microSize: 20
+  gridUnit: 8
+  cornerRadius: 24
+  minTouchSize: 120
+  durationFast: 0.12
+  durationNormal: 0.2
+  durationSlow: 0.35
+  staggerDelay: 0.06
+  panelSprite: {fileID: 21300000, guid: 99f1fec15bcd20a4898aaa7a3972025e, type: 3}
+  cardSprite: {fileID: 21300000, guid: 570c7fefc52e3fb4da817af74da0583d, type: 3}
+  rowSprite: {fileID: 21300000, guid: 3dc937900a037b240a5243f07646c6ad, type: 3}
+  buttonSprite: {fileID: 21300000, guid: 203ef066465bd7f40bc0f2b342e52734, type: 3}
+  buttonPressedSprite: {fileID: 21300000, guid: 7840e1be834b16c4eb693c6a0fd54c0b, type: 3}
+  pillSprite: {fileID: 21300000, guid: cb8db01510de95341b82372f9351b4bb, type: 3}
+  circleSprite: {fileID: 21300000, guid: fea1738c28aaade4995d12b4df7e9140, type: 3}
+  slotFrameSprite: {fileID: 21300000, guid: 9c137db89f02d594bb1e490aeb40d447, type: 3}
+  barFrameSprite: {fileID: 21300000, guid: 2407e908c53a99145b4161c26842b5c7, type: 3}
+  barFillSprite: {fileID: 21300000, guid: 5487269da20b0ac49a7f970a157813fa, type: 3}
+  solidSprite: {fileID: 21300000, guid: 1ae4a5753bd47364caa5c8bf77735f3b, type: 3}
+  glowSprite: {fileID: 21300000, guid: d55f47d2f29eed541a9d2b88f91efc6e, type: 3}
+  outlineSprite: {fileID: 21300000, guid: 1a579f95d982f1a449538fd44276deac, type: 3}
+  knobSprite: {fileID: 21300000, guid: e287b174a2b982347994462e456a9b2b, type: 3}
+  ringThinSprite: {fileID: 21300000, guid: a3af21557e7a133488e557fea1f8d2c3, type: 3}
+  vignetteSprite: {fileID: 21300000, guid: b7ca2c0b9e144c24790b6bcfb81e71f1, type: 3}
+  starfieldSprite: {fileID: 21300000, guid: e179ed359ffcac64b954ece0a4f865b1, type: 3}
+  iconCoin: {fileID: 21300000, guid: e3fa1a4e170f02049a98ffc822aff0de, type: 3}
+  iconShard: {fileID: 21300000, guid: 46a4d2f13c7caac449242f4e5b24f938, type: 3}
+  iconAd: {fileID: 21300000, guid: 1fe7f9043bce78b478e605437e367464, type: 3}
+  iconGear: {fileID: 21300000, guid: f47d591a42dabca4383d9fb2cd975263, type: 3}
+  iconPause: {fileID: 21300000, guid: 8773d0c131d8d2c4d994ad5b12a216fe, type: 3}
+  iconLock: {fileID: 21300000, guid: fe43619e41616ad488c7279eb17df6e9, type: 3}
+  iconCheck: {fileID: 21300000, guid: 68e85eeae7b2e3241bb8e7953f615515, type: 3}
+  iconChevronLeft: {fileID: 21300000, guid: 6d51a2509d4ee7947b2f73b6a458018b, type: 3}
+  iconChevronRight: {fileID: 21300000, guid: f19327096c071824ebfb35b2befcf4df, type: 3}
+  iconHeart: {fileID: 21300000, guid: 672e067557d608c4da2aa778d9ba9295, type: 3}
+  iconSpeed: {fileID: 21300000, guid: 9485b3d38e302044e921f38b8777267f, type: 3}
+  iconSword: {fileID: 21300000, guid: 9fc77ef0f0ff83648891af3859665b71, type: 3}
+  iconClock: {fileID: 21300000, guid: c622c7fd2f1b1504fbe1bc20bdca7e9f, type: 3}
+  iconSkull: {fileID: 21300000, guid: e2916b00240695b4ca99ed6d6fc7903e, type: 3}
+  iconStar: {fileID: 21300000, guid: 432f76a12d5ff254ebae1c2e35c3a10f, type: 3}
+  iconPlus: {fileID: 21300000, guid: 23fe5c1316a6f8541b50580c39608cec, type: 3}
+  iconMinus: {fileID: 21300000, guid: afc860b5815030c42b1edbfd32537c6f, type: 3}
+  iconTarget: {fileID: 21300000, guid: b98e1b56b6a1b3340ab9c0a6f9bcc56b, type: 3}
+  iconClose: {fileID: 21300000, guid: 4eb13c20b7639bd409a57fb85c9dbb7e, type: 3}
+  iconPlay: {fileID: 21300000, guid: 641d0d58bd59799488060df7c143b1be, type: 3}
+  iconReroll: {fileID: 21300000, guid: 14a53a3c495377143a897261c5d4e930, type: 3}
+  iconFlame: {fileID: 21300000, guid: cf1f4b5bc8044ba41bc9dd2333a3cdf4, type: 3}
+  iconMusic: {fileID: 21300000, guid: d61f8db6bd5022a4b9393406cf438310, type: 3}
+  iconSound: {fileID: 21300000, guid: 3060d09181831404da05bb601f75048c, type: 3}
+  iconGlobe: {fileID: 21300000, guid: e7cf5aa1b97c6ae44a70bc17fdd43ec7, type: 3}
+  tabUpgrades: {fileID: 21300000, guid: 8b095efb74f8d8c45bc5042f7b23a7e2, type: 3}
+  tabAbilities: {fileID: 21300000, guid: b3fafe48dd0f37a43a7e719219e49851, type: 3}
+  tabPlay: {fileID: 21300000, guid: 345689560a27ba445ad4e628334033cb, type: 3}
+  tabAchievements: {fileID: 21300000, guid: 405d88c7b0ee3054991b3205e1be9d5f, type: 3}
+  tabBonus: {fileID: 21300000, guid: ef6b24a3bebcb7f41aee777221597cba, type: 3}
+  iconSpriteAsset: {fileID: 11400000, guid: 50b71e1051984504cafc970917867882, type: 2}

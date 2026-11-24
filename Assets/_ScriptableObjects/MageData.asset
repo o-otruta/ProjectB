@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroData
   id: mage
   heroName: Mage
+  role: Area Caster
   description: Arcane spellcaster firing explosive AoE bolts (14 dmg, 1.5m splash
     radius) and channeling devastating elemental power.
   icon: {fileID: 21300000, guid: 14d7f06af2b5c2b4d845325d4e6263dd, type: 3}

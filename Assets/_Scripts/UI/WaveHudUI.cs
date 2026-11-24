@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using VContainer;
+using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Enemies;
 
@@ -11,6 +12,13 @@ namespace ProjectB.UI
         private static readonly string[] CachedWaveLabels = BuildWaveLabels(201);
 
         [SerializeField] private TextMeshProUGUI waveText;
+        [Tooltip("Sprint 13: append the run timer — \"Wave 12 · 03:41\".")]
+        [SerializeField] private bool showRunTimer = true;
+        [Tooltip("Sprint 13 HUD revision: big centred run timer; waveText then shows only \"WAVE 12\".")]
+        [SerializeField] private TextMeshProUGUI timerText;
+        private RunStatistics runStatistics;
+        private readonly char[] labelBuffer = new char[32];
+        private int lastDisplayedSeconds = int.MinValue;
 
         private WaveManager waveManager;
         private GameEventBus eventBus;
@@ -37,10 +45,11 @@ namespace ProjectB.UI
         }
 
         [Inject]
-        public void Construct(WaveManager waveManager, GameEventBus eventBus)
+        public void Construct(WaveManager waveManager, GameEventBus eventBus, RunStatistics runStatistics = null)
         {
             this.waveManager = waveManager;
             this.eventBus = eventBus;
+            this.runStatistics = runStatistics;
             if (isActiveAndEnabled)
             {
                 Subscribe();
@@ -88,13 +97,58 @@ namespace ProjectB.UI
             UpdateWaveText(evt.NextWave);
         }
 
+        private void Update()
+        {
+            if (!showRunTimer || runStatistics == null || waveText == null) return;
+            int seconds = Mathf.FloorToInt(runStatistics.PlayTime);
+            if (seconds == lastDisplayedSeconds) return;
+            if (timerText != null) WriteTimer(seconds);
+            else WriteLabel(lastDisplayedWave, seconds);
+        }
+
+        /// <summary>Zero-GC "03:41" into the big timer.</summary>
+        private void WriteTimer(int seconds)
+        {
+            lastDisplayedSeconds = seconds;
+            int len = UiFormat.WriteClock(labelBuffer, 0, seconds);
+            timerText.SetCharArray(labelBuffer, 0, len);
+        }
+
         private void UpdateWaveText(int wave)
         {
             if (waveText != null && wave != lastDisplayedWave)
             {
                 lastDisplayedWave = wave;
-                waveText.text = GetCachedWaveText(wave);
+                if (timerText != null)
+                {
+                    int len = UiFormat.WriteString(labelBuffer, 0, "WAVE ");
+                    len = UiFormat.WriteInt(labelBuffer, len, Mathf.Max(0, wave));
+                    waveText.SetCharArray(labelBuffer, 0, len);
+                    if (Application.isPlaying && wave > 1) UiTween.Punch(waveText.transform, 0.2f, 0.3f);
+                    if (runStatistics != null) WriteTimer(Mathf.FloorToInt(runStatistics.PlayTime));
+                }
+                else if (showRunTimer && runStatistics != null)
+                {
+                    WriteLabel(wave, Mathf.FloorToInt(runStatistics.PlayTime));
+                }
+                else
+                {
+                    waveText.text = GetCachedWaveText(wave);
+                }
             }
+        }
+
+        /// <summary>Zero-GC "Wave 12 · 03:41".</summary>
+        private void WriteLabel(int wave, int seconds)
+        {
+            lastDisplayedSeconds = seconds;
+            int len = UiFormat.WriteString(labelBuffer, 0, "Wave ");
+            len = UiFormat.WriteInt(labelBuffer, len, Mathf.Max(0, wave));
+            labelBuffer[len++] = ' ';
+            labelBuffer[len++] = '•';
+            labelBuffer[len++] = ' ';
+            len = UiFormat.WriteClock(labelBuffer, len, seconds);
+            waveText.SetCharArray(labelBuffer, 0, len);
         }
     }
 }

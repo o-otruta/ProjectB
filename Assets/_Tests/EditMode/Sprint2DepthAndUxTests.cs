@@ -315,25 +315,25 @@ namespace ProjectB.Tests.EditMode
                     return mgr.GetRerolledCards(prev, 3);
                 }
 
-                // Offer 1: free reroll -> 0 ad calls, label becomes REROLLED, second click blocked
+                // Offer 1: free reroll -> 0 ad calls, label becomes "Rerolled" (Sprint 13 labels), second click blocked
                 selUi.ShowCards(initial, _ => { }, DoReroll, freeRemaining);
                 Assert.IsTrue(selUi.CanRerollCurrentOffer);
-                Assert.AreEqual("REROLL (FREE x1)", selUi.RerollButtonLabel);
+                Assert.AreEqual("Reroll · Free ×1", selUi.RerollButtonLabel);
                 Assert.AreEqual("STAT BOOST", slot1.LevelBadgeLabel);
 
                 selUi.TriggerReroll();
                 Assert.AreEqual(0, adProvider.RewardedShowCalls);
                 Assert.AreEqual(0, freeRemaining);
-                Assert.AreEqual("REROLLED", selUi.RerollButtonLabel);
+                Assert.AreEqual("Rerolled", selUi.RerollButtonLabel);
                 Assert.IsFalse(selUi.CanRerollCurrentOffer);
 
                 // Offer 2: no free rerolls left -> uses rewarded ad
                 selUi.ShowCards(initial, _ => { }, DoReroll, freeRemaining);
                 Assert.IsTrue(selUi.CanRerollCurrentOffer);
-                Assert.AreEqual("REROLL (WATCH AD)", selUi.RerollButtonLabel);
+                Assert.AreEqual("<sprite name=\"ad\"> Reroll", selUi.RerollButtonLabel);
                 selUi.TriggerReroll();
                 Assert.AreEqual(1, adProvider.RewardedShowCalls);
-                Assert.AreEqual("REROLLED", selUi.RerollButtonLabel);
+                Assert.AreEqual("Rerolled", selUi.RerollButtonLabel);
             }
             finally
             {
@@ -468,26 +468,25 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(pausePanel, "PauseMenuUI.pausePanel must be wired");
                 Assert.IsFalse(pausePanel.activeSelf, "PausePanel child must start inactive");
                 Assert.IsNotNull(GetPrivateField(pauseMenu, "pauseButton"), "PauseMenuUI.pauseButton must be wired");
-                Assert.IsNotNull(GetPrivateField(pauseMenu, "musicSlider"), "PauseMenuUI.musicSlider must be wired");
-                Assert.IsNotNull(GetPrivateField(pauseMenu, "sfxSlider"), "PauseMenuUI.sfxSlider must be wired");
-                Assert.IsNotNull(GetPrivateField(pauseMenu, "musicValueText"), "PauseMenuUI.musicValueText must be wired");
-                Assert.IsNotNull(GetPrivateField(pauseMenu, "sfxValueText"), "PauseMenuUI.sfxValueText must be wired");
+                // Sprint 13: volume sliders moved to the shared SettingsPopupUI opened from Pause.
+                Assert.IsNotNull(GetPrivateField(pauseMenu, "settingsButton"), "PauseMenuUI.settingsButton must be wired");
+                Assert.IsNotNull(GetPrivateField(pauseMenu, "settingsPopup"), "PauseMenuUI.settingsPopup must be wired");
                 Assert.IsNotNull(GetPrivateField(pauseMenu, "resumeButton"), "PauseMenuUI.resumeButton must be wired");
                 Assert.IsNotNull(GetPrivateField(pauseMenu, "quitToMenuButton"), "PauseMenuUI.quitToMenuButton must be wired");
 
                 var abilityHud = safeArea.GetComponentInChildren<AbilityHudUI>(true);
                 Assert.IsNotNull(abilityHud, "AbilityHudUI missing under SafeAreaHUD");
-                Assert.IsNotNull(abilityHud.GetComponent<HorizontalLayoutGroup>(), "AbilityHud must use HorizontalLayoutGroup");
+                // Sprint 13: two compact rows (Active / Passive) stacked vertically under the top HUD block.
+                Assert.IsNotNull(abilityHud.GetComponent<VerticalLayoutGroup>(), "AbilityHud must stack its rows vertically");
                 Assert.IsNull(abilityHud.transform.Find("ActiveRow"), "ACT row label must be removed");
                 Assert.IsNull(abilityHud.transform.Find("PassiveRow"), "PAS row label must be removed");
                 Assert.IsNotNull(abilityHud.transform.Find("ActiveSlots"));
-                Assert.IsNotNull(abilityHud.transform.Find("Divider"));
                 Assert.IsNotNull(abilityHud.transform.Find("PassiveSlots"));
                 Assert.IsNotNull(GetPrivateField(abilityHud, "activeSlotsContainer"), "AbilityHudUI.activeSlotsContainer must be wired");
                 Assert.IsNotNull(GetPrivateField(abilityHud, "passiveSlotsContainer"), "AbilityHudUI.passiveSlotsContainer must be wired");
                 var bossBar = safeArea.Find("BossHealthBar") as RectTransform;
                 Assert.IsNotNull(bossBar);
-                Assert.LessOrEqual(bossBar.anchoredPosition.y, -225f, "BossHealthBar must sit cleanly below single-row AbilityHud");
+                Assert.LessOrEqual(bossBar.anchoredPosition.y, -225f, "BossHealthBar must sit cleanly below the AbilityHud rows");
             }
             finally
             {

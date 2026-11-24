@@ -23,15 +23,16 @@ namespace ProjectB.UI
         private const float LINE_THICKNESS = 7f;
         private const int STAR_COUNT = 140;
 
-        private static readonly Color LockedNodeColor = new Color(0.22f, 0.24f, 0.33f, 1f);
-        private static readonly Color AvailableNodeColor = new Color(0.42f, 0.62f, 1f, 1f);
-        private static readonly Color UnlockedNodeColor = new Color(1f, 0.80f, 0.28f, 1f);
-        private static readonly Color LockedLineColor = new Color(0.35f, 0.38f, 0.55f, 0.22f);
-        private static readonly Color AvailableLineColor = new Color(0.55f, 0.75f, 1f, 0.9f);
-        private static readonly Color UnlockedLineColor = new Color(1f, 0.82f, 0.32f, 0.95f);
-        private static readonly Color SynergyHaloColor = new Color(0.30f, 0.95f, 0.88f, 0.75f);
-        private static readonly Color SynergyHaloAltColor = new Color(0.72f, 0.40f, 1f, 0.75f);
-        private static readonly Color KeystoneHaloColor = new Color(1f, 0.55f, 0.22f, 0.8f);
+        // Sprint 13: constellation colours come from UiTheme (rarity blue = available, gold = lit, shard = synergy).
+        private static Color LockedNodeColor => UiTheme.Current.surfaceRaised;
+        private static Color AvailableNodeColor => UiTheme.Current.rarityRare;
+        private static Color UnlockedNodeColor => UiTheme.Current.gold;
+        private static Color LockedLineColor => UiTheme.WithAlpha(UiTheme.Current.outline, 0.25f);
+        private static Color AvailableLineColor => UiTheme.WithAlpha(UiTheme.Current.rarityRare, 0.9f);
+        private static Color UnlockedLineColor => UiTheme.WithAlpha(UiTheme.Current.gold, 0.95f);
+        private static Color SynergyHaloColor => UiTheme.WithAlpha(UiTheme.Current.shard, 0.75f);
+        private static Color SynergyHaloAltColor => UiTheme.WithAlpha(UiTheme.Current.rarityEpic, 0.75f);
+        private static Color KeystoneHaloColor => UiTheme.WithAlpha(UiTheme.Current.warning, 0.8f);
         private static readonly Color SelectedOutlineColor = new Color(1f, 1f, 1f, 1f);
 
         [Header("Panel")]
@@ -354,8 +355,10 @@ namespace ProjectB.UI
                 }
                 if (view.costLabel != null)
                 {
-                    view.costLabel.text = state == TalentNodeState.Unlocked ? string.Empty : FormatCost(view.data);
-                    view.costLabel.color = state == TalentNodeState.Available ? Color.white : new Color(1f, 1f, 1f, 0.4f);
+                    // Sprint 13: price only on nodes you can buy right now — no overlapping labels on the inner ring.
+                    bool showCost = state == TalentNodeState.Available;
+                    view.costLabel.text = showCost ? FormatCost(view.data) : string.Empty;
+                    view.costLabel.color = UiTheme.Current.textPrimary;
                 }
                 view.selection.enabled = selectedNode == view.data;
             }
@@ -493,10 +496,8 @@ namespace ProjectB.UI
         private static string FormatCost(TalentNodeData node)
         {
             if (node.nodeType == TalentNodeType.Origin) return string.Empty;
-            // Purple = Boss Shards, gold = optional coin price (inner ring)
-            return node.coinCost > 0
-                ? $"<color=#C59BFF>{node.shardCost}</color> / <color=#FFD54A>{node.coinCost}c</color>"
-                : $"<color=#C59BFF>{node.shardCost} shards</color>";
+            // Sprint 13: compact "1◆" label (the coin alternative is shown in the detail sheet) — no overlaps.
+            return $"{node.shardCost}<sprite name=\"shard\">";
         }
 
         private static string DescribeType(TalentNodeData node)

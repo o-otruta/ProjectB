@@ -1,10 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ProjectB.Abilities;
 using ProjectB.Data;
 
 namespace ProjectB.UI
 {
+    /// <summary>Popup with the unlocked reward of a completed achievement (Sprint 13: real reward icon, pop-in).</summary>
     public class AchievementRewardPopupUI : MonoBehaviour
     {
         [SerializeField] private GameObject popupPanel;
@@ -12,6 +14,7 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private TextMeshProUGUI descriptionText;
         [SerializeField] private Button closeButton;
+        [SerializeField] private RectTransform window;
 
         private void Awake()
         {
@@ -31,26 +34,39 @@ namespace ProjectB.UI
 
         public void ShowReward(AchievementData achievement)
         {
+            ShowReward(achievement, null);
+        }
+
+        public void ShowReward(AchievementData achievement, AbilityCatalog abilityCatalog)
+        {
             if (achievement == null) return;
-            
+
             if (titleText != null) titleText.text = "Reward Unlocked!";
-            
+
             if (descriptionText != null)
             {
-                string formatted = RewardDisplayFormatter.FormatReward(achievement);
-                descriptionText.text = !string.IsNullOrEmpty(formatted) ? formatted : "Reward Unlocked!";
+                string formatted = RewardDisplayFormatter.FormatReward(achievement, abilityCatalog);
+                descriptionText.text = !string.IsNullOrEmpty(formatted)
+                    ? $"<b>{achievement.title}</b>\n{formatted}"
+                    : "Reward Unlocked!";
             }
 
             if (rewardIconImage != null)
             {
-                // In future, you could get a specific reward icon, for now just use the achievement icon
-                rewardIconImage.sprite = achievement.icon;
+                Sprite reward = RewardDisplayFormatter.ResolveRewardIcon(achievement, abilityCatalog);
+                rewardIconImage.sprite = reward != null ? reward : achievement.icon;
+                rewardIconImage.preserveAspect = true;
             }
 
             if (popupPanel != null)
             {
                 popupPanel.SetActive(true);
             }
+            if (window != null)
+            {
+                UiTween.Scale(window, Vector3.one * 0.85f, Vector3.one, UiTheme.Current.durationSlow, 0f, UiEase.OutBack);
+            }
+            UiAudio.Confirm();
         }
 
         public void Hide()

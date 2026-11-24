@@ -10,6 +10,8 @@ namespace ProjectB.UI
         private HeroHealth heroHealth;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private TMPro.TextMeshProUGUI hpText;
+        [Tooltip("Sprint 13: themed bar with ghost-trail; when set, the legacy Slider is not needed.")]
+        [SerializeField] private ProgressBarUI progressBar;
         private bool isInitialized = false;
         private int lastDisplayedHp = int.MinValue;
         private int lastDisplayedMaxHp = int.MinValue;
@@ -62,6 +64,10 @@ namespace ProjectB.UI
             {
                 hpSlider.maxValue = maxHp;
                 hpSlider.value = currentHp;
+            }
+            if (progressBar != null)
+            {
+                progressBar.SetValue(currentHp, maxHp);
             }
             if (hpText != null && (currentHp != lastDisplayedHp || maxHp != lastDisplayedMaxHp))
             {

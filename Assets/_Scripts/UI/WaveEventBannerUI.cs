@@ -23,10 +23,6 @@ namespace ProjectB.UI
             "3/3 LEFT"
         };
 
-        private static readonly Color SwarmColor = new Color(1.00f, 0.56f, 0.14f, 1f);
-        private static readonly Color GoldGoblinColor = new Color(1.00f, 0.84f, 0.18f, 1f);
-        private static readonly Color BloodMoonColor = new Color(0.96f, 0.20f, 0.24f, 1f);
-        private static readonly Color EliteAmbushColor = new Color(0.80f, 0.34f, 1.00f, 1f);
 
         [SerializeField] private GameObject bannerRoot;
         [SerializeField] private Image backgroundImage;
@@ -141,9 +137,10 @@ namespace ProjectB.UI
             if (borderOutline != null) borderOutline.effectColor = accent;
             if (backgroundImage != null)
             {
+                UiTheme theme = UiTheme.Current;
                 backgroundImage.color = evt.EventType == WaveEventType.BloodMoon
-                    ? new Color(0.18f, 0.06f, 0.08f, 0.92f)
-                    : new Color(0.09f, 0.11f, 0.17f, 0.92f);
+                    ? UiTheme.WithAlpha(UiTheme.Shade(theme.danger, 0.22f), 0.94f)
+                    : UiTheme.WithAlpha(theme.surface, 0.94f);
             }
             if (titleText != null)
             {
@@ -238,13 +235,14 @@ namespace ProjectB.UI
 
         public static Color GetEventAccentColor(WaveEventType type)
         {
+            UiTheme theme = UiTheme.Current;
             return type switch
             {
-                WaveEventType.SwarmRush => SwarmColor,
-                WaveEventType.GoldGoblin => GoldGoblinColor,
-                WaveEventType.BloodMoon => BloodMoonColor,
-                WaveEventType.EliteAmbush => EliteAmbushColor,
-                _ => Color.white
+                WaveEventType.SwarmRush => theme.warning,
+                WaveEventType.GoldGoblin => theme.gold,
+                WaveEventType.BloodMoon => theme.danger,
+                WaveEventType.EliteAmbush => theme.rarityEpic,
+                _ => theme.textPrimary
             };
         }
     }

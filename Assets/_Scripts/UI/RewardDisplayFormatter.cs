@@ -79,6 +79,57 @@ namespace ProjectB.UI
             };
         }
 
+        /// <summary>Icon for the reward chip of an achievement (Sprint 13): ability / hero icon, coin or slot.</summary>
+        public static Sprite ResolveRewardIcon(AchievementData ach, AbilityCatalog abilityCatalog = null, HeroCatalog heroCatalog = null)
+        {
+            if (ach == null) return null;
+            UiTheme theme = UiTheme.Current;
+            switch (ach.rewardType)
+            {
+                case AchievementRewardType.GiveCoins:
+                    return theme.iconCoin;
+                case AchievementRewardType.UnlockAbility:
+                {
+                    AbilityCatalog catalog = abilityCatalog != null ? abilityCatalog : GetAbilityCatalog();
+                    if (catalog != null && catalog.abilities != null)
+                    {
+                        for (int i = 0; i < catalog.abilities.Count; i++)
+                        {
+                            AbilityData ab = catalog.abilities[i];
+                            if (ab != null && ab.id == ach.rewardId) return ab.icon;
+                        }
+                    }
+                    return theme.iconStar;
+                }
+                case AchievementRewardType.UnlockHero:
+                {
+                    HeroCatalog catalog = heroCatalog != null ? heroCatalog : GetHeroCatalog();
+                    HeroData hero = catalog != null ? catalog.GetById(ach.rewardId) : null;
+                    return hero != null && hero.icon != null ? hero.icon : theme.iconStar;
+                }
+                case AchievementRewardType.UnlockActiveSlot:
+                case AchievementRewardType.UnlockPassiveSlot:
+                    return theme.iconPlus;
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>Compact reward label for chips: "+500", "Laser Turret", "Mage", "+1 Active".</summary>
+        public static string FormatRewardShort(AchievementData ach, AbilityCatalog abilityCatalog = null, HeroCatalog heroCatalog = null)
+        {
+            if (ach == null) return string.Empty;
+            return ach.rewardType switch
+            {
+                AchievementRewardType.GiveCoins => $"+{ach.rewardValue}",
+                AchievementRewardType.UnlockAbility => ResolveAbilityName(ach.rewardId, abilityCatalog),
+                AchievementRewardType.UnlockHero => ResolveHeroName(ach.rewardId, heroCatalog),
+                AchievementRewardType.UnlockActiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Active",
+                AchievementRewardType.UnlockPassiveSlot => $"+{Mathf.Max(1, ach.rewardValue)} Passive",
+                _ => string.Empty
+            };
+        }
+
         public static string HumanizeIdentifier(string rawId)
         {
             if (string.IsNullOrWhiteSpace(rawId)) return string.Empty;

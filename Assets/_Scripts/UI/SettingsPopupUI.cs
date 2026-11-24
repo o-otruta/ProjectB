@@ -15,8 +15,13 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI musicValueText;
         [SerializeField] private TextMeshProUGUI sfxValueText;
         [SerializeField] private Button closeButton;
+        [Tooltip("Sprint 13: reserved row for the language switch (Sprint 12.3 fills it in).")]
+        [SerializeField] private GameObject languageRow;
+        [SerializeField] private Button backgroundButton;
 
         private AudioManager audioManager;
+
+        public bool IsOpen => popupPanel != null && popupPanel.activeSelf;
 
         [Inject]
         public void Construct(AudioManager audioManager)
@@ -29,6 +34,7 @@ namespace ProjectB.UI
             if (musicSlider != null) musicSlider.onValueChanged.AddListener(OnMusicSliderChanged);
             if (sfxSlider != null) sfxSlider.onValueChanged.AddListener(OnSfxSliderChanged);
             if (closeButton != null) closeButton.onClick.AddListener(Hide);
+            if (backgroundButton != null) backgroundButton.onClick.AddListener(Hide);
 
             if (popupPanel != null) popupPanel.SetActive(false);
         }
@@ -38,6 +44,7 @@ namespace ProjectB.UI
             if (musicSlider != null) musicSlider.onValueChanged.RemoveListener(OnMusicSliderChanged);
             if (sfxSlider != null) sfxSlider.onValueChanged.RemoveListener(OnSfxSliderChanged);
             if (closeButton != null) closeButton.onClick.RemoveListener(Hide);
+            if (backgroundButton != null) backgroundButton.onClick.RemoveListener(Hide);
         }
 
         public void Show()

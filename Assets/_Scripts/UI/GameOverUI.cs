@@ -13,11 +13,8 @@ namespace ProjectB.UI
 {
     public class GameOverUI : MonoBehaviour
     {
-        private static readonly Color WeaponBarColor = new Color(0.95f, 0.78f, 0.25f, 1f);
-        private static readonly Color UltimateBarColor = new Color(0.85f, 0.36f, 0.98f, 1f);
-        private static readonly Color BarrelBarColor = new Color(1f, 0.44f, 0.16f, 1f);
-        private static readonly Color SynergyBarColor = new Color(1f, 0.84f, 0.2f, 1f);
-        private static readonly Color AbilityBarColor = new Color(0.28f, 0.78f, 1f, 1f);
+        private const float BREAKDOWN_ROW_HEIGHT = 64f;
+        private const float BREAKDOWN_ROW_SPACING = 6f;
 
         [Header("Core Panel")]
         [SerializeField] private GameObject panel;
@@ -42,11 +39,30 @@ namespace ProjectB.UI
         [SerializeField] private Button doubleCoinsButton;
         [SerializeField] private TextMeshProUGUI doubleCoinsButtonText;
 
+        [Header("Sprint 13: redesigned layout")]
+        [SerializeField] private TMP_Text titleText;
+        [SerializeField] private GameObject newBestBadge;
+        [SerializeField] private TMP_Text killsValueText;
+        [SerializeField] private TMP_Text timeValueText;
+        [SerializeField] private TMP_Text comboValueText;
+        [SerializeField] private GameObject comboChip;
+        [SerializeField] private CurrencyLabel coinsLabel;
+        [SerializeField] private CurrencyLabel shardsLabel;
+        [SerializeField] private GameObject shardsChip;
+        [Tooltip("LayoutElement of the breakdown section: height follows the row count up to the max, then scrolls.")]
+        [SerializeField] private LayoutElement breakdownLayout;
+        [SerializeField] private float breakdownHeaderHeight = 64f;
+        [SerializeField] private float breakdownMaxHeight = 420f;
+        [SerializeField] private CanvasGroup panelGroup;
+
         private GameManager gameManager;
         private AchievementManager achievementManager;
         private RunStatistics runStatistics;
         private RunComboTracker comboTracker;
         private SelectedHeroService selectedHeroService;
+        private SaveManager saveManager;
+        private int bestWaveBeforeRun = -1;
+        private readonly char[] numberBuffer = new char[24];
         private readonly List<GameObject> spawnedAchievementRows = new List<GameObject>();
         private readonly List<GameObject> spawnedBreakdownRows = new List<GameObject>();
         private readonly List<DamageSourceEntry> breakdownBuffer = new List<DamageSourceEntry>(16);
@@ -57,8 +73,13 @@ namespace ProjectB.UI
             AchievementManager achievementManager,
             RunStatistics runStatistics = null,
             SelectedHeroService selectedHeroService = null,
-            RunComboTracker comboTracker = null)
+            RunComboTracker comboTracker = null,
+            SaveManager saveManager = null)
         {
+            this.saveManager = saveManager;
+            // Snapshot the record before this run so Game Over can show NEW BEST!
+            // (GameManager writes bestWave before raising OnGameOver).
+            bestWaveBeforeRun = saveManager != null && saveManager.Data != null ? saveManager.Data.bestWave : -1;
             this.gameManager = gameManager;
             this.achievementManager = achievementManager;
             this.runStatistics = runStatistics;
@@ -98,9 +119,57 @@ namespace ProjectB.UI
                 panel.SetActive(true);
             }
 
+            UiTheme theme = UiTheme.Current;
+            if (titleText != null)
+            {
+                titleText.text = "DEFEATED";
+                titleText.color = theme.danger;
+                UiTween.Scale(titleText.transform, Vector3.one * 1.6f, Vector3.one, theme.durationSlow, 0f, UiEase.OutBack);
+            }
+            if (panelGroup != null) UiTween.Fade(panelGroup, 0f, 1f, theme.durationSlow);
+
             if (waveText != null)
             {
-                waveText.text = $"Wave Reached: {currentWave}";
+                waveText.text = titleText != null ? $"WAVE {currentWave}" : $"Wave Reached: {currentWave}";
+            }
+
+            bool isNewBest = bestWaveBeforeRun >= 0 && currentWave > bestWaveBeforeRun;
+            if (newBestBadge != null)
+            {
+                newBestBadge.SetActive(isNewBest);
+                if (isNewBest) UiTween.Scale(newBestBadge.transform, Vector3.zero, Vector3.one, theme.durationSlow, 0.25f, UiEase.OutBack);
+            }
+
+            int shardsEarned = runStatistics != null ? runStatistics.BossShardsEarned : 0;
+            if (coinsLabel != null)
+            {
+                coinsLabel.SetValue(0, animate: false);
+                coinsLabel.SetValue(coinsEarned, animate: true);
+            }
+            if (shardsChip != null) shardsChip.SetActive(shardsEarned > 0);
+            if (shardsLabel != null)
+            {
+                shardsLabel.SetValue(0, animate: false);
+                shardsLabel.SetValue(shardsEarned, animate: true);
+            }
+
+            int killCount = runStatistics != null ? runStatistics.EnemiesKilled : 0;
+            float playSeconds = runStatistics != null ? runStatistics.PlayTime : 0f;
+            int comboBest = Mathf.Max(
+                runStatistics != null ? runStatistics.BestCombo : 0,
+                comboTracker != null ? comboTracker.BestCombo : 0);
+            SetGrouped(killsValueText, killCount);
+            if (timeValueText != null)
+            {
+                int len = UiFormat.WriteClock(numberBuffer, 0, Mathf.FloorToInt(playSeconds));
+                timeValueText.SetCharArray(numberBuffer, 0, len);
+            }
+            if (comboChip != null) comboChip.SetActive(comboBest >= 2);
+            if (comboValueText != null)
+            {
+                numberBuffer[0] = 'x';
+                int len = UiFormat.WriteInt(numberBuffer, 1, comboBest);
+                comboValueText.SetCharArray(numberBuffer, 0, len);
             }
 
             if (coinsText != null)
@@ -131,6 +200,21 @@ namespace ProjectB.UI
             RefreshAdButtons();
         }
 
+        private void SetGrouped(TMP_Text text, int value)
+        {
+            if (text == null) return;
+            int len = UiFormat.WriteGrouped(numberBuffer, 0, value);
+            text.SetCharArray(numberBuffer, 0, len);
+        }
+
+        /// <summary>Breakdown section height for <paramref name="rows"/> rows, clamped to the scroll maximum.</summary>
+        public static float CalculateBreakdownHeight(int rows, float headerHeight, float maxHeight)
+        {
+            if (rows <= 0) return 0f;
+            float content = headerHeight + rows * BREAKDOWN_ROW_HEIGHT + Mathf.Max(0, rows - 1) * BREAKDOWN_ROW_SPACING + 16f;
+            return Mathf.Min(content, maxHeight);
+        }
+
         public void PopulateDamageBreakdown()
         {
             for (int i = 0; i < spawnedBreakdownRows.Count; i++)
@@ -151,9 +235,18 @@ namespace ProjectB.UI
                 damageBreakdownSection.SetActive(hasData);
             }
 
+            if (breakdownLayout != null)
+            {
+                float h = CalculateBreakdownHeight(breakdownBuffer.Count, breakdownHeaderHeight, breakdownMaxHeight);
+                breakdownLayout.preferredHeight = h;
+                breakdownLayout.minHeight = h;
+            }
+
             if (!hasData || damageBreakdownContainer == null) return;
 
-            TMP_FontAsset sharedFont = statsText != null ? statsText.font : null;
+            TMP_FontAsset sharedFont = UiTheme.Current.bodyFont != null
+                ? UiTheme.Current.bodyFont
+                : (statsText != null ? statsText.font : null);
             HeroData hero = selectedHeroService != null ? selectedHeroService.GetSelectedHero() : null;
             SynergyCatalog synCat = synergyCatalog != null ? synergyCatalog : Resources.Load<SynergyCatalog>("SynergyCatalog");
 
@@ -204,7 +297,7 @@ namespace ProjectB.UI
                     ? $"{hero.heroName} Weapon"
                     : "Base Weapon";
                 icon = hero != null ? hero.icon : null;
-                barColor = WeaponBarColor;
+                barColor = UiTheme.Current.gold;
                 return;
             }
 
@@ -214,14 +307,14 @@ namespace ProjectB.UI
                     ? $"Ult: {hero.ultimateName}"
                     : "Ultimate";
                 icon = hero != null ? (hero.ultimateIcon != null ? hero.ultimateIcon : hero.icon) : null;
-                barColor = UltimateBarColor;
+                barColor = UiTheme.Current.rarityEpic;
                 return;
             }
 
             if (sourceId == DamageSourceIds.Barrel)
             {
                 displayName = "Explosive Barrel";
-                barColor = BarrelBarColor;
+                barColor = UiTheme.Current.warning;
                 return;
             }
 
@@ -232,7 +325,7 @@ namespace ProjectB.UI
                 {
                     displayName = $"{syn.synergyName} (Synergy)";
                     icon = syn.icon;
-                    barColor = SynergyBarColor;
+                    barColor = UiTheme.Current.shard;
                     return;
                 }
             }
@@ -253,7 +346,7 @@ namespace ProjectB.UI
             }
 
             displayName = RewardDisplayFormatter.ResolveAbilityName(sourceId, abCatalog);
-            barColor = AbilityBarColor;
+            barColor = UiTheme.Current.xpFill;
         }
 
         private static GameObject CreateBreakdownRow(
@@ -264,13 +357,16 @@ namespace ProjectB.UI
             TMP_FontAsset sharedFont)
         {
             var row = new GameObject($"DmgRow_{entry.SourceId}", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            UiTheme theme = UiTheme.Current;
             var le = row.GetComponent<LayoutElement>();
-            le.minHeight = 52f;
-            le.preferredHeight = 52f;
-            ((RectTransform)row.transform).sizeDelta = new Vector2(0f, 52f);
+            le.minHeight = BREAKDOWN_ROW_HEIGHT;
+            le.preferredHeight = BREAKDOWN_ROW_HEIGHT;
+            ((RectTransform)row.transform).sizeDelta = new Vector2(0f, BREAKDOWN_ROW_HEIGHT);
 
             var bg = row.GetComponent<Image>();
-            bg.color = new Color(0.11f, 0.13f, 0.18f, 0.92f);
+            bg.sprite = theme.rowSprite;
+            bg.type = theme.rowSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            bg.color = theme.surfaceRaised;
             bg.raycastTarget = false;
 
             // Left Icon Box
@@ -280,10 +376,12 @@ namespace ProjectB.UI
             iconBoxRt.anchorMin = new Vector2(0f, 0.5f);
             iconBoxRt.anchorMax = new Vector2(0f, 0.5f);
             iconBoxRt.pivot = new Vector2(0f, 0.5f);
-            iconBoxRt.anchoredPosition = new Vector2(8f, 0f);
-            iconBoxRt.sizeDelta = new Vector2(40f, 40f);
+            iconBoxRt.anchoredPosition = new Vector2(10f, 2f);
+            iconBoxRt.sizeDelta = new Vector2(46f, 46f);
             var iconBoxImg = iconBoxGo.GetComponent<Image>();
-            iconBoxImg.color = new Color(0.07f, 0.09f, 0.13f, 1f);
+            iconBoxImg.sprite = theme.cardSprite;
+            iconBoxImg.type = theme.cardSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            iconBoxImg.color = theme.surfaceSunken;
             iconBoxImg.raycastTarget = false;
 
             if (icon != null)
@@ -325,7 +423,7 @@ namespace ProjectB.UI
             var contentRt = (RectTransform)contentGo.transform;
             contentRt.anchorMin = Vector2.zero;
             contentRt.anchorMax = Vector2.one;
-            contentRt.offsetMin = new Vector2(58f, 5f);
+            contentRt.offsetMin = new Vector2(68f, 8f);
             contentRt.offsetMax = new Vector2(-12f, -4f);
 
             // Top Left: Name
@@ -342,7 +440,7 @@ namespace ProjectB.UI
             nameTmp.fontSize = 20f;
             nameTmp.fontStyle = FontStyles.Bold;
             nameTmp.alignment = TextAlignmentOptions.MidlineLeft;
-            nameTmp.color = Color.white;
+            nameTmp.color = theme.textPrimary;
             nameTmp.enableAutoSizing = true;
             nameTmp.fontSizeMin = 14f;
             nameTmp.fontSizeMax = 20f;
@@ -365,7 +463,7 @@ namespace ProjectB.UI
             statsTmp.fontSize = 19f;
             statsTmp.fontStyle = FontStyles.Bold;
             statsTmp.alignment = TextAlignmentOptions.MidlineRight;
-            statsTmp.color = new Color(0.88f, 0.92f, 0.98f, 1f);
+            statsTmp.color = theme.textSecondary;
             statsTmp.enableAutoSizing = true;
             statsTmp.fontSizeMin = 13f;
             statsTmp.fontSizeMax = 19f;
@@ -380,7 +478,7 @@ namespace ProjectB.UI
             barBgRt.offsetMin = Vector2.zero;
             barBgRt.offsetMax = Vector2.zero;
             var barBgImg = barBgGo.GetComponent<Image>();
-            barBgImg.color = new Color(0.05f, 0.06f, 0.09f, 0.95f);
+            barBgImg.color = theme.surfaceSunken;
             barBgImg.raycastTarget = false;
 
             var barFillGo = new GameObject("BarFill", typeof(RectTransform), typeof(Image));
@@ -416,7 +514,7 @@ namespace ProjectB.UI
             {
                 doubleCoinsButtonText.text = (gameManager != null && gameManager.HasDoubledCoinsThisRun)
                     ? "DOUBLED!"
-                    : "x2 COINS (AD)";
+                    : "<sprite name=\"ad\"> x2 Coins";
             }
         }
 
@@ -426,6 +524,8 @@ namespace ProjectB.UI
             {
                 coinsText.text = $"Coins Earned: {newTotal} (x2!)";
             }
+            if (coinsLabel != null) coinsLabel.SetValue(newTotal, animate: true);
+            UiAudio.Play(SfxType.CoinPickup);
             RefreshAdButtons();
         }
 
@@ -470,8 +570,11 @@ namespace ProjectB.UI
             le.minHeight = 56f;
             le.preferredHeight = 56f;
 
+            UiTheme theme = UiTheme.Current;
             var bg = row.GetComponent<Image>();
-            bg.color = new Color(0.22f, 0.19f, 0.08f, 0.92f);
+            bg.sprite = theme.rowSprite;
+            bg.type = theme.rowSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            bg.color = UiTheme.Shade(theme.gold, 0.32f);
             bg.raycastTarget = false;
 
             var txtGo = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -486,10 +589,11 @@ namespace ProjectB.UI
             string rewardStr = FormatReward(ach, abilityCatalog, heroCatalog);
             tmp.text = string.IsNullOrEmpty(rewardStr)
                 ? $"<b>{ach.title}</b>"
-                : $"<b>{ach.title}</b>  <color=#FFD54F>({rewardStr})</color>";
+                : $"<b>{ach.title}</b>  <color=#{ColorUtility.ToHtmlStringRGB(theme.gold)}>({rewardStr})</color>";
             tmp.fontSize = 22f;
             tmp.alignment = TextAlignmentOptions.MidlineLeft;
-            tmp.color = Color.white;
+            tmp.color = theme.textPrimary;
+            if (theme.bodyFont != null) tmp.font = theme.bodyFont;
             tmp.enableAutoSizing = true;
             tmp.fontSizeMin = 15f;
             tmp.fontSizeMax = 22f;

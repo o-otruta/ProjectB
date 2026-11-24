@@ -32,6 +32,9 @@ MonoBehaviour:
   bossDeathClip: {fileID: 8300000, guid: 5f56e2a1eedde124993f2851c7df5bac, type: 3}
   shrineStartClip: {fileID: 8300000, guid: 07a3ee1323d34c549b56480f0e66f4f2, type: 3}
   comboMilestoneClip: {fileID: 8300000, guid: cb0800eeaac50d0458fdd414a4f7f536, type: 3}
+  uiConfirmClip: {fileID: 8300000, guid: 9f96277a84b26c84b8e2f91ee3795f9a, type: 3}
+  uiErrorClip: {fileID: 8300000, guid: a909ded40fecfa54dbfa143379b0de86, type: 3}
+  ultReadyClip: {fileID: 8300000, guid: 0280c8bc4e179c947a37aa8729763ce8, type: 3}
   menuMusicClip: {fileID: 8300000, guid: 49e239280579706408921489dd4ff59e, type: 3}
   gameplayMusicClip: {fileID: 8300000, guid: f8bf20650b70ee542bb69525e38f34b0, type: 3}
   bossMusicClip: {fileID: 8300000, guid: 5aa8deb939150cb44949130d84928bfb, type: 3}

@@ -279,11 +279,23 @@ namespace ProjectB.Visuals
                     var tmp = go.AddComponent<TextMeshProUGUI>();
                     tmp.alignment = TextAlignmentOptions.Center;
                     tmp.fontSize = 44f;
-                    tmp.fontStyle = FontStyles.Bold;
                     tmp.textWrappingMode = TextWrappingModes.NoWrap;
                     tmp.raycastTarget = false;
-                    tmp.outlineWidth = 0.22f;
-                    tmp.outlineColor = new Color32(10, 10, 14, 220);
+
+                    // Sprint 13: shared "Number" preset (thick outline) from UiTheme — one material for every
+                    // damage number instead of a per-text outline instance, so they batch.
+                    ProjectB.UI.UiTheme theme = ProjectB.UI.UiTheme.Current;
+                    if (theme.displayFont != null && theme.numberMaterial != null)
+                    {
+                        tmp.font = theme.displayFont;
+                        tmp.fontSharedMaterial = theme.numberMaterial;
+                    }
+                    else
+                    {
+                        tmp.fontStyle = FontStyles.Bold;
+                        tmp.outlineWidth = 0.22f;
+                        tmp.outlineColor = new Color32(10, 10, 14, 220);
+                    }
                     tmp.text = "00000!"; // Pre-allocate internal TMP char buffer at pool creation time
 
                     var item = go.AddComponent<DamageNumberItem>();

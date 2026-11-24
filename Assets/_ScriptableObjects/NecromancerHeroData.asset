@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.HeroData
   id: necromancer
   heroName: Necromancer
+  role: Soul Reaper
   description: Master of souls firing life-draining bolts (20% chance on hit to heal
     2 HP) and harvesting essence for faster growth.
   icon: {fileID: 21300000, guid: 694976933c96f514c931e96cc3eab06f, type: 3}

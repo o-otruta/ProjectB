@@ -11,6 +11,11 @@ namespace ProjectB.UI
         private LevelUp.HeroExperience heroExperience;
         [SerializeField] private Slider xpSlider;
         [SerializeField] private TMPro.TextMeshProUGUI levelText;
+        [Tooltip("Sprint 13: themed thin XP bar (replaces the Slider when assigned).")]
+        [SerializeField] private ProgressBarUI progressBar;
+        [Tooltip("Sprint 13: \"LV 2\" label centred inside the XP bar.")]
+        [SerializeField] private TMPro.TextMeshProUGUI levelBadgeText;
+        private readonly char[] levelBuffer = new char[12];
         private bool isInitialized = false;
         private int lastDisplayedLevel = int.MinValue;
 
@@ -90,6 +95,10 @@ namespace ProjectB.UI
                 xpSlider.maxValue = nextLevelXp;
                 xpSlider.value = currentXp;
             }
+            if (progressBar != null)
+            {
+                progressBar.SetValue(currentXp, Mathf.Max(1, nextLevelXp));
+            }
         }
 
         private void UpdateLevelText(int newLevel)
@@ -98,6 +107,22 @@ namespace ProjectB.UI
             {
                 lastDisplayedLevel = newLevel;
                 levelText.text = GetCachedLevelText(newLevel);
+            }
+            if (levelBadgeText != null)
+            {
+                int len = UiFormat.WriteString(levelBuffer, 0, "LV ");
+                len = UiFormat.WriteInt(levelBuffer, len, Mathf.Max(0, newLevel));
+                if (progressBar != null && progressBar.HasSplitLabel && progressBar.Label == levelBadgeText)
+                {
+                    // Split-colour label: white over the empty part, dark over the green fill.
+                    progressBar.SetLabel(levelBuffer, len);
+                    if (Application.isPlaying && newLevel > 1) progressBar.PunchLabel();
+                }
+                else
+                {
+                    levelBadgeText.SetCharArray(levelBuffer, 0, len);
+                    if (Application.isPlaying && newLevel > 1) UiTween.Punch(levelBadgeText.transform, 0.3f, 0.3f);
+                }
             }
         }
     }

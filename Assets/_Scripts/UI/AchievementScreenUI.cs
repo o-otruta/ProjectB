@@ -1,21 +1,31 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ProjectB.Abilities;
 using ProjectB.Data;
 using ProjectB.Meta;
 using VContainer;
 
 namespace ProjectB.UI
 {
+    /// <summary>
+    /// Achievements tab. Sprint 13.2: closest-to-completion achievements first, completed ones (checked, dimmed)
+    /// at the end; a summary line shows "12 / 27 completed".
+    /// </summary>
     public class AchievementScreenUI : MonoBehaviour
     {
         [SerializeField] private Transform contentContainer;
         [SerializeField] private AchievementItemUI itemPrefab;
         [SerializeField] private AchievementRewardPopupUI rewardPopup;
-        
+
+        [Header("Sprint 13")]
+        [SerializeField] private AbilityCatalog abilityCatalog;
+        [SerializeField] private TMPro.TMP_Text summaryText;
+
         private AchievementManager achievementManager;
         private SaveManager saveManager;
-        
-        private List<AchievementItemUI> spawnedItems = new List<AchievementItemUI>();
+
+        private readonly List<AchievementItemUI> spawnedItems = new List<AchievementItemUI>();
+        private readonly List<AchievementData> sortBuffer = new List<AchievementData>(32);
 
         [Inject]
         public void Construct(AchievementManager achievementManager, SaveManager saveManager)
@@ -58,20 +68,49 @@ namespace ProjectB.UI
             }
             spawnedItems.Clear();
 
+            sortBuffer.Clear();
             var allAchievements = achievementManager.GetAllAchievements();
-            
-            foreach (var data in allAchievements)
+            for (int i = 0; i < allAchievements.Count; i++)
+            {
+                if (allAchievements[i] != null) sortBuffer.Add(allAchievements[i]);
+            }
+            SortByCompletion(sortBuffer, saveManager.Data);
+
+            int completed = 0;
+            foreach (var data in sortBuffer)
             {
                 var item = Instantiate(itemPrefab, contentContainer);
-                
+
                 bool isCompleted = saveManager.Data.completedAchievements.Contains(data.id);
-                int progress = 0;
-                saveManager.Data.achievementProgress.TryGetValue(data.id, out progress);
-                
-                item.Setup(data, progress, isCompleted);
+                if (isCompleted) completed++;
+                saveManager.Data.achievementProgress.TryGetValue(data.id, out int progress);
+
+                item.Setup(data, progress, isCompleted, abilityCatalog);
                 item.OnItemClicked += HandleItemClicked;
                 spawnedItems.Add(item);
             }
+
+            if (summaryText != null) summaryText.text = $"{completed} / {sortBuffer.Count} completed";
+        }
+
+        /// <summary>In progress (highest ratio first) → not started → completed.</summary>
+        public static void SortByCompletion(List<AchievementData> list, SaveData data)
+        {
+            if (list == null || data == null) return;
+            list.Sort((a, b) =>
+            {
+                float ka = SortKey(a, data);
+                float kb = SortKey(b, data);
+                int cmp = kb.CompareTo(ka);
+                return cmp != 0 ? cmp : string.CompareOrdinal(a.id, b.id);
+            });
+        }
+
+        private static float SortKey(AchievementData ach, SaveData data)
+        {
+            if (data.completedAchievements.Contains(ach.id)) return -1f;
+            data.achievementProgress.TryGetValue(ach.id, out int progress);
+            return ach.targetValue > 0 ? Mathf.Clamp01((float)progress / ach.targetValue) : 0f;
         }
 
         private void HandleItemClicked(AchievementData data)
@@ -81,7 +120,7 @@ namespace ProjectB.UI
             bool isCompleted = saveManager.Data.completedAchievements.Contains(data.id);
             if (!isCompleted) return;
 
-            rewardPopup.ShowReward(data);
+            rewardPopup.ShowReward(data, abilityCatalog);
         }
     }
 }

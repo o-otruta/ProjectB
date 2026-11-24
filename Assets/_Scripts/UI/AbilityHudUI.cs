@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 using VContainer;
 using ProjectB.Abilities;
 
@@ -13,6 +14,15 @@ namespace ProjectB.UI
         [SerializeField] private AbilityHudSlotUI slotPrefab;
         [SerializeField] private float slotSize = 68f;
 
+        [Header("Sprint 13: locked slots")]
+        [Tooltip("Hide locked sockets and collapse them into one small \"lock +N\" chip per row.")]
+        [SerializeField] private bool hideLockedSlots;
+        [SerializeField] private GameObject activeLockedChip;
+        [SerializeField] private TMP_Text activeLockedChipText;
+        [SerializeField] private GameObject passiveLockedChip;
+        [SerializeField] private TMP_Text passiveLockedChipText;
+        private readonly char[] chipBuffer = new char[4];
+
         private HeroAbilities heroAbilities;
         private readonly List<AbilityHudSlotUI> activeSlots = new List<AbilityHudSlotUI>(HeroAbilities.MAX_ACTIVE_SLOTS);
         private readonly List<AbilityHudSlotUI> passiveSlots = new List<AbilityHudSlotUI>(HeroAbilities.MAX_PASSIVE_SLOTS);
@@ -21,6 +31,7 @@ namespace ProjectB.UI
 
         public IReadOnlyList<AbilityHudSlotUI> ActiveSlots => activeSlots;
         public IReadOnlyList<AbilityHudSlotUI> PassiveSlots => passiveSlots;
+        public bool HidesLockedSlots => hideLockedSlots;
 
         [Inject]
         public void Construct(HeroAbilities heroAbilities)
@@ -78,13 +89,15 @@ namespace ProjectB.UI
                 if (activeSlotsContainer != null)
                 {
                     EnsureSlotCount(activeSlotsContainer, activeSlots, HeroAbilities.MAX_ACTIVE_SLOTS);
-                    PopulateFixedRow(actives, activeSlots, AbilityType.Active, heroAbilities.UnlockedActiveSlots);
+                    int locked = PopulateFixedRow(actives, activeSlots, AbilityType.Active, heroAbilities.UnlockedActiveSlots, hideLockedSlots);
+                    UpdateLockedChip(activeLockedChip, activeLockedChipText, locked);
                 }
 
                 if (passiveSlotsContainer != null)
                 {
                     EnsureSlotCount(passiveSlotsContainer, passiveSlots, HeroAbilities.MAX_PASSIVE_SLOTS);
-                    PopulateFixedRow(passives, passiveSlots, AbilityType.Passive, heroAbilities.UnlockedPassiveSlots);
+                    int locked = PopulateFixedRow(passives, passiveSlots, AbilityType.Passive, heroAbilities.UnlockedPassiveSlots, hideLockedSlots);
+                    UpdateLockedChip(passiveLockedChip, passiveLockedChipText, locked);
                 }
                 return;
             }
@@ -121,7 +134,20 @@ namespace ProjectB.UI
             }
         }
 
-        private static void PopulateFixedRow<T>(IReadOnlyList<T> abilities, List<AbilityHudSlotUI> slots, AbilityType slotType, int unlockedCount)
+        private void UpdateLockedChip(GameObject chip, TMP_Text text, int lockedCount)
+        {
+            if (chip == null) return;
+            bool show = hideLockedSlots && lockedCount > 0;
+            if (chip.activeSelf != show) chip.SetActive(show);
+            if (show) chip.transform.SetAsLastSibling();
+            if (!show || text == null) return;
+            chipBuffer[0] = '+';
+            int len = UiFormat.WriteInt(chipBuffer, 1, lockedCount);
+            text.SetCharArray(chipBuffer, 0, len);
+        }
+
+        /// <summary>Fills one row; returns how many sockets are still locked.</summary>
+        private static int PopulateFixedRow<T>(IReadOnlyList<T> abilities, List<AbilityHudSlotUI> slots, AbilityType slotType, int unlockedCount, bool hideLocked)
             where T : AbilityBase
         {
             int filledCount = 0;
@@ -134,6 +160,7 @@ namespace ProjectB.UI
             }
 
             int unlockedLimit = Mathf.Clamp(unlockedCount, 0, slots.Count);
+            int lockedCount = 0;
             for (int i = filledCount; i < slots.Count; i++)
             {
                 if (i < unlockedLimit)
@@ -143,8 +170,11 @@ namespace ProjectB.UI
                 else
                 {
                     slots[i].SetLocked(slotType);
+                    lockedCount++;
+                    if (hideLocked && slots[i].gameObject.activeSelf) slots[i].gameObject.SetActive(false);
                 }
             }
+            return lockedCount;
         }
 
         private void EnsureSlotCount(Transform container, List<AbilityHudSlotUI> pool, int required)

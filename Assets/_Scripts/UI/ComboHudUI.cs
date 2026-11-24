@@ -18,11 +18,6 @@ namespace ProjectB.UI
             "+30% XP & COINS"
         };
 
-        private static readonly Color Tier0Color = new Color(0.95f, 0.96f, 1f, 1f);
-        private static readonly Color Tier1Color = new Color(1f, 0.86f, 0.28f, 1f);
-        private static readonly Color Tier2Color = new Color(1f, 0.62f, 0.18f, 1f);
-        private static readonly Color Tier3Color = new Color(1f, 0.34f, 0.28f, 1f);
-        private static readonly Color Tier4Color = new Color(0.92f, 0.35f, 1f, 1f);
 
         [SerializeField] private GameObject rootContainer;
         [SerializeField] private TextMeshProUGUI comboText;
@@ -194,21 +189,23 @@ namespace ProjectB.UI
 
             if (backgroundImage != null)
             {
+                UiTheme theme = UiTheme.Current;
                 backgroundImage.color = tier > 0
-                    ? new Color(0.16f, 0.11f, 0.08f, 0.9f)
-                    : new Color(0.1f, 0.12f, 0.18f, 0.86f);
+                    ? UiTheme.WithAlpha(theme.surfaceRaised, 0.94f)
+                    : UiTheme.WithAlpha(theme.surface, 0.9f);
             }
         }
 
         private static Color GetTierColor(int tier)
         {
+            UiTheme theme = UiTheme.Current;
             return tier switch
             {
-                1 => Tier1Color,
-                2 => Tier2Color,
-                3 => Tier3Color,
-                4 => Tier4Color,
-                _ => Tier0Color
+                1 => theme.gold,
+                2 => theme.warning,
+                3 => theme.danger,
+                4 => theme.rarityEpic,
+                _ => theme.textPrimary
             };
         }
     }

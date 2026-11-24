@@ -10,8 +10,6 @@ namespace ProjectB.UI
     {
         private static readonly string[] CachedTenthsStrings = BuildTenthsCache(151);
         private static readonly string[] CachedSecondsStrings = BuildSecondsCache(121);
-        private static readonly Color ActiveFillColor = new Color(0.3f, 0.9f, 1f, 0.45f);
-        private static readonly Color CooldownFillColor = new Color(0f, 0f, 0f, 0.65f);
 
         [SerializeField] private Button button;
         [SerializeField] private Image backgroundImage;
@@ -20,14 +18,16 @@ namespace ProjectB.UI
         [SerializeField] private TextMeshProUGUI labelText;
         [SerializeField] private TextMeshProUGUI statusText;
 
-        [Header("Colors")]
-        [SerializeField] private Color readyColor = new Color(0.18f, 0.68f, 0.95f, 0.95f);
-        [SerializeField] private Color activeColor = new Color(1f, 0.8f, 0.2f, 1f);
-        [SerializeField] private Color cooldownColor = new Color(0.25f, 0.27f, 0.32f, 0.85f);
+        [Header("Sprint 13")]
+        [Tooltip("Pulsing glow ring shown while the ultimate is ready.")]
+        [SerializeField] private GameObject readyGlow;
+        [SerializeField] private bool playReadySfx = true;
 
         private HeroUltimate heroUltimate;
         private int lastDisplayedState = -1; // 0 = ready, 1 = active, 2 = cooldown
         private int lastDisplayedValue = int.MinValue;
+        private bool wasReady;
+        private bool readyInitialized;
 
         private static string[] BuildTenthsCache(int count)
         {
@@ -128,6 +128,19 @@ namespace ProjectB.UI
             RefreshVisuals(force: true);
         }
 
+        private void SetReadyGlow(bool ready)
+        {
+            if (readyGlow != null && readyGlow.activeSelf != ready) readyGlow.SetActive(ready);
+
+            if (readyInitialized && ready && !wasReady && Application.isPlaying)
+            {
+                if (playReadySfx) UiAudio.Play(ProjectB.Data.SfxType.UltReady);
+                UiTween.Punch(transform, 0.18f, 0.3f);
+            }
+            wasReady = ready;
+            readyInitialized = true;
+        }
+
         private void RefreshVisuals(bool force)
         {
             if (heroUltimate == null) return;
@@ -139,7 +152,7 @@ namespace ProjectB.UI
                 {
                     if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
                     cooldownFillImage.fillAmount = ratio;
-                    if (lastDisplayedState != 1) cooldownFillImage.color = ActiveFillColor;
+                    if (lastDisplayedState != 1) cooldownFillImage.color = UiTheme.WithAlpha(UiTheme.Current.gold, 0.45f);
                 }
 
                 int tenths = Mathf.CeilToInt(heroUltimate.ActiveRemaining * 10f);
@@ -148,7 +161,8 @@ namespace ProjectB.UI
                     lastDisplayedState = 1;
                     lastDisplayedValue = tenths;
                     if (button != null) button.interactable = false;
-                    if (backgroundImage != null) backgroundImage.color = activeColor;
+                    if (backgroundImage != null) backgroundImage.color = UiTheme.Current.gold;
+                    SetReadyGlow(false);
                     if (statusText != null) statusText.text = GetCachedTenthsText(tenths);
                 }
             }
@@ -159,7 +173,7 @@ namespace ProjectB.UI
                 {
                     if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
                     cooldownFillImage.fillAmount = ratio;
-                    if (lastDisplayedState != 2) cooldownFillImage.color = CooldownFillColor;
+                    if (lastDisplayedState != 2) cooldownFillImage.color = UiTheme.WithAlpha(UiTheme.Current.surfaceSunken, 0.72f);
                 }
 
                 int seconds = Mathf.CeilToInt(heroUltimate.CooldownRemaining);
@@ -168,7 +182,8 @@ namespace ProjectB.UI
                     lastDisplayedState = 2;
                     lastDisplayedValue = seconds;
                     if (button != null) button.interactable = false;
-                    if (backgroundImage != null) backgroundImage.color = cooldownColor;
+                    if (backgroundImage != null) backgroundImage.color = UiTheme.Current.surfaceRaised;
+                    SetReadyGlow(false);
                     if (statusText != null) statusText.text = GetCachedSecondsText(seconds);
                 }
             }
@@ -187,8 +202,9 @@ namespace ProjectB.UI
                     lastDisplayedState = 0;
                     lastDisplayedValue = readyFlag;
                     if (button != null) button.interactable = ready;
-                    if (backgroundImage != null) backgroundImage.color = ready ? readyColor : cooldownColor;
-                    if (statusText != null) statusText.text = "READY";
+                    if (backgroundImage != null) backgroundImage.color = ready ? UiTheme.Current.accent : UiTheme.Current.surfaceRaised;
+                    if (statusText != null) statusText.text = ready ? string.Empty : "READY";
+                    SetReadyGlow(ready);
                 }
             }
         }

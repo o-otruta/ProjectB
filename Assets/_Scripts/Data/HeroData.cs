@@ -32,6 +32,8 @@ namespace ProjectB.Data
         [Header("Identity")]
         public string id = "knight";
         public string heroName = "Knight";
+        [Tooltip("Short role tag shown on the hero name plate (Sprint 13), e.g. \"Tank\".")]
+        public string role = "Tank";
         [TextArea(2, 4)]
         public string description = "Sturdy warrior firing steady bolts (10 dmg, 2/s, 8m range) and protected by an impenetrable shield.";
         public Sprite icon;
