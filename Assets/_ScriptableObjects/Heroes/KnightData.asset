@@ -15,8 +15,8 @@ MonoBehaviour:
   id: knight
   heroName: Knight
   role: Tank
-  description: Sturdy warrior firing steady bolts (10 dmg, 2/s, 8m range) and protected
-    by an impenetrable shield.
+  description: Sturdy warrior cleaving foes ahead with wind-slash sweeps (14 dmg,
+    2.6m radius, 1.3/s) and protected by an impenetrable shield.
   nameKey: hero.knight.name
   roleKey: hero.knight.role
   descriptionKey: hero.knight.desc
@@ -37,8 +37,8 @@ MonoBehaviour:
   passiveName: Iron Will
   passiveDescription: '+100% Max HP
 
-    <b>Weapon:</b> Steady Bolt (10 dmg, 2/s,
-    8m range)'
+    <b>Weapon:</b> Wind Cleave (14 dmg to all
+    in a 2.6m arc ahead, 1.3/s)'
   ultimateType: 0
   ultimateName: Aegis Shield
   ultimateDescription: Become invulnerable for 5 seconds and unleash a 4.5m shockwave

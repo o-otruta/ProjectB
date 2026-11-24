@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Core;
+using ProjectB.Data;
 using ProjectB.Data.Combat;
+using ProjectB.Enemies;
 using ProjectB.Player;
 
 namespace ProjectB.Combat
@@ -18,6 +20,9 @@ namespace ProjectB.Combat
         private RunStatistics runStatistics;
 
         private IObjectPool<Projectile> projectilePool;
+        private IObjectPool<MeleeSweepVfx> meleeVfxPool;
+        private Transform facingTransform;
+        private readonly IDamageable[] sweepVictims = new IDamageable[200];
         private float nextFireTime;
         private Collider[] overlapResults = new Collider[200]; // Буфер для поиска врагов
         private float damageMultiplier;
@@ -29,12 +34,29 @@ namespace ProjectB.Combat
         }
 
         public const float MULTISHOT_LATERAL_SPACING = 0.35f;
+        private const float MELEE_SWEEP_HALF_HEIGHT = 4f;
 
         /// <summary>Extra projectiles per volley from WeaponMod_Multishot cards.</summary>
         public int ExtraProjectiles { get; set; }
 
         /// <summary>Attack speed multiplier from WeaponMod_FireRate cards (cooldown / multiplier).</summary>
         public float FireRateMultiplier { get; set; } = 1f;
+
+        /// <summary>Melee sweep radius multiplier from WeaponMod_Radius cards (Knight only).</summary>
+        public float RadiusMultiplier { get; set; } = 1f;
+
+        public bool IsMelee => weaponData != null && weaponData.attackMode == WeaponAttackMode.MeleeSweep;
+
+        /// <summary>Final sweep radius: base x Radius cards x Global Area.</summary>
+        public float EffectiveMeleeRadius
+        {
+            get
+            {
+                if (weaponData == null) return 0f;
+                float r = weaponData.meleeRadius * Mathf.Max(0.1f, RadiusMultiplier);
+                return runtimeStats != null ? runtimeStats.GetScaledArea(r) : r;
+            }
+        }
 
         public int ProjectilesPerVolley => 1 + Mathf.Max(0, ExtraProjectiles);
         public WeaponData Data => weaponData;
@@ -63,7 +85,8 @@ namespace ProjectB.Combat
             float damageMultiplier = 1f,
             HeroRuntimeStats runtimeStats = null,
             HeroHealth ownerHealth = null,
-            RunStatistics runStatistics = null)
+            RunStatistics runStatistics = null,
+            Transform facingTransform = null)
         {
             this.weaponData = data;
             this.enemyLayer = enemyLayer;
@@ -73,11 +96,46 @@ namespace ProjectB.Combat
             this.runtimeStats = runtimeStats;
             this.ownerHealth = ownerHealth;
             this.runStatistics = runStatistics;
+            this.facingTransform = facingTransform;
 
             projectileContainer = new GameObject($"ProjectileContainer_{data.name}").transform;
             projectileContainer.SetParent(rootContainer);
 
-            InitializePool();
+            if (IsMelee) InitializeMeleeVfxPool();
+            else InitializePool();
+        }
+
+        private void InitializeMeleeVfxPool()
+        {
+            if (weaponData.meleeVfxPrefab == null) return;
+
+            meleeVfxPool = new ObjectPool<MeleeSweepVfx>(
+                createFunc: () =>
+                {
+                    var obj = Object.Instantiate(weaponData.meleeVfxPrefab, projectileContainer);
+                    var vfx = obj.GetComponent<MeleeSweepVfx>();
+                    if (vfx == null) Debug.LogError("Melee VFX prefab is missing MeleeSweepVfx component!");
+                    return vfx;
+                },
+                actionOnGet: v => { if (v != null) v.gameObject.SetActive(true); },
+                actionOnRelease: v => { if (v != null) v.gameObject.SetActive(false); },
+                actionOnDestroy: v =>
+                {
+                    if (v == null) return;
+                    if (Application.isPlaying) Object.Destroy(v.gameObject);
+                    else Object.DestroyImmediate(v.gameObject);
+                },
+                collectionCheck: true,
+                defaultCapacity: 4,
+                maxSize: 12);
+
+            if (Application.isPlaying)
+            {
+                MeleeSweepVfx a = meleeVfxPool.Get();
+                MeleeSweepVfx b = meleeVfxPool.Get();
+                if (a != null) meleeVfxPool.Release(a);
+                if (b != null) meleeVfxPool.Release(b);
+            }
         }
 
         private void InitializePool()
@@ -132,7 +190,18 @@ namespace ProjectB.Combat
 
         public void UpdateController()
         {
-            if (weaponData == null || projectilePool == null || Time.deltaTime <= 0f) return;
+            if (weaponData == null || Time.deltaTime <= 0f) return;
+
+            if (IsMelee)
+            {
+                if (Time.time >= nextFireTime)
+                {
+                    nextFireTime = Time.time + (Sweep() > 0 ? EffectiveAttackCooldown : EMPTY_SCAN_COOLDOWN);
+                }
+                return;
+            }
+
+            if (projectilePool == null) return;
 
             if (Time.time >= nextFireTime)
             {
@@ -181,6 +250,120 @@ namespace ProjectB.Combat
             return closestTarget;
         }
 
+        /// <summary>Flat facing of the hero model (falls back to the owner forward).</summary>
+        public Vector3 FacingDirection
+        {
+            get
+            {
+                Transform source = facingTransform != null ? facingTransform : ownerTransform;
+                Vector3 f = source != null ? source.forward : Vector3.forward;
+                f.y = 0f;
+                return f.sqrMagnitude > 0.0001f ? f.normalized : Vector3.forward;
+            }
+        }
+
+        /// <summary>Sweep centre: shifted from the hero along the facing by radius x offset ratio.</summary>
+        public Vector3 MeleeSweepCenter
+        {
+            get
+            {
+                Vector3 origin = ownerTransform != null ? ownerTransform.position : Vector3.zero;
+                float offset = weaponData != null ? EffectiveMeleeRadius * weaponData.meleeForwardOffsetRatio : 0f;
+                return origin + FacingDirection * offset;
+            }
+        }
+
+        /// <summary>
+        /// Performs one melee sweep: damages every target inside the offset circle. Does nothing (and plays no VFX)
+        /// when no valid enemy is inside. Returns the number of damaged targets. Zero-GC.
+        /// </summary>
+        public int Sweep()
+        {
+            if (weaponData == null) return 0;
+
+            float radius = EffectiveMeleeRadius;
+            Vector3 center = MeleeSweepCenter;
+            // Vertical cylinder (capsule) instead of a sphere: the sweep is a flat circle on the ground, so enemies
+            // near the rim are hit regardless of collider height, and flyers (Bat, Frost Wisp) are not skipped.
+            int hitCount = Physics.OverlapCapsuleNonAlloc(
+                center + Vector3.down * MELEE_SWEEP_HALF_HEIGHT,
+                center + Vector3.up * MELEE_SWEEP_HALF_HEIGHT,
+                radius, overlapResults, enemyLayer);
+
+            bool hasEnemy = false;
+            int victims = 0;
+            for (int i = 0; i < hitCount && victims < sweepVictims.Length; i++)
+            {
+                Collider col = overlapResults[i];
+                if (col == null || !col.TryGetComponent<IDamageable>(out var dmg) || dmg.IsDead) continue;
+
+                bool duplicate = false;
+                for (int v = 0; v < victims; v++)
+                {
+                    if (ReferenceEquals(sweepVictims[v], dmg)) { duplicate = true; break; }
+                }
+                if (duplicate) continue;
+
+                if (!hasEnemy && CombatTargetFilter.IsValidAutoAimTarget(col, dmg, enemyLayer)) hasEnemy = true;
+                sweepVictims[victims++] = dmg;
+            }
+
+            if (!hasEnemy)
+            {
+                for (int v = 0; v < victims; v++) sweepVictims[v] = null;
+                LastVolleyCount = 0;
+                return 0;
+            }
+
+            float rawDamage = weaponData.damage * damageMultiplier;
+            Vector3 heroPos = ownerTransform != null ? ownerTransform.position : center;
+            int damaged = 0;
+            for (int v = 0; v < victims; v++)
+            {
+                IDamageable victim = sweepVictims[v];
+                sweepVictims[v] = null;
+                if (victim == null || victim.IsDead || rawDamage <= 0f) continue;
+
+                bool isCrit = false;
+                int finalDamage = runtimeStats != null
+                    ? runtimeStats.RollDamage(rawDamage, out isCrit)
+                    : Mathf.RoundToInt(rawDamage);
+                if (finalDamage <= 0) continue;
+
+                if (victim is EnemyBase enemy)
+                {
+                    int dealt = enemy.TakeDamageFrom(finalDamage, isCrit, heroPos);
+                    runStatistics?.RecordDamage(DamageSourceIds.Weapon, dealt);
+                }
+                else
+                {
+                    victim.TakeDamage(finalDamage);
+                }
+                damaged++;
+            }
+
+            if (damaged > 0) TryApplyLifesteal();
+
+            if (meleeVfxPool != null)
+            {
+                MeleeSweepVfx vfx = meleeVfxPool.Get();
+                if (vfx != null) vfx.Play(center, FacingDirection, radius, meleeVfxPool, ownerTransform);
+            }
+
+            LastVolleyCount = damaged;
+            return damaged;
+        }
+
+        private void TryApplyLifesteal()
+        {
+            if (weaponData.lifestealAmount <= 0 || weaponData.lifestealChance <= 0f) return;
+            if (ownerHealth == null || ownerHealth.IsDead) return;
+            if (weaponData.lifestealChance >= 1f || Random.value < weaponData.lifestealChance)
+            {
+                ownerHealth.Heal(weaponData.lifestealAmount);
+            }
+        }
+
         /// <summary>Fires one volley at the given primary target (exposed for tests).</summary>
         public int FireVolley(Transform target)
         {
@@ -190,6 +373,7 @@ namespace ProjectB.Combat
 
         private void Fire(Transform target)
         {
+            if (projectilePool == null) { LastVolleyCount = 0; return; }
             int volley = Mathf.Min(ProjectilesPerVolley, volleyTargets.Length);
             int targetCount = 1;
             volleyTargets[0] = target;
@@ -271,6 +455,12 @@ namespace ProjectB.Combat
 
         public void DrawGizmos()
         {
+            if (IsMelee)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(MeleeSweepCenter, EffectiveMeleeRadius);
+                return;
+            }
             if (weaponData != null)
             {
                 Gizmos.color = Color.red;

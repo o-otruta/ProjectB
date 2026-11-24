@@ -9,7 +9,9 @@ namespace ProjectB.LevelUp
         /// <summary>+value% attack speed (cooldown divided by 1 + value/100).</summary>
         FireRate = 1,
         /// <summary>+value% base weapon damage.</summary>
-        Power = 2
+        Power = 2,
+        /// <summary>+value% melee sweep radius. Offered only for melee weapons (Knight); replaces Multishot there.</summary>
+        Radius = 3
     }
 
     /// <summary>

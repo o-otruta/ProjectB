@@ -99,19 +99,52 @@ namespace ProjectB.Combat
         public void AddWeapon(WeaponData data)
         {
             if (data == null) return;
-            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier, runtimeStats, hp, runStatistics);
+            if (facingTransform == null && TryGetComponent<HeroMovement>(out var movement))
+            {
+                facingTransform = movement.VisualModel;
+            }
+            var controller = new WeaponController(data, enemyLayer, transform, firePoint, projectilesRoot, HeroDamageMultiplier, runtimeStats, hp, runStatistics, facingTransform);
             controller.ExtraProjectiles = ExtraProjectiles;
             controller.FireRateMultiplier = WeaponFireRateMultiplier;
+            controller.RadiusMultiplier = WeaponRadiusMultiplier;
             activeWeapons.Add(controller);
         }
 
         public float HeroDamageMultiplier => (runtimeStats != null ? runtimeStats.WeaponDamageMultiplier : 1f) * WeaponPowerMultiplier;
 
         // --- Weapon upgrade cards (Sprint 11) ---
-        private readonly int[] weaponUpgradeStacks = new int[3];
+        private readonly int[] weaponUpgradeStacks = new int[4];
+        private Transform facingTransform;
         public int ExtraProjectiles { get; private set; }
         public float WeaponFireRateMultiplier { get; private set; } = 1f;
         public float WeaponPowerMultiplier { get; private set; } = 1f;
+        /// <summary>Melee sweep radius multiplier (WeaponMod_Radius, Knight only).</summary>
+        public float WeaponRadiusMultiplier { get; private set; } = 1f;
+
+        /// <summary>
+        /// Whether a weapon upgrade card makes sense for the current loadout:
+        /// Multishot needs a projectile weapon, Radius needs a melee weapon.
+        /// </summary>
+        public bool SupportsWeaponUpgrade(ProjectB.LevelUp.WeaponUpgradeType type)
+        {
+            // A LevelUp can be built before Start (e.g. meta "Starting Level"): load the loadout first.
+            if (activeWeapons.Count == 0 && Application.isPlaying) EnsureInitialized();
+            if (activeWeapons.Count == 0) return type != ProjectB.LevelUp.WeaponUpgradeType.Radius;
+            bool hasMelee = false;
+            bool hasRanged = false;
+            for (int i = 0; i < activeWeapons.Count; i++)
+            {
+                if (activeWeapons[i].IsMelee) hasMelee = true;
+                else hasRanged = true;
+            }
+
+            return type switch
+            {
+                ProjectB.LevelUp.WeaponUpgradeType.Multishot => hasRanged,
+                ProjectB.LevelUp.WeaponUpgradeType.Radius => hasMelee,
+                _ => true
+            };
+        }
         public System.Collections.Generic.IReadOnlyList<WeaponController> ActiveWeapons => activeWeapons;
 
         public int GetWeaponUpgradeStacks(ProjectB.LevelUp.WeaponUpgradeType type)
@@ -136,6 +169,9 @@ namespace ProjectB.Combat
                 case ProjectB.LevelUp.WeaponUpgradeType.Power:
                     WeaponPowerMultiplier = Mathf.Max(0.1f, WeaponPowerMultiplier + value / 100f);
                     break;
+                case ProjectB.LevelUp.WeaponUpgradeType.Radius:
+                    WeaponRadiusMultiplier = Mathf.Max(0.1f, WeaponRadiusMultiplier + value / 100f);
+                    break;
             }
 
             RefreshWeaponMultipliers();
@@ -154,6 +190,7 @@ namespace ProjectB.Combat
                 activeWeapons[i].DamageMultiplier = mult;
                 activeWeapons[i].ExtraProjectiles = ExtraProjectiles;
                 activeWeapons[i].FireRateMultiplier = WeaponFireRateMultiplier;
+                activeWeapons[i].RadiusMultiplier = WeaponRadiusMultiplier;
             }
         }
 

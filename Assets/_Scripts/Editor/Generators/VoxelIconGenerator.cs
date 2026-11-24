@@ -113,6 +113,7 @@ namespace ProjectB.EditorScripts
                     {
                         WeaponUpgradeType.Multishot => "shooter",
                         WeaponUpgradeType.FireRate => "swift_boots",
+                        WeaponUpgradeType.Radius => "area_tome",
                         _ => "battle_fury"
                     };
                     sprite = GetOrCreateSprite($"card_weapon_{weaponCard.upgradeType}", framed: true, spriteCache, key, GetRarityFrameColor(weaponCard.rarity));

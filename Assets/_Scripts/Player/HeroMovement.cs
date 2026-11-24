@@ -160,6 +160,9 @@ namespace ProjectB.Player
 
         public float MoveSpeed => moveSpeed;
 
+        /// <summary>Visual model that turns toward the movement direction (hero facing for melee sweeps).</summary>
+        public Transform VisualModel => visualModel;
+
         public void ApplySlow(float factor, float duration)
         {
             if (duration <= 0f) return;

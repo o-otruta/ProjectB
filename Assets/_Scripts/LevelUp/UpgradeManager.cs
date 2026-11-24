@@ -286,6 +286,11 @@ namespace ProjectB.LevelUp
                         if (weaponCard.maxStacks > 0 && heroCombat != null &&
                             heroCombat.GetWeaponUpgradeStacks(weaponCard.upgradeType) >= weaponCard.maxStacks)
                             continue;
+                        // Melee weapons (Knight) take Radius instead of Multishot; ranged weapons never see Radius.
+                        if (heroCombat != null
+                                ? !heroCombat.SupportsWeaponUpgrade(weaponCard.upgradeType)
+                                : weaponCard.upgradeType == WeaponUpgradeType.Radius)
+                            continue;
                     }
                     
                     validPool.Add(card);

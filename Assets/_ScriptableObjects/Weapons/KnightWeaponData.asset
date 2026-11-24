@@ -12,11 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20ada558541fa324d8c5a998d73667d1, type: 3}
   m_Name: KnightWeaponData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Combat.WeaponData
-  damage: 10
-  attackCooldown: 0.5
-  range: 8
+  attackMode: 1
+  damage: 14
+  attackCooldown: 0.75
+  range: 3.9
   projectileSpeed: 15
   splashRadius: 0
+  pierceCount: 0
+  pierceRetargetRadius: 4.5
+  meleeRadius: 2.6
+  meleeForwardOffsetRatio: 0.5
+  meleeVfxPrefab: {fileID: 7768175995035717253, guid: f17130b83cff2264f9d786ea2440c9c5, type: 3}
   lifestealChance: 0
   lifestealAmount: 0
   projectilePrefab: {fileID: 6831994681046026528, guid: 90d102a0c85b67d458e46c0632a5f51d, type: 3}
