@@ -8,6 +8,7 @@ namespace ProjectB.Data
         public const string DEFAULT_RESOURCE_PATH = "RunRulesConfig";
 
         public const int DEFAULT_FREE_REROLLS_PER_RUN = 1;
+        public const int DEFAULT_BASE_ABILITY_MAX_LEVEL = 5;
         public const float DEFAULT_POST_HIT_IFRAMES = 0.18f;
         public const float DEFAULT_SECOND_WIND_HP_PERCENT = 0.30f;
         public const float DEFAULT_SECOND_WIND_INVULNERABILITY = 2.5f;
@@ -22,6 +23,11 @@ namespace ProjectB.Data
         [Min(0)]
         [Tooltip("Базовое количество бесплатных рероллов карточек за забег.")]
         public int freeRerollsPerRun = DEFAULT_FREE_REROLLS_PER_RUN;
+
+        [Header("Ability Level Cap")]
+        [Min(1)]
+        [Tooltip("Базовый максимальный уровень способности за забег. Узлы «Пути мастерства» в Созвездии поднимают потолок (10 / 20 / 50).")]
+        public int baseAbilityMaxLevel = DEFAULT_BASE_ABILITY_MAX_LEVEL;
 
         [Header("Hero Defense & Second Wind")]
         [Min(0f)]

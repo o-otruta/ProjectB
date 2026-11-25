@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: mastery_lv50
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: mastery_lv50
+  displayName: 'Mythic Ascension: Lv 50 Cap'
+  description: 'Abilities can level up to Lv 50: MYTHIC tiers at Lv 30 / 40 / 50
+    add +25% ability damage each. Requires 28 unlocked stars.'
+  nameKey: talent.mastery_lv50.name
+  descriptionKey: talent.mastery_lv50.desc
+  icon: {fileID: 21300000, guid: 5e52bf66ca43d194a9eb461cc8412265, type: 3}
+  nodeType: 4
+  constellation: 4
+  position: {x: 0, y: -1040}
+  prerequisiteIds:
+  - mastery_lv20
+  minUnlockedStars: 28
+  shardCost: 20
+  coinCost: 0
+  effects:
+  - type: 21
+    value: 50
+  synergyId: 

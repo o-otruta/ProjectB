@@ -24,7 +24,8 @@ MonoBehaviour:
   prerequisiteIds:
   - fortune_syn_overcharged_grid
   - fortune_syn_cataclysm_vortex
-  shardCost: 4
+  minUnlockedStars: 0
+  shardCost: 3
   coinCost: 0
   effects:
   - type: 11

@@ -44,6 +44,8 @@ namespace ProjectB.Player
         public bool HasSecretAndShrineTalent { get; private set; }
         public int BarrelRespawnBonus { get; private set; }
         public int FreeRerollBonus { get; private set; }
+        /// <summary>Ability level cap from the Constellation Path of Mastery (0 = none, base cap from <c>RunRulesConfig</c>).</summary>
+        public int TalentAbilityLevelCap { get; private set; }
         public bool HasSecondWind { get; private set; }
         public int CrystalCoinBonus { get; private set; }
 
@@ -150,6 +152,7 @@ namespace ProjectB.Player
                 HasSecretAndShrineTalent = false;
                 BonusIFrameSeconds = 0f;
                 BarrelRespawnBonus = FreeRerollBonus = CrystalCoinBonus = 0;
+                TalentAbilityLevelCap = 0;
                 HasSecondWind = false;
             }
             else
@@ -171,6 +174,7 @@ namespace ProjectB.Player
                 FreeRerollBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.FreeRerolls)));
                 CrystalCoinBonus = Mathf.Max(0, Mathf.RoundToInt(talentTree.GetTotalEffect(TalentEffectType.CrystalCoinBonus)));
                 HasSecondWind = talentTree.GetTotalEffect(TalentEffectType.SecondWind) > 0f;
+                TalentAbilityLevelCap = talentTree.GetAbilityLevelCapBonus();
             }
 
             if (notify)

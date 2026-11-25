@@ -25,7 +25,8 @@ MonoBehaviour:
   prerequisiteIds:
   - fortune_r4a
   - fortune_r4b
-  shardCost: 8
+  minUnlockedStars: 0
+  shardCost: 12
   coinCost: 0
   effects:
   - type: 14

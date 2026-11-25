@@ -178,14 +178,15 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(8, pierceVal);
             Assert.AreEqual(10f, rangeVal, 0.01f);
 
-            // Verify NO maxLevel cap: upgrade orbital well past Lv 5 (to Lv 8) and ensure UpgradeManager STILL offers its modifier card
+            // Level cap: with the Path of Mastery Lv 10 star the orbital stays upgradable at Lv 8 and leaves the pool at Lv 10.
+            heroAbilities.SetAbilityLevelCapOverride(10);
             for (int i = 0; i < 6; i++)
             {
                 applier.ApplyCard(dualOrbitalCard, null);
             }
             Assert.AreEqual(8, heroAbilities.GetAbilityLevel("orbital_small_sword"));
 
-            var mgrGo = Track(new GameObject("NoCapUpgradeManager"));
+            var mgrGo = Track(new GameObject("LevelCapUpgradeManager"));
             var mgr = mgrGo.AddComponent<UpgradeManager>();
             mgr.cardPool = new List<CardData> { dualOrbitalCard };
             mgr.Construct(null, null, null, heroAbilities, applier, null);
@@ -193,7 +194,14 @@ namespace ProjectB.Tests.EditMode
 
             var offered = mgr.GetRandomCards(3);
             Assert.AreEqual(1, offered.Count);
-            Assert.AreSame(dualOrbitalCard, offered[0], "Abilities have no maxLevel cap so modifier cards stay eligible at Lv 8+");
+            Assert.AreSame(dualOrbitalCard, offered[0], "Below the level cap modifier cards stay eligible");
+
+            applier.ApplyCard(dualOrbitalCard, null);
+            applier.ApplyCard(dualOrbitalCard, null);
+            Assert.AreEqual(10, heroAbilities.GetAbilityLevel("orbital_small_sword"));
+            Assert.AreEqual(0, mgr.GetRandomCards(3).Count, "Capped abilities drop their modifier cards from the LevelUp pool");
+            applier.ApplyCard(dualOrbitalCard, null);
+            Assert.AreEqual(10, heroAbilities.GetAbilityLevel("orbital_small_sword"), "Upgrades past the cap are ignored");
         }
 
         [Test]
@@ -239,7 +247,10 @@ namespace ProjectB.Tests.EditMode
 
             heroAbilities.AddAbility(shooterData);
             Assert.AreEqual("Lv 1 -> Lv 2", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _));
-            for (int i = 0; i < 4; i++) heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
+            for (int i = 0; i < 3; i++) heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
+            Assert.AreEqual("Lv 4 -> Lv 5 MAX", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _), "Base cap Lv 5");
+            heroAbilities.SetAbilityLevelCapOverride(10);
+            heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
             Assert.AreEqual("Lv 5 -> Lv 6", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _));
 
             // Bounce scale curve

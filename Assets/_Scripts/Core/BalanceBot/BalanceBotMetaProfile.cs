@@ -205,6 +205,11 @@ namespace ProjectB.Core.BalanceBot
                         }
                     }
 
+                    if (connected && node.minUnlockedStars > 0 && unlocked.Count - 1 < node.minUnlockedStars)
+                    {
+                        connected = false;
+                    }
+
                     if (connected)
                     {
                         unlocked.Add(node.id);

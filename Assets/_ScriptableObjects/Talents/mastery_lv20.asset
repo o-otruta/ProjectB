@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: mastery_lv20
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: mastery_lv20
+  displayName: 'Awakening: Lv 20 Cap'
+  description: Abilities can level up to Lv 20 and AWAKEN at Lv 20.
+  nameKey: talent.mastery_lv20.name
+  descriptionKey: talent.mastery_lv20.desc
+  icon: {fileID: 21300000, guid: bcbc5b882719e794e8a4fdb8afe32ca2, type: 3}
+  nodeType: 4
+  constellation: 4
+  position: {x: 0, y: -700}
+  prerequisiteIds:
+  - bridge_bastion_fortune
+  minUnlockedStars: 0
+  shardCost: 8
+  coinCost: 0
+  effects:
+  - type: 21
+    value: 20
+  synergyId: 

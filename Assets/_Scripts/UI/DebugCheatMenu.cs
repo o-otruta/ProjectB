@@ -226,6 +226,12 @@ namespace ProjectB.UI
                 return heroAbilities.HasAbility(data.id);
             }
 
+            if (heroAbilities.IsAbilityAtMaxLevel(data.id))
+            {
+                pickerStatusNotice = $"{data.abilityName}: Lv {heroAbilities.MaxAbilityLevel} cap (Constellation Path of Mastery)";
+                return false;
+            }
+
             int level = Mathf.Max(1, heroAbilities.GetAbilityLevel(data.id));
             AbilityModifierCardData chosenMod = PickModifierForUpgrade(abilityCard, level);
             if (chosenMod != null)

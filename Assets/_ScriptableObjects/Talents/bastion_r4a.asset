@@ -24,7 +24,8 @@ MonoBehaviour:
   prerequisiteIds:
   - bastion_syn_steam_blast
   - bastion_syn_thunder_storm
-  shardCost: 4
+  minUnlockedStars: 0
+  shardCost: 3
   coinCost: 0
   effects:
   - type: 7

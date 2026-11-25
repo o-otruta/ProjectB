@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: bastion_r1b
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
   id: bastion_r1b
-  displayName: +15% Healing
-  description: 'All healing you receive is 15% stronger. (Inner ring: also purchasable
+  displayName: +25% Healing
+  description: 'All healing you receive is 25% stronger. (Inner ring: also purchasable
     with coins.)'
   nameKey: talent.bastion_r1b.name
   descriptionKey: talent.bastion_r1b.desc
@@ -23,9 +23,10 @@ MonoBehaviour:
   constellation: 2
   position: {x: -169.70564, y: -169.70561}
   prerequisiteIds: []
+  minUnlockedStars: 0
   shardCost: 1
   coinCost: 150
   effects:
   - type: 6
-    value: 15
+    value: 25
   synergyId: 

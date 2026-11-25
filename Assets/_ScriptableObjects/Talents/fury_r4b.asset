@@ -24,7 +24,8 @@ MonoBehaviour:
   prerequisiteIds:
   - fury_syn_blade_storm
   - fury_syn_ricochet_barrage
-  shardCost: 4
+  minUnlockedStars: 0
+  shardCost: 5
   coinCost: 0
   effects:
   - type: 4

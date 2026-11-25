@@ -21,6 +21,7 @@ namespace ProjectB.UI
         public const float NODE_SIZE = 96f;
         public const float KEYSTONE_SCALE = 1.45f;
         public const float ORIGIN_SCALE = 1.3f;
+        public const float MASTERY_SCALE = 1.2f;
         private const float LINE_THICKNESS = 7f;
         private const int STAR_COUNT = 140;
 
@@ -34,6 +35,13 @@ namespace ProjectB.UI
         private static Color SynergyHaloColor => UiTheme.WithAlpha(UiTheme.Current.shard, 0.75f);
         private static Color SynergyHaloAltColor => UiTheme.WithAlpha(UiTheme.Current.rarityEpic, 0.75f);
         private static Color KeystoneHaloColor => UiTheme.WithAlpha(UiTheme.Current.warning, 0.8f);
+        // Path of Mastery stars glow in the Overdrive tier colour they unlock (Lv 10 / 20 / 50).
+        private static Color GetMasteryHaloColor(TalentNodeData node)
+        {
+            float cap = node.GetEffectValue(TalentEffectType.AbilityMaxLevel);
+            int tier = cap >= 30f ? 3 : (cap >= 20f ? 2 : 1);
+            return UiTheme.WithAlpha(UiTheme.Current.GetOverdriveColor(tier, UiTheme.Current.warning), 0.8f);
+        }
         private static readonly Color SelectedOutlineColor = new Color(1f, 1f, 1f, 1f);
 
         [Header("Panel")]
@@ -277,8 +285,13 @@ namespace ProjectB.UI
 
         private void CreateNode(TalentNodeData node)
         {
-            float scale = node.nodeType == TalentNodeType.Keystone ? KEYSTONE_SCALE
-                : (node.nodeType == TalentNodeType.Origin ? ORIGIN_SCALE : 1f);
+            float scale = node.nodeType switch
+            {
+                TalentNodeType.Keystone => KEYSTONE_SCALE,
+                TalentNodeType.Origin => ORIGIN_SCALE,
+                TalentNodeType.Mastery => MASTERY_SCALE,
+                _ => 1f
+            };
             float size = NODE_SIZE * scale;
 
             var root = new GameObject($"Node_{node.id}", typeof(RectTransform));
@@ -289,10 +302,12 @@ namespace ProjectB.UI
 
             var view = new NodeView { data = node, rect = rt };
 
-            if (node.nodeType == TalentNodeType.Synergy || node.nodeType == TalentNodeType.Keystone || node.nodeType == TalentNodeType.Origin)
+            if (node.nodeType == TalentNodeType.Synergy || node.nodeType == TalentNodeType.Keystone ||
+                node.nodeType == TalentNodeType.Origin || node.nodeType == TalentNodeType.Mastery)
             {
                 view.halo = CreateImage("Halo", rt, size * 1.7f, haloSprite, false);
                 view.halo.color = node.nodeType == TalentNodeType.Keystone ? KeystoneHaloColor
+                    : node.nodeType == TalentNodeType.Mastery ? GetMasteryHaloColor(node)
                     : (node.nodeType == TalentNodeType.Synergy
                         ? (Mathf.Abs(node.position.x) > Mathf.Abs(node.position.y) ? SynergyHaloAltColor : SynergyHaloColor)
                         : UnlockedNodeColor * new Color(1f, 1f, 1f, 0.5f));
@@ -487,7 +502,9 @@ namespace ProjectB.UI
                     TalentNodeState.Available => canShards || canCoins
                         ? $"<color=#8FD3FF>{Loc.Get("ui.constellation.status_ready", "Ready to unlock")}</color>"
                         : $"<color=#FF8A80>{Loc.Get("ui.constellation.status_no_shards", "Not enough Boss Shards")}</color>",
-                    _ => $"<color=#9AA0B8>{Loc.Get("ui.constellation.status_locked", "Unlock a connected star first")}</color>"
+                    _ => talentTree.IsConnected(node) && !talentTree.MeetsStarRequirement(node)
+                        ? $"<color=#9AA0B8>{Loc.Format("ui.constellation.status_need_stars", talentTree.UnlockedCount, node.minUnlockedStars)}</color>"
+                        : $"<color=#9AA0B8>{Loc.Get("ui.constellation.status_locked", "Unlock a connected star first")}</color>"
                 };
             }
 
@@ -530,12 +547,14 @@ namespace ProjectB.UI
                 TalentConstellation.Fury => Loc.Get("ui.constellation.fury", "Constellation of Fury"),
                 TalentConstellation.Bastion => Loc.Get("ui.constellation.bastion", "Constellation of the Bastion"),
                 TalentConstellation.Fortune => Loc.Get("ui.constellation.fortune", "Constellation of Fortune & Chaos"),
+                TalentConstellation.Mastery => Loc.Get("ui.constellation.mastery", "Path of Mastery"),
                 _ => Loc.Get("ui.constellation.core", "Core")
             };
             string type = node.nodeType switch
             {
                 TalentNodeType.Synergy => Loc.Get("ui.constellation.type_synergy", "Synergy Star"),
                 TalentNodeType.Keystone => Loc.Get("ui.constellation.type_keystone", "KEYSTONE"),
+                TalentNodeType.Mastery => Loc.Get("ui.constellation.type_mastery", "MASTERY"),
                 TalentNodeType.Origin => Loc.Get("ui.constellation.type_origin", "Origin"),
                 _ => Loc.Get("ui.constellation.type_star", "Star")
             };

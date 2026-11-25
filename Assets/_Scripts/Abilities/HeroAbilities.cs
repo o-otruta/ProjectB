@@ -4,6 +4,7 @@ using UnityEngine;
 using VContainer;
 using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
 using ProjectB.Player;
@@ -34,6 +35,8 @@ namespace ProjectB.Abilities
         private ISynergyUnlockProvider synergyUnlockProvider;
         private bool hasExplicitSynergyList;
         private SynergyCatalog cachedCatalogFallback;
+        private RunRulesConfig runRulesConfig;
+        private int levelCapOverride;
 
         public IReadOnlyList<ActiveAbility> ActiveAbilities => activeAbilities;
         public IReadOnlyList<PassiveAbility> PassiveAbilities => passiveAbilities;
@@ -42,6 +45,21 @@ namespace ProjectB.Abilities
         public int TotalAbilitiesCount => activeAbilities.Count + passiveAbilities.Count;
         public int UnlockedActiveSlots => abilitySlotService != null ? abilitySlotService.MaxActiveSlots : DEFAULT_ACTIVE_SLOTS;
         public int UnlockedPassiveSlots => abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : DEFAULT_PASSIVE_SLOTS;
+
+        /// <summary>
+        /// Per-run ability level cap: <see cref="RunRulesConfig.baseAbilityMaxLevel"/> (5) raised by the Constellation
+        /// Path of Mastery (10 / 20 / 50). Applies to active and passive abilities alike.
+        /// </summary>
+        public int MaxAbilityLevel
+        {
+            get
+            {
+                if (levelCapOverride > 0) return levelCapOverride;
+                int baseCap = runRulesConfig != null ? runRulesConfig.baseAbilityMaxLevel : RunRulesConfig.DEFAULT_BASE_ABILITY_MAX_LEVEL;
+                int talentCap = runtimeStats != null ? runtimeStats.TalentAbilityLevelCap : 0;
+                return Mathf.Max(1, Mathf.Max(baseCap, talentCap));
+            }
+        }
 
         public event Action OnAbilitiesUpdated;
         public event Action<SynergyData> OnSynergyActivated;
@@ -54,7 +72,8 @@ namespace ProjectB.Abilities
             HeroHealth heroHealth = null,
             AbilitySlotService abilitySlotService = null,
             RunStatistics runStatistics = null,
-            ISynergyUnlockProvider synergyUnlockProvider = null)
+            ISynergyUnlockProvider synergyUnlockProvider = null,
+            RunRulesConfig runRulesConfig = null)
         {
             if (this.abilitySlotService != null)
             {
@@ -68,6 +87,7 @@ namespace ProjectB.Abilities
             this.abilitySlotService = abilitySlotService;
             this.runStatistics = runStatistics;
             this.synergyUnlockProvider = synergyUnlockProvider;
+            this.runRulesConfig = runRulesConfig;
 
             for (int i = 0; i < activeAbilities.Count; i++)
             {
@@ -89,6 +109,23 @@ namespace ProjectB.Abilities
             {
                 abilitySlotService.OnSlotCapacityChanged -= OnAbilitiesChanged;
             }
+        }
+
+        public void SetRunRulesConfig(RunRulesConfig rules)
+        {
+            runRulesConfig = rules;
+        }
+
+        /// <summary>Forces a level cap (tests / debug). 0 restores the config + Constellation cap.</summary>
+        public void SetAbilityLevelCapOverride(int cap)
+        {
+            levelCapOverride = Mathf.Max(0, cap);
+        }
+
+        public bool IsAbilityAtMaxLevel(string id)
+        {
+            int level = GetAbilityLevel(id);
+            return level > 0 && level >= MaxAbilityLevel;
         }
 
         public void SetSynergyUnlockProvider(ISynergyUnlockProvider provider)
@@ -323,12 +360,13 @@ namespace ProjectB.Abilities
             return null;
         }
 
-        public void UpgradeAbility(string id, ModifierType type, float value)
+        public bool UpgradeAbility(string id, ModifierType type, float value)
         {
-            UpgradeAbility(id, type, value, hasSecondary: false, default, 0f);
+            return UpgradeAbility(id, type, value, hasSecondary: false, default, 0f);
         }
 
-        public void UpgradeAbility(
+        /// <summary>Applies a modifier and raises the ability level. Returns false when the ability is missing or capped.</summary>
+        public bool UpgradeAbility(
             string id,
             ModifierType type,
             float value,
@@ -336,6 +374,12 @@ namespace ProjectB.Abilities
             ModifierType secondaryType,
             float secondaryValue)
         {
+            if (IsAbilityAtMaxLevel(id))
+            {
+                DevLog.Log($"[HeroAbilities] {id} is at the level cap (Lv {MaxAbilityLevel}); upgrade ignored.");
+                return false;
+            }
+
             if (HasActive(id, out ActiveAbility active))
             {
                 active.ApplyModifier(type, value);
@@ -361,7 +405,9 @@ namespace ProjectB.Abilities
             else
             {
                 Debug.LogWarning($"[HeroAbilities] Trying to upgrade ability {id} but it's not equipped.");
+                return false;
             }
+            return true;
         }
 
         public bool CanAddActive() => activeAbilities.Count < UnlockedActiveSlots;

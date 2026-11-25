@@ -251,7 +251,8 @@ namespace ProjectB.LevelUp
             bool canAddPassive = heroAbilities == null || heroAbilities.CanAddPassive();
 
             // Filter out invalid, locked, already acquired, or slot-capped abilities and orphan modifiers.
-            // Abilities have no maxLevel cap, so modifiers remain eligible at any level.
+            // Modifiers of abilities at the run level cap (RunRulesConfig base 5, raised by the Constellation
+            // Path of Mastery to 10 / 20 / 50) leave the pool; stat and weapon cards keep it from running dry.
             // Reactive synergies auto-activate in HeroAbilities and never enter LevelUp cards.
             if (dynamicPool != null)
             {
@@ -279,6 +280,9 @@ namespace ProjectB.LevelUp
                             continue;
 
                         if (heroAbilities != null && !heroAbilities.HasAbility(modifierCard.targetAbilityId))
+                            continue;
+
+                        if (heroAbilities != null && heroAbilities.IsAbilityAtMaxLevel(modifierCard.targetAbilityId))
                             continue;
                     }
                     else if (card is WeaponUpgradeCardData weaponCard)

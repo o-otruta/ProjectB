@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: fury_r1b
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
   id: fury_r1b
-  displayName: +5% Damage
-  description: 'Permanently +5% damage for weapon and abilities. (Inner ring: also
+  displayName: +8% Damage
+  description: 'Permanently +8% damage for weapon and abilities. (Inner ring: also
     purchasable with coins.)'
   nameKey: talent.fury_r1b.name
   descriptionKey: talent.fury_r1b.desc
@@ -23,9 +23,10 @@ MonoBehaviour:
   constellation: 1
   position: {x: -62.11657, y: 231.82219}
   prerequisiteIds: []
+  minUnlockedStars: 0
   shardCost: 1
   coinCost: 150
   effects:
   - type: 20
-    value: 5
+    value: 8
   synergyId: 

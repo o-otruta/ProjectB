@@ -432,6 +432,12 @@ namespace ProjectB.LevelUp
                             string tierLabel = ActiveAbility.GetOverdriveTierLabel(ActiveAbility.CalculateOverdriveTier(next));
                             return Loc.Format("ui.card.lv_progress_od", cur, next, tierLabel);
                         }
+                        if (next >= heroAbilities.MaxAbilityLevel)
+                        {
+                            // Last upgrade before the Constellation level cap (Path of Mastery raises it).
+                            badgeColor = new Color(0.86f, 0.30f, 0.30f, 1f);
+                            return Loc.Format("ui.card.lv_progress_od", cur, next, Loc.Get("ui.card.max", "MAX"));
+                        }
                         return Loc.Format("ui.card.lv_progress", cur, next);
                     }
                     return Loc.Get("ui.card.upgrade", "UPGRADE");

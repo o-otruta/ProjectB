@@ -9,7 +9,8 @@ namespace ProjectB.Data
         Origin = 0,
         Stat = 1,
         Synergy = 2,
-        Keystone = 3
+        Keystone = 3,
+        Mastery = 4
     }
 
     public enum TalentConstellation
@@ -17,11 +18,13 @@ namespace ProjectB.Data
         Core = 0,
         Fury = 1,       // Offense
         Bastion = 2,    // Defense
-        Fortune = 3     // Fortune & Arcane
+        Fortune = 3,    // Fortune & Arcane
+        Mastery = 4     // Ability level cap path (Overdrive / Awakened / Mythic)
     }
 
     /// <summary>
-    /// Effects granted permanently by an unlocked Constellation node. Values are additive across nodes.
+    /// Effects granted permanently by an unlocked Constellation node. Values are additive across nodes,
+    /// except <see cref="AbilityMaxLevel"/>, where the highest unlocked value wins.
     /// Percent effects use whole numbers (10 = +10%).
     /// </summary>
     public enum TalentEffectType
@@ -46,7 +49,9 @@ namespace ProjectB.Data
         MaxHpPercent = 17,
         MoveSpeedPercent = 18,
         XpGainPercent = 19,
-        GlobalDamagePercent = 20
+        GlobalDamagePercent = 20,
+        /// <summary>Raises the per-run ability level cap to this value (max across unlocked nodes, not summed).</summary>
+        AbilityMaxLevel = 21
     }
 
     [Serializable]
@@ -83,6 +88,10 @@ namespace ProjectB.Data
         [Tooltip("Node becomes available when ANY of these nodes is unlocked. Empty = root-adjacent (always available).")]
         public List<string> prerequisiteIds = new List<string>();
 
+        [Tooltip("Extra gate: this many other stars (Origin excluded) must already be unlocked. 0 = no gate. " +
+                 "Used by end-game stars such as Mythic Ascension (Lv 50 cap).")]
+        [Min(0)] public int minUnlockedStars;
+
         [Header("Cost")]
         [Min(0)] public int shardCost = 1;
         [Tooltip("Optional alternative coin price (inner ring only). 0 = shards only.")]
@@ -96,6 +105,7 @@ namespace ProjectB.Data
 
         public bool IsKeystone => nodeType == TalentNodeType.Keystone;
         public bool IsOrigin => nodeType == TalentNodeType.Origin;
+        public bool IsMastery => nodeType == TalentNodeType.Mastery;
 
         public float GetEffectValue(TalentEffectType type)
         {

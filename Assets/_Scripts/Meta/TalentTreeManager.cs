@@ -21,7 +21,8 @@ namespace ProjectB.Meta
         NotConnected = 3,
         NotEnoughShards = 4,
         NotEnoughCoins = 5,
-        CoinsNotAllowed = 6
+        CoinsNotAllowed = 6,
+        NotEnoughStars = 7
     }
 
     /// <summary>
@@ -126,11 +127,17 @@ namespace ProjectB.Meta
             return false;
         }
 
+        /// <summary>True when the node's <see cref="TalentNodeData.minUnlockedStars"/> gate is met (always true without a gate).</summary>
+        public bool MeetsStarRequirement(TalentNodeData node)
+        {
+            return node == null || node.minUnlockedStars <= 0 || UnlockedCount >= node.minUnlockedStars;
+        }
+
         public TalentNodeState GetState(TalentNodeData node)
         {
             if (node == null) return TalentNodeState.Locked;
             if (IsUnlocked(node.id)) return TalentNodeState.Unlocked;
-            return IsConnected(node) ? TalentNodeState.Available : TalentNodeState.Locked;
+            return IsConnected(node) && MeetsStarRequirement(node) ? TalentNodeState.Available : TalentNodeState.Locked;
         }
 
         public TalentNodeState GetState(string id) => GetState(GetNode(id));
@@ -141,6 +148,7 @@ namespace ProjectB.Meta
             if (node == null) return TalentUnlockResult.UnknownNode;
             if (IsUnlocked(id)) return TalentUnlockResult.AlreadyUnlocked;
             if (!IsConnected(node)) return TalentUnlockResult.NotConnected;
+            if (!MeetsStarRequirement(node)) return TalentUnlockResult.NotEnoughStars;
 
             if (payWithCoins)
             {
@@ -191,6 +199,28 @@ namespace ProjectB.Meta
         }
 
         public bool HasEffect(TalentEffectType type) => GetTotalEffect(type) > 0f;
+
+        /// <summary>Highest single value of an effect across unlocked nodes (0 when none). Not a hot path.</summary>
+        public float GetHighestEffect(TalentEffectType type)
+        {
+            float best = 0f;
+            foreach (var kv in nodesById)
+            {
+                TalentNodeData node = kv.Value;
+                if (node.effects == null || node.effects.Count == 0 || !IsUnlocked(node.id)) continue;
+                for (int i = 0; i < node.effects.Count; i++)
+                {
+                    if (node.effects[i].type == type && node.effects[i].value > best) best = node.effects[i].value;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Ability level cap granted by the Path of Mastery (highest unlocked node wins, 0 = no node unlocked).
+        /// The run-wide base cap lives in <see cref="RunRulesConfig.baseAbilityMaxLevel"/>.
+        /// </summary>
+        public int GetAbilityLevelCapBonus() => Mathf.Max(0, Mathf.RoundToInt(GetHighestEffect(TalentEffectType.AbilityMaxLevel)));
 
         private void RecalculateEffects()
         {

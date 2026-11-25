@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 294b06f4ec2574b4baf0f2a664b04517, type: 3}
   m_Name: TalentTree
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentTreeData
-  canvasSize: 2200
+  canvasSize: 2300
   nodes:
   - {fileID: 11400000, guid: 9929cb89f57c892438241a27b4cfb2ab, type: 2}
   - {fileID: 11400000, guid: c0f4091e4ae27bb4bb5821988fda52d7, type: 2}
@@ -51,3 +51,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3e96fe5c2cee73d448b34ae777abd584, type: 2}
   - {fileID: 11400000, guid: 74dff411987edee4fa4fb3f765758eca, type: 2}
   - {fileID: 11400000, guid: 61ee098ed0d6171479fd54a500a6a869, type: 2}
+  - {fileID: 11400000, guid: 94ad4e682649ce94e96e09004343f1f9, type: 2}
+  - {fileID: 11400000, guid: 3822024b94110f04f967844443e931ef, type: 2}
+  - {fileID: 11400000, guid: e02091b98f8f5e84190f8623406d39e7, type: 2}

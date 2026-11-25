@@ -251,6 +251,7 @@ namespace ProjectB.EditorScripts
                     TalentNodeType.Synergy => Cyan,
                     TalentNodeType.Keystone => FireOrange,
                     TalentNodeType.Origin => Purple,
+                    TalentNodeType.Mastery => FireOrange,
                     _ => node.constellation switch
                     {
                         TalentConstellation.Fury => Crimson,
@@ -669,6 +670,12 @@ namespace ProjectB.EditorScripts
         {
             if (node.nodeType == TalentNodeType.Origin) return "boss_shard";
             if (node.nodeType == TalentNodeType.Synergy) return ResolveSynergyTemplateKey(node.synergyId);
+            if (node.nodeType == TalentNodeType.Mastery)
+            {
+                // Path of Mastery: Lv 10 Overdrive → Lv 20 Awakened → Lv 50 Mythic.
+                float cap = node.GetEffectValue(TalentEffectType.AbilityMaxLevel);
+                return cap >= 30f ? "skyfall_spire" : (cap >= 20f ? "synergy_blades" : "sword");
+            }
             if (node.nodeType == TalentNodeType.Keystone)
             {
                 if (node.GetEffectValue(TalentEffectType.SecondWind) > 0f) return "ult_shield";
