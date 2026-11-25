@@ -12,7 +12,7 @@ namespace ProjectB.Visuals
     {
         private static readonly string[] CachedNumbers = BuildNumberCache(2500, string.Empty, string.Empty);
         private static readonly string[] CachedCritNumbers = BuildNumberCache(2500, string.Empty, "!");
-        private static readonly string[] CachedHealNumbers = BuildNumberCache(501, "+", " HP");
+        private static readonly string[] CachedHealNumbers = BuildNumberCache(2500, "+", " HP");
 
         [SerializeField] private TextMeshProUGUI textMesh;
 

@@ -104,6 +104,8 @@ namespace ProjectB.Visuals
         private static readonly Color SoulNovaPrimaryColor = new Color(0.28f, 0.92f, 1f, 1f);
         private static readonly Color SoulNovaSecondaryColor = new Color(0.62f, 0.34f, 1f, 1f);
         private static readonly Color SoulHealTextColor = new Color(0.38f, 1f, 0.55f, 1f);
+        private static readonly Color EnemyHealPrimaryColor = new Color(0.30f, 1f, 0.42f, 1f);
+        private static readonly Color EnemyHealSecondaryColor = new Color(0.75f, 1f, 0.55f, 1f);
         private static readonly Color BarrelPrimaryColor = new Color(1f, 0.42f, 0.12f, 1f);
         private static readonly Color BarrelSecondaryColor = new Color(1f, 0.88f, 0.2f, 1f);
         private static readonly Color VacuumPrimaryColor = new Color(0.25f, 0.95f, 1f, 1f);
@@ -458,6 +460,7 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<WaveMutatorStartedEvent>(OnWaveMutatorStarted);
                 eventBus.Subscribe<WaveMutatorEndedEvent>(OnWaveMutatorEnded);
                 eventBus.Subscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
+                eventBus.Subscribe<EnemyHealedEvent>(OnEnemyHealed);
                 eventBus.Subscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
                 eventBus.Subscribe<AbilityVfxEvent>(OnAbilityVfx);
                 eventBus.Subscribe<BossShardsGainedEvent>(OnBossShardsGained);
@@ -514,6 +517,7 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<WaveMutatorStartedEvent>(OnWaveMutatorStarted);
                 eventBus.Unsubscribe<WaveMutatorEndedEvent>(OnWaveMutatorEnded);
                 eventBus.Unsubscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
+                eventBus.Unsubscribe<EnemyHealedEvent>(OnEnemyHealed);
                 eventBus.Unsubscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
                 eventBus.Unsubscribe<AbilityVfxEvent>(OnAbilityVfx);
                 eventBus.Unsubscribe<BossShardsGainedEvent>(OnBossShardsGained);
@@ -692,8 +696,43 @@ namespace ProjectB.Visuals
 
         private void OnEnemySummonHeal(EnemySummonHealEvent evt)
         {
-            EmitExplosionRing(evt.Position + Vector3.up * 0.5f, Mathf.Max(1.5f, evt.Radius * 0.5f), SoulNovaSecondaryColor, SoulNovaPrimaryColor, 16, 4, 4.4f, 0.24f);
+            // Small green + purple spark on the healer itself; beams to targets come from EnemyHealedEvent.
+            EmitBurst(evt.Position + Vector3.up * 1.4f, EnemyHealPrimaryColor, 10, 3.2f, 0.3f);
+            EmitBurst(evt.Position + Vector3.up * 0.8f, SoulNovaSecondaryColor, 4, 3.0f, 0.26f);
         }
+
+        private void OnEnemyHealed(EnemyHealedEvent evt)
+        {
+            // Beam of green motes from the healer to the healed enemy, then a "+" burst on the target.
+            Vector3 from = evt.SourcePosition + Vector3.up * 1.3f;
+            Vector3 to = evt.TargetPosition + Vector3.up * (evt.TargetIsBoss ? 1.8f : 1.0f);
+            EmitHealBeam(from, to, evt.TargetIsBoss ? 12 : 7, evt.TargetIsBoss ? 0.34f : 0.26f);
+            EmitBurst(to, EnemyHealPrimaryColor, evt.TargetIsBoss ? 14 : 6, 2.6f, evt.TargetIsBoss ? 0.34f : 0.24f);
+
+            if (evt.TargetIsBoss && evt.Amount > 0 && damagePool != null)
+            {
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.TargetPosition + Vector3.up * 1.2f, DamageNumberItem.GetCachedHealText(evt.Amount), EnemyHealPrimaryColor, 1.35f, 1.2f, mainCamera, damagePool);
+            }
+        }
+
+        private void EmitHealBeam(Vector3 from, Vector3 to, int count, float size)
+        {
+            if (burstParticles == null || count <= 0) return;
+
+            var emitParams = new ParticleSystem.EmitParams { startSize = size };
+            for (int i = 0; i < count; i++)
+            {
+                float t = (i + 0.5f) / count;
+                Vector3 pos = Vector3.Lerp(from, to, t);
+                pos.y += Mathf.Sin(t * Mathf.PI) * 0.8f; // slight arc
+                emitParams.position = pos;
+                emitParams.velocity = new Vector3(Random.Range(-0.3f, 0.3f), Random.Range(0.8f, 1.6f), Random.Range(-0.3f, 0.3f));
+                emitParams.startColor = (i & 1) == 0 ? EnemyHealPrimaryColor : EnemyHealSecondaryColor;
+                burstParticles.Emit(emitParams, 1);
+            }
+        }
+
 
         private void OnAbilityVfx(AbilityVfxEvent evt)
         {

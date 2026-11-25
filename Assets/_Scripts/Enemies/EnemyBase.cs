@@ -37,6 +37,9 @@ namespace ProjectB.Enemies
         private static readonly Color HasteAuraRimColor = new Color(0.18f, 0.94f, 1.00f, 1f);
         private static readonly Color MiniBossRimColor = new Color(1.00f, 0.45f, 0.10f, 1f);
         private static readonly Color DefaultBossRimColor = new Color(1.00f, 0.72f, 0.22f, 0.85f);
+        private static readonly Color HealGlowRimColor = new Color(0.30f, 1.00f, 0.42f, 1f);
+        private static readonly Color HealGlowTintColor = new Color(0.78f, 1.00f, 0.80f, 1f);
+        private const float HEAL_GLOW_DURATION = 0.6f;
         private const float HIT_FLASH_DURATION = 0.08f;
         private const float HASTE_PULSE_INTERVAL = 0.25f;
         private const float HASTE_BUFF_DURATION = 0.45f;
@@ -46,6 +49,9 @@ namespace ProjectB.Enemies
 
         private Renderer[] enemyRenderers;
         private MaterialPropertyBlock propBlock;
+        private float healGlowTimer;
+        private float healGlowDuration = HEAL_GLOW_DURATION;
+        private bool healGlowRampUp;
         protected Vector3 baseLocalScale = Vector3.one;
         protected float activeScaleMultiplier = 1f;
         private bool baseScaleCaptured;
@@ -199,6 +205,8 @@ namespace ProjectB.Enemies
             hasteAuraSpeedBonus = 0.2f;
             nextHasteAuraPulseTime = 0f;
             hitFlashTimer = 0f;
+            healGlowTimer = 0f;
+            healGlowRampUp = false;
             isMiniBoss = false;
             activeBossId = null;
             shardRewardMultiplier = 1;
@@ -373,7 +381,8 @@ namespace ProjectB.Enemies
             if (enemyRenderers == null || enemyRenderers.Length == 0) return;
 
             float clampedFlash = Mathf.Clamp01(hitFlashAmount);
-            if (!isElite && !isMiniBoss && !hasBossRim && !hasCustomRim && clampedFlash <= 0.001f)
+            float healGlow = GetHealGlowStrength();
+            if (!isElite && !isMiniBoss && !hasBossRim && !hasCustomRim && clampedFlash <= 0.001f && healGlow <= 0.001f)
             {
                 ClearTint();
                 return;
@@ -409,6 +418,14 @@ namespace ProjectB.Enemies
                 baseTint = GetCustomBaseTint();
                 rimColor = GetCustomRimColor();
                 rimPower = 2.1f;
+            }
+
+            if (healGlow > 0.001f)
+            {
+                // Green heal glow overrides the rim so a healed (or about-to-heal) enemy reads instantly.
+                rimColor = Color.Lerp(rimColor, HealGlowRimColor, healGlow);
+                rimPower = Mathf.Lerp(rimPower, 1.1f, healGlow);
+                baseTint = Color.Lerp(baseTint, HealGlowTintColor, healGlow * 0.6f);
             }
 
             propBlock.SetColor(BaseColorPropertyId, baseTint);
@@ -478,6 +495,7 @@ namespace ProjectB.Enemies
         {
             if (!isAlive || target == null || enemyData == null) return;
             UpdateHitFlash();
+            UpdateHealGlow();
             UpdateFreezeAndTaunt(Time.deltaTime);
             UpdateSlowTimer();
             UpdateSpeedBuffTimer();
@@ -505,6 +523,45 @@ namespace ProjectB.Enemies
         protected virtual void RestoreBaseTint()
         {
             ApplyVisualState(0f);
+        }
+
+        /// <summary>
+        /// Plays the green heal glow. With <paramref name="rampUp"/> the glow grows over the duration
+        /// (healer telegraph); otherwise it starts bright and fades (healed target).
+        /// </summary>
+        public void PlayHealGlow(float duration = HEAL_GLOW_DURATION, bool rampUp = false)
+        {
+            if (!isAlive || duration <= 0f) return;
+            healGlowDuration = duration;
+            healGlowTimer = duration;
+            healGlowRampUp = rampUp;
+            ApplyVisualState(hitFlashTimer > 0f ? Mathf.Clamp01(hitFlashTimer / HIT_FLASH_DURATION) : 0f);
+        }
+
+        public bool IsHealGlowing => healGlowTimer > 0f;
+
+        protected float GetHealGlowStrength()
+        {
+            if (healGlowTimer <= 0f || healGlowDuration <= 0f) return 0f;
+            float t = Mathf.Clamp01(healGlowTimer / healGlowDuration);
+            return healGlowRampUp ? 1f - t : t;
+        }
+
+        private void UpdateHealGlow()
+        {
+            if (healGlowTimer <= 0f) return;
+            healGlowTimer -= Time.deltaTime;
+            if (healGlowTimer <= 0f)
+            {
+                healGlowTimer = 0f;
+                healGlowRampUp = false;
+                if (hitFlashTimer <= 0f)
+                {
+                    RestoreBaseTint();
+                    return;
+                }
+            }
+            ApplyVisualState(hitFlashTimer > 0f ? Mathf.Clamp01(hitFlashTimer / HIT_FLASH_DURATION) : 0f);
         }
 
         private void UpdateSlowTimer()
@@ -674,6 +731,11 @@ namespace ProjectB.Enemies
             if (healed > 0 && (isMiniBoss || IsBoss))
             {
                 eventBus?.Publish(new BossHealthChangedEvent(BossId, currentHp, maxHp));
+            }
+
+            if (healed > 0)
+            {
+                PlayHealGlow();
             }
 
             return healed;

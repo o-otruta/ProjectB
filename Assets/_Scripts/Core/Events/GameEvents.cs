@@ -569,6 +569,25 @@ namespace ProjectB.Core.Events
     }
 
     /// <summary>
+    /// Fired for every ally an enemy healer restored HP to (source → target), used for heal beams and "+HP" text.
+    /// </summary>
+    public struct EnemyHealedEvent
+    {
+        public Vector3 SourcePosition;
+        public Vector3 TargetPosition;
+        public int Amount;
+        public bool TargetIsBoss;
+
+        public EnemyHealedEvent(Vector3 sourcePosition, Vector3 targetPosition, int amount, bool targetIsBoss)
+        {
+            SourcePosition = sourcePosition;
+            TargetPosition = targetPosition;
+            Amount = amount;
+            TargetIsBoss = targetIsBoss;
+        }
+    }
+
+    /// <summary>
     /// Босс Demon Lord перешёл во 2-ю фазу ярости (< 50% HP).
     /// </summary>
     public struct DemonLordEnragedEvent

@@ -599,6 +599,22 @@ namespace ProjectB.Tests.EditMode
             var allyPool = new UnityEngine.Pool.ObjectPool<EnemyBase>(() => ally);
             ally.Initialize(allyData, heroHealth.transform, allyPool, bus);
             ally.TakeDamageFrom(40, false, new Vector3(0f, 0f, 4f), isAoE: true); // Now at 60/100 HP
+
+            // Mini-boss ally: receives only bossHealMultiplier of the normal heal
+            var bossAllyGo = Track(new GameObject("DamagedMiniBoss") { layer = enemyLayer });
+            bossAllyGo.transform.position = new Vector3(-2.5f, 0f, 0f);
+            var bossAllyCol = bossAllyGo.AddComponent<CapsuleCollider>();
+            bossAllyCol.radius = 0.5f;
+            bossAllyCol.height = 1.5f;
+            var bossAlly = bossAllyGo.AddComponent<EnemyBase>();
+            var bossAllyData = Track(ScriptableObject.CreateInstance<EnemyData>());
+            bossAllyData.hp = 1000;
+            var bossAllyPool = new UnityEngine.Pool.ObjectPool<EnemyBase>(() => bossAlly);
+            bossAlly.Initialize(bossAllyData, heroHealth.transform, bossAllyPool, bus);
+            bossAlly.MakeMiniBoss(1f, 1f, 1f);
+            int bossMaxHp = bossAlly.MaxHp;
+            bossAlly.TakeDamageFrom(bossMaxHp / 2, false, new Vector3(0f, 0f, 4f), isAoE: true);
+            int bossHpBefore = bossAlly.CurrentHp;
             Physics.SyncTransforms();
 
             int summons = 0;
@@ -607,6 +623,8 @@ namespace ProjectB.Tests.EditMode
 
             int healEvents = 0;
             bus.Subscribe<EnemySummonHealEvent>(_ => healEvents++);
+            var healedEvents = new List<EnemyHealedEvent>();
+            bus.Subscribe<EnemyHealedEvent>(e => healedEvents.Add(e));
 
             summoner.ExecuteSummonAndHealPulse();
 
@@ -615,6 +633,19 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(75, ally.CurrentHp, "Nearby ally at 60/100 HP should heal +15 HP (15% of MaxHP)");
             Assert.AreEqual(summonerHpBefore, summoner.CurrentHp, "Summoner should not heal itself");
             Assert.AreEqual(1, healEvents);
+
+            int expectedBossHeal = Mathf.Max(1, Mathf.RoundToInt(bossMaxHp * summonerData.healPercent * summonerData.bossHealMultiplier));
+            Assert.Less(summonerData.bossHealMultiplier, 1f, "Bosses and mini-bosses must receive a reduced heal");
+            Assert.AreEqual(bossHpBefore + expectedBossHeal, bossAlly.CurrentHp, "Mini-boss heal must be scaled by bossHealMultiplier");
+
+            Assert.AreEqual(2, healedEvents.Count, "One EnemyHealedEvent per healed ally (drives heal beam VFX)");
+            int regularIdx = healedEvents[0].TargetIsBoss ? 1 : 0;
+            Assert.AreEqual(15, healedEvents[regularIdx].Amount);
+            Assert.IsFalse(healedEvents[regularIdx].TargetIsBoss);
+            Assert.IsTrue(healedEvents[1 - regularIdx].TargetIsBoss);
+            Assert.AreEqual(expectedBossHeal, healedEvents[1 - regularIdx].Amount);
+            Assert.IsTrue(ally.IsHealGlowing, "Healed enemy must play the green heal glow");
+            Assert.IsTrue(bossAlly.IsHealGlowing);
         }
 
         [Test]

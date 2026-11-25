@@ -29,3 +29,14 @@ MonoBehaviour:
   minionData: {fileID: 11400000, guid: 7fb952e41c892fc48948add9031aba41, type: 2}
   healRadius: 6
   healPercent: 0.15
+  bossHealMultiplier: 0.2
+  healTelegraphDuration: 1
+  healerMarkerMaterial: {fileID: 2100000, guid: 80a0c81950460514a903095a1b25965b, type: 2}
+  healerMarkerCount: 3
+  healerMarkerSize: 0.25
+  healerMarkerHeight: 0.35
+  healerMarkerLeadTime: 0.15
+  healerMarkerFadeTime: 0.12
+  healerMarkerFadeOutTime: 0.22
+  healerMarkerHoldAfterPulse: 0.05
+  healerMarkerRiseDistance: 1.45
