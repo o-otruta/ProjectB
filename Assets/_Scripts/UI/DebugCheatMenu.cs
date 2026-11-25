@@ -94,6 +94,19 @@ namespace ProjectB.UI
         private bool showPassiveTab;
         private string pickerStatusNotice;
 
+        // Enemy spawn picker + test mode
+        private GameObject enemyPickerPanel;
+        private Transform enemyPickerContent;
+        private TextMeshProUGUI enemyPickerHeader;
+        private TextMeshProUGUI testModeLabel;
+        private TextMeshProUGUI spawnCountLabel;
+        private TextMeshProUGUI spawnEliteLabel;
+        private readonly List<EnemyData> cachedEnemyTypes = new List<EnemyData>();
+        private readonly List<string> cachedEnemyLabels = new List<string>();
+        private int spawnCount = 1;
+        private bool spawnElite;
+        private string enemyPickerNotice;
+
         private float timeSpeedScale = 1f;
         private float nextInfoRefreshTime;
 
@@ -109,10 +122,18 @@ namespace ProjectB.UI
                 ToggleMenu();
             }
 
-            if (menuPanel != null && menuPanel.activeSelf && Time.unscaledTime >= nextInfoRefreshTime)
+            if (Time.unscaledTime >= nextInfoRefreshTime)
             {
-                nextInfoRefreshTime = Time.unscaledTime + 0.2f;
-                RefreshInfoHeader();
+                if (menuPanel != null && menuPanel.activeSelf)
+                {
+                    nextInfoRefreshTime = Time.unscaledTime + 0.2f;
+                    RefreshInfoHeader();
+                }
+                else if (enemyPickerPanel != null && enemyPickerPanel.activeSelf)
+                {
+                    nextInfoRefreshTime = Time.unscaledTime + 0.2f;
+                    RefreshEnemyPickerHeader();
+                }
             }
         }
 
@@ -129,6 +150,11 @@ namespace ProjectB.UI
             if (abilityPickerPanel != null && abilityPickerPanel.activeSelf)
             {
                 abilityPickerPanel.SetActive(false);
+                return;
+            }
+            if (enemyPickerPanel != null && enemyPickerPanel.activeSelf)
+            {
+                enemyPickerPanel.SetActive(false);
                 return;
             }
 
@@ -155,6 +181,7 @@ namespace ProjectB.UI
         private void BackToCheatMenu()
         {
             if (abilityPickerPanel != null) abilityPickerPanel.SetActive(false);
+            if (enemyPickerPanel != null) enemyPickerPanel.SetActive(false);
             if (menuPanel != null)
             {
                 menuPanel.SetActive(true);
@@ -258,7 +285,34 @@ namespace ProjectB.UI
             int lvl = heroExperience != null ? heroExperience.CurrentLevel : 1;
             int hp = heroHealth != null ? heroHealth.CurrentHp : 0;
             int maxHp = heroHealth != null ? heroHealth.MaxHp : 0;
-            infoText.text = $"W:{wave} | Mobs:{enemies} | Lv:{lvl} | HP:{hp}/{maxHp}";
+            bool frozen = waveManager != null && waveManager.IsWaveFrozen;
+            infoText.text = $"W:{wave}{(frozen ? " FROZEN" : "")} | Mobs:{enemies} | Lv:{lvl} | HP:{hp}/{maxHp}";
+            if (testModeLabel != null) testModeLabel.text = frozen ? "Test Mode: ON" : "Test Mode: OFF";
+        }
+
+        /// <summary>Test mode: freezes the wave flow and clears the map, so enemies can be spawned by hand.</summary>
+        public void SetTestMode(bool enabled)
+        {
+            if (waveManager == null) return;
+            waveManager.SetWavesFrozen(enabled);
+            if (enabled)
+            {
+                ClearAllMobs();
+            }
+            RefreshInfoHeader();
+        }
+
+        /// <summary>Removes every enemy without rewards and hides a leftover boss HP bar.</summary>
+        public void ClearAllMobs()
+        {
+            waveManager?.DespawnAllActiveEnemies();
+            HideBossBar();
+        }
+
+        private static void HideBossBar()
+        {
+            var bossBar = FindAnyObjectByType<BossHealthBarUI>(FindObjectsInactive.Include);
+            if (bossBar != null) bossBar.Hide();
         }
 
         private void BuildOverlayUI()
@@ -318,6 +372,11 @@ namespace ProjectB.UI
                 waveManager?.JumpToWave(5);
                 RefreshInfoHeader();
             });
+            var testModeBtn = AddFlexButton(waveRow1.transform, "Test Mode: OFF", new Color(0.12f, 0.5f, 0.46f, 1f), () =>
+            {
+                SetTestMode(waveManager != null && !waveManager.IsWaveFrozen);
+            });
+            testModeLabel = testModeBtn.GetComponentInChildren<TextMeshProUGUI>();
 
             var waveRow2 = CreateRow(menuPanel.transform, 72f, 14f);
             AddFlexButton(waveRow2.transform, "W25 Golem", new Color(0.72f, 0.18f, 0.22f, 1f), () =>
@@ -345,6 +404,11 @@ namespace ProjectB.UI
             AddFlexButton(waveRow3.transform, "Kill All Enemies", new Color(0.65f, 0.22f, 0.22f, 1f), () =>
             {
                 waveManager?.KillAllActiveEnemies();
+                RefreshInfoHeader();
+            });
+            AddFlexButton(waveRow3.transform, "Clear Mobs (no loot)", new Color(0.36f, 0.26f, 0.3f, 1f), () =>
+            {
+                ClearAllMobs();
                 RefreshInfoHeader();
             });
             AddFlexButton(waveRow3.transform, "+1 Level Up", new Color(0.2f, 0.62f, 0.34f, 1f), () =>
@@ -414,6 +478,7 @@ namespace ProjectB.UI
 
             var abilityRow = CreateRow(menuPanel.transform, 72f, 14f);
             AddFlexButton(abilityRow.transform, "Grant Abilities...", new Color(0.76f, 0.42f, 0.14f, 1f), OpenAbilityPicker);
+            AddFlexButton(abilityRow.transform, "Spawn Mobs...", new Color(0.62f, 0.2f, 0.32f, 1f), OpenEnemyPicker);
 
             var arenaRow = CreateRow(menuPanel.transform, 72f, 12f);
             AddFlexButton(arenaRow.transform, "Spawn Barrel", new Color(0.78f, 0.24f, 0.18f, 1f), () =>
@@ -479,6 +544,273 @@ namespace ProjectB.UI
             menuPanel.SetActive(false);
 
             BuildAbilityPickerPanel();
+            BuildEnemyPickerPanel();
+        }
+
+        private void OpenEnemyPicker()
+        {
+            if (menuPanel != null) menuPanel.SetActive(false);
+            if (enemyPickerPanel == null) return;
+            enemyPickerNotice = null;
+            enemyPickerPanel.SetActive(true);
+            RebuildEnemyPickerButtons();
+            RefreshEnemyPickerHeader();
+        }
+
+        private void BuildEnemyPickerPanel()
+        {
+            enemyPickerPanel = new GameObject("EnemyPickerPanel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
+            enemyPickerPanel.transform.SetParent(transform, false);
+            var panelRt = enemyPickerPanel.GetComponent<RectTransform>();
+            panelRt.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRt.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRt.pivot = new Vector2(0.5f, 0.5f);
+            panelRt.anchoredPosition = new Vector2(0f, 30f);
+            panelRt.sizeDelta = new Vector2(880f, 1040f);
+            enemyPickerPanel.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.09f, 0.95f);
+
+            var vlg = enemyPickerPanel.GetComponent<VerticalLayoutGroup>();
+            vlg.padding = new RectOffset(22, 22, 18, 18);
+            vlg.spacing = 12f;
+            vlg.childControlWidth = true;
+            vlg.childControlHeight = true;
+            vlg.childForceExpandWidth = true;
+            vlg.childForceExpandHeight = false;
+
+            // Header: status + Back + Close
+            var headerRow = CreateRow(enemyPickerPanel.transform, 60f, 10f);
+            var headerLe = headerRow.AddComponent<LayoutElement>();
+            headerLe.minHeight = 60f;
+            headerLe.preferredHeight = 60f;
+            enemyPickerHeader = CreateLabel(headerRow.transform, "SPAWN MOBS", 24, Color.yellow, TextAlignmentOptions.MidlineLeft);
+            enemyPickerHeader.enableAutoSizing = true;
+            enemyPickerHeader.fontSizeMin = 14;
+            enemyPickerHeader.fontSizeMax = 24;
+            enemyPickerHeader.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var backBtn = CreateButton(headerRow.transform, "BackBtn", "< Back", new Color(0.28f, 0.34f, 0.44f, 1f), 24, BackToCheatMenu);
+            var backLe = backBtn.gameObject.AddComponent<LayoutElement>();
+            backLe.preferredWidth = 130f;
+            backLe.minWidth = 130f;
+            var closeBtn = CreateButton(headerRow.transform, "CloseBtn", "X", new Color(0.75f, 0.18f, 0.18f, 1f), 26, ToggleMenu);
+            var closeLe = closeBtn.gameObject.AddComponent<LayoutElement>();
+            closeLe.preferredWidth = 70f;
+            closeLe.minWidth = 70f;
+
+            // Options: test mode, clear, count, elite, wave scaling
+            var optRow1 = CreateRow(enemyPickerPanel.transform, 64f, 10f);
+            var opt1Le = optRow1.AddComponent<LayoutElement>();
+            opt1Le.minHeight = 64f;
+            opt1Le.preferredHeight = 64f;
+            AddFlexButton(optRow1.transform, "Test Mode", new Color(0.12f, 0.5f, 0.46f, 1f), () =>
+            {
+                SetTestMode(waveManager != null && !waveManager.IsWaveFrozen);
+                RefreshEnemyPickerHeader();
+            });
+            AddFlexButton(optRow1.transform, "Clear Mobs", new Color(0.36f, 0.26f, 0.3f, 1f), () =>
+            {
+                ClearAllMobs();
+                enemyPickerNotice = null;
+                RefreshEnemyPickerHeader();
+            });
+            var countBtn = AddFlexButton(optRow1.transform, "Count: x1", new Color(0.26f, 0.28f, 0.36f, 1f), () =>
+            {
+                spawnCount = spawnCount == 1 ? 3 : (spawnCount == 3 ? 5 : (spawnCount == 5 ? 10 : 1));
+                if (spawnCountLabel != null) spawnCountLabel.text = $"Count: x{spawnCount}";
+            });
+            spawnCountLabel = countBtn.GetComponentInChildren<TextMeshProUGUI>();
+            var eliteBtn = AddFlexButton(optRow1.transform, "Elite: OFF", new Color(0.26f, 0.28f, 0.36f, 1f), () =>
+            {
+                spawnElite = !spawnElite;
+                if (spawnEliteLabel != null) spawnEliteLabel.text = spawnElite ? "Elite: ON" : "Elite: OFF";
+            });
+            spawnEliteLabel = eliteBtn.GetComponentInChildren<TextMeshProUGUI>();
+
+            var optRow2 = CreateRow(enemyPickerPanel.transform, 64f, 10f);
+            var opt2Le = optRow2.AddComponent<LayoutElement>();
+            opt2Le.minHeight = 64f;
+            opt2Le.preferredHeight = 64f;
+            AddWaveScaleButton(optRow2.transform, "W-5", -5);
+            AddWaveScaleButton(optRow2.transform, "W-1", -1);
+            AddWaveScaleButton(optRow2.transform, "W+1", 1);
+            AddWaveScaleButton(optRow2.transform, "W+5", 5);
+            AddFlexButton(optRow2.transform, "W25", new Color(0.72f, 0.18f, 0.22f, 1f), () => SetScalingWave(25));
+
+            // Scrollable enemy grid
+            var scrollGo = new GameObject("EnemyScroll", typeof(RectTransform), typeof(Image), typeof(RectMask2D), typeof(ScrollRect), typeof(LayoutElement));
+            scrollGo.transform.SetParent(enemyPickerPanel.transform, false);
+            scrollGo.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.14f, 0.7f);
+            var scrollLe = scrollGo.GetComponent<LayoutElement>();
+            scrollLe.flexibleHeight = 1f;
+            scrollLe.minHeight = 640f;
+
+            var contentGo = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+            contentGo.transform.SetParent(scrollGo.transform, false);
+            var contentRt = contentGo.GetComponent<RectTransform>();
+            contentRt.anchorMin = new Vector2(0f, 1f);
+            contentRt.anchorMax = new Vector2(1f, 1f);
+            contentRt.pivot = new Vector2(0.5f, 1f);
+            contentRt.anchoredPosition = Vector2.zero;
+            contentRt.sizeDelta = Vector2.zero;
+
+            var grid = contentGo.GetComponent<GridLayoutGroup>();
+            grid.padding = new RectOffset(10, 10, 10, 10);
+            grid.cellSize = new Vector2(398f, 76f);
+            grid.spacing = new Vector2(14f, 10f);
+            grid.childAlignment = TextAnchor.UpperCenter;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 2;
+            contentGo.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scroll = scrollGo.GetComponent<ScrollRect>();
+            scroll.viewport = scrollGo.GetComponent<RectTransform>();
+            scroll.content = contentRt;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
+
+            enemyPickerContent = contentGo.transform;
+            enemyPickerPanel.SetActive(false);
+        }
+
+        private void AddWaveScaleButton(Transform parent, string label, int delta)
+        {
+            AddFlexButton(parent, label, new Color(0.22f, 0.36f, 0.58f, 1f), () =>
+            {
+                int current = waveManager != null ? waveManager.CurrentWave : 1;
+                SetScalingWave(current + delta);
+            });
+        }
+
+        /// <summary>Changes the current wave (HP/damage scaling for spawned mobs). Clears the map, like any wave jump.</summary>
+        private void SetScalingWave(int wave)
+        {
+            if (waveManager == null) return;
+            waveManager.JumpToWave(Mathf.Max(1, wave));
+            if (waveManager.IsWaveFrozen) HideBossBar();
+            enemyPickerNotice = waveManager.IsWaveFrozen ? null : "Waves are running: enable Test Mode to stop spawns";
+            RefreshEnemyPickerHeader();
+        }
+
+        private void RefreshEnemyPickerHeader()
+        {
+            if (enemyPickerHeader == null) return;
+            if (!string.IsNullOrEmpty(enemyPickerNotice))
+            {
+                enemyPickerHeader.text = enemyPickerNotice;
+                enemyPickerHeader.color = new Color(1f, 0.6f, 0.35f, 1f);
+                return;
+            }
+
+            int wave = waveManager != null ? waveManager.CurrentWave : 0;
+            int mobs = waveManager != null ? waveManager.EnemiesAlive : 0;
+            bool frozen = waveManager != null && waveManager.IsWaveFrozen;
+            enemyPickerHeader.text = $"SPAWN  •  W{wave} scaling  •  Mobs {mobs}  •  {(frozen ? "TEST MODE" : "waves running")}";
+            enemyPickerHeader.color = frozen ? new Color(0.45f, 1f, 0.75f, 1f) : Color.yellow;
+        }
+
+        private void RebuildEnemyPickerButtons()
+        {
+            if (enemyPickerContent == null) return;
+            for (int i = enemyPickerContent.childCount - 1; i >= 0; i--)
+            {
+                GameObject child = enemyPickerContent.GetChild(i).gameObject;
+                child.SetActive(false);
+                Destroy(child);
+            }
+
+            CollectEnemyTypes();
+            for (int i = 0; i < cachedEnemyTypes.Count; i++)
+            {
+                EnemyData data = cachedEnemyTypes[i];
+                bool isBoss = data is BossData;
+                Color bg = isBoss ? new Color(0.58f, 0.16f, 0.2f, 1f) : new Color(0.22f, 0.26f, 0.36f, 1f);
+                CreateButton(enemyPickerContent, $"Spawn_{data.name}", cachedEnemyLabels[i], bg, 22, () => SpawnEnemyFromPicker(data));
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(enemyPickerContent as RectTransform);
+        }
+
+        private void SpawnEnemyFromPicker(EnemyData data)
+        {
+            if (waveManager == null || data == null) return;
+            bool isBoss = data is BossData;
+            int count = isBoss ? 1 : spawnCount;
+            int spawned = 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (waveManager.DebugSpawnEnemyNearHero(data, 6f + i * 0.6f, spawnElite && !isBoss) != null)
+                {
+                    spawned++;
+                }
+            }
+
+            enemyPickerNotice = spawned > 0 ? null : "Spawn failed (enemy limit reached?)";
+            RefreshEnemyPickerHeader();
+        }
+
+        private void CollectEnemyTypes()
+        {
+            cachedEnemyTypes.Clear();
+            cachedEnemyLabels.Clear();
+            WaveConfig config = waveManager != null ? waveManager.Config : null;
+            if (config == null) return;
+
+            if (config.bosses != null)
+            {
+                for (int i = 0; i < config.bosses.Count; i++)
+                {
+                    BossData boss = config.bosses[i];
+                    if (boss == null) continue;
+                    int bossWave = config.bossInterval * (i + 1);
+                    AddEnemyType(boss, $"BOSS {boss.bossDisplayName} · W{bossWave}");
+                }
+            }
+
+            if (config.enemySchedule != null)
+            {
+                for (int i = 0; i < config.enemySchedule.Count; i++)
+                {
+                    EnemyWaveEntry entry = config.enemySchedule[i];
+                    if (entry == null || entry.enemy == null) continue;
+                    AddEnemyType(entry.enemy, $"{PrettyEnemyName(entry.enemy)} · W{entry.minWave}");
+                }
+            }
+
+            // Summons and special spawns that are not in the regular schedule
+            int scheduledCount = cachedEnemyTypes.Count;
+            for (int i = 0; i < scheduledCount; i++)
+            {
+                EnemyData data = cachedEnemyTypes[i];
+                if (data is SummonerEnemyData summoner) AddEnemyType(summoner.minionData, $"{PrettyEnemyName(summoner.minionData)} · summon");
+                else if (data is SplitterEnemyData splitter) AddEnemyType(splitter.splitChildData, $"{PrettyEnemyName(splitter.splitChildData)} · split");
+                else if (data is BossData boss) AddEnemyType(boss.minionData, $"{PrettyEnemyName(boss.minionData)} · boss summon");
+            }
+            AddEnemyType(config.goldGoblinData, "Gold Goblin · event");
+            AddEnemyType(config.swarmRushEnemyData, $"{PrettyEnemyName(config.swarmRushEnemyData)} · swarm");
+            AddEnemyType(config.corridorHordeEnemyData, $"{PrettyEnemyName(config.corridorHordeEnemyData)} · corridor");
+        }
+
+        private void AddEnemyType(EnemyData data, string label)
+        {
+            if (data == null || cachedEnemyTypes.Contains(data)) return;
+            cachedEnemyTypes.Add(data);
+            cachedEnemyLabels.Add(label);
+        }
+
+        private static string PrettyEnemyName(EnemyData data)
+        {
+            if (data == null) return string.Empty;
+            string raw = data.name;
+            if (raw.EndsWith("Data", StringComparison.Ordinal)) raw = raw.Substring(0, raw.Length - 4);
+            var sb = new System.Text.StringBuilder(raw.Length + 4);
+            for (int i = 0; i < raw.Length; i++)
+            {
+                char c = raw[i];
+                if (i > 0 && char.IsUpper(c) && !char.IsUpper(raw[i - 1])) sb.Append(' ');
+                sb.Append(c == '_' ? ' ' : c);
+            }
+            return sb.ToString();
         }
 
         private void BuildAbilityPickerPanel()

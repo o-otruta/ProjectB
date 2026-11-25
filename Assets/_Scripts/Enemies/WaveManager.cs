@@ -1202,12 +1202,18 @@ namespace ProjectB.Enemies
         private void SpawnBoss(BossData bossData)
         {
             if (bossData == null || !CanSpawnMoreEnemies) return;
+            SpawnBossAt(bossData, GetValidSpawnPosition());
+        }
+
+        private EnemyBase SpawnBossAt(BossData bossData, Vector3 position)
+        {
+            if (bossData == null || !CanSpawnMoreEnemies) return null;
             EnsurePoolsInitialized();
             EnsureBossPool(bossData);
 
             IObjectPool<EnemyBase> pool = bossPools[bossData];
             EnemyBase enemy = pool.Get();
-            enemy.transform.position = GetValidSpawnPosition();
+            enemy.transform.position = ClampToArena(position);
 
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier, applyMutatorHp: false);
             enemy.SetRuntimeModifiers(ResolveEnemyModifiers());
@@ -1230,8 +1236,10 @@ namespace ProjectB.Enemies
                 enemy.Initialize(bossData, heroTarget, pool, eventBus, hpMultiplier, damageMultiplier);
             }
 
+            if (cachedEnemyDiedHandler == null) cachedEnemyDiedHandler = HandleEnemyDied;
             enemy.OnDied += cachedEnemyDiedHandler;
             activeEnemies.Add(enemy);
+            return enemy;
         }
 
         private void SpawnSummonedMinion(EnemyData minionData, Vector3 nearPosition)
@@ -1311,7 +1319,7 @@ namespace ProjectB.Enemies
                 ? waveConfig.GetOverlapAliveThreshold(currentWave, currentWaveSpawnedCount, isFtueRun, currentWaveIsBoss)
                 : 0;
 
-            if (!isSpawning && activeEnemies.Count <= overlapThreshold)
+            if (!IsWaveFrozen && !isSpawning && activeEnemies.Count <= overlapThreshold)
             {
                 AdvanceWave();
             }
@@ -1319,6 +1327,7 @@ namespace ProjectB.Enemies
 
         private void AdvanceWave()
         {
+            if (IsWaveFrozen) return;
             StopWaveCoroutines();
             currentWaveSpawnedCount = 0;
             currentWaveIsBoss = false;
@@ -1383,7 +1392,81 @@ namespace ProjectB.Enemies
             int prev = currentWave;
             currentWave = Mathf.Max(1, targetWave);
             eventBus?.Publish(new WaveCompletedEvent(prev, currentWave));
-            spawnWaveCoroutine = StartCoroutine(SpawnWaveCoroutine());
+            if (!IsWaveFrozen)
+            {
+                spawnWaveCoroutine = StartCoroutine(SpawnWaveCoroutine());
+            }
+        }
+
+        // ---- Debug / test mode (used by DebugCheatMenu) ----
+
+        /// <summary>True while wave spawning and wave advancement are suspended for testing.</summary>
+        public bool IsWaveFrozen { get; private set; }
+
+        /// <summary>
+        /// Freezes or unfreezes the wave flow. While frozen no wave mobs spawn and the wave never advances;
+        /// enemies already on the map (and their summons) keep acting. Unfreezing restarts the current wave.
+        /// </summary>
+        public void SetWavesFrozen(bool frozen)
+        {
+            if (!Application.isPlaying || IsWaveFrozen == frozen) return;
+            IsWaveFrozen = frozen;
+            if (frozen)
+            {
+                StopWaveCoroutines();
+                currentWaveSpawnedCount = 0;
+                return;
+            }
+
+            currentWaveSpawnedCount = 0;
+            currentWaveIsBoss = false;
+            if (heroHealth == null || !heroHealth.IsDead)
+            {
+                spawnWaveCoroutine = StartCoroutine(SpawnWaveCoroutine());
+            }
+        }
+
+        /// <summary>Removes every active enemy without XP, coin or kill rewards.</summary>
+        public int DespawnAllActiveEnemies()
+        {
+            if (!Application.isPlaying) return 0;
+            CopyActiveEnemiesToBuffer();
+            int removed = 0;
+            for (int i = 0; i < enemyIterationBuffer.Count; i++)
+            {
+                var e = enemyIterationBuffer[i];
+                if (e == null) continue;
+                if (cachedEnemyDiedHandler != null) e.OnDied -= cachedEnemyDiedHandler;
+                e.Despawn();
+                removed++;
+            }
+            activeEnemies.Clear();
+            enemyIterationBuffer.Clear();
+            ClearActiveFrostZones();
+            CheckWaveEnd();
+            return removed;
+        }
+
+        /// <summary>
+        /// Spawns one enemy (or boss) near the hero with the current wave's HP/damage scaling.
+        /// Bosses use the full boss initialization (patterns, summons, HP bar).
+        /// </summary>
+        public EnemyBase DebugSpawnEnemyNearHero(EnemyData data, float distance = 7f, bool makeElite = false)
+        {
+            if (!Application.isPlaying || data == null || heroTarget == null || !CanSpawnMoreEnemies) return null;
+            EnsurePoolsInitialized();
+
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * Mathf.Max(1f, distance);
+            Vector3 pos = GetValidPositionNear(heroTarget.position + offset, 0f, 2f);
+
+            if (data is BossData bossData)
+            {
+                return SpawnBossAt(bossData, pos);
+            }
+
+            EnemyBase enemy = SpawnEnemyForWave(data, pos, currentWave, makeElite, PickEliteArchetype(Random.value));
+            return enemy;
         }
 
         public void KillAllActiveEnemies()
