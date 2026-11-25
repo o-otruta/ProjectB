@@ -384,7 +384,7 @@
 - [x] **14.2.** Камера по короткой стороне (`CameraConfig`), радиус спавна от проекции фрустума + кламп компаса к HUD.
 - [x] **14.3.** Мультиввод (`InputActionAsset`, `MoveInput`-агрегатор для Touch + клавиатуры + геймпада, подсказки и системная кнопка Back).
 - [x] **14.4.** Ландшафтные раскладки всех экранов меню, HUD, Pause и Game Over; прогон `9:21 / 4:3 / 16:10 / 21:9` и замер draw calls (13.6 — `9 <= 10`).
-- [ ] **14.5.** Web-билд (Poki или CrazyGames): Build Profile `Web`, Quality `Web`, браузерный lifecycle, `IAdProvider` / `IPlatformEvents` / `ISaveStorage`.
+- [~] **14.5.** Web-билд (Poki или CrazyGames): *(Basic Launch WebGL готов: `15.91 МБ`, `5` файлов без DoNotShip, Chrome смоук-тест 119.5 FPS и 0 ошибок; далее замер Firefox/Edge/моб. Chrome и Фаза 5 — CrazyGames SDK)* Build Profile `Web`, Quality `Web`, браузерный lifecycle, `IAdProvider` / `IPlatformEvents` / `ISaveStorage`.
 - [ ] **14.6.** Дешёвые порты после Google Play (Samsung Galaxy Store, TapTap, Steam; Amazon — бэклог).
 - [ ] **14.7.** Тесты `Sprint14MultiplatformTests`, скриншоты и смоук-тест Web-билда.
 

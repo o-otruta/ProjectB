@@ -94,6 +94,7 @@ namespace ProjectB.Meta
                 string json = JsonUtility.ToJson(Data, false);
                 PlayerPrefs.SetString(SAVE_KEY, json);
                 PlayerPrefs.Save();
+                WebBrowserBridge.FlushStorage();
                 IsDirty = false;
                 OnDataChanged?.Invoke();
             }

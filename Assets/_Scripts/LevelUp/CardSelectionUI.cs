@@ -394,6 +394,7 @@ namespace ProjectB.LevelUp
         {
             if (cardSlots == null) return;
 
+            bool adsSupported = adManager == null || adManager.IsAdsAvailable;
             bool canWatchAd = adManager != null && adManager.CanShowRewarded();
             int count = currentCards != null ? currentCards.Count : 0;
 
@@ -401,10 +402,16 @@ namespace ProjectB.LevelUp
             {
                 if (cardSlots[i] == null) continue;
 
+                bool requiresAd = i >= freeCardsCount;
+                if (requiresAd && !adsSupported)
+                {
+                    cardSlots[i].gameObject.SetActive(false);
+                    continue;
+                }
+
                 if (i < count)
                 {
                     int slotIndex = i;
-                    bool requiresAd = slotIndex >= freeCardsCount;
                     CardData cardData = currentCards[slotIndex];
                     string badgeLabel = FormatLevelBadge(cardData, heroAbilities, out Color badgeColor);
 
@@ -428,7 +435,8 @@ namespace ProjectB.LevelUp
 
         private void RefreshRerollButton()
         {
-            bool showButton = onRerollCallback != null;
+            bool adsSupported = adManager == null || adManager.IsAdsAvailable;
+            bool showButton = onRerollCallback != null && (freeRerollsAvailable > 0 || adsSupported);
             if (rerollButton != null)
             {
                 rerollButton.gameObject.SetActive(showButton);

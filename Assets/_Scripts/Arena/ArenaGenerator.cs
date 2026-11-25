@@ -430,8 +430,11 @@ namespace ProjectB.Arena
 
         private void GenerateDecorations()
         {
-            int primaryCount = (_config.DecorationPrefabs != null && _config.DecorationPrefabs.Length > 0)
+            int rawPrimaryCount = (_config.DecorationPrefabs != null && _config.DecorationPrefabs.Length > 0)
                 ? Range(_config.MinDecorations, _config.MaxDecorations + 1)
+                : 0;
+            int primaryCount = rawPrimaryCount > 0
+                ? Mathf.Max(0, Mathf.RoundToInt(rawPrimaryCount * _config.ResolveGrassDensityMultiplier()))
                 : 0;
             int propCount = (_config.PropDecorationPrefabs != null && _config.PropDecorationPrefabs.Length > 0)
                 ? Range(Mathf.Max(0, _config.MinPropDecorations), Mathf.Max(_config.MinPropDecorations, _config.MaxPropDecorations) + 1)

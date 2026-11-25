@@ -748,7 +748,42 @@ namespace ProjectB.Tests.EditMode
             // Hygiene 1: ProjectB_PostFX clean (only Bloom, Vignette, ColorAdjustments)
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>("Assets/Settings/ProjectB_PostFX.asset");
             Assert.IsNotNull(profile);
-            Assert.AreEqual(3, profile.components.Count, "ProjectB_PostFX must contain only Bloom, Vignette, ColorAdjustments");
+            // ProjectB_PostFX is the URP Default Volume Profile, so URP 17 auto-populates it on build with every
+            // VolumeComponent at neutral default values. Only Bloom, Vignette and ColorAdjustments may have a visible effect.
+            foreach (VolumeComponent component in profile.components)
+            {
+                if (component is Bloom || component is Vignette || component is ColorAdjustments)
+                {
+                    Assert.IsTrue(((IPostProcessComponent)component).IsActive(), $"ProjectB_PostFX: {component.GetType().Name} must stay active");
+                }
+                else if (component is ColorCurves curves)
+                {
+                    // URP always reports ColorCurves as active; require identity (default) curves instead.
+                    var defaults = ScriptableObject.CreateInstance<ColorCurves>();
+                    try
+                    {
+                        for (int p = 0; p < curves.parameters.Count; p++)
+                        {
+                            var actual = ((TextureCurveParameter)curves.parameters[p]).value;
+                            var expected = ((TextureCurveParameter)defaults.parameters[p]).value;
+                            Assert.AreEqual(expected.length, actual.length, $"ProjectB_PostFX: ColorCurves[{p}] must be the default curve");
+                            for (int k = 0; k < actual.length; k++)
+                            {
+                                Assert.AreEqual(expected[k].time, actual[k].time, 0.0001f, $"ProjectB_PostFX: ColorCurves[{p}] must be the default curve");
+                                Assert.AreEqual(expected[k].value, actual[k].value, 0.0001f, $"ProjectB_PostFX: ColorCurves[{p}] must be the default curve");
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        UnityEngine.Object.DestroyImmediate(defaults);
+                    }
+                }
+                else if (component is IPostProcessComponent postFx)
+                {
+                    Assert.IsFalse(postFx.IsActive(), $"ProjectB_PostFX: only Bloom, Vignette, ColorAdjustments may be active, found {component.GetType().Name}");
+                }
+            }
             Assert.IsTrue(profile.TryGet<Bloom>(out _));
             Assert.IsTrue(profile.TryGet<Vignette>(out _));
             Assert.IsTrue(profile.TryGet<ColorAdjustments>(out _));

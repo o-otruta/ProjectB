@@ -100,5 +100,31 @@ namespace ProjectB.Data
         [Min(0f)]
         [Tooltip("Maximum distance from arena center for the Challenge Shrine")]
         public float ShrineMaxDistanceFromCenter = 48f;
+
+        [Header("Platform Quality Overrides")]
+        [Range(0.1f, 1f)]
+        [Tooltip("Grass density multiplier on Web / WebGL quality level (30-50% recommended)")]
+        public float WebGrassDensityMultiplier = 0.4f;
+
+        /// <summary>
+        /// Returns the grass decoration density multiplier for the active platform/quality level.
+        /// Reduces grass count on WebGL or under the "Web" quality level without altering mobile/PC scenes.
+        /// </summary>
+        public float ResolveGrassDensityMultiplier(string qualityLevelName = null, bool? isWebGlOverride = null)
+        {
+            bool isWeb = isWebGlOverride ?? (Application.platform == RuntimePlatform.WebGLPlayer);
+            string qName = qualityLevelName;
+            if (qName == null)
+            {
+                string[] names = QualitySettings.names;
+                int idx = QualitySettings.GetQualityLevel();
+                qName = (names != null && idx >= 0 && idx < names.Length) ? names[idx] : string.Empty;
+            }
+            if (isWeb || string.Equals(qName, "Web", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return Mathf.Clamp(WebGrassDensityMultiplier, 0.1f, 1f);
+            }
+            return 1f;
+        }
     }
 }

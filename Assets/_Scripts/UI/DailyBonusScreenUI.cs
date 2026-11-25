@@ -205,11 +205,29 @@ namespace ProjectB.UI
                 && data.rewards.Length > 0
                 && data.rewards[Mathf.Clamp(currentDay - 1, 0, data.rewards.Length - 1)].rewardType == DailyBonusRewardType.Coins;
 
-            if (claimButton != null) claimButton.gameObject.SetActive(isRewardAvailable);
+            bool adsSupported = adManager == null || adManager.IsAdsAvailable;
+            bool showDouble = isRewardAvailable && isCoinsReward && adsSupported;
+
+            if (claimButton != null)
+            {
+                claimButton.gameObject.SetActive(isRewardAvailable);
+                if (isRewardAvailable && !showDouble && claimButton.transform is RectTransform claimRt)
+                {
+                    Vector2 pos = claimRt.anchoredPosition;
+                    if (pos.x < -1f)
+                    {
+                        pos.x = 0f;
+                        claimRt.anchoredPosition = pos;
+                    }
+                }
+            }
             if (claimDoubleButton != null)
             {
-                claimDoubleButton.gameObject.SetActive(isRewardAvailable && isCoinsReward);
-                claimDoubleButton.interactable = adManager == null || adManager.CanShowRewarded();
+                claimDoubleButton.gameObject.SetActive(showDouble);
+                if (showDouble)
+                {
+                    claimDoubleButton.interactable = adManager == null || adManager.CanShowRewarded();
+                }
             }
             if (allClaimedMessage != null) allClaimedMessage.SetActive(!isRewardAvailable);
         }

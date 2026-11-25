@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Profile;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using ProjectB.Ads;
@@ -16,6 +20,7 @@ using ProjectB.Core;
 using ProjectB.Core.Events;
 using ProjectB.Data;
 using ProjectB.Data.Enemies;
+using ProjectB.Data.Meta;
 using ProjectB.Data.Platform;
 using ProjectB.EditorScripts;
 using ProjectB.Enemies;
@@ -1548,6 +1553,212 @@ namespace ProjectB.Tests.EditMode
             adaptive.Apply(LayoutMode.Landscape, 21f / 9f, 2.2f);
             Assert.AreEqual(3, grid.constraintCount);
             Assert.AreEqual(490f, grid.cellSize.x, 1f);
+        }
+
+        // ───────────────────────── 14.5 WebGL Basic Launch (No SDK) ─────────────────────────
+
+        private static void SetField(object target, string fieldName, object value)
+        {
+            var fi = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.IsNotNull(fi, $"Missing field {target.GetType().Name}.{fieldName}");
+            fi.SetValue(target, value);
+        }
+
+        [Test]
+        public void ArenaConfig_WebGrassDensityMultiplier_ScalesTo30To50PercentOnWebOnly()
+        {
+            ArenaConfig cfg = AssetDatabase.LoadAssetAtPath<ArenaConfig>("Assets/_ScriptableObjects/ArenaConfig.asset");
+            Assert.IsNotNull(cfg, "ArenaConfig.asset missing");
+            Assert.GreaterOrEqual(cfg.WebGrassDensityMultiplier, 0.3f);
+            Assert.LessOrEqual(cfg.WebGrassDensityMultiplier, 0.5f);
+
+            Assert.AreEqual(1f, cfg.ResolveGrassDensityMultiplier("Mobile", false), 0.001f);
+            Assert.AreEqual(1f, cfg.ResolveGrassDensityMultiplier("PC", false), 0.001f);
+            Assert.AreEqual(cfg.WebGrassDensityMultiplier, cfg.ResolveGrassDensityMultiplier("Web", false), 0.001f);
+            Assert.AreEqual(cfg.WebGrassDensityMultiplier, cfg.ResolveGrassDensityMultiplier("Mobile", true), 0.001f);
+        }
+
+        [Test]
+        public void NullAdProvider_HidesAllFiveRewardedUiControls_WhileKeepingFreeReroll()
+        {
+            string prevSave = PlayerPrefs.GetString(SaveManager.SAVE_KEY, null);
+            try
+            {
+                PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                var save = new SaveManager();
+                var adConfig = Resources.Load<AdConfig>(AdManager.CONFIG_RESOURCE_PATH);
+                var adManager = new AdManager(save, adConfig, new NullAdProvider());
+
+                Assert.IsFalse(adManager.IsAdsAvailable);
+                Assert.IsFalse(adManager.CanShowRewarded());
+                Assert.IsFalse(adManager.ShouldShowInterstitial());
+
+                // 1. CardSelectionUI: 3rd ad card hidden; ad reroll hidden when free rerolls == 0; free reroll shown when > 0
+                var csGo = Track(new GameObject("CardSelection", typeof(RectTransform), typeof(CardSelectionUI)));
+                var csPanel = new GameObject("Panel", typeof(RectTransform));
+                csPanel.transform.SetParent(csGo.transform, false);
+                var slots = new CardUI[3];
+                for (int i = 0; i < 3; i++)
+                {
+                    var sGo = new GameObject("Slot" + i, typeof(RectTransform), typeof(Button), typeof(CardUI));
+                    sGo.transform.SetParent(csPanel.transform, false);
+                    slots[i] = sGo.GetComponent<CardUI>();
+                }
+                var rerollGo = new GameObject("RerollBtn", typeof(RectTransform), typeof(Button));
+                rerollGo.transform.SetParent(csPanel.transform, false);
+                var cs = csGo.GetComponent<CardSelectionUI>();
+                SetField(cs, "selectionPanel", csPanel);
+                SetField(cs, "cardSlots", slots);
+                SetField(cs, "rerollButton", rerollGo.GetComponent<Button>());
+                cs.Construct(adManager: adManager);
+
+                var c1 = ScriptableObject.CreateInstance<StatUpgradeCardData>();
+                var c2 = ScriptableObject.CreateInstance<StatUpgradeCardData>();
+                var c3 = ScriptableObject.CreateInstance<StatUpgradeCardData>();
+                Track(c1); Track(c2); Track(c3);
+                var offer = new List<CardData> { c1, c2, c3 };
+
+                cs.ShowCards(offer, _ => { }, (_, __) => offer, freeRerolls: 1);
+                Assert.IsTrue(slots[0].gameObject.activeSelf);
+                Assert.IsTrue(slots[1].gameObject.activeSelf);
+                Assert.IsFalse(slots[2].gameObject.activeSelf, "3rd ad card must be hidden when no ad SDK");
+                Assert.IsTrue(rerollGo.activeSelf, "Free reroll stays visible");
+
+                cs.ShowCards(offer, _ => { }, (_, __) => offer, freeRerolls: 0);
+                Assert.IsFalse(rerollGo.activeSelf, "Ad-only reroll button must be hidden when no ad SDK");
+
+                // 2. GameOverUI: Revive and Double Coins buttons hidden
+                var gmGo = Track(new GameObject("GM", typeof(GameManager)));
+                var gm = gmGo.GetComponent<GameManager>();
+                gm.Construct(null, null, save, new RunStatistics(), null, new GameEventBus(), adManager: adManager);
+                Assert.IsFalse(gm.IsAdsAvailable);
+
+                var goUiObj = Track(new GameObject("GameOver", typeof(RectTransform), typeof(GameOverUI)));
+                var goPanel = new GameObject("Panel", typeof(RectTransform));
+                goPanel.transform.SetParent(goUiObj.transform, false);
+                var reviveBtn = new GameObject("ReviveBtn", typeof(RectTransform), typeof(Button)).GetComponent<Button>();
+                var doubleBtn = new GameObject("DoubleBtn", typeof(RectTransform), typeof(Button)).GetComponent<Button>();
+                reviveBtn.transform.SetParent(goPanel.transform, false);
+                doubleBtn.transform.SetParent(goPanel.transform, false);
+                var goUi = goUiObj.GetComponent<GameOverUI>();
+                SetField(goUi, "panel", goPanel);
+                SetField(goUi, "reviveButton", reviveBtn);
+                SetField(goUi, "doubleCoinsButton", doubleBtn);
+                goUi.Construct(gm, null, saveManager: save);
+                goUi.Show(4, 120);
+                Assert.IsFalse(reviveBtn.gameObject.activeSelf, "Revive ad button must be hidden when no ad SDK");
+                Assert.IsFalse(doubleBtn.gameObject.activeSelf, "Double coins ad button must be hidden when no ad SDK");
+
+                // 3. DailyBonusScreenUI: Claim stays visible, ClaimDouble hidden
+                var bonusManager = new DailyBonusManager(save);
+                var dailyGo = Track(new GameObject("Daily", typeof(RectTransform), typeof(DailyBonusScreenUI)));
+                var claimBtn = new GameObject("ClaimBtn", typeof(RectTransform), typeof(Button)).GetComponent<Button>();
+                var claimDoubleBtn = new GameObject("ClaimDoubleBtn", typeof(RectTransform), typeof(Button)).GetComponent<Button>();
+                claimBtn.transform.SetParent(dailyGo.transform, false);
+                claimDoubleBtn.transform.SetParent(dailyGo.transform, false);
+                var dailyUi = dailyGo.GetComponent<DailyBonusScreenUI>();
+                SetField(dailyUi, "claimButton", claimBtn);
+                SetField(dailyUi, "claimDoubleButton", claimDoubleBtn);
+                dailyUi.Construct(bonusManager, adManager);
+                typeof(DailyBonusScreenUI).GetMethod("RefreshUI", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(dailyUi, null);
+                Assert.IsTrue(claimBtn.gameObject.activeSelf);
+                Assert.IsFalse(claimDoubleBtn.gameObject.activeSelf, "Daily double ad button must be hidden when no ad SDK");
+            }
+            finally
+            {
+                if (string.IsNullOrEmpty(prevSave)) PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                else PlayerPrefs.SetString(SaveManager.SAVE_KEY, prevSave);
+            }
+        }
+
+        [Test]
+        public void AudioManager_WebGlUserGesture_DefersMusicUntilUnlocked()
+        {
+            string prevSave = PlayerPrefs.GetString(SaveManager.SAVE_KEY, null);
+            try
+            {
+                PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                var save = new SaveManager();
+                var catalog = Resources.Load<AudioCatalog>(AudioManager.CATALOG_RESOURCE_PATH);
+                var audio = new AudioManager(save, catalog);
+                audio.SetRequiresUserGestureForTesting(true);
+                Assert.IsFalse(audio.IsAudioUnlocked);
+
+                audio.PlayMusic(MusicType.Menu);
+                Assert.AreEqual(MusicType.Menu, audio.CurrentMusic);
+                Assert.IsFalse(audio.IsAudioUnlocked);
+
+                audio.NotifyUserGestureUnlocked();
+                Assert.IsTrue(audio.IsAudioUnlocked);
+            }
+            finally
+            {
+                if (string.IsNullOrEmpty(prevSave)) PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                else PlayerPrefs.SetString(SaveManager.SAVE_KEY, prevSave);
+            }
+        }
+
+        [Test]
+        public void WebBrowserLifecycle_HiddenTab_FlushesDirtySave_AndUnlocksAudioOnGesture()
+        {
+            string prevSave = PlayerPrefs.GetString(SaveManager.SAVE_KEY, null);
+            try
+            {
+                PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                var save = new SaveManager();
+                save.AddCoins(25, saveImmediately: false);
+                Assert.IsTrue(save.IsDirty);
+
+                var audio = new AudioManager(save, null);
+                audio.SetRequiresUserGestureForTesting(true);
+
+                var gmGo = Track(new GameObject("TestWebLifecycleGM", typeof(GameManager)));
+                var gm = gmGo.GetComponent<GameManager>();
+                gm.Construct(null, null, save, new RunStatistics(), null, new GameEventBus());
+
+                var lifecycle = new WebBrowserLifecycle(audio, save);
+                lifecycle.HandleUserGesture();
+                Assert.IsTrue(audio.IsAudioUnlocked);
+
+                lifecycle.HandleVisibilityChanged(true, gm);
+                Assert.IsFalse(save.IsDirty, "Hiding tab must flush dirty SaveManager state");
+                Assert.IsTrue(gm.IsPaused, "Hiding tab must pause active GameManager");
+            }
+            finally
+            {
+                Time.timeScale = 1f;
+                if (string.IsNullOrEmpty(prevSave)) PlayerPrefs.DeleteKey(SaveManager.SAVE_KEY);
+                else PlayerPrefs.SetString(SaveManager.SAVE_KEY, prevSave);
+            }
+        }
+
+        [Test]
+        public void WebBuildConfiguration_HasBuildProfile_QualityWeb_Brotli_StrippingMedium_LinkXml_AndTemplate()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>("Assets/Settings/Build Profiles/Web.asset");
+            Assert.IsNotNull(profile, "Web BuildProfile missing");
+
+            var webRp = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/Web_RPAsset.asset");
+            Assert.IsNotNull(webRp, "Web_RPAsset missing");
+            Assert.AreEqual(1, webRp.msaaSampleCount, "MSAA must be disabled on Web");
+            Assert.LessOrEqual(webRp.shadowDistance, 25f);
+
+            int webQualityIdx = Array.IndexOf(QualitySettings.names, "Web");
+            Assert.GreaterOrEqual(webQualityIdx, 0, "Quality level 'Web' missing");
+
+            Assert.IsFalse(PlayerSettings.runInBackground, "runInBackground must be false for WebGL");
+            Assert.AreEqual(WebGLCompressionFormat.Brotli, PlayerSettings.WebGL.compressionFormat);
+            // Unity 6 Medium (--rule-set=Aggressive) strips VContainer.InjectAttribute : PreserveAttribute even with link.xml; Low (--rule-set=Conservative) preserves it.
+            Assert.AreEqual(ManagedStrippingLevel.Low, PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL));
+            Assert.AreEqual(Il2CppCodeGeneration.OptimizeSize, PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.WebGL));
+            Assert.AreEqual("PROJECT:ProjectB_Web", PlayerSettings.WebGL.template);
+
+            Assert.IsTrue(File.Exists("Assets/link.xml"), "Assets/link.xml missing");
+            string linkXml = File.ReadAllText("Assets/link.xml");
+            StringAssert.Contains("VContainer", linkXml);
+            StringAssert.Contains("MeshCollider", linkXml);
+            Assert.IsTrue(File.Exists("Assets/WebGLTemplates/ProjectB_Web/index.html"), "WebGL template index.html missing");
+            Assert.IsTrue(File.Exists("Assets/Plugins/WebGL/ProjectBWebBridge.jslib"), "ProjectBWebBridge.jslib missing");
         }
     }
 }

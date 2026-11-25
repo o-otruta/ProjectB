@@ -27,11 +27,15 @@ namespace ProjectB.Core
         private int nextSfxIndex;
         private MusicType currentMusic = MusicType.None;
         private float musicDuckMultiplier = 1f;
+        private bool requiresUserGesture;
+        private bool isAudioUnlocked = true;
 
         public float MusicVolume => saveManager?.Data != null ? Mathf.Clamp01(saveManager.Data.musicVolume) : 1f;
         public float SfxVolume => saveManager?.Data != null ? Mathf.Clamp01(saveManager.Data.sfxVolume) : 1f;
         public bool IsMusicDucked => musicDuckMultiplier < 0.99f;
         public MusicType CurrentMusic => currentMusic;
+        public bool RequiresUserGesture => requiresUserGesture;
+        public bool IsAudioUnlocked => isAudioUnlocked;
         public float EffectiveMusicVolume => MusicVolume * (catalog != null ? catalog.musicBaseVolume : 0.5f) * musicDuckMultiplier;
 
         [Inject]
@@ -46,9 +50,32 @@ namespace ProjectB.Core
             this.catalog = catalog;
             lastSfxPlayTimes = new float[Enum.GetValues(typeof(SfxType)).Length];
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+            requiresUserGesture = true;
+            isAudioUnlocked = false;
+#endif
+
             if (Application.isPlaying)
             {
                 InitializeAudioHost();
+            }
+        }
+
+        public void SetRequiresUserGestureForTesting(bool required)
+        {
+            requiresUserGesture = required;
+            isAudioUnlocked = !required;
+        }
+
+        public void NotifyUserGestureUnlocked()
+        {
+            if (isAudioUnlocked) return;
+            isAudioUnlocked = true;
+
+            if (currentMusic != MusicType.None && musicSource != null && musicSource.clip != null && !musicSource.isPlaying)
+            {
+                ApplyVolumes();
+                musicSource.Play();
             }
         }
 
@@ -129,7 +156,7 @@ namespace ProjectB.Core
                 musicSource.clip = clip;
             }
             ApplyVolumes();
-            if (!musicSource.isPlaying)
+            if (isAudioUnlocked && !musicSource.isPlaying)
             {
                 musicSource.Play();
             }

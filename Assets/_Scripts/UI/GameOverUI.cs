@@ -555,20 +555,29 @@ namespace ProjectB.UI
 
         private void RefreshAdButtons()
         {
+            bool adsSupported = gameManager == null || gameManager.IsAdsAvailable;
             bool canRevive = gameManager != null && gameManager.CanRevive;
             bool canDouble = gameManager != null && gameManager.CanDoubleCoins;
 
             if (reviveButton != null)
             {
-                reviveButton.interactable = canRevive;
+                reviveButton.gameObject.SetActive(adsSupported);
+                if (adsSupported)
+                {
+                    reviveButton.interactable = canRevive;
+                }
             }
 
             if (doubleCoinsButton != null)
             {
-                doubleCoinsButton.interactable = canDouble;
+                doubleCoinsButton.gameObject.SetActive(adsSupported);
+                if (adsSupported)
+                {
+                    doubleCoinsButton.interactable = canDouble;
+                }
             }
 
-            if (doubleCoinsButtonText != null)
+            if (doubleCoinsButtonText != null && adsSupported)
             {
                 doubleCoinsButtonText.text = (gameManager != null && gameManager.HasDoubledCoinsThisRun)
                     ? Loc.Get("ui.gameover.doubled", "DOUBLED!")

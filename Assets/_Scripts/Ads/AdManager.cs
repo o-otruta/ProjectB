@@ -30,6 +30,7 @@ namespace ProjectB.Ads
             }
         }
         public bool IsShowingAd => isShowingAd;
+        public bool IsAdsAvailable => provider != null && !(provider is NullAdProvider);
         public float ReviveInvulnerabilitySeconds => config != null ? Mathf.Max(0f, config.reviveInvulnerabilitySeconds) : 3f;
 
         public event Action OnAdStateChanged;
@@ -53,6 +54,8 @@ namespace ProjectB.Ads
         {
 #if GOOGLE_MOBILE_ADS && !UNITY_EDITOR
             return new AdMobAdProvider();
+#elif UNITY_WEBGL && !UNITY_EDITOR && !PLATFORM_CRAZYGAMES
+            return new NullAdProvider();
 #else
             return new MockAdProvider();
 #endif

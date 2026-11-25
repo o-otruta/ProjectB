@@ -38,6 +38,7 @@ namespace ProjectB.Core
             builder.RegisterEntryPoint<LayoutModeService>().AsSelf();
             builder.Register<InputModeService>(Lifetime.Singleton);
             builder.RegisterEntryPoint<OrientationPolicyService>().AsSelf();
+            builder.RegisterEntryPoint<WebBrowserLifecycle>().AsSelf();
 
             // Sprint 14.3: multi-input config and project-wide InputActionAsset service.
             InputConfig inputConfig = Resources.Load<InputConfig>(InputConfig.RESOURCE_PATH);

@@ -55,3 +55,4 @@ MonoBehaviour:
   ChallengeShrinePrefab: {fileID: 1197867940534599887, guid: 1ad295e1878fc8542ac5283e0c761480, type: 3}
   ShrineMinDistanceFromCenter: 18
   ShrineMaxDistanceFromCenter: 48
+  WebGrassDensityMultiplier: 0.4

@@ -600,7 +600,7 @@
   - HUD: блок героя слева сверху, слоты колонкой, ульта справа снизу;
   - Pause и Game Over — две колонки;
   - прогон 9:21 / 4:3 / 16:10 / 21:9 и замер draw calls HUD (закрывает 13.6).
-- [ ] **14.5. Web-билд: Poki или CrazyGames** *(первый релиз, 5.2)*:
+- [~] **14.5. Web-билд: Poki или CrazyGames** *(Basic Launch WebGL готов: `15.91 МБ`, `5` файлов без DoNotShip, Chrome смоук-тест 119.5 FPS и 0 ошибок; далее Firefox/Edge/моб. Chrome и Фаза 5 — CrazyGames SDK; первый релиз, 5.2)*:
   - Общий Build Profile `Web`: WebGL2, Brotli/Gzip, IL2CPP `Size`, Managed Stripping `Medium` + `link.xml` для VContainer, Vorbis. Define площадки — `PLATFORM_POKI` или `PLATFORM_CRAZYGAMES`.
   - Quality `Web`: трава 30–50%, короткие тени, без MSAA; `runInBackground = false`.
   - Жизненный цикл браузера: пауза на скрытие вкладки (общая логика с 15.1), музыка после первого клика, перехват `Space` и стрелок.

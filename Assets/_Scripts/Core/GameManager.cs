@@ -80,6 +80,7 @@ namespace ProjectB.Core
         public bool CanPause => currentState == GameState.Playing;
         public bool HasRevivedThisRun => hasRevivedThisRun;
         public bool HasDoubledCoinsThisRun => hasDoubledCoinsThisRun;
+        public bool IsAdsAvailable => adManager == null || adManager.IsAdsAvailable;
         public bool CanRevive => currentState == GameState.GameOver
             && !hasRevivedThisRun
             && (adManager == null || adManager.CanShowRewarded());
