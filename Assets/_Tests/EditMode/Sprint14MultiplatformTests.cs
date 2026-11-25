@@ -1302,5 +1302,252 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(compass.EvaluateIndicatorState(Vector3.zero, new Vector3(0f, 0f, -40f), cam, new Vector2(1920f, 1080f), 60f, out Vector2 bottomLand, out _, out _));
             Assert.GreaterOrEqual(bottomLand.y, -1080f * 0.5f + camCfg.landscapeCompassMargins.bottom - 0.1f, "Bottom HUD zone must be respected in Landscape");
         }
+
+        // ───────────────────────── 14.4 Landscape Layouts & HUD Consolidation ─────────────────────────
+
+        [Test]
+        public void MainMenu_LandscapeLayouts_HaveLeftNavRail_Grids_DailyRow_AndRightConstellationSheet()
+        {
+            const string mainMenuScenePath = "Assets/_Scenes/MainMenu.unity";
+            Scene loaded = SceneManager.GetSceneByPath(mainMenuScenePath);
+            bool openedHere = !loaded.isLoaded;
+            Scene scene = openedHere ? EditorSceneManager.OpenScene(mainMenuScenePath, OpenSceneMode.Additive) : loaded;
+            try
+            {
+                Transform safe = null;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    safe = root.transform.Find("SafeAreaRoot");
+                    if (safe != null) break;
+                }
+                Assert.IsNotNull(safe, "MainMenu SafeAreaRoot missing");
+
+                Transform bottomBar = safe.Find("BottomBar");
+                Assert.IsNotNull(bottomBar);
+                var bottomAdaptive = bottomBar.GetComponent<AdaptiveLayoutGroup>();
+                Assert.IsNotNull(bottomAdaptive, "BottomBar must use AdaptiveLayoutGroup");
+                Assert.AreEqual(LayoutAxis.Vertical, bottomAdaptive.GetSettings(LayoutMode.Landscape).axis, "Landscape nav rail must stack vertically");
+                var bottomRr = bottomBar.GetComponent<ResponsiveRect>();
+                Assert.IsNotNull(bottomRr);
+                Assert.IsTrue(bottomRr.HasPreset(LayoutMode.Landscape));
+                Assert.LessOrEqual(bottomRr.GetPreset(LayoutMode.Landscape).anchorMax.x, 0.01f, "Left rail anchored on left edge");
+
+                foreach (string panelName in new[] { "UpgradesPanel", "AbilitiesPanel", "AchievementsPanel" })
+                {
+                    Transform panel = safe.Find(panelName);
+                    Assert.IsNotNull(panel, panelName);
+                    var panelRr = panel.GetComponent<ResponsiveRect>();
+                    Assert.IsNotNull(panelRr, $"{panelName} needs ResponsiveRect");
+                    Assert.IsTrue(panelRr.HasPreset(LayoutMode.Landscape));
+
+                    Transform content = panel.Find("ScrollView/Viewport/Content");
+                    Assert.IsNotNull(content, $"{panelName} ScrollView/Viewport/Content missing");
+                    var adaptiveGrid = content.GetComponent<AdaptiveGridLayout>();
+                    Assert.IsNotNull(adaptiveGrid, $"{panelName} Content needs AdaptiveGridLayout");
+                    Assert.IsTrue(adaptiveGrid.FitCellWidthToContainer);
+                    Assert.AreEqual(1, adaptiveGrid.GetSettings(LayoutMode.Portrait).columns);
+                    Assert.AreEqual(2, adaptiveGrid.GetSettings(LayoutMode.Landscape).columns);
+                    Assert.AreEqual(3, adaptiveGrid.UltraWideColumns);
+                }
+
+                Transform daysContainer = safe.Find("DailyBonusScreenPanel/DaysContainer");
+                Assert.IsNotNull(daysContainer);
+                var daysAdaptive = daysContainer.GetComponent<AdaptiveLayoutGroup>();
+                Assert.IsNotNull(daysAdaptive);
+                Assert.AreEqual(LayoutAxis.Vertical, daysAdaptive.GetSettings(LayoutMode.Portrait).axis);
+                Assert.AreEqual(LayoutAxis.Horizontal, daysAdaptive.GetSettings(LayoutMode.Landscape).axis, "Daily 7 days sit in one row in Landscape");
+
+                Transform detailSheet = safe.Find("ConstellationScreen/ConstellationPanel/DetailSheet");
+                Assert.IsNotNull(detailSheet);
+                var detailRr = detailSheet.GetComponent<ResponsiveRect>();
+                Assert.IsNotNull(detailRr);
+                Assert.IsTrue(detailRr.HasPreset(LayoutMode.Landscape));
+                Assert.GreaterOrEqual(detailRr.GetPreset(LayoutMode.Landscape).anchorMin.x, 0.99f, "Constellation detail sheet docks on the right in Landscape");
+
+                Assert.IsTrue(safe.Find("SettingsPopup/PopupPanel/Window").GetComponent<ResponsiveRect>().HasPreset(LayoutMode.Landscape));
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void Gameplay_LandscapeLayouts_HaveTopLeftHeroBlock_ColumnSlots_TwoColumnModals_AndSingleHudCanvas()
+        {
+            Scene loaded = SceneManager.GetSceneByPath(Sprint14InputWiringTool.GAMEPLAY_SCENE);
+            bool openedHere = !loaded.isLoaded;
+            Scene scene = openedHere ? EditorSceneManager.OpenScene(Sprint14InputWiringTool.GAMEPLAY_SCENE, OpenSceneMode.Additive) : loaded;
+            try
+            {
+                Transform canvasTf = null;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    if (root.GetComponent<Canvas>() != null)
+                    {
+                        canvasTf = root.transform;
+                        break;
+                    }
+                }
+                Assert.IsNotNull(canvasTf);
+
+                Transform hud = canvasTf.Find("SafeAreaHUD");
+                Assert.IsNotNull(hud);
+                Assert.IsNotNull(hud.GetComponent<Canvas>(), "SafeAreaHUD owns one consolidated HUD sub-canvas");
+                foreach (string widgetName in new[] { "XpBar", "HpBar", "WaveHud", "CoinHud", "KillsHud", "AbilityHud", "UltimateButton", "BossHealthBar", "ComboHud" })
+                {
+                    Transform child = hud.Find(widgetName);
+                    Assert.IsNotNull(child, widgetName);
+                    Assert.IsNull(child.GetComponent<Canvas>(), $"HUD widget {widgetName} must not carry a separate Canvas (keeps draw calls <= 10)");
+                }
+
+                var topStack = hud.GetComponent<HudTopStack>();
+                Assert.IsNotNull(topStack);
+                Assert.Less(topStack.LandscapeTopOffset, 0f);
+
+                var hpRr = hud.Find("HpBar").GetComponent<ResponsiveRect>();
+                Assert.IsTrue(hpRr.HasPreset(LayoutMode.Landscape));
+                Assert.Less(hpRr.GetPreset(LayoutMode.Landscape).anchorMax.x, 0.2f, "HpBar sits in top-left hero block in Landscape");
+
+                var xpRr = hud.Find("XpBar").GetComponent<ResponsiveRect>();
+                Assert.IsTrue(xpRr.HasPreset(LayoutMode.Landscape));
+                Assert.Less(xpRr.GetPreset(LayoutMode.Landscape).anchorMax.x, 0.2f, "XpBar sits in top-left hero block in Landscape");
+
+                var abilityVl = hud.Find("AbilityHud").GetComponent<VerticalLayoutGroup>();
+                Assert.IsNotNull(abilityVl, "AbilityHud keeps VerticalLayoutGroup for Portrait");
+                var abilityUi = hud.Find("AbilityHud").GetComponent<AbilityHudUI>();
+                Assert.IsInstanceOf<ILayoutModeConsumer>(abilityUi);
+                Assert.AreEqual(LayoutAxis.Vertical, hud.Find("AbilityHud/ActiveSlots").GetComponent<AdaptiveLayoutGroup>().GetSettings(LayoutMode.Landscape).axis);
+                Assert.AreEqual(LayoutAxis.Vertical, hud.Find("AbilityHud/PassiveSlots").GetComponent<AdaptiveLayoutGroup>().GetSettings(LayoutMode.Landscape).axis);
+                Assert.IsTrue(hud.Find("AbilityHud/ActiveSlots").GetComponent<ResponsiveRect>().HasPreset(LayoutMode.Landscape));
+                Assert.IsTrue(hud.Find("AbilityHud/PassiveSlots").GetComponent<ResponsiveRect>().HasPreset(LayoutMode.Landscape));
+
+                Transform pauseBody = canvasTf.Find("PauseMenu/PausePanel/Window/Body");
+                Assert.IsNotNull(pauseBody, "Pause window must contain two-column Body");
+                var pauseAdaptive = pauseBody.GetComponent<AdaptiveLayoutGroup>();
+                Assert.IsNotNull(pauseAdaptive);
+                Assert.AreEqual(LayoutAxis.Vertical, pauseAdaptive.GetSettings(LayoutMode.Portrait).axis);
+                Assert.AreEqual(LayoutAxis.Horizontal, pauseAdaptive.GetSettings(LayoutMode.Landscape).axis);
+                Assert.IsNotNull(pauseBody.Find("LeftColumn/Summary"));
+                Assert.IsNotNull(pauseBody.Find("LeftColumn/BuildGrid"));
+                Assert.IsNotNull(pauseBody.Find("RightColumn/ResumeButton"));
+
+                Transform goCols = canvasTf.Find("GameOverPanel/Content/Layout/Columns");
+                Assert.IsNotNull(goCols, "GameOver layout must contain two-column Columns");
+                var goAdaptive = goCols.GetComponent<AdaptiveLayoutGroup>();
+                Assert.IsNotNull(goAdaptive);
+                Assert.AreEqual(LayoutAxis.Vertical, goAdaptive.GetSettings(LayoutMode.Portrait).axis);
+                Assert.AreEqual(LayoutAxis.Horizontal, goAdaptive.GetSettings(LayoutMode.Landscape).axis);
+                Assert.IsNotNull(goCols.Find("LeftColumn/StatChips"));
+                Assert.IsNotNull(goCols.Find("RightColumn/DamageBreakdownSection"));
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void LayoutModeSwitch_MidLevelUpAndMidPause_PreservesStateAndSwitchesLayoutsCleanly()
+        {
+            Scene loaded = SceneManager.GetSceneByPath(Sprint14InputWiringTool.GAMEPLAY_SCENE);
+            bool openedHere = !loaded.isLoaded;
+            Scene scene = openedHere ? EditorSceneManager.OpenScene(Sprint14InputWiringTool.GAMEPLAY_SCENE, OpenSceneMode.Additive) : loaded;
+            try
+            {
+                Transform canvasTf = null;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    if (root.GetComponent<Canvas>() != null)
+                    {
+                        canvasTf = root.transform;
+                        break;
+                    }
+                }
+                Assert.IsNotNull(canvasTf);
+
+                var cardPanel = canvasTf.Find("CardSelectionPanel").gameObject;
+                var cardsContainer = canvasTf.Find("CardSelectionPanel/Content/CardsContainer");
+                var cardsGroup = cardsContainer.GetComponent<AdaptiveLayoutGroup>();
+                var cardsRr = cardsContainer.GetComponent<ResponsiveRect>();
+                var pausePanel = canvasTf.Find("PauseMenu/PausePanel").gameObject;
+                var pauseBodyGroup = canvasTf.Find("PauseMenu/PausePanel/Window/Body").GetComponent<AdaptiveLayoutGroup>();
+
+                bool origCardActive = cardPanel.activeSelf;
+                bool origPauseActive = pausePanel.activeSelf;
+                try
+                {
+                    cardPanel.SetActive(true);
+                    pausePanel.SetActive(true);
+
+                    foreach (LayoutMode mode in new[] { LayoutMode.Landscape, LayoutMode.Portrait, LayoutMode.Landscape })
+                    {
+                        cardsGroup.ApplyLayoutMode(mode);
+                        cardsRr.ApplyLayoutMode(mode);
+                        pauseBodyGroup.ApplyLayoutMode(mode);
+
+                        Assert.IsTrue(cardPanel.activeSelf, $"CardSelectionPanel must remain active on {mode}");
+                        Assert.IsTrue(pausePanel.activeSelf, $"PausePanel must remain active on {mode}");
+                        Assert.AreEqual(mode == LayoutMode.Portrait, cardsGroup.IsVertical);
+                        Assert.AreEqual(mode == LayoutMode.Portrait, pauseBodyGroup.IsVertical);
+                        Assert.AreEqual(mode, cardsRr.AppliedMode);
+                    }
+                }
+                finally
+                {
+                    cardsGroup.ApplyLayoutMode(LayoutMode.Portrait);
+                    cardsRr.ApplyLayoutMode(LayoutMode.Portrait);
+                    pauseBodyGroup.ApplyLayoutMode(LayoutMode.Portrait);
+                    cardPanel.SetActive(origCardActive);
+                    pausePanel.SetActive(origPauseActive);
+                }
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void BottomTabUI_AndAdaptiveGridLayout_FitContainer_UpdateCleanlyInLandscape()
+        {
+            var tabGo = Track(new GameObject("Tab", typeof(RectTransform), typeof(LayoutElement), typeof(Button), typeof(BottomTabUI)));
+            var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(tabGo.transform, false);
+            var tab = tabGo.GetComponent<BottomTabUI>();
+            var le = tabGo.GetComponent<LayoutElement>();
+            tab.layoutElement = le;
+            tab.iconRect = (RectTransform)iconGo.transform;
+
+            tab.SetActiveState(true, instant: true);
+            tab.ApplyLayoutMode(LayoutMode.Portrait);
+            Assert.AreEqual(tab.activeWidth, le.preferredWidth, 0.5f);
+            Assert.AreEqual(tab.activeIconY, tab.iconRect.anchoredPosition.y, 0.5f);
+
+            tab.ApplyLayoutMode(LayoutMode.Landscape);
+            Assert.AreEqual(tab.landscapeActiveHeight, le.preferredHeight, 0.5f);
+            Assert.AreEqual(tab.landscapeActiveIconY, tab.iconRect.anchoredPosition.y, 0.5f);
+
+            var gridGo = Track(new GameObject("FitGrid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(AdaptiveGridLayout)));
+            ((RectTransform)gridGo.transform).sizeDelta = new Vector2(1600f, 900f);
+            var grid = gridGo.GetComponent<GridLayoutGroup>();
+            grid.padding = new RectOffset(40, 40, 10, 10);
+            var adaptive = gridGo.GetComponent<AdaptiveGridLayout>();
+            adaptive.SetSettings(LayoutMode.Portrait, new GridModeSettings { columns = 1, cellSize = new Vector2(1000f, 190f), spacing = new Vector2(20f, 18f) });
+            adaptive.SetSettings(LayoutMode.Landscape, new GridModeSettings { columns = 2, cellSize = new Vector2(600f, 190f), spacing = new Vector2(24f, 18f) });
+            adaptive.UltraWideColumns = 3;
+            adaptive.FitCellWidthToContainer = true;
+
+            // avail = 1600 - 80 - 24 = 1496 -> 748 per column
+            adaptive.Apply(LayoutMode.Landscape, 16f / 9f, 2.2f);
+            Assert.AreEqual(2, grid.constraintCount);
+            Assert.AreEqual(748f, grid.cellSize.x, 1f);
+            Assert.AreEqual(190f, grid.cellSize.y, 0.5f);
+
+            // 21:9 -> 3 columns: avail = 1600 - 80 - 48 = 1472 -> floor(1472 / 3) = 490
+            adaptive.Apply(LayoutMode.Landscape, 21f / 9f, 2.2f);
+            Assert.AreEqual(3, grid.constraintCount);
+            Assert.AreEqual(490f, grid.cellSize.x, 1f);
+        }
     }
 }

@@ -2,14 +2,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using ProjectB.Data.Platform;
 
 namespace ProjectB.UI
 {
     /// <summary>
-    /// One bottom-navigation tab: the active tab widens, raises and enlarges its icon, fades in its label and the
-    /// accent plate (Sprint 13.2 keeps the original animation, now themed and on unscaled time).
+    /// One bottom-navigation tab: the active tab widens (or grows taller in Landscape left-rail mode),
+    /// raises and enlarges its icon, fades in its label and the accent plate.
     /// </summary>
-    public class BottomTabUI : MonoBehaviour
+    public class BottomTabUI : MonoBehaviour, ILayoutModeConsumer
     {
         [Header("References")]
         public RectTransform iconRect;
@@ -28,8 +29,17 @@ namespace ProjectB.UI
         public float inactiveIconScale = 1.0f;
         public float animationDuration = 0.2f;
 
+        [Header("Landscape Left Rail")]
+        public float landscapeActiveHeight = 184f;
+        public float landscapeInactiveHeight = 148f;
+        public float landscapeActiveIconY = 18f;
+        public float landscapeInactiveIconY = 4f;
+
         private bool isActive = false;
         private bool hasState;
+        private float currentWeight;
+        private LayoutMode currentMode = LayoutMode.Portrait;
+        private LayoutModeBinding layoutBinding;
         private Coroutine animCoroutine;
         private Color plateColor = Color.white;
         private Color labelColor = Color.white;
@@ -37,12 +47,33 @@ namespace ProjectB.UI
         private Color iconInactiveColor = Color.white;
 
         public bool IsActive => isActive;
+        public LayoutMode AppliedMode => currentMode;
 
         private void Awake()
         {
             if (button == null) button = GetComponent<Button>();
             if (layoutElement == null) layoutElement = GetComponent<LayoutElement>();
             ApplyTheme(UiTheme.Current);
+        }
+
+        private void OnEnable()
+        {
+            if (layoutBinding == null) layoutBinding = new LayoutModeBinding(ApplyLayoutMode);
+            if (layoutBinding.Enable())
+            {
+                ApplyLayoutMode(layoutBinding.Service.Mode);
+            }
+        }
+
+        private void OnDisable()
+        {
+            layoutBinding?.Disable();
+        }
+
+        public void ApplyLayoutMode(LayoutMode mode)
+        {
+            currentMode = mode;
+            ApplyState(currentWeight);
         }
 
         public void ApplyTheme(UiTheme theme)
@@ -79,9 +110,7 @@ namespace ProjectB.UI
 
         private IEnumerator AnimateTransition(float targetWeight)
         {
-            float currentWidth = layoutElement != null ? layoutElement.preferredWidth : inactiveWidth;
-            float startWeight = Mathf.Clamp01((currentWidth - inactiveWidth) / (activeWidth - inactiveWidth));
-            if (float.IsNaN(startWeight)) startWeight = 0f;
+            float startWeight = currentWeight;
 
             float time = 0f;
             while (time < animationDuration)
@@ -97,15 +126,31 @@ namespace ProjectB.UI
 
         private void ApplyState(float weight) // weight 0 = inactive, 1 = active
         {
+            currentWeight = weight;
             if (layoutElement != null)
             {
-                layoutElement.preferredWidth = Mathf.Lerp(inactiveWidth, activeWidth, weight);
-                layoutElement.flexibleWidth = 1;
+                if (currentMode == LayoutMode.Landscape)
+                {
+                    layoutElement.preferredWidth = -1f;
+                    layoutElement.flexibleWidth = 1f;
+                    layoutElement.preferredHeight = Mathf.Lerp(landscapeInactiveHeight, landscapeActiveHeight, weight);
+                    layoutElement.flexibleHeight = 1f;
+                }
+                else
+                {
+                    layoutElement.preferredWidth = Mathf.Lerp(inactiveWidth, activeWidth, weight);
+                    layoutElement.flexibleWidth = 1f;
+                    layoutElement.preferredHeight = -1f;
+                    layoutElement.flexibleHeight = 0f;
+                }
             }
 
             if (iconRect != null)
             {
-                iconRect.anchoredPosition = new Vector2(iconRect.anchoredPosition.x, Mathf.Lerp(inactiveIconY, activeIconY, weight));
+                float targetY = currentMode == LayoutMode.Landscape
+                    ? Mathf.Lerp(landscapeInactiveIconY, landscapeActiveIconY, weight)
+                    : Mathf.Lerp(inactiveIconY, activeIconY, weight);
+                iconRect.anchoredPosition = new Vector2(iconRect.anchoredPosition.x, targetY);
                 float scale = Mathf.Lerp(inactiveIconScale, activeIconScale, weight);
                 iconRect.localScale = new Vector3(scale, scale, 1f);
             }

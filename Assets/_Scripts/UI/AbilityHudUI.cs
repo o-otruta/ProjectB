@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Abilities;
+using ProjectB.Data.Platform;
 
 namespace ProjectB.UI
 {
-    public class AbilityHudUI : MonoBehaviour
+    public class AbilityHudUI : MonoBehaviour, ILayoutModeConsumer
     {
         [SerializeField] private Transform activeSlotsContainer;
         [SerializeField] private Transform passiveSlotsContainer;
@@ -28,6 +30,8 @@ namespace ProjectB.UI
         private readonly List<AbilityHudSlotUI> passiveSlots = new List<AbilityHudSlotUI>(HeroAbilities.MAX_PASSIVE_SLOTS);
         private readonly List<AbilityHudSlotUI> legacySlots = new List<AbilityHudSlotUI>();
         private bool isSubscribed;
+        private LayoutModeBinding layoutBinding;
+        private VerticalLayoutGroup cachedVerticalGroup;
 
         public IReadOnlyList<AbilityHudSlotUI> ActiveSlots => activeSlots;
         public IReadOnlyList<AbilityHudSlotUI> PassiveSlots => passiveSlots;
@@ -50,12 +54,24 @@ namespace ProjectB.UI
 
         private void OnEnable()
         {
+            if (layoutBinding == null) layoutBinding = new LayoutModeBinding(ApplyLayoutMode);
+            if (layoutBinding.Enable())
+            {
+                ApplyLayoutMode(layoutBinding.Service.Mode);
+            }
             Subscribe();
         }
 
         private void OnDisable()
         {
+            layoutBinding?.Disable();
             Unsubscribe();
+        }
+
+        public void ApplyLayoutMode(LayoutMode mode)
+        {
+            if (cachedVerticalGroup == null) cachedVerticalGroup = GetComponent<VerticalLayoutGroup>();
+            if (cachedVerticalGroup != null) cachedVerticalGroup.enabled = (mode == LayoutMode.Portrait);
         }
 
         private void Subscribe()

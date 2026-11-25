@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ProjectB.Data.Platform;
 
 namespace ProjectB.UI
 {
@@ -9,7 +10,7 @@ namespace ProjectB.UI
     /// Followers (e.g. the combo counter) sit right below the priority entry only, so events may overlap them.
     /// Zero-GC: one pass over a fixed array per frame, unscaled time so it also works under pause / Game Over.
     /// </summary>
-    public sealed class HudTopStack : MonoBehaviour
+    public sealed class HudTopStack : MonoBehaviour, ILayoutModeConsumer
     {
         [Serializable]
         public struct Entry
@@ -26,16 +27,37 @@ namespace ProjectB.UI
         [Tooltip("Placed right below entries[0] when it is visible, otherwise at the top offset")]
         [SerializeField] private RectTransform[] priorityFollowers = Array.Empty<RectTransform>();
         [SerializeField] private float topOffset = -250f;
+        [SerializeField] private float landscapeTopOffset = -136f;
         [SerializeField, Min(0f)] private float spacing = 14f;
         [SerializeField, Min(0f)] private float slideSpeed = 14f;
 
         private bool[] wasVisible;
+        private LayoutMode currentMode = LayoutMode.Portrait;
+        private LayoutModeBinding layoutBinding;
 
         public float TopOffset => topOffset;
+        public float LandscapeTopOffset => landscapeTopOffset;
+        public float ActiveTopOffset => currentMode == LayoutMode.Landscape ? landscapeTopOffset : topOffset;
         public float Spacing => spacing;
 
         private void OnEnable()
         {
+            if (layoutBinding == null) layoutBinding = new LayoutModeBinding(ApplyLayoutMode);
+            if (layoutBinding.Enable())
+            {
+                currentMode = layoutBinding.Service.Mode;
+            }
+            Relayout(snap: true);
+        }
+
+        private void OnDisable()
+        {
+            layoutBinding?.Disable();
+        }
+
+        public void ApplyLayoutMode(LayoutMode mode)
+        {
+            currentMode = mode;
             Relayout(snap: true);
         }
 
@@ -56,8 +78,9 @@ namespace ProjectB.UI
             if (wasVisible == null || wasVisible.Length != entries.Length) wasVisible = new bool[entries.Length];
 
             float t = snap ? 1f : 1f - Mathf.Exp(-slideSpeed * Time.unscaledDeltaTime);
-            float cursor = topOffset;
-            float followerY = topOffset;
+            float baseTop = ActiveTopOffset;
+            float cursor = baseTop;
+            float followerY = baseTop;
 
             for (int i = 0; i < entries.Length; i++)
             {

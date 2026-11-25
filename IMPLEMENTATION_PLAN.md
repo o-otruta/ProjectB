@@ -350,7 +350,7 @@
   - Game Over — `NEW BEST!`, count-up наград, авто-высота breakdown, перестроенные кнопки;
   - попапы и тосты.
 - [x] **13.5. Game Feel UI:** *(без опциональной вибрации)* клик-SFX, переходы, count-up, пульс бейджей.
-- [~] **13.6. Адаптивность и производительность:** *(открыт замер draw calls на устройстве и прогон 9:21 / 21:9 / 4:3)* `9:16` / `9:19.5` / `9:21`, `SafeAreaFitter` везде, разделение HUD-канвасов, HUD ≤ 10 draw calls и 0 B GC.
+- [x] **13.6. Адаптивность и производительность:** `9:16` / `9:19.5` / `9:21` + ландшафт (`16:9 / 16:10 / 21:9 / 4:3`), `SafeAreaFitter` везде, единый `SafeAreaHUD` канвас (`9` HUD draw calls ≤ 10 в `1920x1080`, 0 B GC).
 - [x] **13.7. Тесты `Sprint13UiTests`** + скриншоты «до / после» всех экранов в `Screenshots/Sprint13/`.
 
 ---
@@ -383,7 +383,7 @@
 - [x] **14.1.** Адаптивный фундамент (`LayoutModeService`, `InputModeService`, `AdaptiveCanvasScaler`, `ResponsiveRect`, `AdaptiveLayoutGroup`, `OrientationPolicy`).
 - [x] **14.2.** Камера по короткой стороне (`CameraConfig`), радиус спавна от проекции фрустума + кламп компаса к HUD.
 - [x] **14.3.** Мультиввод (`InputActionAsset`, `MoveInput`-агрегатор для Touch + клавиатуры + геймпада, подсказки и системная кнопка Back).
-- [ ] **14.4.** Ландшафтные раскладки всех экранов меню, HUD, Pause и Game Over; прогон `9:21 / 4:3 / 16:10 / 21:9` и замер draw calls (13.6).
+- [x] **14.4.** Ландшафтные раскладки всех экранов меню, HUD, Pause и Game Over; прогон `9:21 / 4:3 / 16:10 / 21:9` и замер draw calls (13.6 — `9 <= 10`).
 - [ ] **14.5.** Web-билд (Poki или CrazyGames): Build Profile `Web`, Quality `Web`, браузерный lifecycle, `IAdProvider` / `IPlatformEvents` / `ISaveStorage`.
 - [ ] **14.6.** Дешёвые порты после Google Play (Samsung Galaxy Store, TapTap, Steam; Amazon — бэклог).
 - [ ] **14.7.** Тесты `Sprint14MultiplatformTests`, скриншоты и смоук-тест Web-билда.

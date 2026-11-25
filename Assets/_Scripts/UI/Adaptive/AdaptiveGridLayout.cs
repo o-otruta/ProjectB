@@ -28,13 +28,18 @@ namespace ProjectB.UI
         [SerializeField] private GridModeSettings landscape = new GridModeSettings { columns = 2, cellSize = new Vector2(820f, 180f), spacing = new Vector2(24f, 24f) };
         [Tooltip("Columns on ultra-wide Landscape screens. 0 = same as Landscape.")]
         [SerializeField, Min(0)] private int ultraWideColumns;
+        [Tooltip("Stretch cell width to fill the container width across columns while preserving cell height.")]
+        [SerializeField] private bool fitCellWidthToContainer;
         [SerializeField, HideInInspector] private LayoutMode appliedMode = LayoutMode.Portrait;
 
         private GridLayoutGroup grid;
         private LayoutModeBinding binding;
+        private float lastAppliedAspect = 9f / 16f;
+        private float lastUltraWideAspect = float.PositiveInfinity;
 
         public LayoutMode AppliedMode => appliedMode;
         public int UltraWideColumns { get => ultraWideColumns; set => ultraWideColumns = Mathf.Max(0, value); }
+        public bool FitCellWidthToContainer { get => fitCellWidthToContainer; set => fitCellWidthToContainer = value; }
         public GridLayoutGroup Grid => EnsureGrid();
 
         private void Reset()
@@ -82,12 +87,41 @@ namespace ProjectB.UI
             GridLayoutGroup g = EnsureGrid();
             if (g == null) return;
 
+            lastAppliedAspect = aspect;
+            lastUltraWideAspect = ultraWideAspect;
+
             GridModeSettings settings = GetSettings(mode);
+            int cols = AdaptiveLayoutMath.GetGridColumns(mode, aspect, portrait.columns, landscape.columns, ultraWideColumns, ultraWideAspect);
             g.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            g.constraintCount = AdaptiveLayoutMath.GetGridColumns(mode, aspect, portrait.columns, landscape.columns, ultraWideColumns, ultraWideAspect);
-            if (settings.cellSize.x > 0f && settings.cellSize.y > 0f) g.cellSize = settings.cellSize;
+            g.constraintCount = cols;
             g.spacing = settings.spacing;
+            Vector2 targetCellSize = ResolveCellSize(g, settings, cols);
+            if (targetCellSize.x > 0f && targetCellSize.y > 0f) g.cellSize = targetCellSize;
             appliedMode = mode;
+        }
+
+        private Vector2 ResolveCellSize(GridLayoutGroup g, in GridModeSettings settings, int cols)
+        {
+            if (!fitCellWidthToContainer || cols <= 0) return settings.cellSize;
+            float containerWidth = ((RectTransform)transform).rect.width;
+            float available = containerWidth - g.padding.left - g.padding.right - settings.spacing.x * Mathf.Max(0, cols - 1);
+            if (available > 100f)
+            {
+                return new Vector2(Mathf.Floor(available / cols), settings.cellSize.y);
+            }
+            return settings.cellSize;
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (!fitCellWidthToContainer || grid == null) return;
+            GridModeSettings settings = GetSettings(appliedMode);
+            int cols = grid.constraintCount > 0 ? grid.constraintCount : Mathf.Max(1, settings.columns);
+            Vector2 target = ResolveCellSize(grid, settings, cols);
+            if (target.x > 0f && target.y > 0f && Mathf.Abs(grid.cellSize.x - target.x) > 0.5f)
+            {
+                grid.cellSize = target;
+            }
         }
 
         private void HandleScreenChanged()

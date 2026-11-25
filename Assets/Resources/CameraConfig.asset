@@ -30,6 +30,6 @@ MonoBehaviour:
     bottom: 260
   landscapeCompassMargins:
     left: 220
-    right: 200
-    top: 110
+    right: 220
+    top: 136
     bottom: 90
