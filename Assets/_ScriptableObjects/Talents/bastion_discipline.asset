@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9721436d72457cc48957bb9a38d55c52, type: 3}
+  m_Name: bastion_discipline
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.TalentNodeData
+  id: bastion_discipline
+  displayName: +1 Passive Slot
+  description: +1 Passive ability slot.
+  nameKey: talent.bastion_discipline.name
+  descriptionKey: talent.bastion_discipline.desc
+  icon: {fileID: 21300000, guid: 1c5380a1353bc0546aeab166f722ea4d, type: 3}
+  nodeType: 1
+  constellation: 2
+  position: {x: -502.29474, y: -290}
+  prerequisiteIds:
+  - bastion_r2
+  shardCost: 10
+  coinCost: 0
+  effects:
+  - type: 14
+    value: 1
+  synergyId: 

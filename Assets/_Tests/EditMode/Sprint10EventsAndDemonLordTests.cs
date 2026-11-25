@@ -257,8 +257,8 @@ namespace ProjectB.Tests.EditMode
             Assert.Greater(arenaConfig.ObstacleClearancePadding, 0f);
 
             // 5. Boss Achievements (Wave 75 Frost Lich & Wave 100 Demon Lord)
-            var frostAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/DefeatFrostLich.asset");
-            var demonAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/DefeatDemonLord.asset");
+            var frostAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/defeat_frost_lich.asset");
+            var demonAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/defeat_demon_lord.asset");
             Assert.IsNotNull(frostAch);
             Assert.IsNotNull(demonAch);
             Assert.IsNotNull(frostAch.icon, "DefeatFrostLich icon should be generated");

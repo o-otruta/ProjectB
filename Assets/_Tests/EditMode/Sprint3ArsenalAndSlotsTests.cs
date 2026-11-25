@@ -261,13 +261,15 @@ namespace ProjectB.Tests.EditMode
                     Assert.IsTrue(hud.PassiveSlots[i].IsLocked);
                 }
 
-                // Wave 25 -> active slot 1 (W5) + passive slot 2 (W25); 250 kills -> passive slot 1.
-                // Active slot 2 now needs a Golem kill, so actives stay at 3.
+                // Achievements grant only two slots: first mini-boss -> +1 active, Stone Golem -> +1 passive.
+                // The other 3+3 come from Constellation nodes (fury_arsenal, fury/bastion keystones, ...).
                 achManager.OnWaveReached(25);
-                achManager.AddProgress("unlock_passive_slot_1", 250);
+                Assert.AreEqual(2, slotService.MaxActiveSlots, "Reaching waves alone no longer grants slots");
+                achManager.OnMiniBossDefeated();
+                achManager.OnBossDefeated("golem");
 
                 Assert.AreEqual(3, slotService.MaxActiveSlots);
-                Assert.AreEqual(4, slotService.MaxPassiveSlots);
+                Assert.AreEqual(3, slotService.MaxPassiveSlots);
                 Assert.IsTrue(heroAbilities.CanAddActive());
                 Assert.IsTrue(heroAbilities.CanAddPassive());
 
@@ -275,8 +277,8 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsTrue(hud.ActiveSlots[2].IsEmpty);
                 Assert.IsFalse(hud.ActiveSlots[2].IsLocked);
                 Assert.IsTrue(hud.ActiveSlots[3].IsLocked);
-                Assert.IsTrue(hud.PassiveSlots[3].IsEmpty);
-                Assert.IsTrue(hud.PassiveSlots[4].IsLocked);
+                Assert.IsTrue(hud.PassiveSlots[2].IsEmpty);
+                Assert.IsTrue(hud.PassiveSlots[3].IsLocked);
 
                 // 3rd active & passive now equip cleanly
                 Assert.IsTrue(heroAbilities.AddAbility(actives[2]));
@@ -289,7 +291,7 @@ namespace ProjectB.Tests.EditMode
                 {
                     using var reloadedSlots = new AbilitySlotService(reloadedSave, new MetaUpgradeManager(reloadedSave));
                     Assert.AreEqual(3, reloadedSlots.MaxActiveSlots);
-                    Assert.AreEqual(4, reloadedSlots.MaxPassiveSlots);
+                    Assert.AreEqual(3, reloadedSlots.MaxPassiveSlots);
                 }
                 finally
                 {
@@ -309,7 +311,7 @@ namespace ProjectB.Tests.EditMode
                 skillTree.BonusPassive = 0;
                 skillTree.NotifyChanged();
                 Assert.AreEqual(3, slotService.MaxActiveSlots);
-                Assert.AreEqual(4, slotService.MaxPassiveSlots);
+                Assert.AreEqual(3, slotService.MaxPassiveSlots);
             }
             finally
             {
@@ -612,7 +614,7 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(slotUi);
             Assert.IsNotNull(GetPrivateField(slotUi, "lockedIconSprite"), "AbilityHudSlot.prefab must have lockedIconSprite wired");
 
-            // Check 6 slot achievements + 5 ability unlock achievements
+            // Check slot achievements (1 active + 1 passive) + ability unlock achievements
             using var saveManager = new SaveManager();
             var achMgr = new AchievementManager(saveManager);
             var allAch = achMgr.GetAllAchievements();
@@ -621,10 +623,10 @@ namespace ProjectB.Tests.EditMode
             var expectedAbilityAch = new Dictionary<string, string>
             {
                 ["collect_5_abilities"] = "MiniDragon",
-                ["kill_1000_enemies"] = "VoxelTornado",
-                ["reach_wave_50"] = "EarthquakeSlam",
+                ["kills_in_run_500"] = "VoxelTornado",
+                ["boss_before_enrage"] = "EarthquakeSlam",
                 ["no_damage_5_waves"] = "CriticalLens",
-                ["find_5_chests"] = "GoldenIdol"
+                ["gold_goblin_5"] = "GoldenIdol"
             };
 
             int slotActiveCount = 0;
@@ -640,8 +642,8 @@ namespace ProjectB.Tests.EditMode
                 if (ach.rewardType == AchievementRewardType.UnlockActiveSlot) slotActiveCount++;
                 if (ach.rewardType == AchievementRewardType.UnlockPassiveSlot) slotPassiveCount++;
             }
-            Assert.AreEqual(3, slotActiveCount, "Expected 3 UnlockActiveSlot achievements (3 -> 6 slots)");
-            Assert.AreEqual(3, slotPassiveCount, "Expected 3 UnlockPassiveSlot achievements (3 -> 6 slots)");
+            Assert.AreEqual(1, slotActiveCount, "Expected 1 UnlockActiveSlot achievement (the rest come from the Constellation)");
+            Assert.AreEqual(1, slotPassiveCount, "Expected 1 UnlockPassiveSlot achievement (the rest come from the Constellation)");
 
             // Verify Gameplay.unity UpgradeManager wiring
             Scene alreadyLoaded = SceneManager.GetSceneByPath("Assets/_Scenes/Gameplay.unity");

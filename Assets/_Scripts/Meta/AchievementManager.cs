@@ -2,47 +2,49 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ProjectB.Data;
+using ProjectB.Data.Enemies;
 
 namespace ProjectB.Meta
 {
+    /// <summary>
+    /// Persistent achievement store: progress, completion and rewards in <see cref="SaveData"/>.
+    /// Run-time signals come from <c>AchievementRunTracker</c> (gameplay scope), <c>EnemyDeathHandler</c>,
+    /// <c>HeroAbilities</c>, <c>WaveManager</c>; meta signals from <see cref="MetaAchievementSync"/>.
+    /// </summary>
     public class AchievementManager
     {
+        private const char SET_SEPARATOR = '|';
+
         private readonly SaveManager _saveManager;
         private readonly List<AchievementData> _allAchievements;
         private readonly Dictionary<string, AchievementData> _achievementsById;
         private readonly Dictionary<AchievementConditionType, List<AchievementData>> _achievementsByCondition;
         private readonly HashSet<string> _completedIds;
+        private readonly HashSet<string> _setEntries;
         private int _syncedCompletedCount = -1;
+        private int _syncedSetEntryCount = -1;
+        private SaveData _syncedData;
 
         public List<AchievementData> unlockedThisRun { get; private set; }
-        
+
         public event Action<AchievementData> OnAchievementUnlocked;
 
         public AchievementManager(SaveManager saveManager)
         {
             _saveManager = saveManager;
             _allAchievements = new List<AchievementData>(Resources.LoadAll<AchievementData>("Achievements"));
-            _allAchievements.Sort((a, b) =>
-            {
-                if (a == null && b == null) return 0;
-                if (a == null) return 1;
-                if (b == null) return -1;
-                int typeCmp = a.conditionType.CompareTo(b.conditionType);
-                if (typeCmp != 0) return typeCmp;
-                int targetCmp = a.targetValue.CompareTo(b.targetValue);
-                if (targetCmp != 0) return targetCmp;
-                return string.CompareOrdinal(a.id, b.id);
-            });
+            _allAchievements.Sort(CompareForDisplay);
             _achievementsById = new Dictionary<string, AchievementData>(_allAchievements.Count);
             _achievementsByCondition = new Dictionary<AchievementConditionType, List<AchievementData>>();
             _completedIds = new HashSet<string>(StringComparer.Ordinal);
+            _setEntries = new HashSet<string>(StringComparer.Ordinal);
             unlockedThisRun = new List<AchievementData>();
 
             if (_saveManager != null)
             {
-                _saveManager.OnDataChanged += InvalidateCompletedCache;
+                _saveManager.OnDataChanged += InvalidateCaches;
             }
-            EnsureCompletedCacheSynced();
+            EnsureCachesSynced();
 
             for (int i = 0; i < _allAchievements.Count; i++)
             {
@@ -66,53 +68,91 @@ namespace ProjectB.Meta
             }
         }
 
+        /// <summary>Category → sortOrder → id (stable order for the Achievements screen and tests).</summary>
+        public static int CompareForDisplay(AchievementData a, AchievementData b)
+        {
+            if (a == null && b == null) return 0;
+            if (a == null) return 1;
+            if (b == null) return -1;
+            int cmp = a.category.CompareTo(b.category);
+            if (cmp != 0) return cmp;
+            cmp = a.sortOrder.CompareTo(b.sortOrder);
+            if (cmp != 0) return cmp;
+            return string.CompareOrdinal(a.id, b.id);
+        }
+
         public IReadOnlyList<AchievementData> GetAllAchievements() => _allAchievements;
+
+        public bool HasConditionType(AchievementConditionType type) => _achievementsByCondition.ContainsKey(type);
 
         public void ClearRunUnlocks()
         {
             unlockedThisRun.Clear();
         }
 
-        private void InvalidateCompletedCache()
+        private void InvalidateCaches()
         {
             _syncedCompletedCount = -1;
+            _syncedSetEntryCount = -1;
         }
 
-        private void EnsureCompletedCacheSynced()
+        private void EnsureCachesSynced()
         {
-            var list = _saveManager?.Data?.completedAchievements;
-            int count = list != null ? list.Count : 0;
-            if (_syncedCompletedCount == count) return;
-
-            _completedIds.Clear();
-            if (list != null)
+            SaveData data = _saveManager?.Data;
+            if (!ReferenceEquals(data, _syncedData))
             {
-                for (int i = 0; i < list.Count; i++)
+                _syncedData = data;
+                _syncedCompletedCount = -1;
+                _syncedSetEntryCount = -1;
+            }
+
+            var completed = data?.completedAchievements;
+            int completedCount = completed != null ? completed.Count : 0;
+            if (_syncedCompletedCount != completedCount)
+            {
+                _completedIds.Clear();
+                if (completed != null)
                 {
-                    if (!string.IsNullOrEmpty(list[i]))
+                    for (int i = 0; i < completed.Count; i++)
                     {
-                        _completedIds.Add(list[i]);
+                        if (!string.IsNullOrEmpty(completed[i])) _completedIds.Add(completed[i]);
                     }
                 }
+                _syncedCompletedCount = completedCount;
             }
-            _syncedCompletedCount = count;
+
+            var sets = data?.achievementSetEntries;
+            int setCount = sets != null ? sets.Count : 0;
+            if (_syncedSetEntryCount != setCount)
+            {
+                _setEntries.Clear();
+                if (sets != null)
+                {
+                    for (int i = 0; i < sets.Count; i++)
+                    {
+                        if (!string.IsNullOrEmpty(sets[i])) _setEntries.Add(sets[i]);
+                    }
+                }
+                _syncedSetEntryCount = setCount;
+            }
         }
 
-        private bool IsAchievementCompleted(string id)
+        public bool IsAchievementCompleted(string id)
         {
-            EnsureCompletedCacheSynced();
+            EnsureCachesSynced();
             return _completedIds.Contains(id);
         }
 
         public void AddProgress(string id, int amount)
         {
             if (string.IsNullOrEmpty(id) || amount <= 0) return;
+            if (_saveManager?.Data == null) return;
             if (!_achievementsById.TryGetValue(id, out var achievement)) return;
 
             if (IsAchievementCompleted(id)) return;
 
             _saveManager.Data.achievementProgress.TryGetValue(id, out int currentProgress);
-            
+
             int newProgress = currentProgress + amount;
             bool shouldUnlock = newProgress >= achievement.targetValue;
             if (shouldUnlock)
@@ -145,7 +185,7 @@ namespace ProjectB.Meta
                 }
             }
         }
-        
+
         public void SetProgressByType(AchievementConditionType conditionType, int newValue, string targetId = null)
         {
             if (!_achievementsByCondition.TryGetValue(conditionType, out var list)) return;
@@ -153,18 +193,58 @@ namespace ProjectB.Meta
             for (int i = 0; i < list.Count; i++)
             {
                 var achievement = list[i];
-                if (IsAchievementCompleted(achievement.id)) continue;
-
                 if (string.IsNullOrEmpty(achievement.targetId) || achievement.targetId == targetId)
                 {
-                    _saveManager.Data.achievementProgress.TryGetValue(achievement.id, out int currentProgress);
-                    
-                    if (newValue > currentProgress)
-                    {
-                        AddProgress(achievement.id, newValue - currentProgress);
-                    }
+                    RaiseProgressTo(achievement, newValue);
                 }
             }
+        }
+
+        private void RaiseProgressTo(AchievementData achievement, int newValue)
+        {
+            if (achievement == null || _saveManager?.Data == null) return;
+            if (IsAchievementCompleted(achievement.id)) return;
+
+            _saveManager.Data.achievementProgress.TryGetValue(achievement.id, out int currentProgress);
+            if (newValue > currentProgress)
+            {
+                AddProgress(achievement.id, newValue - currentProgress);
+            }
+        }
+
+        /// <summary>Adds a distinct member to every set-achievement of this type; progress = number of members.</summary>
+        private void AddSetMemberByType(AchievementConditionType conditionType, string memberId)
+        {
+            if (string.IsNullOrEmpty(memberId)) return;
+            if (!_achievementsByCondition.TryGetValue(conditionType, out var list)) return;
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                AddSetMember(list[i], memberId);
+            }
+        }
+
+        private void AddSetMember(AchievementData achievement, string memberId)
+        {
+            if (achievement == null || _saveManager?.Data == null) return;
+            if (IsAchievementCompleted(achievement.id)) return;
+
+            EnsureCachesSynced();
+            string key = string.Concat(achievement.id, SET_SEPARATOR.ToString(), memberId);
+            if (!_setEntries.Add(key)) return;
+
+            _saveManager.Data.achievementSetEntries ??= new List<string>();
+            _saveManager.Data.achievementSetEntries.Add(key);
+            _syncedSetEntryCount = _saveManager.Data.achievementSetEntries.Count;
+
+            AddProgress(achievement.id, 1);
+        }
+
+        /// <summary>True if <paramref name="memberId"/> was already counted for this set achievement (UI / tests).</summary>
+        public bool HasSetMember(string achievementId, string memberId)
+        {
+            EnsureCachesSynced();
+            return _setEntries.Contains(string.Concat(achievementId, SET_SEPARATOR.ToString(), memberId));
         }
 
         private void UnlockAchievement(AchievementData achievement)
@@ -181,6 +261,9 @@ namespace ProjectB.Meta
             {
                 case AchievementRewardType.GiveCoins:
                     _saveManager.AddCoins(achievement.rewardValue, saveImmediately: false);
+                    break;
+                case AchievementRewardType.GiveShards:
+                    _saveManager.AddBossShards(achievement.rewardValue, saveImmediately: false);
                     break;
                 case AchievementRewardType.UnlockAbility:
                     if (!string.IsNullOrEmpty(achievement.rewardId))
@@ -207,23 +290,67 @@ namespace ProjectB.Meta
 
             OnAchievementUnlocked?.Invoke(achievement);
         }
-        
-        // Обработчики событий
+
+        // ---------------------------------------------------------------- Run signals
+
         public void OnEnemyKilled()
         {
             AddProgressByType(AchievementConditionType.TotalKills, 1);
         }
-        
+
+        /// <summary>Unconstrained wave progress (legacy entry point; constrained achievements are skipped).</summary>
         public void OnWaveReached(int wave)
         {
-            SetProgressByType(AchievementConditionType.ReachWave, wave);
+            OnWaveReached(wave, default);
         }
-        
+
+        /// <summary>Wave progress with a run snapshot: constrained ReachWave achievements and HeroesReachedWave.</summary>
+        public void OnWaveReached(int wave, in AchievementRunContext context)
+        {
+            if (_achievementsByCondition.TryGetValue(AchievementConditionType.ReachWave, out var list))
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var achievement = list[i];
+                    var constraint = achievement.runConstraint;
+                    if (constraint != null && constraint.HasAny && !constraint.IsSatisfiedBy(context)) continue;
+                    RaiseProgressTo(achievement, wave);
+                }
+            }
+
+            if (context.IsValid && !string.IsNullOrEmpty(context.HeroId) &&
+                _achievementsByCondition.TryGetValue(AchievementConditionType.HeroesReachedWave, out var heroList))
+            {
+                for (int i = 0; i < heroList.Count; i++)
+                {
+                    if (wave >= heroList[i].conditionParam)
+                    {
+                        AddSetMember(heroList[i], context.HeroId);
+                    }
+                }
+            }
+        }
+
         public void OnBossDefeated(string bossId)
         {
             AddProgressByType(AchievementConditionType.DefeatBoss, 1, bossId);
         }
-        
+
+        public void OnMiniBossDefeated()
+        {
+            AddProgressByType(AchievementConditionType.DefeatMiniBosses, 1);
+        }
+
+        public void OnEliteKilled()
+        {
+            AddProgressByType(AchievementConditionType.EliteKills, 1);
+        }
+
+        public void OnKillsInRun(int killsThisRun)
+        {
+            SetProgressByType(AchievementConditionType.KillsInRun, killsThisRun);
+        }
+
         public void OnAbilityUpgraded(string abilityId, int level)
         {
             SetProgressByType(AchievementConditionType.MaxAbilityLevel, level, abilityId);
@@ -252,6 +379,86 @@ namespace ProjectB.Meta
         public void OnComboReached(int combo)
         {
             SetProgressByType(AchievementConditionType.ReachCombo, combo);
+        }
+
+        public void OnBarrelExploded(int enemiesHit)
+        {
+            SetProgressByType(AchievementConditionType.BarrelMultiKill, enemiesHit);
+        }
+
+        public void OnSiegeShellBroken()
+        {
+            AddProgressByType(AchievementConditionType.SiegeShellsBroken, 1);
+        }
+
+        public void OnVacuumMagnetCollected(int xpMagnetized)
+        {
+            SetProgressByType(AchievementConditionType.VacuumMagnetXp, xpMagnetized);
+        }
+
+        public void OnSynergyActivated(string synergyId, int distinctSynergiesThisRun)
+        {
+            AddSetMemberByType(AchievementConditionType.UniqueSynergies, synergyId);
+            SetProgressByType(AchievementConditionType.SynergiesInRun, distinctSynergiesThisRun);
+        }
+
+        public void OnUltimateUsed()
+        {
+            AddProgressByType(AchievementConditionType.UltimatesUsed, 1);
+        }
+
+        /// <summary>A big boss died. <paramref name="heroHpPercent"/> is 0–100.</summary>
+        public void OnBigBossKilled(bool beforeEnrage, float heroHpPercent)
+        {
+            if (beforeEnrage)
+            {
+                AddProgressByType(AchievementConditionType.BossBeforeEnrage, 1);
+            }
+
+            if (!_achievementsByCondition.TryGetValue(AchievementConditionType.BossAtLowHp, out var list)) return;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (heroHpPercent > 0f && heroHpPercent <= list[i].conditionParam)
+                {
+                    AddProgress(list[i].id, 1);
+                }
+            }
+        }
+
+        public void OnRunDuration(int minutes)
+        {
+            SetProgressByType(AchievementConditionType.RunDurationMinutes, minutes);
+        }
+
+        public void OnWaveEventCompleted(WaveEventType eventType)
+        {
+            if (eventType == WaveEventType.None) return;
+            string name = WaveEventName(eventType);
+            AddProgressByType(AchievementConditionType.WaveEventsCompleted, 1, name);
+            AddSetMemberByType(AchievementConditionType.UniqueWaveEvents, name);
+        }
+
+        public void OnMutatorSurvived(WaveMutatorType mutatorType)
+        {
+            AddSetMemberByType(AchievementConditionType.UniqueMutators, mutatorType.ToString());
+        }
+
+        public void OnSecondWindTriggered()
+        {
+            AddProgressByType(AchievementConditionType.SecondWindTriggers, 1);
+        }
+
+        private static string WaveEventName(WaveEventType type)
+        {
+            switch (type)
+            {
+                case WaveEventType.SwarmRush: return "SwarmRush";
+                case WaveEventType.GoldGoblin: return "GoldGoblin";
+                case WaveEventType.BloodMoon: return "BloodMoon";
+                case WaveEventType.EliteAmbush: return "EliteAmbush";
+                case WaveEventType.CorridorHorde: return "CorridorHorde";
+                default: return type.ToString();
+            }
         }
     }
 }

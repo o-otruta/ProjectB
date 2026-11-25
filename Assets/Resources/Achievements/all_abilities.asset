@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: all_abilities
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: all_abilities
+  title: Full Arsenal
+  description: Unlock all locked abilities
+  category: 6
+  sortOrder: 5
+  nameKey: ach.all_abilities.title
+  descriptionKey: ach.all_abilities.desc
+  icon: {fileID: 21300000, guid: cfcdb956bbd604848a773bccfc8941fd, type: 3}
+  conditionType: 31
+  targetValue: 11
+  targetId: 
+  conditionParam: 0
+  runConstraint:
+    heroId: 
+    maxActiveAbilities: -1
+    maxPassiveAbilities: -1
+    noRerolls: 0
+    maxRunSeconds: 0
+  rewardType: 3
+  rewardValue: 4000
+  rewardId: 

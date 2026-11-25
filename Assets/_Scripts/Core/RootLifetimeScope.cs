@@ -30,6 +30,8 @@ namespace ProjectB.Core
                 .AsSelf()
                 .As<ISynergyUnlockProvider>()
                 .As<IAbilitySlotBonusProvider>();
+            // Meta achievements (runs, Constellation, meta upgrades, daily bonus, unlocked abilities).
+            builder.RegisterEntryPoint<MetaAchievementSync>().AsSelf();
             builder.Register<AudioManager>(Lifetime.Singleton);
             builder.Register<AdManager>(Lifetime.Singleton);
             builder.Register<LocalizationService>(Lifetime.Singleton);

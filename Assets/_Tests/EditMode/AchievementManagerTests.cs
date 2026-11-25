@@ -37,12 +37,12 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void LoadsAll15Achievements_WithUniqueIdsAndValidTargets()
+        public void Loads50PlusAchievements_WithUniqueIdsAndValidTargets()
         {
             var manager = new AchievementManager(saveManager);
             var all = manager.GetAllAchievements();
 
-            Assert.GreaterOrEqual(all.Count, 15);
+            Assert.GreaterOrEqual(all.Count, 50);
             var seenIds = new HashSet<string>();
             for (int i = 0; i < all.Count; i++)
             {
@@ -63,12 +63,14 @@ namespace ProjectB.Tests.EditMode
             manager.OnWaveReached(10);
             Assert.IsTrue(saveManager.IsAbilityUnlocked("LaserTurret"));
 
-            // Defeat Stone Golem -> BlackHole
-            manager.OnBossDefeated("golem");
+            // 2000 kills in one run -> BlackHole
+            manager.OnKillsInRun(2000);
             Assert.IsTrue(saveManager.IsAbilityUnlocked("BlackHole"));
 
-            // Upgrade ability to Lv 5 -> VitalityRegen
-            manager.OnAbilityUpgraded("Shooter", 5);
+            // Upgrade ability to Lv 10 (Overdrive I) -> VitalityRegen
+            manager.OnAbilityUpgraded("Shooter", 9);
+            Assert.IsFalse(saveManager.IsAbilityUnlocked("VitalityRegen"));
+            manager.OnAbilityUpgraded("Shooter", 10);
             Assert.IsTrue(saveManager.IsAbilityUnlocked("VitalityRegen"));
 
             // Find Mystery Crystal -> coins reward

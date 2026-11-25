@@ -243,6 +243,7 @@ namespace ProjectB.Player
                     break;
             }
 
+            eventBus?.Publish(new UltimateActivatedEvent(ultType));
             return true;
         }
 

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: daily_7
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: daily_7
+  title: Regular
+  description: Claim the daily bonus 7 times
+  category: 6
+  sortOrder: 4
+  nameKey: ach.daily_7.title
+  descriptionKey: ach.daily_7.desc
+  icon: {fileID: 21300000, guid: d17627d3e7569e04b9dda57b160430df, type: 3}
+  conditionType: 30
+  targetValue: 7
+  targetId: 
+  conditionParam: 0
+  runConstraint:
+    heroId: 
+    maxActiveAbilities: -1
+    maxPassiveAbilities: -1
+    noRerolls: 0
+    maxRunSeconds: 0
+  rewardType: 3
+  rewardValue: 600
+  rewardId: 

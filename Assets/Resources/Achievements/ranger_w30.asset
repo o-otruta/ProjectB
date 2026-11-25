@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: ranger_w30
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: ranger_w30
+  title: Ranger Mastery
+  description: Reach Wave 30 as the Ranger
+  category: 5
+  sortOrder: 4
+  nameKey: ach.ranger_w30.title
+  descriptionKey: ach.ranger_w30.desc
+  icon: {fileID: 21300000, guid: 5368d35315cf5834681c28165774350e, type: 3}
+  conditionType: 0
+  targetValue: 30
+  targetId: 
+  conditionParam: 0
+  runConstraint:
+    heroId: ranger
+    maxActiveAbilities: -1
+    maxPassiveAbilities: -1
+    noRerolls: 0
+    maxRunSeconds: 0
+  rewardType: 3
+  rewardValue: 1000
+  rewardId: 

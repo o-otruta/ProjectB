@@ -142,7 +142,7 @@
 - [x] `HeroAbilities` на герое — списки активных и пассивных способностей, прокачка без `maxLevel`
 - [x] Object pooling для снарядов способностей
 - [x] Система модификаторов `ApplyModifier(ModifierType, value)`
-- [x] Слоты способностей `2+2 → 6+6` (`AbilitySlotService` + `IAbilitySlotBonusProvider`; база снижена с 3+3 в 12.7)
+- [x] Слоты способностей `2+2 → 6+6` (`AbilitySlotService` + `IAbilitySlotBonusProvider`; база снижена с 3+3 в 12.7): ачивки дают 1+1 (первый мини-босс → активный, Golem → пассивный), Созвездия — 3+3
 
 ### 2.2 Типы способностей
 - [x] **Орбитальные** (Orbital Sword, Guardian Shields)
@@ -204,11 +204,12 @@
 
 ### 3.3 Система ачивок
 - [x] ScriptableObject `AchievementData` + `AchievementManager`
-- [x] Условия: `ReachWave`, `TotalKills`, `DefeatBoss`, `MaxAbilityLevel`, `CollectAbilitiesInRun`, `NoDamageWaves`, `FindSecretItem`, `ClearShrines`, `ReachCombo`
-- [x] Награды: `UnlockAbility`, `UnlockHero`, `GiveCoins`, `UnlockActiveSlot`, `UnlockPassiveSlot`
+- [x] 32 условия (`AchievementConditionType`): волны с ограничениями забега (`AchievementRunConstraint`: герой, лимит активных/пассивных, без рероллов, лимит времени), боссы, мини-боссы, элиты, убийства за забег, комбо, бочки, Vacuum Magnet, панцири Golemite, синергии, ульты, события и мутаторы, Second Wind, герои, мета (забеги, звёзды, Keystone, апгрейды, дейли, способности)
+- [x] `AchievementRunTracker` (scoped, `GameEventBus`) и `MetaAchievementSync` (root) кормят `AchievementManager`; «наборы» хранятся в `SaveData.achievementSetEntries`
+- [x] Награды: `UnlockAbility`, `UnlockHero`, `GiveCoins`, `GiveShards`, `UnlockActiveSlot`, `UnlockPassiveSlot`
 - [x] Персистентный прогресс в `SaveData`
 - [x] Нотификация (`AchievementPopupUI` с очередью) + список на Game Over с человекочитаемыми наградами
-- [x] 27 ачивок
+- [x] 59 ачивок в 8 категориях (`AchievementCategory`) с фильтр-чипами на экране ачивок; без скрытых
 
 ### 3.4 Разблокировка контента
 - [x] Заблокированные способности (`unlockedByDefault = false`): Laser Turret, Black Hole, Vitality Regen, Dragon Whelp, Arcane Tornado, Seismic Hammer, Sniper Lens, Golden Idol, Vampiric Fang, Skyfall Spire, Shadow Decoy

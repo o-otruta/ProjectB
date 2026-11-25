@@ -69,6 +69,7 @@ namespace ProjectB.UI
             return ach.rewardType switch
             {
                 AchievementRewardType.GiveCoins => Loc.Format("ui.reward.coins_long", ach.rewardValue),
+                AchievementRewardType.GiveShards => Loc.Format("ui.reward.shards_long", ach.rewardValue),
                 AchievementRewardType.UnlockAbility => !string.IsNullOrEmpty(ach.rewardId)
                     ? Loc.Format("ui.reward.unlocked_item", ResolveAbilityName(ach.rewardId, abilityCatalog))
                     : Loc.Get("ui.reward.new_ability", "New Ability Unlocked!"),
@@ -90,6 +91,8 @@ namespace ProjectB.UI
             {
                 case AchievementRewardType.GiveCoins:
                     return theme.iconCoin;
+                case AchievementRewardType.GiveShards:
+                    return theme.iconShard != null ? theme.iconShard : theme.iconStar;
                 case AchievementRewardType.UnlockAbility:
                 {
                     AbilityCatalog catalog = abilityCatalog != null ? abilityCatalog : GetAbilityCatalog();
@@ -124,6 +127,7 @@ namespace ProjectB.UI
             return ach.rewardType switch
             {
                 AchievementRewardType.GiveCoins => $"+{ach.rewardValue}",
+                AchievementRewardType.GiveShards => Loc.Format("ui.reward.shards_short", ach.rewardValue),
                 AchievementRewardType.UnlockAbility => ResolveAbilityName(ach.rewardId, abilityCatalog),
                 AchievementRewardType.UnlockHero => ResolveHeroName(ach.rewardId, heroCatalog),
                 AchievementRewardType.UnlockActiveSlot => Loc.Format("ui.reward.active_slot_short", Mathf.Max(1, ach.rewardValue)),

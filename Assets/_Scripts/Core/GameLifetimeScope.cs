@@ -42,6 +42,7 @@ namespace ProjectB.Core
             builder.Register<MoveInputService>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
             builder.RegisterEntryPoint<MetaRunRewardsHandler>().AsSelf();
+            builder.RegisterEntryPoint<AchievementRunTracker>().AsSelf();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             builder.RegisterEntryPoint<RunTelemetry>().AsSelf();
 #endif

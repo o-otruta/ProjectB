@@ -852,4 +852,17 @@ namespace ProjectB.Core.Events
             WasRerolled = wasRerolled;
         }
     }
+
+    /// <summary>
+    /// Герой применил ульту (для ачивок и аналитики).
+    /// </summary>
+    public struct UltimateActivatedEvent
+    {
+        public HeroUltimateType UltimateType;
+
+        public UltimateActivatedEvent(HeroUltimateType ultimateType)
+        {
+            UltimateType = ultimateType;
+        }
+    }
 }

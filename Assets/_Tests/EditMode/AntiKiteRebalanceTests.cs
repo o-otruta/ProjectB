@@ -71,7 +71,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void AbilitySlots_StartAtTwoPlusTwo_OneEarlyAchievementEach_RestAreDeep()
+        public void AbilitySlots_StartAtTwoPlusTwo_OneEarlyActiveAchievement_RestAreDeep()
         {
             Assert.AreEqual(2, AbilitySlotService.BASE_ACTIVE_SLOTS);
             Assert.AreEqual(2, AbilitySlotService.BASE_PASSIVE_SLOTS);
@@ -86,21 +86,15 @@ namespace ProjectB.Tests.EditMode
                 return null;
             }
 
-            var a1 = Find("unlock_active_slot_1");
-            Assert.AreEqual(AchievementConditionType.ReachWave, a1.conditionType);
-            Assert.AreEqual(5, a1.targetValue, "One early active slot so the player learns the mechanic");
+            var early = Find("first_mini_boss");
+            Assert.AreEqual(AchievementConditionType.DefeatMiniBosses, early.conditionType);
+            Assert.AreEqual(1, early.targetValue, "One early active slot so the player learns the mechanic");
+            Assert.AreEqual(AchievementRewardType.UnlockActiveSlot, early.rewardType);
 
-            var a2 = Find("unlock_active_slot_2");
-            Assert.AreEqual(AchievementConditionType.DefeatBoss, a2.conditionType);
-            Assert.AreEqual("golem", a2.targetId);
-
-            var a3 = Find("unlock_active_slot_3");
-            Assert.AreEqual(AchievementConditionType.ReachWave, a3.conditionType);
-            Assert.AreEqual(50, a3.targetValue);
-
-            var p2 = Find("unlock_passive_slot_2");
-            Assert.AreEqual(AchievementConditionType.ReachWave, p2.conditionType);
-            Assert.AreEqual(25, p2.targetValue);
+            var golem = Find("defeat_golem");
+            Assert.AreEqual(AchievementConditionType.DefeatBoss, golem.conditionType);
+            Assert.AreEqual("golem", golem.targetId);
+            Assert.AreEqual(AchievementRewardType.UnlockPassiveSlot, golem.rewardType);
         }
     }
 }

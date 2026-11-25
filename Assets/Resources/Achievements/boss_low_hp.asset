@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: boss_low_hp
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: boss_low_hp
+  title: By a Thread
+  description: Finish off a big boss with 20% HP or less
+  category: 1
+  sortOrder: 7
+  nameKey: ach.boss_low_hp.title
+  descriptionKey: ach.boss_low_hp.desc
+  icon: {fileID: 21300000, guid: 37ca31dbfb6c9504ab2167eb82701211, type: 3}
+  conditionType: 19
+  targetValue: 1
+  targetId: 
+  conditionParam: 20
+  runConstraint:
+    heroId: 
+    maxActiveAbilities: -1
+    maxPassiveAbilities: -1
+    noRerolls: 0
+    maxRunSeconds: 0
+  rewardType: 3
+  rewardValue: 1000
+  rewardId: 

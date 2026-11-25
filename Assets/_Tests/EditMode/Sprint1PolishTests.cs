@@ -117,11 +117,11 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void MageHeroAndReachWave25Achievement_ConfiguredForUnlockAndMeteorStrike()
+        public void MageHeroAndReachWave20Achievement_ConfiguredForUnlockAndMeteorStrike()
         {
             var mage = AssetDatabase.LoadAssetAtPath<HeroData>("Assets/_ScriptableObjects/Heroes/MageData.asset");
             var mageWeapon = AssetDatabase.LoadAssetAtPath<WeaponData>("Assets/_ScriptableObjects/Weapons/MageWeaponData.asset");
-            var reach25 = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/ReachWave25.asset");
+            var reach25 = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/reach_wave_20.asset");
 
             Assert.IsNotNull(mage);
             Assert.IsNotNull(mageWeapon);
@@ -143,7 +143,7 @@ namespace ProjectB.Tests.EditMode
             {
                 var achMgr = new AchievementManager(saveManager);
                 Assert.IsFalse(saveManager.IsHeroUnlocked("mage"));
-                achMgr.OnWaveReached(25);
+                achMgr.OnWaveReached(20);
                 Assert.IsTrue(saveManager.IsHeroUnlocked("mage"));
             }
         }

@@ -208,8 +208,8 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(catalog.heroes.Contains(ranger));
             Assert.IsTrue(catalog.heroes.Contains(necro));
 
-            var kill5000 = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/Kill5000Enemies.asset");
-            var defeatNecro = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/DefeatNecromancer.asset");
+            var kill5000 = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/clear_3_shrines.asset");
+            var defeatNecro = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/defeat_3_bosses.asset");
             Assert.AreEqual(AchievementRewardType.UnlockHero, kill5000.rewardType);
             Assert.AreEqual("ranger", kill5000.rewardId);
             Assert.AreEqual(AchievementRewardType.UnlockHero, defeatNecro.rewardType);
@@ -221,8 +221,10 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsFalse(saveManager.IsHeroUnlocked("ranger"));
                 Assert.IsFalse(saveManager.IsHeroUnlocked("necromancer"));
 
-                achMgr.AddProgressByType(AchievementConditionType.TotalKills, 5000);
+                for (int i = 0; i < 3; i++) achMgr.OnShrineCleared();
+                achMgr.OnBossDefeated("golem");
                 achMgr.OnBossDefeated("necromancer");
+                achMgr.OnBossDefeated("frost_lich");
 
                 Assert.IsTrue(saveManager.IsHeroUnlocked("ranger"));
                 Assert.IsTrue(saveManager.IsHeroUnlocked("necromancer"));

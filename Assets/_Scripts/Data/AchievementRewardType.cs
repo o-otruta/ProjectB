@@ -7,6 +7,7 @@ namespace ProjectB.Data
         UnlockHero,
         GiveCoins,
         UnlockActiveSlot = 4,
-        UnlockPassiveSlot = 5
+        UnlockPassiveSlot = 5,
+        GiveShards = 6
     }
 }

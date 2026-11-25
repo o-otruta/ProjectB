@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: ability_lvl_10
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: ability_lvl_10
+  title: Overdrive
+  description: Upgrade any ability to Lv 10 (Overdrive I)
+  category: 3
+  sortOrder: 2
+  nameKey: ach.ability_lvl_10.title
+  descriptionKey: ach.ability_lvl_10.desc
+  icon: {fileID: 21300000, guid: 65f3d648ed931a4428ca6a8ed8bb3370, type: 3}
+  conditionType: 3
+  targetValue: 10
+  targetId: 
+  conditionParam: 0
+  runConstraint:
+    heroId: 
+    maxActiveAbilities: -1
+    maxPassiveAbilities: -1
+    noRerolls: 0
+    maxRunSeconds: 0
+  rewardType: 1
+  rewardValue: 0
+  rewardId: VitalityRegen

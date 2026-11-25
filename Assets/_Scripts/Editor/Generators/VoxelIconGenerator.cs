@@ -181,6 +181,8 @@ namespace ProjectB.EditorScripts
                     AchievementRewardType.UnlockAbility => Purple,
                     AchievementRewardType.UnlockActiveSlot => FireOrange,
                     AchievementRewardType.UnlockPassiveSlot => Cyan,
+                    AchievementRewardType.GiveShards => Purple,
+                    AchievementRewardType.GiveCoins => Gold,
                     _ => Cyan
                 };
 
@@ -693,6 +695,8 @@ namespace ProjectB.EditorScripts
                 TalentEffectType.MaxHpPercent => "titan_heart",
                 TalentEffectType.MoveSpeedPercent => "swift_boots",
                 TalentEffectType.XpGainPercent => "secret_crystal",
+                TalentEffectType.BonusActiveSlots => "slot_active",
+                TalentEffectType.BonusPassiveSlots => "slot_passive",
                 _ => "boss_shard"
             };
         }
@@ -732,13 +736,9 @@ namespace ProjectB.EditorScripts
 
         private static string ResolveAchievementTemplateKey(AchievementData ach)
         {
-            if (ach.id.Contains("chest")) return "secret_chest";
-            if (ach.id.Contains("scroll")) return "secret_scroll";
-            if (ach.id.Contains("crystal")) return "secret_crystal";
-            if (ach.id.Contains("golem")) return "boss_golem";
-            if (ach.id.Contains("necromancer")) return "boss_necro";
-            if (ach.id.Contains("frost_lich")) return "ice_aura";
-            if (ach.id.Contains("demon_lord")) return "ult_meteor";
+            // Slot rewards and unlocks get the icon of what they grant.
+            if (ach.rewardType == AchievementRewardType.UnlockActiveSlot) return "slot_active";
+            if (ach.rewardType == AchievementRewardType.UnlockPassiveSlot) return "slot_passive";
             if (ach.rewardType == AchievementRewardType.UnlockHero)
             {
                 return ach.rewardId switch
@@ -748,22 +748,80 @@ namespace ProjectB.EditorScripts
                     _ => "hero_mage"
                 };
             }
-            if (ach.rewardType == AchievementRewardType.UnlockActiveSlot) return "slot_active";
-            if (ach.rewardType == AchievementRewardType.UnlockPassiveSlot) return "slot_passive";
             if (ach.rewardType == AchievementRewardType.UnlockAbility && !string.IsNullOrEmpty(ach.rewardId))
             {
                 return ResolveAbilityTemplateKey(ach.rewardId);
             }
 
-            return ach.conditionType switch
+            // Hero-restricted runs show the hero.
+            string heroId = ach.runConstraint != null ? ach.runConstraint.heroId : null;
+            if (!string.IsNullOrEmpty(heroId))
             {
-                AchievementConditionType.TotalKills => "kills_skull",
-                AchievementConditionType.ReachWave => "wave_banner",
-                AchievementConditionType.CollectAbilitiesInRun => "tome_arsenal",
-                AchievementConditionType.NoDamageWaves => "iron_skin",
-                AchievementConditionType.MaxAbilityLevel => "vitality_regen",
-                _ => "fallback_star"
-            };
+                return heroId switch
+                {
+                    "mage" => "hero_mage",
+                    "ranger" => "hero_ranger",
+                    "necromancer" => "hero_necromancer",
+                    _ => "hero_knight"
+                };
+            }
+
+            switch (ach.conditionType)
+            {
+                case AchievementConditionType.DefeatBoss:
+                    return ach.targetId switch
+                    {
+                        "golem" => "boss_golem",
+                        "necromancer" => "boss_necro",
+                        "frost_lich" => "ice_aura",
+                        "demon_lord" => "ult_meteor",
+                        _ => "boss_golem"
+                    };
+                case AchievementConditionType.FindSecretItem:
+                    return ach.targetId switch
+                    {
+                        "secret_chest" => "secret_chest",
+                        "secret_scroll" => "secret_scroll",
+                        _ => "secret_crystal"
+                    };
+                case AchievementConditionType.ReachWave:
+                    if (ach.runConstraint != null && ach.runConstraint.maxRunSeconds > 0) return "swift_boots";
+                    if (ach.runConstraint != null && ach.runConstraint.maxActiveAbilities >= 0) return "sword";
+                    if (ach.runConstraint != null && ach.runConstraint.maxPassiveAbilities >= 0) return "battle_fury";
+                    if (ach.runConstraint != null && ach.runConstraint.noRerolls) return "chrono_tome";
+                    return "wave_banner";
+                case AchievementConditionType.TotalKills:
+                case AchievementConditionType.KillsInRun: return "kills_skull";
+                case AchievementConditionType.CollectAbilitiesInRun: return "tome_arsenal";
+                case AchievementConditionType.NoDamageWaves: return "iron_skin";
+                case AchievementConditionType.MaxAbilityLevel: return "chrono_tome";
+                case AchievementConditionType.ClearShrines: return "skyfall_spire";
+                case AchievementConditionType.ReachCombo: return "chain_lightning";
+                case AchievementConditionType.DefeatMiniBosses: return "titan_heart";
+                case AchievementConditionType.EliteKills: return "battle_fury";
+                case AchievementConditionType.BarrelMultiKill: return "fireball";
+                case AchievementConditionType.SiegeShellsBroken: return "seismic_hammer";
+                case AchievementConditionType.VacuumMagnetXp: return "magnet";
+                case AchievementConditionType.UniqueSynergies:
+                case AchievementConditionType.SynergiesInRun: return "synergy_thunderstorm";
+                case AchievementConditionType.UltimatesUsed: return "ult_meteor";
+                case AchievementConditionType.BossBeforeEnrage: return "boss_golem";
+                case AchievementConditionType.BossAtLowHp: return "vampiric_fang";
+                case AchievementConditionType.RunDurationMinutes: return "chrono_tome";
+                case AchievementConditionType.WaveEventsCompleted:
+                    return ach.targetId == "GoldGoblin" ? "golden_idol" : "wave_banner";
+                case AchievementConditionType.UniqueWaveEvents: return "wave_banner";
+                case AchievementConditionType.UniqueMutators: return "black_hole";
+                case AchievementConditionType.SecondWindTriggers: return "guardian_shield";
+                case AchievementConditionType.HeroesReachedWave: return "hero_knight";
+                case AchievementConditionType.TotalRuns: return "swift_boots";
+                case AchievementConditionType.TalentsUnlocked:
+                case AchievementConditionType.KeystonesUnlocked: return "fallback_star";
+                case AchievementConditionType.MetaUpgradeLevels: return "coin_stack";
+                case AchievementConditionType.DailyBonusClaims: return "coin_single";
+                case AchievementConditionType.AbilitiesUnlocked: return "tome_arsenal";
+                default: return "fallback_star";
+            }
         }
 
         private static string ResolveMetaUpgradeTemplateKey(MetaUpgradeEffectType type)

@@ -168,9 +168,9 @@ namespace ProjectB.Tests.EditMode
         [Test]
         public void SecretAchievements_HaveUpdatedTargetsAndUnlockCorrectly()
         {
-            var chests = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/Find5Chests.asset");
-            var scrolls = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/Find3Scrolls.asset");
-            var crystal = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/Find1Crystal.asset");
+            var chests = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/secret_chests_2.asset");
+            var scrolls = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/secret_scroll.asset");
+            var crystal = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/secret_crystal.asset");
 
             Assert.IsNotNull(chests);
             Assert.IsNotNull(scrolls);
@@ -182,15 +182,17 @@ namespace ProjectB.Tests.EditMode
             using var save = new SaveManager();
             var achMgr = new AchievementManager(save);
 
+            int coinsBeforeChests = save.Data.coins;
             achMgr.OnSecretItemFound("secret_chest");
-            Assert.IsFalse(save.IsAbilityUnlocked("GoldenIdol"));
+            Assert.IsFalse(save.Data.completedAchievements.Contains("secret_chests_2"));
             achMgr.OnSecretItemFound("secret_chest");
-            Assert.IsTrue(save.IsAbilityUnlocked("GoldenIdol"));
+            Assert.IsTrue(save.Data.completedAchievements.Contains("secret_chests_2"));
+            Assert.Greater(save.Data.coins, coinsBeforeChests);
 
             int coinsBeforeScroll = save.Data.coins;
             achMgr.OnSecretItemFound("secret_scroll");
             Assert.Greater(save.Data.coins, coinsBeforeScroll);
-            Assert.IsTrue(save.Data.completedAchievements.Contains("find_3_scrolls"));
+            Assert.IsTrue(save.Data.completedAchievements.Contains("secret_scroll"));
         }
     }
 }

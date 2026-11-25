@@ -1468,7 +1468,9 @@ namespace ProjectB.Enemies
 
             currentWave++;
             DevLog.Log($"[WaveManager] Wave {completedWave} completed!");
-            achievementManager?.OnWaveReached(currentWave);
+            // ReachWave-ачивки (с ограничениями забега) обрабатывает AchievementRunTracker по WaveCompletedEvent;
+            // без шины событий (изолированные тесты) — прямой вызов без контекста.
+            if (eventBus == null) achievementManager?.OnWaveReached(currentWave);
             eventBus?.Publish(new WaveCompletedEvent(completedWave, currentWave));
             startWaveDelayCoroutine = StartCoroutine(StartWaveDelay());
         }

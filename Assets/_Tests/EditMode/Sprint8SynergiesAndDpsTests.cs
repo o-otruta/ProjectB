@@ -741,9 +741,9 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(1f, totalShare, 0.001f);
 
             // Human-readable RewardDisplayFormatter / GameOverUI.FormatReward
-            var laserAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/ReachWave10.asset");
-            var rangerAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/Kill5000Enemies.asset");
-            var dragonAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/Collect5Abilities.asset");
+            var laserAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/reach_wave_10.asset");
+            var rangerAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/clear_3_shrines.asset");
+            var dragonAch = AssetDatabase.LoadAssetAtPath<AchievementData>("Assets/Resources/Achievements/collect_5_abilities.asset");
 
             Assert.AreEqual("Unlocked: Laser Turret", GameOverUI.FormatReward(laserAch));
             Assert.AreEqual("Hero: Ranger", GameOverUI.FormatReward(rangerAch));

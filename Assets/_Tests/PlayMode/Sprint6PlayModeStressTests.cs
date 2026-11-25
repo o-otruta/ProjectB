@@ -70,8 +70,8 @@ namespace ProjectB.Tests.PlayMode
         public IEnumerator PlayMode_Wave40SwarmWith100PlusEnemiesAnd6ActiveSkills_RunsSmoothlyAndMagnetizesPickups()
         {
             using var saveManager = new SaveManager();
-            saveManager.AddBonusActiveSlots(3, saveImmediately: false);
-            saveManager.AddBonusPassiveSlots(3, saveImmediately: false);
+            saveManager.AddBonusActiveSlots(AbilitySlotService.MAX_ACTIVE_SLOTS - AbilitySlotService.BASE_ACTIVE_SLOTS, saveImmediately: false);
+            saveManager.AddBonusPassiveSlots(AbilitySlotService.MAX_PASSIVE_SLOTS - AbilitySlotService.BASE_PASSIVE_SLOTS, saveImmediately: false);
             using var slotService = new AbilitySlotService(saveManager, null);
             var bus = new GameEventBus();
             var runStats = new RunStatistics();

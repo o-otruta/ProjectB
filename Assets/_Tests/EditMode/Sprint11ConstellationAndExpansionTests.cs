@@ -401,8 +401,9 @@ namespace ProjectB.Tests.EditMode
                 }
             }
             Assert.AreEqual(tree.nodes.Count - 1, mgr.UnlockedCount, "All stars must be reachable");
-            Assert.AreEqual(1, mgr.GetBonusActiveSlots());
-            Assert.AreEqual(1, mgr.GetBonusPassiveSlots());
+            // The full Constellation grants 3+3 slots (achievements add only 1+1: first mini-boss and Golem).
+            Assert.AreEqual(3, mgr.GetBonusActiveSlots());
+            Assert.AreEqual(3, mgr.GetBonusPassiveSlots());
             Assert.IsTrue(mgr.HasEffect(TalentEffectType.SecondWind));
         }
 
@@ -558,10 +559,10 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNull(catalog.GetById("paladin"), "Paladin was removed");
             Assert.IsNull(catalog.GetById("engineer"), "Engineer was removed");
 
-            var lich = LoadAsset<AchievementData>("Assets/Resources/Achievements/DefeatFrostLich.asset");
-            Assert.AreEqual(AchievementRewardType.GiveCoins, lich.rewardType);
+            var lich = LoadAsset<AchievementData>("Assets/Resources/Achievements/defeat_frost_lich.asset");
+            Assert.AreEqual(AchievementRewardType.GiveShards, lich.rewardType);
             Assert.Greater(lich.rewardValue, 0);
-            var shrines = LoadAsset<AchievementData>("Assets/Resources/Achievements/Clear5Shrines.asset");
+            var shrines = LoadAsset<AchievementData>("Assets/Resources/Achievements/clear_5_shrines.asset");
             Assert.AreEqual(AchievementConditionType.ClearShrines, shrines.conditionType);
             Assert.AreEqual(AchievementRewardType.GiveCoins, shrines.rewardType);
             Assert.Greater(shrines.rewardValue, 0);
@@ -929,9 +930,9 @@ namespace ProjectB.Tests.EditMode
 
             var achievements = new Dictionary<string, string>
             {
-                { "Clear3Shrines", "SkyfallSpire" },
-                { "Combo50", "ShadowDecoy" },
-                { "ReachWave35", "VampiricFang" },
+                { "elite_kills_30", "SkyfallSpire" },
+                { "combo_50", "ShadowDecoy" },
+                { "reach_wave_35", "VampiricFang" },
             };
             foreach (var kv in achievements)
             {
@@ -960,7 +961,7 @@ namespace ProjectB.Tests.EditMode
             var achievements = new AchievementManager(save);
             for (int i = 0; i < 3; i++) achievements.OnShrineCleared();
             Assert.IsTrue(save.Data.completedAchievements.Contains("clear_3_shrines"));
-            Assert.IsTrue(save.IsAbilityUnlocked("SkyfallSpire"));
+            Assert.IsTrue(save.IsHeroUnlocked("ranger"), "3 shrines now unlock the Ranger");
             Assert.IsFalse(save.Data.completedAchievements.Contains("clear_5_shrines"));
 
             achievements.OnComboReached(30);
@@ -972,7 +973,7 @@ namespace ProjectB.Tests.EditMode
             achievements.OnShrineCleared();
             achievements.OnShrineCleared();
             Assert.IsTrue(save.Data.completedAchievements.Contains("clear_5_shrines"));
-            Assert.AreEqual(coinsBefore + 300, save.Data.coins, "Shrine Master pays 300 coins");
+            Assert.AreEqual(coinsBefore + 1000, save.Data.coins, "Shrine Master pays 1000 coins (doubled)");
         }
 
         [Test]

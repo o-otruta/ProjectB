@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
+  m_Name: barrel_strike
+  m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
+  id: barrel_strike
+  title: Strike!
+  description: Hit 12 enemies with a single barrel explosion
+  category: 2
+  sortOrder: 5
+  nameKey: ach.barrel_strike.title
+  descriptionKey: ach.barrel_strike.desc
+  icon: {fileID: 21300000, guid: 89e78396ddc62fd40ad31c0e767b5352, type: 3}
+  conditionType: 12
+  targetValue: 12
+  targetId: 
+  conditionParam: 0
+  runConstraint:
+    heroId: 
+    maxActiveAbilities: -1
+    maxPassiveAbilities: -1
+    noRerolls: 0
+    maxRunSeconds: 0
+  rewardType: 3
+  rewardValue: 600
+  rewardId: 

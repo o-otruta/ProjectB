@@ -19,6 +19,9 @@ namespace ProjectB.Meta
         // Список ID выполненных ачивок
         public List<string> completedAchievements = new List<string>();
 
+        // Члены «множественных» ачивок (уникальные герои, синергии, события): записи вида "achievementId|memberId"
+        public List<string> achievementSetEntries = new List<string>();
+
         // --- Разблокировки ---
         // ID разблокированных способностей (через ачивки)
         public List<string> unlockedAbilityIds = new List<string>();
