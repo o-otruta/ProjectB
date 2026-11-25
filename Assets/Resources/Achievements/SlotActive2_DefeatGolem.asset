@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a202728283cda6a4a899c4d970ebbe39, type: 3}
-  m_Name: SlotActive2_Wave15
+  m_Name: SlotActive2_DefeatGolem
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
   id: unlock_active_slot_2
   title: Weapon Master
-  description: Reach Wave 15 to unlock +1 Active Ability Slot
+  description: Defeat the Stone Golem to unlock +1 Active Ability Slot
   nameKey: ach.unlock_active_slot_2.title
   descriptionKey: ach.unlock_active_slot_2.desc
   icon: {fileID: 21300000, guid: 4a1e3aab21f3f5045b6f739f1e2cabd6, type: 3}
-  conditionType: 0
-  targetValue: 15
-  targetId: 
+  conditionType: 2
+  targetValue: 1
+  targetId: golem
   rewardType: 4
   rewardValue: 1
   rewardId: 

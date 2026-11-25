@@ -17,6 +17,26 @@ namespace ProjectB.Enemies
 
         private float nextSummonTime;
 
+        // Ярость по таймеру боя (анти-кайт)
+        private float bossFightStartTime;
+        private float baseDamageMultiplier = 1f;
+        private float timedEnrageSpeedMultiplier = 1f;
+        private int timedEnrageLevel;
+        private System.Action<Vector3, float, float, float> heroSlowZoneSpawner;
+
+        public int TimedEnrageLevel => timedEnrageLevel;
+        public bool IsTimedEnraged => timedEnrageLevel > 0;
+        protected override bool HasEnrageRim => timedEnrageLevel > 0;
+
+        /// <summary>Хук от WaveManager: зона замедления героя (позиция, радиус, длительность, slowFactor).</summary>
+        public void SetHeroSlowZoneSpawner(System.Action<Vector3, float, float, float> spawner) => heroSlowZoneSpawner = spawner;
+
+        protected void SpawnHeroSlowZone(Vector3 position, float radius, float duration, float slowFactor)
+        {
+            if (radius <= 0f || duration <= 0f) return;
+            heroSlowZoneSpawner?.Invoke(position, radius, duration, slowFactor);
+        }
+
         public override bool IsBoss => true;
         public override string BossId => bossData != null ? bossData.bossId : base.BossId;
         public BossData BossData => bossData;
@@ -47,6 +67,11 @@ namespace ProjectB.Enemies
             float summonCd = data != null && data.summonCooldown > 0f ? data.summonCooldown : 10f;
             nextSummonTime = Time.time + summonCd * 0.6f;
 
+            bossFightStartTime = Time.time;
+            baseDamageMultiplier = currentDamageMultiplier;
+            timedEnrageSpeedMultiplier = 1f;
+            timedEnrageLevel = 0;
+
             string displayName = data != null ? Loc.Name(data) : string.Empty;
             if (string.IsNullOrEmpty(displayName))
             {
@@ -64,8 +89,41 @@ namespace ProjectB.Enemies
             if (!IsTargetDead())
             {
                 UpdateSummoning();
+                UpdateTimedEnrage();
             }
         }
+
+        protected override float GetAdditionalSpeedMultiplier() => timedEnrageSpeedMultiplier;
+
+        public static int ComputeTimedEnrageLevel(float elapsed, float enrageAfter, float rampInterval)
+        {
+            if (enrageAfter <= 0f || elapsed < enrageAfter) return 0;
+            return 1 + Mathf.FloorToInt((elapsed - enrageAfter) / Mathf.Max(5f, rampInterval));
+        }
+
+        private void UpdateTimedEnrage()
+        {
+            if (bossData == null || isMiniBoss || bossData.enrageAfterSeconds <= 0f) return;
+
+            int level = ComputeTimedEnrageLevel(Time.time - bossFightStartTime, bossData.enrageAfterSeconds, bossData.enrageRampInterval);
+            if (level <= timedEnrageLevel) return;
+
+            timedEnrageLevel = level;
+            int steps = level - 1;
+            timedEnrageSpeedMultiplier = Mathf.Min(
+                Mathf.Max(1f, bossData.enrageMaxSpeedMultiplier),
+                bossData.enrageSpeedMultiplier + steps * bossData.enrageRampSpeedStep);
+            float dmgMult = Mathf.Min(
+                Mathf.Max(1f, bossData.enrageMaxDamageMultiplier),
+                bossData.enrageDamageMultiplier + steps * bossData.enrageRampDamageStep);
+            currentDamageMultiplier = baseDamageMultiplier * dmgMult;
+            OnTimedEnrageLevelChanged(level);
+            ApplyVisualState(0f);
+            eventBus?.Publish(new BossEnragedEvent(transform.position, BossId, level));
+        }
+
+        /// <summary>Хук для боссов: например, Golem прыгает чаще в ярости.</summary>
+        protected virtual void OnTimedEnrageLevelChanged(int level) { }
 
         protected void UpdateSummoning()
         {

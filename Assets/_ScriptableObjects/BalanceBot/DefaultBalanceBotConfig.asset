@@ -34,6 +34,9 @@ MonoBehaviour:
   stuckMinDisplacement: 0.65
   unstuckDurationSeconds: 0.65
   decisionIntervalSeconds: 0.1
+  bossEngageAfterSeconds: 20
+  bossEngageMinHpRatio: 0.5
+  bossEngageWeight: 3
   ultimateMinNearbyEnemies: 6
   ultimateCheckRadius: 7.5
   ultimateLowHpEmergencyThreshold: 0.35

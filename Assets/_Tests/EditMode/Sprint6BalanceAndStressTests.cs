@@ -393,8 +393,8 @@ namespace ProjectB.Tests.EditMode
         public void Wave40StressTest_120ActiveEnemies_6ActiveSkillsPlusSynergies_MeetsFrameTimingAndZeroGcInCombatLoop()
         {
             using var saveManager = new SaveManager();
-            saveManager.AddBonusActiveSlots(3, saveImmediately: false);
-            saveManager.AddBonusPassiveSlots(3, saveImmediately: false);
+            saveManager.AddBonusActiveSlots(AbilitySlotService.MAX_ACTIVE_SLOTS - AbilitySlotService.BASE_ACTIVE_SLOTS, saveImmediately: false);
+            saveManager.AddBonusPassiveSlots(AbilitySlotService.MAX_PASSIVE_SLOTS - AbilitySlotService.BASE_PASSIVE_SLOTS, saveImmediately: false);
             var metaMgr = new MetaUpgradeManager(saveManager);
             using var slotService = new AbilitySlotService(saveManager, metaMgr);
             var achMgr = new AchievementManager(saveManager);

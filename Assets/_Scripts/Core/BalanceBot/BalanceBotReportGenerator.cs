@@ -118,8 +118,10 @@ namespace ProjectB.Core.BalanceBot
         {
             sb.AppendLine("## 1. Hero x Strategy x Meta");
             sb.AppendLine();
-            sb.AppendLine("| Hero | Strategy | Meta | Runs | Median Wave | P25 Wave | P75 Wave | Median Time (s) | Avg Kills | Avg Coins |");
-            sb.AppendLine("|---|---|---|---:|---:|---:|---:|---:|---:|---:|");
+            sb.AppendLine("Median/P25/P75 count only runs that ended in death; runs stopped by the time/watchdog limit are listed as Stalled (with their wave).");
+            sb.AppendLine();
+            sb.AppendLine("| Hero | Strategy | Meta | Runs | Median Wave | P25 Wave | P75 Wave | Median Time (s) | Avg Kills | Avg Coins | Stalled |");
+            sb.AppendLine("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|");
 
             var groups = new Dictionary<GroupKey, List<CompletedRunSummary>>();
             for (int i = 0; i < runs.Count; i++)
@@ -156,10 +158,19 @@ namespace ProjectB.Core.BalanceBot
 
                 double sumKills = 0;
                 double sumCoins = 0;
+                var stalled = new StringBuilder();
                 for (int i = 0; i < list.Count; i++)
                 {
-                    wavesBuf.Add(list[i].DeathWave);
-                    timesBuf.Add(list[i].RunTimeSeconds);
+                    if (IsStalledRun(list[i]))
+                    {
+                        if (stalled.Length > 0) stalled.Append(", ");
+                        stalled.Append('W').Append(list[i].DeathWave.ToString(CultureInfo.InvariantCulture));
+                    }
+                    else
+                    {
+                        wavesBuf.Add(list[i].DeathWave);
+                        timesBuf.Add(list[i].RunTimeSeconds);
+                    }
                     sumKills += list[i].TotalKills;
                     sumCoins += list[i].TotalCoins;
                 }
@@ -178,9 +189,17 @@ namespace ProjectB.Core.BalanceBot
                     $"{p75.ToString("F1", CultureInfo.InvariantCulture)} | " +
                     $"{medTime.ToString("F1", CultureInfo.InvariantCulture)} | " +
                     $"{avgKills.ToString("F1", CultureInfo.InvariantCulture)} | " +
-                    $"{avgCoins.ToString("F1", CultureInfo.InvariantCulture)} |");
+                    $"{avgCoins.ToString("F1", CultureInfo.InvariantCulture)} | " +
+                    $"{(stalled.Length > 0 ? stalled.ToString() : "-")} |");
             }
             sb.AppendLine();
+        }
+
+        /// <summary>Забег остановлен лимитом времени/сторожем, а не смертью — его волна не «волна смерти».</summary>
+        public static bool IsStalledRun(CompletedRunSummary run)
+        {
+            string cause = run.DeathCause;
+            return cause == "TimeLimitReached" || cause == "WatchdogTimeout";
         }
 
         private static void AppendTopAbilitiesSection(StringBuilder sb, IReadOnlyList<CompletedRunSummary> runs)

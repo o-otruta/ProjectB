@@ -579,14 +579,10 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(HeroAbilities.MAX_ACTIVE_SLOTS, hud.ActiveSlots.Count);
             Assert.AreEqual(HeroAbilities.MAX_PASSIVE_SLOTS, hud.PassiveSlots.Count);
 
-            // Active row has Active1, Active2, 1 empty unlocked socket (slot 2), and 3 locked sockets (slots 3..5)
+            // Base 2+2 slots: active row has Active1, Active2 and 4 locked sockets (slots 2..5)
             Assert.AreSame(active1, hud.ActiveSlots[0].CurrentData);
             Assert.AreSame(active2, hud.ActiveSlots[1].CurrentData);
-            Assert.IsTrue(hud.ActiveSlots[2].IsEmpty, "Active slot 2 should be empty and unlocked");
-            Assert.IsFalse(hud.ActiveSlots[2].IsLocked, "Active slot 2 should not be locked");
-            Assert.IsTrue(hud.ActiveSlots[2].gameObject.activeSelf);
-            Assert.IsFalse(hud.ActiveSlots[2].transform.Find("LevelBadge").gameObject.activeSelf);
-            for (int i = 3; i < HeroAbilities.MAX_ACTIVE_SLOTS; i++)
+            for (int i = 2; i < HeroAbilities.MAX_ACTIVE_SLOTS; i++)
             {
                 Assert.IsTrue(hud.ActiveSlots[i].IsLocked, $"Active slot {i} should be locked by default");
                 Assert.IsFalse(hud.ActiveSlots[i].IsEmpty, $"Locked active slot {i} must not report IsEmpty");
@@ -594,14 +590,10 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsFalse(hud.ActiveSlots[i].transform.Find("LevelBadge").gameObject.activeSelf);
             }
 
-            // Passive row has Passive1, Passive2, 1 empty unlocked socket (slot 2), and 3 locked sockets (slots 3..5)
+            // Passive row has Passive1, Passive2 and 4 locked sockets (slots 2..5)
             Assert.AreSame(passive1, hud.PassiveSlots[0].CurrentData);
             Assert.AreSame(passive2, hud.PassiveSlots[1].CurrentData);
-            Assert.IsTrue(hud.PassiveSlots[2].IsEmpty, "Passive slot 2 should be empty and unlocked");
-            Assert.IsFalse(hud.PassiveSlots[2].IsLocked, "Passive slot 2 should not be locked");
-            Assert.IsTrue(hud.PassiveSlots[2].gameObject.activeSelf);
-            Assert.IsFalse(hud.PassiveSlots[2].transform.Find("LevelBadge").gameObject.activeSelf);
-            for (int i = 3; i < HeroAbilities.MAX_PASSIVE_SLOTS; i++)
+            for (int i = 2; i < HeroAbilities.MAX_PASSIVE_SLOTS; i++)
             {
                 Assert.IsTrue(hud.PassiveSlots[i].IsLocked, $"Passive slot {i} should be locked by default");
                 Assert.IsFalse(hud.PassiveSlots[i].IsEmpty, $"Locked passive slot {i} must not report IsEmpty");

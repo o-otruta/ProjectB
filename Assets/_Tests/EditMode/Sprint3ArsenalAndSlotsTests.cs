@@ -160,7 +160,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void AbilitySlots_StartAtThreeEach_RejectFourth_UnlockViaAchievementsAndSkillTree_PersistAndLiveUpdateHud()
+        public void AbilitySlots_StartAtTwoEach_RejectThird_UnlockViaAchievementsAndSkillTree_PersistAndLiveUpdateHud()
         {
             var saveManager = new SaveManager();
             try
@@ -171,15 +171,15 @@ namespace ProjectB.Tests.EditMode
                 var stats = new HeroRuntimeStats();
                 var bus = new GameEventBus();
 
-                Assert.AreEqual(3, slotService.MaxActiveSlots);
-                Assert.AreEqual(3, slotService.MaxPassiveSlots);
+                Assert.AreEqual(2, slotService.MaxActiveSlots);
+                Assert.AreEqual(2, slotService.MaxPassiveSlots);
 
                 var heroGo = Track(new GameObject("SlotTestHero"));
                 var heroAbilities = heroGo.AddComponent<HeroAbilities>();
                 heroAbilities.Construct(stats, bus, achManager, null, slotService);
 
-                Assert.AreEqual(3, heroAbilities.UnlockedActiveSlots);
-                Assert.AreEqual(3, heroAbilities.UnlockedPassiveSlots);
+                Assert.AreEqual(2, heroAbilities.UnlockedActiveSlots);
+                Assert.AreEqual(2, heroAbilities.UnlockedPassiveSlots);
 
                 // Build HUD with 6 active + 6 passive sockets
                 var prefabGo = Track(new GameObject("SlotPrefab", typeof(RectTransform), typeof(Image), typeof(AbilityHudSlotUI)));
@@ -206,7 +206,7 @@ namespace ProjectB.Tests.EditMode
                 SetPrivateField(hud, "slotPrefab", slotPrefab);
                 hud.Construct(heroAbilities);
 
-                // Equip 3 actives + 3 passives; 4th of each must be rejected
+                // Equip 2 actives + 2 passives; 3rd of each must be rejected
                 var actives = new List<ActiveAbilityData>();
                 var passives = new List<StatPassiveAbilityData>();
                 var cards = new List<CardData>();
@@ -235,7 +235,7 @@ namespace ProjectB.Tests.EditMode
                     cards.Add(pc);
                 }
 
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 2; i++)
                 {
                     Assert.IsTrue(heroAbilities.AddAbility(actives[i]));
                     Assert.IsTrue(heroAbilities.AddAbility(passives[i]));
@@ -243,8 +243,8 @@ namespace ProjectB.Tests.EditMode
 
                 Assert.IsFalse(heroAbilities.CanAddActive());
                 Assert.IsFalse(heroAbilities.CanAddPassive());
-                Assert.IsFalse(heroAbilities.AddAbility(actives[3]), "4th active must be rejected at 3 slots");
-                Assert.IsFalse(heroAbilities.AddAbility(passives[3]), "4th passive must be rejected at 3 slots");
+                Assert.IsFalse(heroAbilities.AddAbility(actives[2]), "3rd active must be rejected at 2 slots");
+                Assert.IsFalse(heroAbilities.AddAbility(passives[2]), "3rd passive must be rejected at 2 slots");
 
                 // Verify UpgradeManager filters out new active/passive ability cards when capped at 3
                 var mgrGo = Track(new GameObject("SlotUpgradeMgr"));
@@ -252,35 +252,35 @@ namespace ProjectB.Tests.EditMode
                 mgr.cardPool = cards;
                 mgr.Construct(null, null, null, heroAbilities, null, saveManager);
                 mgr.InitializeRunPool();
-                Assert.AreEqual(0, mgr.GetRandomCards(5).Count, "No new ability cards should be offered when 3/3 slots are full");
+                Assert.AreEqual(0, mgr.GetRandomCards(5).Count, "No new ability cards should be offered when 2/2 slots are full");
 
-                // Verify HUD has 3 filled + 3 locked per row
-                for (int i = 3; i < 6; i++)
+                // Verify HUD has 2 filled + 4 locked per row
+                for (int i = 2; i < 6; i++)
                 {
                     Assert.IsTrue(hud.ActiveSlots[i].IsLocked);
                     Assert.IsTrue(hud.PassiveSlots[i].IsLocked);
                 }
 
-                // Trigger 2 active slot achievements (Wave 15 -> triggers Wave 5 & Wave 15) + 1 passive slot achievement (250 kills)
-                achManager.OnWaveReached(15);
-                achManager.OnEnemyKilled(); // wait, let's trigger 250 kills via AddProgress
+                // Wave 25 -> active slot 1 (W5) + passive slot 2 (W25); 250 kills -> passive slot 1.
+                // Active slot 2 now needs a Golem kill, so actives stay at 3.
+                achManager.OnWaveReached(25);
                 achManager.AddProgress("unlock_passive_slot_1", 250);
 
-                Assert.AreEqual(5, slotService.MaxActiveSlots);
+                Assert.AreEqual(3, slotService.MaxActiveSlots);
                 Assert.AreEqual(4, slotService.MaxPassiveSlots);
                 Assert.IsTrue(heroAbilities.CanAddActive());
                 Assert.IsTrue(heroAbilities.CanAddPassive());
 
-                // Live-updated HUD should now show slot 3 as empty unlocked!
-                Assert.IsTrue(hud.ActiveSlots[3].IsEmpty);
-                Assert.IsFalse(hud.ActiveSlots[3].IsLocked);
-                Assert.IsTrue(hud.ActiveSlots[5].IsLocked);
+                // Live-updated HUD should now show slot 2 as empty unlocked!
+                Assert.IsTrue(hud.ActiveSlots[2].IsEmpty);
+                Assert.IsFalse(hud.ActiveSlots[2].IsLocked);
+                Assert.IsTrue(hud.ActiveSlots[3].IsLocked);
                 Assert.IsTrue(hud.PassiveSlots[3].IsEmpty);
                 Assert.IsTrue(hud.PassiveSlots[4].IsLocked);
 
-                // 4th active & passive now equip cleanly
-                Assert.IsTrue(heroAbilities.AddAbility(actives[3]));
-                Assert.IsTrue(heroAbilities.AddAbility(passives[3]));
+                // 3rd active & passive now equip cleanly
+                Assert.IsTrue(heroAbilities.AddAbility(actives[2]));
+                Assert.IsTrue(heroAbilities.AddAbility(passives[2]));
 
                 // Persist across SaveManager reload
                 saveManager.Save();
@@ -288,7 +288,7 @@ namespace ProjectB.Tests.EditMode
                 try
                 {
                     using var reloadedSlots = new AbilitySlotService(reloadedSave, new MetaUpgradeManager(reloadedSave));
-                    Assert.AreEqual(5, reloadedSlots.MaxActiveSlots);
+                    Assert.AreEqual(3, reloadedSlots.MaxActiveSlots);
                     Assert.AreEqual(4, reloadedSlots.MaxPassiveSlots);
                 }
                 finally
@@ -308,7 +308,7 @@ namespace ProjectB.Tests.EditMode
                 skillTree.BonusActive = 0;
                 skillTree.BonusPassive = 0;
                 skillTree.NotifyChanged();
-                Assert.AreEqual(5, slotService.MaxActiveSlots);
+                Assert.AreEqual(3, slotService.MaxActiveSlots);
                 Assert.AreEqual(4, slotService.MaxPassiveSlots);
             }
             finally
@@ -475,8 +475,12 @@ namespace ProjectB.Tests.EditMode
             SetPrivateField(health, "heroData", heroData);
             typeof(HeroHealth).GetMethod("Start", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(health, null);
 
+            // Base is 2 passive slots; the test equips 3 passives -> grant +1 via a skill-tree provider on clean in-memory save
+            using var passiveSave = new SaveManager(new InMemorySaveStorage());
+            using var passiveSlots = new AbilitySlotService(passiveSave, null);
+            passiveSlots.RegisterBonusProvider(new FakeSkillTreeSlotProvider { BonusPassive = 1 });
             var heroAbilities = heroGo.AddComponent<HeroAbilities>();
-            heroAbilities.Construct(stats, bus, null, health, null);
+            heroAbilities.Construct(stats, bus, null, health, passiveSlots);
 
             var chrono = AssetDatabase.LoadAssetAtPath<StatPassiveAbilityData>("Assets/_ScriptableObjects/Abilities/ChronoTomeData.asset");
             var crit = AssetDatabase.LoadAssetAtPath<StatPassiveAbilityData>("Assets/_ScriptableObjects/Abilities/CriticalLensData.asset");
@@ -734,10 +738,10 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(cheatMenu.GrantOrUpgradeAbility(miniDragonCard));
             Assert.AreEqual(3, heroAbilities.GetAbilityLevel("MiniDragon"));
 
-            // 2. Respects 3-slot cap for active abilities
+            // 2. Respects 2-slot base cap for active abilities
             Assert.IsTrue(cheatMenu.GrantOrUpgradeAbility(chainCard));
-            Assert.IsTrue(cheatMenu.GrantOrUpgradeAbility(guardianCard));
-            Assert.IsFalse(cheatMenu.GrantOrUpgradeAbility(poisonCard), "4th active must be blocked when 3 active slots are full");
+            Assert.IsFalse(cheatMenu.GrantOrUpgradeAbility(guardianCard), "3rd active must be blocked when 2 active slots are full");
+            Assert.IsFalse(cheatMenu.GrantOrUpgradeAbility(poisonCard), "3rd active must be blocked when 2 active slots are full");
             Assert.IsFalse(heroAbilities.HasAbility("PoisonAlchemist"));
 
             // 3. Grants and levels up passive ability (TitanHeart)

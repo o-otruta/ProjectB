@@ -29,6 +29,10 @@ namespace ProjectB.Data.Combat
         [Tooltip("Скорость полета снаряда")]
         public float projectileSpeed = 10f;
 
+        [Tooltip("Упреждение для вражеских стрелков: 0 = в текущую точку цели, 1 = точно в точку перехвата при постоянной скорости. " +
+                 "0.5–0.7 наказывает бег по кругу, но резкая смена направления по-прежнему спасает")]
+        [Range(0f, 1f)] public float leadFactor = 0f;
+
         [Tooltip("Optional AoE splash radius on impact (0 = single target)")]
         public float splashRadius = 0f;
 

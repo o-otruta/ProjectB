@@ -227,6 +227,27 @@ namespace ProjectB.Data.Enemies
         [Tooltip("Интервал проверки отставших врагов в секундах")]
         public float leashCheckInterval = 2f;
 
+        [Header("Anti-Kite: Forward Spawns & Trailing Relocation")]
+        [Tooltip("Доля спавнов волны (и переносов отставших), которые ставятся в конус ПО ХОДУ движения героя. " +
+                 "Бег по кругу упирается в свежую толпу. 0 = равномерно по кольцу")]
+        [Range(0f, 1f)] public float forwardSpawnChance = 0.45f;
+
+        [Tooltip("Полуугол конуса спавна по ходу движения, градусы")]
+        [Range(10f, 180f)] public float forwardSpawnConeHalfAngle = 60f;
+
+        [Tooltip("Минимальная скорость героя (м/с), при которой работает смещение спавна вперёд")]
+        [Min(0f)] public float forwardSpawnMinHeroSpeed = 1.5f;
+
+        [Tooltip("Переносить врагов, которые остались ЗА экраном позади бегущего героя, на кольцо спавна впереди. " +
+                 "Убирает «змею» из мобов за спиной и держит плотность на экране")]
+        public bool relocateTrailingEnemies = true;
+
+        [Tooltip("Отступ (м) за радиусом внеэкранного спавна: дальше этого враг позади героя считается отставшим")]
+        [Min(0f)] public float trailingRelocateMargin = 3f;
+
+        [Tooltip("Насколько «позади» должен быть враг: dot(направление героя, направление на врага) ниже этого значения")]
+        [Range(-1f, 0.5f)] public float trailingBehindDot = -0.2f;
+
         [Tooltip("Безопасный отступ от внешних стен арены при спавне")]
         public float arenaPadding = 3f;
 

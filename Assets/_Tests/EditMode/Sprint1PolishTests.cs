@@ -72,7 +72,7 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(goblin, "GoblinData.asset must exist");
             Assert.AreEqual(28, goblin.hp);
             Assert.AreEqual(2.8f, goblin.speed, 0.01f);
-            Assert.AreEqual(5.5f, goblin.stopDistance, 0.01f);
+            Assert.AreEqual(8.5f, goblin.stopDistance, 0.01f); // анти-кайт: стреляет издалека (было 5.5)
             Assert.IsNotNull(goblin.modelPrefab);
             Assert.IsNotNull(goblin.weaponData);
 

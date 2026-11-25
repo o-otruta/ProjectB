@@ -462,6 +462,7 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
                 eventBus.Subscribe<EnemyHealedEvent>(OnEnemyHealed);
                 eventBus.Subscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
+                eventBus.Subscribe<BossEnragedEvent>(OnBossEnraged);
                 eventBus.Subscribe<AbilityVfxEvent>(OnAbilityVfx);
                 eventBus.Subscribe<BossShardsGainedEvent>(OnBossShardsGained);
                 eventBus.Subscribe<SecondWindTriggeredEvent>(OnSecondWind);
@@ -519,6 +520,7 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<EnemySummonHealEvent>(OnEnemySummonHeal);
                 eventBus.Unsubscribe<EnemyHealedEvent>(OnEnemyHealed);
                 eventBus.Unsubscribe<DemonLordEnragedEvent>(OnDemonLordEnraged);
+                eventBus.Unsubscribe<BossEnragedEvent>(OnBossEnraged);
                 eventBus.Unsubscribe<AbilityVfxEvent>(OnAbilityVfx);
                 eventBus.Unsubscribe<BossShardsGainedEvent>(OnBossShardsGained);
                 eventBus.Unsubscribe<SecondWindTriggeredEvent>(OnSecondWind);
@@ -808,6 +810,18 @@ namespace ProjectB.Visuals
             }
             audioManager?.PlaySfx(SfxType.SynergyFanfare, volumeScale: 1.0f, randomizePitch: false);
             cameraController?.Shake(0.35f, 0.25f);
+        }
+
+        private void OnBossEnraged(BossEnragedEvent evt)
+        {
+            EmitExplosionRing(evt.Position + Vector3.up * 0.8f, 3.2f, DemonEnrageColor, FireballSecondaryColor, 20, 10, 6.5f, 0.35f);
+            if (evt.Level == 1 && damagePool != null)
+            {
+                var item = AcquireDamageNumberItem();
+                item?.ShowText(evt.Position, Loc.Get("ui.hud.boss_enraged", "ENRAGED!"), DemonEnrageColor, 1.45f, 1.8f, mainCamera, damagePool);
+            }
+            if (evt.Level == 1) audioManager?.PlaySfx(SfxType.BossSpawn, volumeScale: 0.85f, randomizePitch: false);
+            cameraController?.Shake(evt.Level == 1 ? 0.32f : 0.18f, 0.22f);
         }
 
         private void OnDemonLordEnraged(DemonLordEnragedEvent evt)

@@ -18,13 +18,13 @@ namespace ProjectB.Meta
     }
 
     /// <summary>
-    /// Resolves effective active and passive ability slot capacities (base 3+3, max 6+6)
+    /// Resolves effective active and passive ability slot capacities (base 2+2, max 6+6)
     /// from achievements (SaveManager), meta upgrades, and future skill-tree providers.
     /// </summary>
     public class AbilitySlotService : IDisposable
     {
-        public const int BASE_ACTIVE_SLOTS = 3;
-        public const int BASE_PASSIVE_SLOTS = 3;
+        public const int BASE_ACTIVE_SLOTS = 2;
+        public const int BASE_PASSIVE_SLOTS = 2;
         public const int MAX_ACTIVE_SLOTS = 6;
         public const int MAX_PASSIVE_SLOTS = 6;
 

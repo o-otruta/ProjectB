@@ -39,6 +39,13 @@ namespace ProjectB.Core.BalanceBot
         [Min(0.1f)] public float unstuckDurationSeconds = 0.65f;
         [Range(0.05f, 0.5f)] public float decisionIntervalSeconds = 0.10f;
 
+        [Header("Boss Engagement")]
+        [Tooltip("Через сколько секунд после появления босса бот перестаёт кайтить его и идёт в атаку (как сделал бы человек)")]
+        [Min(0f)] public float bossEngageAfterSeconds = 20f;
+        [Tooltip("Идти на босса только при HP героя не ниже этой доли")]
+        [Range(0f, 1f)] public float bossEngageMinHpRatio = 0.5f;
+        [Min(0f)] public float bossEngageWeight = 3.0f;
+
         [Header("Ultimate")]
         [Min(1)] public int ultimateMinNearbyEnemies = 6;
         [Min(2f)] public float ultimateCheckRadius = 7.5f;

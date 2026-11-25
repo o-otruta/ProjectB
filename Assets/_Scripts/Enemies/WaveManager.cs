@@ -21,6 +21,7 @@ namespace ProjectB.Enemies
 
         private HeroHealth heroHealth;
         private Transform heroTarget;
+        private Rigidbody heroBody;
         private ProjectB.Meta.AchievementManager achievementManager;
         private GameEventBus eventBus;
         private ArenaGenerator arenaGenerator;
@@ -54,6 +55,11 @@ namespace ProjectB.Enemies
         private readonly List<FrostSlowZone> activeFrostZones = new List<FrostSlowZone>(MAX_ACTIVE_FROST_ZONES);
         private Transform frostZoneContainer;
         private Material cachedFrostZoneMaterial;
+
+        // Зоны обломков боссов (Golem): отдельный пул — у зоны свой визуал, созданный один раз на объект.
+        private ObjectPool<FrostSlowZone> rubbleZonePool;
+        private Material cachedRubbleZoneMaterial;
+        private System.Action<Vector3, float, float, float> cachedHeroSlowZoneCallback;
 
         private WaitForSeconds waveDelayWait;
         private WaitForSeconds spawnDelayWait;
@@ -138,6 +144,7 @@ namespace ProjectB.Enemies
             if (heroHealth != null)
             {
                 heroTarget = heroHealth.transform;
+                heroTarget.TryGetComponent(out heroBody);
             }
             this.achievementManager = achievementManager;
             this.eventBus = eventBus;
@@ -242,6 +249,7 @@ namespace ProjectB.Enemies
             if (cachedSplitChildCallback == null) cachedSplitChildCallback = SpawnSplitChild;
             if (cachedFrostZoneCallback == null) cachedFrostZoneCallback = SpawnFrostSlowZone;
             if (cachedFrostZoneReleasedCallback == null) cachedFrostZoneReleasedCallback = HandleFrostZoneReleased;
+            if (cachedHeroSlowZoneCallback == null) cachedHeroSlowZoneCallback = SpawnBossRubbleZone;
 
             if (waveConfig != null)
             {
@@ -668,6 +676,15 @@ namespace ProjectB.Enemies
                 float leashDistSq = leashDist * leashDist;
                 Vector3 heroPos = heroTarget.position;
 
+                // Анти-кайт: враги за экраном ПОЗАДИ бегущего героя переносятся вперёд по ходу движения.
+                bool relocateTrailing = waveConfig != null && waveConfig.relocateTrailingEnemies
+                                        && TryGetHeroMoveDirection(out _);
+                Vector3 heroDir = Vector3.zero;
+                if (relocateTrailing) TryGetHeroMoveDirection(out heroDir);
+                float trailingDist = GetMaxOffscreenSpawnRadius() + (waveConfig != null ? waveConfig.trailingRelocateMargin : 3f);
+                float trailingDistSq = trailingDist * trailingDist;
+                float behindDot = waveConfig != null ? waveConfig.trailingBehindDot : -0.2f;
+
                 CopyActiveEnemiesToBuffer();
 
                 for (int i = 0; i < enemyIterationBuffer.Count; i++)
@@ -677,10 +694,15 @@ namespace ProjectB.Enemies
 
                     Vector3 diff = enemy.transform.position - heroPos;
                     diff.y = 0f;
-                    if (diff.sqrMagnitude > leashDistSq)
+                    float distSq = diff.sqrMagnitude;
+                    if (distSq > leashDistSq)
                     {
-                        Vector3 newPos = GetValidSpawnPosition();
-                        enemy.Teleport(newPos);
+                        enemy.Teleport(GetWaveSpawnPosition());
+                    }
+                    else if (relocateTrailing && distSq > trailingDistSq && !enemy.IsBoss && !enemy.IsMiniBoss
+                             && Vector3.Dot(heroDir, diff / Mathf.Sqrt(distSq)) < behindDot)
+                    {
+                        enemy.Teleport(GetForwardSpawnPosition(heroDir));
                     }
                 }
                 enemyIterationBuffer.Clear();
@@ -774,6 +796,42 @@ namespace ProjectB.Enemies
             }
 
             return ClampToArena(center + dir * Mathf.Max(0f, minRad));
+        }
+
+        /// <summary>Направление движения героя по XZ, если он бежит быстрее forwardSpawnMinHeroSpeed.</summary>
+        public bool TryGetHeroMoveDirection(out Vector3 dir)
+        {
+            dir = Vector3.zero;
+            if (heroBody == null) return false;
+            Vector3 v = heroBody.linearVelocity;
+            v.y = 0f;
+            float minSpeed = waveConfig != null ? waveConfig.forwardSpawnMinHeroSpeed : 1.5f;
+            float sq = v.sqrMagnitude;
+            if (sq < minSpeed * minSpeed || sq < 1e-4f) return false;
+            dir = v / Mathf.Sqrt(sq);
+            return true;
+        }
+
+        /// <summary>Точка спавна для врагов волны: с шансом forwardSpawnChance — в конусе по ходу движения героя.</summary>
+        public Vector3 GetWaveSpawnPosition(float extraMargin = 0f)
+        {
+            float chance = waveConfig != null ? waveConfig.forwardSpawnChance : 0f;
+            if (chance > 0f && Random.value < chance && TryGetHeroMoveDirection(out Vector3 heroDir))
+            {
+                return GetForwardSpawnPosition(heroDir, extraMargin);
+            }
+            return GetValidSpawnPosition(extraMargin);
+        }
+
+        /// <summary>Внеэкранная точка в конусе ±forwardSpawnConeHalfAngle вокруг направления героя.</summary>
+        public Vector3 GetForwardSpawnPosition(Vector3 heroDir, float extraMargin = 0f)
+        {
+            Vector3 center = heroTarget != null ? heroTarget.position : Vector3.zero;
+            float halfAngle = (waveConfig != null ? waveConfig.forwardSpawnConeHalfAngle : 60f) * Mathf.Deg2Rad;
+            float baseAngle = Mathf.Atan2(heroDir.z, heroDir.x);
+            float angle = baseAngle + Random.Range(-halfAngle, halfAngle);
+            Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            return GetValidOffscreenPositionAlongDirection(center, dir, extraMargin);
         }
 
         public Vector3 GetValidSpawnPosition(float extraMargin = 0f)
@@ -904,7 +962,7 @@ namespace ProjectB.Enemies
 
             if (selectedEntry == null || selectedEntry.enemy == null) return 1;
 
-            Vector3 basePos = GetValidSpawnPosition(packCount > 1 ? 1.8f : 0f);
+            Vector3 basePos = GetWaveSpawnPosition(packCount > 1 ? 1.8f : 0f);
             GetWaveDifficultyMultipliers(out float hpMultiplier, out float damageMultiplier);
             bool spawnedEliteInPack = false;
             int actuallySpawned = 0;
@@ -1131,6 +1189,72 @@ namespace ProjectB.Enemies
             activeFrostZones.Add(zone);
         }
 
+        /// <summary>Зона обломков, замедляющая героя (удар и приземление Golem). Попадает в ActiveFrostZones — бот её обходит.</summary>
+        private void SpawnBossRubbleZone(Vector3 position, float radius, float duration, float slowFactor)
+        {
+            if (radius <= 0f || duration <= 0f || (heroHealth != null && heroHealth.IsDead)) return;
+
+            if (rubbleZonePool == null)
+            {
+                if (frostZoneContainer == null) frostZoneContainer = new GameObject("FrostZoneContainer").transform;
+                rubbleZonePool = new ObjectPool<FrostSlowZone>(
+                    createFunc: () =>
+                    {
+                        var go = new GameObject("BossRubbleZone");
+                        go.transform.SetParent(frostZoneContainer, false);
+                        return go.AddComponent<FrostSlowZone>();
+                    },
+                    actionOnGet: z => z.gameObject.SetActive(true),
+                    actionOnRelease: z => z.gameObject.SetActive(false),
+                    actionOnDestroy: z =>
+                    {
+                        if (z != null)
+                        {
+                            if (Application.isPlaying) Destroy(z.gameObject);
+                            else DestroyImmediate(z.gameObject);
+                        }
+                    },
+                    collectionCheck: false,
+                    defaultCapacity: 4,
+                    maxSize: MAX_ACTIVE_FROST_ZONES);
+            }
+
+            if (activeFrostZones.Count >= MAX_ACTIVE_FROST_ZONES && activeFrostZones[0] != null)
+            {
+                activeFrostZones[0].ForceExpire();
+            }
+
+            if (cachedRubbleZoneMaterial == null)
+            {
+                Shader urpUnlit = Shader.Find("Universal Render Pipeline/Unlit");
+                if (urpUnlit != null)
+                {
+                    cachedRubbleZoneMaterial = new Material(urpUnlit) { name = "BossRubbleZoneRuntimeMat", enableInstancing = true };
+                    if (cachedRubbleZoneMaterial.HasProperty("_BaseColor"))
+                    {
+                        cachedRubbleZoneMaterial.SetColor("_BaseColor", new Color(0.55f, 0.42f, 0.30f, 0.85f));
+                    }
+                }
+            }
+
+            FrostSlowZone zone = rubbleZonePool.Get();
+            ISlowable heroSlowable = heroTarget != null ? heroTarget.GetComponent<ISlowable>() : null;
+            zone.Initialize(
+                ClampToArena(position),
+                radius,
+                duration,
+                slowFactor,
+                0.35f,
+                0.15f,
+                heroTarget,
+                heroSlowable,
+                cachedRubbleZoneMaterial,
+                rubbleZonePool,
+                null,
+                cachedFrostZoneReleasedCallback);
+            activeFrostZones.Add(zone);
+        }
+
         private void HandleFrostZoneReleased(FrostSlowZone zone)
         {
             activeFrostZones.Remove(zone);
@@ -1231,6 +1355,7 @@ namespace ProjectB.Enemies
                     cachedSafePositionProvider,
                     hpMultiplier,
                     damageMultiplier);
+                boss.SetHeroSlowZoneSpawner(cachedHeroSlowZoneCallback);
             }
             else
             {

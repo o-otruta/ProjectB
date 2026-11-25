@@ -80,8 +80,9 @@ namespace ProjectB.Enemies
                 return;
             }
 
-            // Направление выстрела в сторону текущей позиции героя в плоскости XZ
-            Vector3 shootDirection = target.position - transform.position;
+            // Направление выстрела: в точку упреждения (позиция + скорость × время полёта × leadFactor) в плоскости XZ
+            Vector3 aimPoint = GetLeadAimPoint(shootingData.weaponData.leadFactor, shootingData.weaponData.projectileSpeed);
+            Vector3 shootDirection = aimPoint - transform.position;
             shootDirection.y = 0;
             if (shootDirection.sqrMagnitude > 0.001f)
             {

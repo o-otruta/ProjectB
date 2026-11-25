@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: EnemyShooterWeaponData
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.Combat.WeaponData
   damage: 5
-  attackCooldown: 2
-  range: 8
-  projectileSpeed: 6
+  attackCooldown: 3
+  range: 11
+  projectileSpeed: 9
+  leadFactor: 0.6
   splashRadius: 0
   lifestealChance: 0
   lifestealAmount: 0

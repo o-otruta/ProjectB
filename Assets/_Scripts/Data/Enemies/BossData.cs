@@ -20,12 +20,46 @@ namespace ProjectB.Data.Enemies
         public int summonCount = 3;
         public float summonCooldown = 10f;
 
+        [Header("Timed Enrage (anti-kite, all bosses except mini-bosses)")]
+        [Tooltip("Через сколько секунд боя босс впадает в ярость (0 = выключено). Гарантирует, что бой не тянется бесконечно")]
+        [Min(0f)] public float enrageAfterSeconds = 75f;
+        [Tooltip("Множитель скорости в момент ярости")]
+        [Min(1f)] public float enrageSpeedMultiplier = 1.6f;
+        [Tooltip("Множитель урона в момент ярости")]
+        [Min(1f)] public float enrageDamageMultiplier = 1.5f;
+        [Tooltip("Каждые N секунд ярость усиливается ещё на один шаг")]
+        [Min(5f)] public float enrageRampInterval = 30f;
+        [Min(0f)] public float enrageRampSpeedStep = 0.3f;
+        [Min(0f)] public float enrageRampDamageStep = 0.25f;
+        [Min(1f)] public float enrageMaxSpeedMultiplier = 2.8f;
+        [Min(1f)] public float enrageMaxDamageMultiplier = 3f;
+
         [Header("Golem — Ground Slam AoE")]
         public float slamCooldown = 5.5f;
         public float slamTriggerRange = 6.5f;
         public float slamRadius = 4.5f;
         public float slamTelegraphDuration = 1.1f;
         public int slamDamage = 30;
+
+        [Header("Golem — Leap (gap closer)")]
+        [Tooltip("Golem прыгает к герою, если тот дальше этой дистанции (0 кулдаун = выключено)")]
+        public float leapMinDistance = 9f;
+        public float leapCooldown = 7f;
+        [Tooltip("Присед перед прыжком — окно, чтобы заметить и уйти")]
+        public float leapWindupDuration = 0.65f;
+        public float leapAirDuration = 0.6f;
+        [Tooltip("Упреждение точки приземления по скорости героя (0..1)")]
+        [Range(0f, 1f)] public float leapLeadFactor = 0.5f;
+        [Tooltip("Максимальная длина прыжка, м")]
+        public float leapMaxDistance = 16f;
+        public float leapImpactRadius = 3.5f;
+        public int leapDamage = 24;
+
+        [Header("Golem — Rubble Slow Zone (after slam and leap)")]
+        [Tooltip("Радиус зоны обломков, которая замедляет героя (0 = выключено)")]
+        public float rubbleZoneRadius = 3.2f;
+        public float rubbleZoneDuration = 4f;
+        [Range(0.25f, 0.95f)] public float rubbleSlowFactor = 0.6f;
 
         [Header("Necromancer — Teleport & Volley")]
         public float stopDistance = 9f;

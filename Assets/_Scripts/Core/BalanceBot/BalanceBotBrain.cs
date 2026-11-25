@@ -65,6 +65,7 @@ namespace ProjectB.Core.BalanceBot
         private Action<BossDefeatedEvent> cachedOnBossDefeated;
 
         private BossBase activeBoss;
+        private float activeBossSince;
         private int enemyLayerMask;
         private int pickupLayerMask;
         private int obstacleLayerMask;
@@ -259,6 +260,13 @@ namespace ProjectB.Core.BalanceBot
                 }
             }
 
+            // 1b. Boss engagement: after bossEngageAfterSeconds with enough HP, stop kiting the boss and go for it
+            float heroHpRatio = heroHealth.MaxHp > 0 ? (float)heroHealth.CurrentHp / heroHealth.MaxHp : 1f;
+            bool engageBoss = activeBoss != null && !activeBoss.IsDead
+                              && Time.time - activeBossSince >= config.bossEngageAfterSeconds
+                              && heroHpRatio >= config.bossEngageMinHpRatio
+                              && !(activeBoss is GolemBoss g0 && (g0.IsTelegraphingSlam || g0.IsLeaping));
+
             // 2. Evaluate enemy threats, nearest enemy, and ultimate readiness
             Vector3 repulsion = Vector3.zero;
             Vector3 nearestEnemyPos = Vector3.zero;
@@ -300,7 +308,7 @@ namespace ProjectB.Core.BalanceBot
                 }
 
                 float weight = config.repulsionWeight;
-                if (enemy.IsMiniBoss || enemy.IsBoss) weight *= 1.8f;
+                if (enemy.IsMiniBoss || enemy.IsBoss) weight *= engageBoss && ReferenceEquals(enemy, activeBoss) ? 0.25f : 1.8f;
                 if (enemy is ExploderEnemy) weight *= 2.2f;
 
                 if (enemy is ChargerEnemy charger &&
@@ -377,6 +385,19 @@ namespace ProjectB.Core.BalanceBot
                 }
             }
 
+            // 7b. Boss engagement pull
+            if (engageBoss)
+            {
+                Vector3 toBoss = activeBoss.transform.position - heroPos;
+                toBoss.y = 0f;
+                float bossDist = toBoss.magnitude;
+                float bossPreferred = isMeleePrimary ? config.meleePreferredDistance + 1f : config.rangedPreferredDistance;
+                if (bossDist > bossPreferred && bossDist > 0.01f)
+                {
+                    desired += (toBoss / bossDist) * config.bossEngageWeight;
+                }
+            }
+
             // 8. Pickup attraction when close-range threat is low
             float threatMag = repulsion.magnitude;
             if (nearestEnemyDistSq > config.pickupMinEnemyDistance * config.pickupMinEnemyDistance &&
@@ -421,7 +442,21 @@ namespace ProjectB.Core.BalanceBot
             Vector3 bossPos = activeBoss.transform.position;
             bossPos.y = 0f;
 
-            if (activeBoss is GolemBoss golem && golem.IsTelegraphingSlam)
+            if (activeBoss is GolemBoss leaper && leaper.IsLeapAirborne)
+            {
+                // Уходим из точки приземления прыжка Golem
+                float safeR = leaper.LeapImpactRadius + 1.2f;
+                Vector3 land = leaper.LeapLandingPosition;
+                land.y = 0f;
+                Vector3 diff = heroPos - land;
+                diff.y = 0f;
+                if (diff.sqrMagnitude < safeR * safeR)
+                {
+                    Vector3 push = diff.sqrMagnitude > 0.01f ? diff.normalized : Vector3.forward;
+                    repulsion += push * config.bossTelegraphAvoidWeight;
+                }
+            }
+            else if (activeBoss is GolemBoss golem && golem.IsTelegraphingSlam)
             {
                 float safeR = golem.SlamRadius + 1.5f;
                 Vector3 diff = heroPos - bossPos;
@@ -733,6 +768,7 @@ namespace ProjectB.Core.BalanceBot
                 if (all[i] != null && !all[i].IsDead)
                 {
                     activeBoss = all[i];
+                    activeBossSince = Time.time;
                     return;
                 }
             }

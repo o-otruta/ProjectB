@@ -14,6 +14,38 @@ namespace ProjectB.Enemies
         // Кэш id источника урона по герою (Object.name аллоцирует строку на каждом вызове).
         private string heroDamageSourceId = "EnemyContact";
         protected string HeroDamageSourceId => heroDamageSourceId;
+
+        // Rigidbody цели (героя) — для упреждающей стрельбы и прыжков боссов. Кэшируется в Initialize.
+        private Rigidbody targetBody;
+
+        protected Vector3 TargetVelocityXZ
+        {
+            get
+            {
+                if (targetBody == null) return Vector3.zero;
+                Vector3 v = targetBody.linearVelocity;
+                v.y = 0f;
+                return v;
+            }
+        }
+
+        /// <summary>Точка упреждения: позиция цели + скорость × время полёта снаряда × leadFactor (одна итерация).</summary>
+        protected Vector3 GetLeadAimPoint(float leadFactor, float projectileSpeed)
+        {
+            if (target == null) return transform.position + transform.forward;
+            Vector3 targetPos = target.position;
+            if (leadFactor <= 0f || projectileSpeed <= 0.01f) return targetPos;
+
+            Vector3 toTarget = targetPos - transform.position;
+            toTarget.y = 0f;
+            float flightTime = toTarget.magnitude / projectileSpeed;
+            Vector3 predicted = targetPos + TargetVelocityXZ * (flightTime * leadFactor);
+            // Вторая итерация: время полёта до предсказанной точки.
+            Vector3 toPredicted = predicted - transform.position;
+            toPredicted.y = 0f;
+            flightTime = toPredicted.magnitude / projectileSpeed;
+            return targetPos + TargetVelocityXZ * (flightTime * leadFactor);
+        }
         private IObjectPool<EnemyBase> pool;
         protected Transform target;
         protected GameEventBus eventBus;
@@ -165,6 +197,11 @@ namespace ProjectB.Enemies
             ResetTransientStates();
             enemyData = data;
             heroDamageSourceId = data != null ? data.name : "EnemyContact";
+            if (!ReferenceEquals(heroTarget, target) || targetBody == null)
+            {
+                targetBody = null;
+                if (heroTarget != null) heroTarget.TryGetComponent(out targetBody);
+            }
             target = heroTarget;
             pool = enemyPool;
             eventBus = bus;
@@ -354,6 +391,10 @@ namespace ProjectB.Enemies
 
         protected virtual float GetAdditionalSpeedMultiplier() => 1f;
         protected virtual Color GetBossRimColor() => DefaultBossRimColor;
+
+        // Красная подсветка боссов в ярости по таймеру (BossBase).
+        protected virtual bool HasEnrageRim => false;
+        private static readonly Color EnrageRimColor = new Color(1f, 0.12f, 0.08f, 1f);
         protected virtual Color GetBossBaseTint() => Color.white;
         protected virtual Color GetCustomBaseTint() => Color.white;
         protected virtual Color GetCustomRimColor() => Color.clear;
@@ -409,8 +450,8 @@ namespace ProjectB.Enemies
             else if (hasBossRim)
             {
                 baseTint = GetBossBaseTint();
-                rimColor = GetBossRimColor();
-                rimPower = 2.2f;
+                rimColor = HasEnrageRim ? EnrageRimColor : GetBossRimColor();
+                rimPower = HasEnrageRim ? 1.5f : 2.2f;
             }
             else if (isElite)
             {

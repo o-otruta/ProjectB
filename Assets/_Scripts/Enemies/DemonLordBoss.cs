@@ -73,11 +73,12 @@ namespace ProjectB.Enemies
 
         protected override float GetAdditionalSpeedMultiplier()
         {
+            float timed = base.GetAdditionalSpeedMultiplier(); // ярость по таймеру из BossBase
             if (IsEnraged && bossData != null)
             {
-                return Mathf.Max(1f, bossData.demonEnrageSpeedMultiplier);
+                return timed * Mathf.Max(1f, bossData.demonEnrageSpeedMultiplier);
             }
-            return 1f;
+            return timed;
         }
 
         protected override Color GetBossRimColor() => IsEnraged ? EnragedRimColor : Phase1RimColor;

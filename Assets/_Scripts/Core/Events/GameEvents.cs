@@ -754,6 +754,23 @@ namespace ProjectB.Core.Events
     }
 
     /// <summary>
+    /// Босс впал в ярость по таймеру боя (анти-кайт): быстрее и больнее с каждым шагом.
+    /// </summary>
+    public struct BossEnragedEvent
+    {
+        public Vector3 Position;
+        public string BossId;
+        public int Level;
+
+        public BossEnragedEvent(Vector3 position, string bossId, int level)
+        {
+            Position = position;
+            BossId = bossId;
+            Level = level;
+        }
+    }
+
+    /// <summary>
     /// Герой получил урон от врага, снаряда, босса или ловушки.
     /// </summary>
     public struct HeroDamagedEvent
