@@ -138,8 +138,6 @@ namespace ProjectB.EditorScripts
                     "mage" => "hero_mage",
                     "ranger" => "hero_ranger",
                     "necromancer" => "hero_necromancer",
-                    "paladin" => "hero_paladin",
-                    "engineer" => "hero_engineer",
                     _ => "hero_knight"
                 };
                 string ultKey = hero.ultimateType switch
@@ -147,8 +145,6 @@ namespace ProjectB.EditorScripts
                     HeroUltimateType.MeteorStrike => "ult_meteor",
                     HeroUltimateType.ArrowRain => "ult_arrow_rain",
                     HeroUltimateType.SoulNova => "ult_soul_nova",
-                    HeroUltimateType.Consecration => "ult_consecration",
-                    HeroUltimateType.TurretDrop => "laser_turret",
                     _ => "ult_shield"
                 };
                 Color32 frameCol = hero.id switch
@@ -156,8 +152,6 @@ namespace ProjectB.EditorScripts
                     "mage" => Purple,
                     "ranger" => Green,
                     "necromancer" => Cyan,
-                    "paladin" => Gold,
-                    "engineer" => FireOrange,
                     _ => IceBlue
                 };
                 Color32 ultFrameCol = hero.ultimateType switch
@@ -165,8 +159,6 @@ namespace ProjectB.EditorScripts
                     HeroUltimateType.MeteorStrike => FireOrange,
                     HeroUltimateType.ArrowRain => Green,
                     HeroUltimateType.SoulNova => Cyan,
-                    HeroUltimateType.Consecration => Gold,
-                    HeroUltimateType.TurretDrop => FireOrange,
                     _ => IceBlue
                 };
 
@@ -753,8 +745,6 @@ namespace ProjectB.EditorScripts
                 {
                     "ranger" => "hero_ranger",
                     "necromancer" => "hero_necromancer",
-                    "paladin" => "hero_paladin",
-                    "engineer" => "hero_engineer",
                     _ => "hero_mage"
                 };
             }
@@ -1911,63 +1901,6 @@ namespace ProjectB.EditorScripts
                     "..KJJJJJJJJJJK..",
                     "..KWWWWWWWWWWK..",
                     "...KKKKKKKKKK...",
-                    "................"
-                },
-                ["hero_paladin"] = new[]
-                {
-                    ".......KK.......",
-                    "......KHGK......",
-                    ".......KGK......",
-                    "....KKKKKKKK....",
-                    "...KSSSSSSSSK...",
-                    "...KSWWSSWWSK...",
-                    "...KSSSSSSSSK...",
-                    "...KKKKGGKKKK...",
-                    "...KSDKGGKDSK...",
-                    "...KSSKGGKSSK...",
-                    "...KSSSGGSSSK...",
-                    "....KSSGGSSK....",
-                    ".....KSSSSK.....",
-                    "..KKKKKKKKKKKK..",
-                    ".KGGGGGGGGGGGGK.",
-                    ".KKKKKKKKKKKKKK."
-                },
-                ["hero_engineer"] = new[]
-                {
-                    "................",
-                    ".....KKKKKK.....",
-                    "....KHGGGGHK....",
-                    "...KGGGYYGGGK...",
-                    "..KKKKKKKKKKKK..",
-                    "..KGGGGGGGGGGK..",
-                    "...KBBBBBBBBK...",
-                    "...KKKKKKKKKK...",
-                    "...KYYKBBKYYK...",
-                    "...KYWKBBKYWK...",
-                    "...KKKKBBKKKK...",
-                    "....KBBBBBBK....",
-                    "....KBBKKBBK....",
-                    ".....KBBBBK.....",
-                    "...KKOOOOOOKK...",
-                    "..KOOOOOOOOOOK.."
-                },
-                ["ult_consecration"] = new[]
-                {
-                    ".....KKKKKK.....",
-                    "...KKHHHHHHKK...",
-                    "..KHHAAKKAAHHK..",
-                    ".KHAA.KGGK.AAHK.",
-                    ".KHA..KGGK..AHK.",
-                    "KHA.KKKGGKKK.AHK",
-                    "KHA.KGGGGGGK.AHK",
-                    "KHA.KGGGGGGK.AHK",
-                    "KHA.KKKGGKKK.AHK",
-                    "KHA...KGGK...AHK",
-                    ".KHA..KGGK..AHK.",
-                    ".KHAA.KGGK.AAHK.",
-                    "..KHHAAKKAAHHK..",
-                    "...KKHHHHHHKK...",
-                    ".....KKKKKK.....",
                     "................"
                 },
                 ["boss_shard"] = new[]

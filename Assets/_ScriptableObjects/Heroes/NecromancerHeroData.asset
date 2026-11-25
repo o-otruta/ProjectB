@@ -33,7 +33,6 @@ MonoBehaviour:
   visualModelPrefab: {fileID: 4790032887427633488, guid: 5822cd65291ad854794d95115b8a57e2, type: 3}
   passiveType: 4
   passiveValue: 35
-  passiveSecondaryValue: 0
   passiveName: Soul Harvest
   passiveDescription: '+35% XP & Magnet Radius
 
@@ -64,16 +63,3 @@ MonoBehaviour:
   soulNovaSpeed: 16
   soulNovaHitRadius: 0.42
   soulNovaHealPercent: 0.35
-  consecrationRadius: 5.5
-  consecrationTickInterval: 0.5
-  consecrationDamagePerTick: 18
-  consecrationHealPerTick: 3
-  consecrationVisualPrefab: {fileID: 0}
-  turretDropCount: 3
-  turretDropRadius: 2.6
-  turretSearchRadius: 11
-  turretDps: 34
-  turretLifetime: 9
-  turretDropShockwaveRadius: 4
-  turretDropShockwaveDamage: 45
-  turretDropPrefab: {fileID: 0}

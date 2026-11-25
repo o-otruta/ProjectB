@@ -644,9 +644,6 @@ namespace ProjectB.Core.Events
         DecoyDeploy = 4,
         DecoyDetonate = 5,
         ChakramRicochet = 6,
-        ConsecrationCast = 7,
-        ConsecrationPulse = 8,
-        TurretDrop = 9,
         VampiricHeal = 10
     }
 

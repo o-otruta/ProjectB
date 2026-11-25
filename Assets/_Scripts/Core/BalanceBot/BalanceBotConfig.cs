@@ -57,9 +57,7 @@ namespace ProjectB.Core.BalanceBot
             "knight",
             "mage",
             "ranger",
-            "necromancer",
-            "paladin",
-            "engineer"
+            "necromancer"
         };
         public List<BalanceBotStrategyKind> strategies = new List<BalanceBotStrategyKind>
         {

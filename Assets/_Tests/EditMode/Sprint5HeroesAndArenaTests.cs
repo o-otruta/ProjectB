@@ -204,7 +204,7 @@ namespace ProjectB.Tests.EditMode
 
             var catalog = AssetDatabase.LoadAssetAtPath<HeroCatalog>("Assets/Resources/HeroCatalog.asset");
             Assert.IsNotNull(catalog);
-            Assert.GreaterOrEqual(catalog.heroes.Count, 4, "Sprint 11 adds Paladin & Engineer on top of the 4 Sprint 5 heroes");
+            Assert.AreEqual(4, catalog.heroes.Count, "Knight, Mage, Ranger and Necromancer");
             Assert.IsTrue(catalog.heroes.Contains(ranger));
             Assert.IsTrue(catalog.heroes.Contains(necro));
 

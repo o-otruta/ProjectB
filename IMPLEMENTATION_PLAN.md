@@ -212,7 +212,7 @@
 
 ### 3.4 Разблокировка контента
 - [x] Заблокированные способности (`unlockedByDefault = false`): Laser Turret, Black Hole, Vitality Regen, Dragon Whelp, Arcane Tornado, Seismic Hammer, Sniper Lens, Golden Idol, Vampiric Fang, Skyfall Spire, Shadow Decoy
-- [x] Заблокированные герои: Mage, Ranger, Necromancer, Paladin, Engineer
+- [x] Заблокированные герои: Mage, Ranger, Necromancer *(Paladin и Engineer удалены после 12.7)*
 - [x] Заблокированное не попадает в пул карточек / выбор героя
 - [x] Экран коллекции способностей (`AbilitiesScreenUI`) со статусом и нужной ачивкой
 
@@ -279,10 +279,10 @@
 - [x] Музыка: меню, геймплей, босс; приглушение `-50%` на паузе / levelup
 
 ### 4.4 Воксельные ассеты
-- [x] Герои: Knight, Mage, Ranger, Necromancer, Paladin, Engineer
+- [x] Герои: Knight, Mage, Ranger, Necromancer
 - [x] Враги: Slime, Goblin, Skeleton, Bat, Bomb Slime, Orc Charger, Shield Orc, Void Acolyte, Gold Goblin
 - [x] Боссы: Golem, Necromancer, Frost Lich, Demon Lord
-- [x] Способности и снаряды: Orbital Sword, Boomerang, Fireball, Shooter, Turret, Guardian Shield, Poison Flask/Puddle, Dragon Whelp, Voxel Tornado, Buzzsaw Chakram, Skyfall Spire, Shadow Decoy, Seismic / Ice Aura / Black Hole кольца, Aegis Shield, Consecration, Holy Hammer, Cluster Grenade, Ranger Arrow, Soul Bolt
+- [x] Способности и снаряды: Orbital Sword, Boomerang, Fireball, Shooter, Turret, Guardian Shield, Poison Flask/Puddle, Dragon Whelp, Voxel Tornado, Buzzsaw Chakram, Skyfall Spire, Shadow Decoy, Seismic / Ice Aura / Black Hole кольца, Aegis Shield, Ranger Arrow, Soul Bolt
 - [x] Пикапы и секреты: XP-кристалл, монета, Vacuum Magnet, сундук, свиток, кристалл
 - [x] Объекты арены: дуб, сосна, пень, бревно, валуны, руины, кусты, грибы, цветы, трава, бочка, алтарь
 - [x] Шейдер `ProjectB/VoxelLit` (`_HitFlash`, `_RimColor`, `_HeightAO`)

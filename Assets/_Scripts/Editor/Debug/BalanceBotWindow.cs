@@ -60,7 +60,7 @@ namespace ProjectB.EditorScripts
             }
             if (allHeroIds.Count == 0)
             {
-                allHeroIds.AddRange(new[] { "knight", "mage", "ranger", "necromancer", "paladin", "engineer" });
+                allHeroIds.AddRange(new[] { "knight", "mage", "ranger", "necromancer" });
             }
 
             availableProfiles.Clear();

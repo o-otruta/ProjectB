@@ -17,7 +17,6 @@ namespace ProjectB.Player
 
         private static readonly Collider[] secondWindBuffer = new Collider[96];
         private bool secondWindUsed;
-        private float regenAccumulator;
         private RunRulesConfig runRulesConfig;
 
         public event System.Action<int, int> OnHealthChanged;
@@ -175,27 +174,6 @@ namespace ProjectB.Player
             if (Time.deltaTime > 0f)
             {
                 TickInvulnerability(Time.deltaTime);
-                TickPassiveRegen(Time.deltaTime);
-            }
-        }
-
-        /// <summary>Hero passive regeneration (Paladin: +2 HP/s). Zero-GC.</summary>
-        public void TickPassiveRegen(float deltaTime)
-        {
-            float regen = runtimeStats != null ? runtimeStats.HeroPassiveRegenPerSecond : 0f;
-            if (regen <= 0f || deltaTime <= 0f || isDead) return;
-            if (currentHp >= currentMaxHp)
-            {
-                regenAccumulator = 0f;
-                return;
-            }
-
-            regenAccumulator += regen * deltaTime;
-            if (regenAccumulator >= 1f)
-            {
-                int amount = Mathf.FloorToInt(regenAccumulator);
-                regenAccumulator -= amount;
-                Heal(amount);
             }
         }
 

@@ -299,7 +299,7 @@ namespace ProjectB.Tests.EditMode
             Assert.Greater(mid.unlockedTalentIds.Count, 0);
             Assert.Less(mid.unlockedTalentIds.Count, talentTree.nodes.Count - 1);
 
-            SaveData full = fullProfile.BuildSaveData("engineer", metaUpgrades, talentTree, null, heroCatalog);
+            SaveData full = fullProfile.BuildSaveData("necromancer", metaUpgrades, talentTree, null, heroCatalog);
             Assert.Greater(full.totalRuns, 0);
             Assert.AreEqual(metaUpgrades.Length, full.metaUpgradeLevels.Count);
             Assert.AreEqual(3, full.bonusActiveSlots);

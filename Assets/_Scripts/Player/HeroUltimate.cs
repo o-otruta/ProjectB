@@ -63,19 +63,6 @@ namespace ProjectB.Player
         private Transform soulNovaVisualRoot;
         private Transform[] soulBoltVisuals;
 
-        // Divine Consecration (Paladin)
-        private Vector3 consecrationCenter;
-        private float consecrationTickTimer;
-        private Transform consecrationVisual;
-        public bool IsConsecrationActive => isActive && activeUltimateType == HeroUltimateType.Consecration;
-        public Vector3 ConsecrationCenter => consecrationCenter;
-
-        // Mech Drop (Engineer)
-        private UnityEngine.Pool.IObjectPool<LaserTurret> mechTurretPool;
-        private Transform mechTurretRoot;
-        private GameObject mechTurretPoolPrefab;
-        public int LastTurretDropCount { get; private set; }
-
         private int resolvedEnemyLayerMask;
         private int resolvedObstacleLayerMask = -1;
 
@@ -167,19 +154,6 @@ namespace ProjectB.Player
                 else DestroyImmediate(soulNovaVisualRoot.gameObject);
                 soulNovaVisualRoot = null;
             }
-            if (consecrationVisual != null)
-            {
-                if (Application.isPlaying) Destroy(consecrationVisual.gameObject);
-                else DestroyImmediate(consecrationVisual.gameObject);
-                consecrationVisual = null;
-            }
-            if (mechTurretRoot != null)
-            {
-                mechTurretPool?.Clear();
-                if (Application.isPlaying) Destroy(mechTurretRoot.gameObject);
-                else DestroyImmediate(mechTurretRoot.gameObject);
-                mechTurretRoot = null;
-            }
         }
 
         private void Update()
@@ -216,10 +190,6 @@ namespace ProjectB.Player
                 else if (activeUltimateType == HeroUltimateType.SoulNova)
                 {
                     StepSoulNova(Time.deltaTime);
-                }
-                else if (activeUltimateType == HeroUltimateType.Consecration)
-                {
-                    StepConsecration(Time.deltaTime);
                 }
 
                 activeRemaining -= Time.deltaTime;
@@ -265,14 +235,6 @@ namespace ProjectB.Player
 
                 case HeroUltimateType.SoulNova:
                     ActivateSoulNova();
-                    break;
-
-                case HeroUltimateType.Consecration:
-                    ActivateConsecration();
-                    break;
-
-                case HeroUltimateType.TurretDrop:
-                    ActivateTurretDrop();
                     break;
 
                 case HeroUltimateType.Shield:
@@ -768,265 +730,6 @@ namespace ProjectB.Player
             return runtimeStats != null ? runtimeStats.GetScaledArea(radius) : radius;
         }
 
-        // ---------------- Divine Consecration (Paladin) ----------------
-
-        private void ActivateConsecration()
-        {
-            HeroData data = ActiveHeroData;
-            isActive = true;
-            activeUltimateType = HeroUltimateType.Consecration;
-            activeRemaining = ActiveDuration;
-            cooldownRemaining = 0f;
-            meteorsRemaining = 0;
-            arrowWavesRemaining = 0;
-
-            consecrationCenter = transform.position;
-            consecrationCenter.y = 0f;
-            consecrationTickTimer = 0f;
-
-            float radius = ConsecrationRadius;
-            EnsureConsecrationVisual(data);
-            if (consecrationVisual != null)
-            {
-                consecrationVisual.gameObject.SetActive(true);
-                consecrationVisual.position = consecrationCenter + Vector3.up * 0.04f;
-                consecrationVisual.localScale = new Vector3(radius, 1f, radius);
-            }
-
-            OnStateChanged?.Invoke();
-            eventBus?.Publish(new AbilityVfxEvent(AbilityVfxType.ConsecrationCast, consecrationCenter, radius));
-            TickConsecration();
-        }
-
-        public float ConsecrationRadius
-        {
-            get
-            {
-                HeroData data = ActiveHeroData;
-                return ScaleArea(data != null ? Mathf.Max(0.5f, data.consecrationRadius) : 5.5f);
-            }
-        }
-
-        public void StepConsecration(float deltaTime)
-        {
-            HeroData data = ActiveHeroData;
-            float interval = data != null ? Mathf.Max(0.05f, data.consecrationTickInterval) : 0.5f;
-            consecrationTickTimer += Mathf.Max(0f, deltaTime);
-            while (consecrationTickTimer >= interval)
-            {
-                consecrationTickTimer -= interval;
-                TickConsecration();
-            }
-
-            if (consecrationVisual != null && consecrationVisual.gameObject.activeSelf)
-            {
-                consecrationVisual.Rotate(0f, 25f * deltaTime, 0f, Space.World);
-            }
-        }
-
-        /// <summary>One consecration pulse: burns enemies inside the circle and heals the hero if standing in it.</summary>
-        public int TickConsecration()
-        {
-            HeroData data = ActiveHeroData;
-            float radius = ConsecrationRadius;
-            float baseDamage = data != null ? Mathf.Max(0f, data.consecrationDamagePerTick) : 18f;
-            int heal = data != null ? Mathf.Max(0, data.consecrationHealPerTick) : 3;
-
-            int mask = ResolveEnemyLayerMask();
-            float rawDamage = baseDamage * (runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f);
-            int hits = Physics.OverlapSphereNonAlloc(consecrationCenter, radius, ultDamageBuffer, mask);
-            int damaged = 0;
-            for (int i = 0; i < hits; i++)
-            {
-                Collider col = ultDamageBuffer[i];
-                if (col == null || !col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
-                if (damageable is HeroHealth) continue;
-
-                bool isCrit = false;
-                int finalDamage = runtimeStats != null
-                    ? runtimeStats.RollDamage(rawDamage, out isCrit)
-                    : Mathf.Max(1, Mathf.RoundToInt(rawDamage));
-
-                if (damageable is EnemyBase enemy)
-                {
-                    int dealt = enemy.TakeDamageFrom(finalDamage, isCrit, consecrationCenter, isAoE: true);
-                    if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Ultimate, dealt);
-                }
-                else
-                {
-                    damageable.TakeDamage(finalDamage);
-                }
-                damaged++;
-            }
-
-            if (heal > 0 && heroHealth != null && !heroHealth.IsDead)
-            {
-                Vector3 offset = transform.position - consecrationCenter;
-                offset.y = 0f;
-                if (offset.sqrMagnitude <= radius * radius)
-                {
-                    heroHealth.Heal(heal);
-                }
-            }
-
-            eventBus?.Publish(new AbilityVfxEvent(AbilityVfxType.ConsecrationPulse, consecrationCenter, radius));
-            return damaged;
-        }
-
-        private void EnsureConsecrationVisual(HeroData data)
-        {
-            if (consecrationVisual != null || data == null || data.consecrationVisualPrefab == null) return;
-            GameObject go = Instantiate(data.consecrationVisualPrefab);
-            go.name = "ConsecrationVisual";
-            var renderers = go.GetComponentsInChildren<MeshRenderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                renderers[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                renderers[i].receiveShadows = false;
-            }
-            consecrationVisual = go.transform;
-            go.SetActive(false);
-        }
-
-        private void HideConsecrationVisual()
-        {
-            if (consecrationVisual != null) consecrationVisual.gameObject.SetActive(false);
-        }
-
-        // ---------------- Mech Drop (Engineer) ----------------
-
-        private void ActivateTurretDrop()
-        {
-            isActive = true;
-            activeUltimateType = HeroUltimateType.TurretDrop;
-            activeRemaining = Mathf.Max(0.3f, ActiveDuration);
-            cooldownRemaining = 0f;
-            meteorsRemaining = 0;
-            arrowWavesRemaining = 0;
-
-            OnStateChanged?.Invoke();
-            DropTurrets();
-        }
-
-        /// <summary>Drops empowered auto-turrets in a ring around the hero with an impact shockwave. Returns turrets spawned.</summary>
-        public int DropTurrets()
-        {
-            HeroData data = ActiveHeroData;
-            int count = data != null ? Mathf.Max(1, data.turretDropCount) : 3;
-            float ringRadius = data != null ? Mathf.Max(0.5f, data.turretDropRadius) : 2.6f;
-            float searchRadius = data != null ? Mathf.Max(1f, data.turretSearchRadius) : 11f;
-            float dps = (data != null ? Mathf.Max(0f, data.turretDps) : 34f) * (runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f);
-            float lifetime = data != null ? Mathf.Max(0.5f, data.turretLifetime) : 9f;
-            float shockRadius = ScaleArea(data != null ? Mathf.Max(0f, data.turretDropShockwaveRadius) : 4f);
-            float shockDamage = data != null ? Mathf.Max(0f, data.turretDropShockwaveDamage) : 45f;
-
-            Vector3 heroPos = transform.position;
-            heroPos.y = 0f;
-            int mask = ResolveEnemyLayerMask();
-            EnsureMechTurretPool(data);
-
-            int spawned = 0;
-            float angleOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            for (int i = 0; i < count; i++)
-            {
-                float angle = angleOffset + i * (Mathf.PI * 2f / count);
-                Vector3 pos = heroPos + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * ringRadius;
-
-                if (mechTurretPool != null)
-                {
-                    LaserTurret turret = mechTurretPool.Get();
-                    if (turret != null)
-                    {
-                        turret.transform.position = pos;
-                        turret.Initialize(searchRadius, dps, lifetime, mask, mechTurretPool, runtimeStats, runStatistics, DamageSourceIds.Ultimate, 1.3f);
-                        spawned++;
-                    }
-                }
-
-                DealUltAreaDamage(pos, shockRadius, shockDamage, 1.5f);
-                eventBus?.Publish(new AbilityVfxEvent(AbilityVfxType.TurretDrop, pos, shockRadius));
-            }
-
-            LastTurretDropCount = spawned;
-            return spawned;
-        }
-
-        private void EnsureMechTurretPool(HeroData data)
-        {
-            GameObject prefab = data != null ? data.turretDropPrefab : null;
-            if (prefab == null) return;
-            if (mechTurretPool != null && mechTurretPoolPrefab == prefab) return;
-
-            mechTurretPoolPrefab = prefab;
-            if (mechTurretRoot == null)
-            {
-                mechTurretRoot = new GameObject("MechDropTurrets").transform;
-            }
-
-            Transform root = mechTurretRoot;
-            mechTurretPool = new UnityEngine.Pool.ObjectPool<LaserTurret>(
-                () =>
-                {
-                    GameObject go = Instantiate(prefab, root);
-                    go.name = "MechTurret";
-                    var t = go.GetComponent<LaserTurret>();
-                    if (t == null) t = go.AddComponent<LaserTurret>();
-                    return t;
-                },
-                t => { if (t != null) t.gameObject.SetActive(true); },
-                t => { if (t != null) t.gameObject.SetActive(false); },
-                t =>
-                {
-                    if (t == null) return;
-                    if (Application.isPlaying) Destroy(t.gameObject);
-                    else DestroyImmediate(t.gameObject);
-                },
-                collectionCheck: false,
-                defaultCapacity: 6,
-                maxSize: 12);
-        }
-
-        private int DealUltAreaDamage(Vector3 center, float radius, float baseDamage, float knockback)
-        {
-            if (radius <= 0f) return 0;
-            int mask = ResolveEnemyLayerMask();
-            float rawDamage = baseDamage * (runtimeStats != null ? runtimeStats.AbilityDamageMultiplier : 1f);
-            int hits = Physics.OverlapSphereNonAlloc(center, radius, ultDamageBuffer, mask);
-            int affected = 0;
-            for (int i = 0; i < hits; i++)
-            {
-                Collider col = ultDamageBuffer[i];
-                if (col == null || !col.TryGetComponent<IDamageable>(out var damageable) || damageable.IsDead) continue;
-                if (damageable is HeroHealth) continue;
-
-                if (rawDamage > 0f)
-                {
-                    bool isCrit = false;
-                    int finalDamage = runtimeStats != null
-                        ? runtimeStats.RollDamage(rawDamage, out isCrit)
-                        : Mathf.Max(1, Mathf.RoundToInt(rawDamage));
-                    if (damageable is EnemyBase enemyDmg)
-                    {
-                        int dealt = enemyDmg.TakeDamageFrom(finalDamage, isCrit, center, isAoE: true);
-                        if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Ultimate, dealt);
-                    }
-                    else
-                    {
-                        damageable.TakeDamage(finalDamage);
-                    }
-                }
-
-                if (knockback > 0f && damageable is EnemyBase pushed && !pushed.IsDead)
-                {
-                    Vector3 dir = pushed.transform.position - center;
-                    dir.y = 0f;
-                    if (dir.sqrMagnitude > 0.0001f) pushed.ApplyPull(dir.normalized * knockback);
-                }
-                affected++;
-            }
-            return affected;
-        }
-
         private int ResolveEnemyLayerMask()
         {
             if (resolvedEnemyLayerMask != 0) return resolvedEnemyLayerMask;
@@ -1071,10 +774,6 @@ namespace ProjectB.Player
             {
                 HideSoulNovaVisuals();
             }
-            else if (activeUltimateType == HeroUltimateType.Consecration)
-            {
-                HideConsecrationVisual();
-            }
 
             OnStateChanged?.Invoke();
         }
@@ -1098,10 +797,6 @@ namespace ProjectB.Player
                 else if (activeUltimateType == HeroUltimateType.SoulNova)
                 {
                     HideSoulNovaVisuals();
-                }
-                else if (activeUltimateType == HeroUltimateType.Consecration)
-                {
-                    HideConsecrationVisual();
                 }
                 OnStateChanged?.Invoke();
             }

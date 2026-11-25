@@ -67,7 +67,7 @@
 1. **Реактивные синергии** — способности физически взаимодействуют друг с другом на поле боя.
 2. **Бесконечная прокачка с Overdrive** — вехи Lv 10 / 20 / 30+ визуально и системно усиливают способность.
 3. **Драматургия забега** — волны знакомства, события волн (Swarm Rush, Gold Goblin, Blood Moon, Elite Ambush), комбо-счётчик, 4 уникальных босса.
-4. **Длинная мета** — 8 мета-апгрейдов, радиальное Дерево Созвездий с Keystone-перками, 6 героев и 27 ачивок с разблокировками.
+4. **Длинная мета** — 8 мета-апгрейдов, радиальное Дерево Созвездий с Keystone-перками, 4 героя и 27 ачивок с разблокировками.
 
 ---
 
@@ -254,13 +254,13 @@
 
 | Категория | Ачивка → награда |
 |---|---|
-| Волны | `Battle Ready` W5 → активный слот; `Survivor` W10 → Laser Turret; `Weapon Master` W15 → активный слот; `Veteran` W25 → **Mage**; `Night Stalker` W35 → Vampiric Fang; `Grand Sage` W35 → пассивный слот; `Legend` W50 → Seismic Hammer |
-| Убийства (кумулятивно) | `Slayer` 100 → монеты; `Tactician` 250 → пассивный слот; `Exterminator` 1000 → Arcane Tornado; `Warlord` 2500 → активный слот; `Harvester` 5000 → **Ranger** |
-| Боссы | `Golem Breaker` → Black Hole; `Soul Vanquisher` → **Necromancer**; `Frostbreaker` → **Paladin**; `Demon Slayer` → монеты |
-| Способности | `Master Crafter` (любая Lv 5) → Vitality Regen; `Arcane Scholar` (любая Lv 8) → пассивный слот |
+| Волны | `Battle Ready` W5 → активный слот; `Survivor` W10 → Laser Turret; `Veteran` W25 → **Mage**; `Arcane Scholar` W25 → пассивный слот; `Night Stalker` W35 → Vampiric Fang; `Grand Sage` W35 → пассивный слот; `Legend` W50 → Seismic Hammer; `Warlord` W50 → активный слот |
+| Убийства (кумулятивно) | `Slayer` 100 → монеты; `Tactician` 250 → пассивный слот; `Exterminator` 1000 → Arcane Tornado; `Harvester` 5000 → **Ranger** |
+| Боссы | `Golem Breaker` → Black Hole; `Weapon Master` (Golem) → активный слот; `Soul Vanquisher` → **Necromancer**; `Frostbreaker` → 400 монет; `Demon Slayer` → 500 монет |
+| Способности | `Master Crafter` (любая Lv 5) → Vitality Regen |
 | Коллекция за забег | `Arsenal` 5 способностей → Dragon Whelp; `Grand Collector` 8 → монеты |
 | Секреты | `Treasure Hunter` 2 сундука → Golden Idol; `Ancient Scholar` 1 свиток → монеты; `Secret Collector` 1 кристалл → монеты |
-| Алтари | `Shrine Seeker` 3 → Skyfall Spire; `Shrine Master` 5 → **Engineer** |
+| Алтари | `Shrine Seeker` 3 → Skyfall Spire; `Shrine Master` 5 → 300 монет |
 | Челлендж | `Untouchable` 5 волн без урона → Sniper Lens; `Combo Artist` комбо x50 → Shadow Decoy |
 
 ### 4.5 Ежедневный бонус
@@ -283,15 +283,13 @@
 
 ## 5. Контент
 
-### 5.1 Герои (6, разблокируются ачивками)
+### 5.1 Герои (4, разблокируются ачивками)
 | Герой | HP / Скорость | Оружие | Пассивка | Ульта (CD) | Разблокировка |
 |---|---|---|---|---|---|
 | **Knight** | 100 / 5.0 | Steady Bolt (10 урона, 2/с, 8м) | Iron Will: +100% Max HP | Aegis Shield: неуязвимость 5с + ударная волна 4.5м, 40 урона (25с) | С начала |
 | **Mage** | 80 / 5.2 | Arcane Blast (14 урона, AoE 1.5м) | Arcane Mastery: +20% Global Damage | Meteor Shower: 6 метеоров по 80 урона, 3.5м (22с) | `Veteran` (W25) |
 | **Ranger** | 90 / 5.6 | Rapid Bow (9 урона, 3.1/с, 11м) | Windrunner: +25% Move Speed | Arrow Rain: 3 волны по 50 урона в 8м + замедление 50% на 4с (20с) | `Harvester` (5000 убийств) |
 | **Necromancer** | 85 / 5.0 | Soul Bolt (11 урона, 20% шанс лечения 2 HP) | Soul Harvest: +35% XP и радиус магнита | Army of the Dead: 12 пронзающих черепов по 60 урона + лечение (24с) | `Soul Vanquisher` (босс Necromancer, W50) |
-| **Paladin** | 120 / 4.8 | Holy Hammer (14 урона, пробивает 2 цели) | Sacred Bulwark: +25 Armor и +2 HP/с | Divine Consecration: золотой круг 5.5м на 6с — 18 урона / 0.5с и лечение (26с) | `Frostbreaker` (Frost Lich, W75) |
-| **Engineer** | 90 / 5.1 | Cluster Grenade (12 урона, AoE 2.2м) | Overengineered: +20% Area и +12% CDR | Mech Drop: 3 турели по 34 DPS на 9с + ударная волна 45 урона (28с) | `Shrine Master` (5 алтарей) |
 
 Все параметры ульт — в `HeroData` (Data-Driven), CDR применяется к оружию и ульте.
 
@@ -444,7 +442,7 @@
 ## 9. Состав релиза 1.0
 
 ### Готово
-- [x] 6 героев (Knight, Mage, Ranger, Necromancer, Paladin, Engineer) с оружием, пассивкой и ультой, выбор героя перед забегом
+- [x] 4 героя (Knight, Mage, Ranger, Necromancer) с оружием, пассивкой и ультой, выбор героя перед забегом
 - [x] 27 способностей (17 активных + 10 пассивных), 63 карточки модификаторов, 3 карточки оружия, слоты 2+2 → 6+6 (12.7)
 - [x] 12 реактивных синергий, пороги Overdrive (Lv 10 / 20 / 30+), комбо-счётчик
 - [x] 8 типов обычных врагов + Gold Goblin, 3 архетипа элит, мини-боссы, 4 босса (W25 / W50 / W75 / W100)
@@ -499,7 +497,7 @@
 | Спринт 8 | Реактивные синергии, Overdrive, комбо, Damage Breakdown |
 | Спринт 9 | Шейдер `VoxelLit`, воксельные модели способностей, hit-stop, Multi-POI компас, расширение аудио |
 | Спринт 10 | События волн, Demon Lord (W100), Shield Bearer / Void Summoner / Gold Goblin, живая арена |
-| Спринт 11 | Дерево Созвездий + Осколки Боссов, Paladin и Engineer, карточки оружия, 4 способности + 2 пассивки + 4 синергии |
+| Спринт 11 | Дерево Созвездий + Осколки Боссов, Paladin и Engineer (удалены позже), карточки оружия, 4 способности + 2 пассивки + 4 синергии |
 | Спринт 12 *(в планах)* | Экономика и баланс по модели, FTUE, локализация EN/UK/RU; стресс-тест v2 после Спринта 17 |
 | Спринт 13 | UI/UX-редизайн: `UiTheme`, шрифты Russo One + Rubik, процедурный UI-кит и иконки, новые меню, HUD и модалки |
 | Спринт 14 *(14.1 готова)* | Мультиплатформа: `LayoutModeService` / `OrientationPolicy` (14.1 ✅); камера/спавн, мультиввод, ландшафт и Web-билд (14.2–14.5) |

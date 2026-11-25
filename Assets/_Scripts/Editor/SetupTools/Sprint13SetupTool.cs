@@ -79,9 +79,7 @@ namespace ProjectB.EditorScripts
                 ["knight"] = "Tank",
                 ["mage"] = "Area Caster",
                 ["ranger"] = "Swift Archer",
-                ["necromancer"] = "Soul Reaper",
-                ["paladin"] = "Holy Bulwark",
-                ["engineer"] = "Turret Builder"
+                ["necromancer"] = "Soul Reaper"
             };
             foreach (string guid in AssetDatabase.FindAssets("t:HeroData"))
             {

@@ -27,10 +27,6 @@ namespace ProjectB.Player
         public float HeroPassiveSpeedMultiplier { get; private set; } = 1f;
         public float HeroPassiveXpMultiplier { get; private set; } = 1f;
         public float HeroPassiveMagnetMultiplier { get; private set; } = 1f;
-        public float HeroPassiveArmor { get; private set; }
-        public float HeroPassiveRegenPerSecond { get; private set; }
-        public float HeroPassiveAreaPercent { get; private set; }
-        public float HeroPassiveCooldownReduction { get; private set; }
 
         // --- Constellation Tree (Sprint 11) ---
         public float TalentArmor { get; private set; }
@@ -62,18 +58,18 @@ namespace ProjectB.Player
         private float appliedTalentCoin;
 
         /// <summary>Total flat armor: run cards/passives + hero passive + Constellation nodes.</summary>
-        public float Armor => Mathf.Max(0f, runArmor + HeroPassiveArmor + TalentArmor);
+        public float Armor => Mathf.Max(0f, runArmor + TalentArmor);
 
         /// <summary>
         /// Global radius/area multiplier for AoE abilities, weapon splash and ultimates
-        /// (Area Tome passive, Engineer passive, Constellation nodes). 1.0 = no bonus.
+        /// (Area Tome passive, Constellation nodes). 1.0 = no bonus.
         /// </summary>
-        public float GlobalAreaMultiplier => Mathf.Max(0.25f, 1f + (runAreaPercent + HeroPassiveAreaPercent + TalentAreaPercent) / 100f);
+        public float GlobalAreaMultiplier => Mathf.Max(0.25f, 1f + (runAreaPercent + TalentAreaPercent) / 100f);
         public float MoveSpeedFlatBonus { get; private set; } = 0f;
         public float MagnetRadiusFlatBonus { get; private set; } = 0f;
         public int MaxHpFlatBonus { get; private set; } = 0;
 
-        public float CooldownReduction => Mathf.Clamp(runCooldownReduction + HeroPassiveCooldownReduction + TalentCooldownReduction, 0f, MAX_COOLDOWN_REDUCTION);
+        public float CooldownReduction => Mathf.Clamp(runCooldownReduction + TalentCooldownReduction, 0f, MAX_COOLDOWN_REDUCTION);
         public float CooldownReductionMultiplier => Mathf.Clamp(1f - CooldownReduction, 0.5f, 1f);
         public float CritChance { get; private set; } = 0f;
         public float CritMultiplier { get; private set; } = BASE_CRIT_MULTIPLIER;
@@ -208,10 +204,6 @@ namespace ProjectB.Player
             HeroPassiveSpeedMultiplier = 1f;
             HeroPassiveXpMultiplier = 1f;
             HeroPassiveMagnetMultiplier = 1f;
-            HeroPassiveArmor = 0f;
-            HeroPassiveRegenPerSecond = 0f;
-            HeroPassiveAreaPercent = 0f;
-            HeroPassiveCooldownReduction = 0f;
 
             if (heroData != null && heroData.passiveValue > 0f)
             {
@@ -230,14 +222,6 @@ namespace ProjectB.Player
                         float factor = 1f + heroData.passiveValue / 100f;
                         HeroPassiveXpMultiplier = factor;
                         HeroPassiveMagnetMultiplier = factor;
-                        break;
-                    case HeroPassiveType.ArmorAndRegen:
-                        HeroPassiveArmor = heroData.passiveValue;
-                        HeroPassiveRegenPerSecond = Mathf.Max(0f, heroData.passiveSecondaryValue);
-                        break;
-                    case HeroPassiveType.AreaAndCooldown:
-                        HeroPassiveAreaPercent = heroData.passiveValue;
-                        HeroPassiveCooldownReduction = Mathf.Clamp(heroData.passiveSecondaryValue / 100f, 0f, MAX_COOLDOWN_REDUCTION);
                         break;
                     case HeroPassiveType.None:
                     default:

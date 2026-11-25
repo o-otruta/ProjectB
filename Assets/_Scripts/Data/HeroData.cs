@@ -9,11 +9,7 @@ namespace ProjectB.Data
         MaxHpPercent = 1,
         GlobalDamagePercent = 2,
         MoveSpeedPercent = 3,
-        XpAndMagnetPercent = 4,
-        /// <summary>passiveValue = flat Armor, passiveSecondaryValue = HP regen per second (Paladin).</summary>
-        ArmorAndRegen = 5,
-        /// <summary>passiveValue = Global Area %, passiveSecondaryValue = Cooldown Reduction % (Engineer).</summary>
-        AreaAndCooldown = 6
+        XpAndMagnetPercent = 4
     }
 
     public enum HeroUltimateType
@@ -21,9 +17,7 @@ namespace ProjectB.Data
         Shield = 0,
         MeteorStrike = 1,
         ArrowRain = 2,
-        SoulNova = 3,
-        Consecration = 4,
-        TurretDrop = 5
+        SoulNova = 3
     }
 
     [CreateAssetMenu(fileName = "HeroData", menuName = "ProjectB/Data/HeroData")]
@@ -68,8 +62,6 @@ namespace ProjectB.Data
         public HeroPassiveType passiveType = HeroPassiveType.MaxHpPercent;
         [Tooltip("Percentage bonus value, e.g. 100 = +100%")]
         public float passiveValue = 100f;
-        [Tooltip("Secondary passive value for dual passives (ArmorAndRegen: HP/s, AreaAndCooldown: CDR %)")]
-        public float passiveSecondaryValue = 0f;
         public string passiveName = "Iron Will";
         [TextArea(1, 3)]
         public string passiveDescription = "+100% Max HP\n<b>Weapon:</b> Steady Bolt (10 dmg, 2/s, 8m range)";
@@ -108,24 +100,5 @@ namespace ProjectB.Data
         [Min(1f)] public float soulNovaSpeed = 16f;
         [Min(0.1f)] public float soulNovaHitRadius = 0.42f;
         [Range(0f, 1f)] public float soulNovaHealPercent = 0.35f;
-
-        [Header("Ultimate Parameters — Divine Consecration (Paladin)")]
-        [Min(0.5f)] public float consecrationRadius = 5.5f;
-        [Min(0.05f)] public float consecrationTickInterval = 0.5f;
-        [Min(0f)] public float consecrationDamagePerTick = 18f;
-        [Min(0)] public int consecrationHealPerTick = 3;
-        [Tooltip("Optional voxel ring visual spawned at the cast position")]
-        public GameObject consecrationVisualPrefab;
-
-        [Header("Ultimate Parameters — Mech Drop (Engineer)")]
-        [Min(1)] public int turretDropCount = 3;
-        [Min(0.5f)] public float turretDropRadius = 2.6f;
-        [Min(1f)] public float turretSearchRadius = 11f;
-        [Min(0f)] public float turretDps = 34f;
-        [Min(0.5f)] public float turretLifetime = 9f;
-        [Min(0f)] public float turretDropShockwaveRadius = 4f;
-        [Min(0f)] public float turretDropShockwaveDamage = 45f;
-        [Tooltip("Prefab with a LaserTurret component (empowered auto-turret)")]
-        public GameObject turretDropPrefab;
     }
 }

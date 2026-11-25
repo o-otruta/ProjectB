@@ -128,7 +128,7 @@ namespace ProjectB.Abilities
             return rawDamage * multiplier * OverdriveDamageMultiplier;
         }
 
-        /// <summary>Global radius/area multiplier (Area Tome, Engineer passive, Constellation nodes).</summary>
+        /// <summary>Global radius/area multiplier (Area Tome, Constellation nodes).</summary>
         public float AreaMultiplier => runtimeStats != null ? runtimeStats.GlobalAreaMultiplier : 1f;
 
         protected float ScaleArea(float baseRadius) => baseRadius * AreaMultiplier;

@@ -547,68 +547,37 @@ namespace ProjectB.Tests.EditMode
         // ------------------------------------------------------------------ 11.2 Heroes & weapon cards
 
         [Test]
-        public void NewHeroes_PaladinAndEngineer_RegisteredWithPassivesWeaponsAndUltimates()
+        public void HeroRoster_HasFourHeroes_AndFormerHeroAchievementsGiveCoins()
         {
             var catalog = Resources.Load<HeroCatalog>("HeroCatalog");
-            var paladin = catalog.GetById("paladin");
-            var engineer = catalog.GetById("engineer");
-            Assert.IsNotNull(paladin);
-            Assert.IsNotNull(engineer);
-            Assert.AreEqual(6, catalog.heroes.Count);
+            Assert.AreEqual(4, catalog.heroes.Count);
+            foreach (string id in new[] { "knight", "mage", "ranger", "necromancer" })
+            {
+                Assert.IsNotNull(catalog.GetById(id), $"Missing hero {id}");
+            }
+            Assert.IsNull(catalog.GetById("paladin"), "Paladin was removed");
+            Assert.IsNull(catalog.GetById("engineer"), "Engineer was removed");
 
-            Assert.AreEqual(120, paladin.maxHp);
-            Assert.AreEqual(4.8f, paladin.moveSpeed, 0.001f);
-            Assert.AreEqual(HeroUltimateType.Consecration, paladin.ultimateType);
-            Assert.AreEqual(2, paladin.startingWeapon.pierceCount, "Holy Hammer pierces 2 targets");
-            Assert.IsNotNull(paladin.visualModelPrefab);
-            Assert.IsNotNull(paladin.consecrationVisualPrefab);
-
-            Assert.AreEqual(90, engineer.maxHp);
-            Assert.AreEqual(5.1f, engineer.moveSpeed, 0.001f);
-            Assert.AreEqual(HeroUltimateType.TurretDrop, engineer.ultimateType);
-            Assert.AreEqual(2.2f, engineer.startingWeapon.splashRadius, 0.001f, "Cluster Grenade AoE 2.2m");
-            Assert.IsNotNull(engineer.turretDropPrefab.GetComponent<LaserTurret>());
-
-            var pStats = new HeroRuntimeStats();
-            pStats.ApplyHeroPassive(paladin, notify: false);
-            Assert.AreEqual(25f, pStats.Armor, 0.001f);
-            Assert.AreEqual(2f, pStats.HeroPassiveRegenPerSecond, 0.001f);
-
-            var eStats = new HeroRuntimeStats();
-            eStats.ApplyHeroPassive(engineer, notify: false);
-            Assert.AreEqual(1.2f, eStats.GlobalAreaMultiplier, 0.001f);
-            Assert.AreEqual(0.12f, eStats.CooldownReduction, 0.001f);
-
-            // Unlock achievements
             var lich = LoadAsset<AchievementData>("Assets/Resources/Achievements/DefeatFrostLich.asset");
-            Assert.AreEqual(AchievementRewardType.UnlockHero, lich.rewardType);
-            Assert.AreEqual("paladin", lich.rewardId);
+            Assert.AreEqual(AchievementRewardType.GiveCoins, lich.rewardType);
+            Assert.Greater(lich.rewardValue, 0);
             var shrines = LoadAsset<AchievementData>("Assets/Resources/Achievements/Clear5Shrines.asset");
             Assert.AreEqual(AchievementConditionType.ClearShrines, shrines.conditionType);
-            Assert.AreEqual("engineer", shrines.rewardId);
+            Assert.AreEqual(AchievementRewardType.GiveCoins, shrines.rewardType);
+            Assert.Greater(shrines.rewardValue, 0);
 
-            foreach (string model in new[] { "Paladin", "Engineer", "HolyHammer", "ClusterGrenade", "BuzzsawChakram", "SkyfallSpire", "ShadowDecoy", "ConsecrationRing" })
+            foreach (string model in new[] { "BuzzsawChakram", "SkyfallSpire", "ShadowDecoy" })
             {
                 Assert.IsTrue(File.Exists($"ArtSources/Blender/{model}.blend"), $"Missing {model}.blend source");
             }
-            var mat = LoadAsset<Material>("Assets/_Materials/Voxels/Paladin_Mat.mat");
-            Assert.AreEqual("ProjectB/VoxelLit", mat.shader.name);
-            Assert.IsTrue(mat.enableInstancing);
         }
 
         [Test]
-        public void PaladinPassive_RegeneratesAndHealingBonusApplies()
+        public void HealingBonusTalent_AmplifiesHeals()
         {
-            var paladin = Resources.Load<HeroCatalog>("HeroCatalog").GetById("paladin");
             var stats = new HeroRuntimeStats();
             var health = CreateHeroHealth(stats, new GameEventBus(), 100);
-            // HeroHealth.Start applies the placeholder hero's passive; apply the Paladin afterwards
-            stats.ApplyHeroPassive(paladin, notify: false);
             health.TakeDamage(50);
-            Assert.AreEqual(60, health.CurrentHp, "+25 Armor mitigates 50 -> 40");
-            int hpAfterHit = health.CurrentHp;
-            health.TickPassiveRegen(1.0f);
-            Assert.AreEqual(hpAfterHit + 2, health.CurrentHp, "+2 HP/s regeneration");
 
             // Constellation +15% Healing
             var tree = BuildTestTree();
@@ -628,45 +597,8 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void Ultimates_ConsecrationBurnsAndHeals_MechDropSpawnsTurrets()
+        public void UltimateCooldownTalent_ReducesUltimateCooldown()
         {
-            var catalog = Resources.Load<HeroCatalog>("HeroCatalog");
-            var bus = new GameEventBus();
-            var stats = new HeroRuntimeStats();
-
-            // Paladin — Divine Consecration
-            var health = CreateHeroHealth(stats, bus, 100);
-            health.TakeDamage(40);
-            var ult = health.gameObject.AddComponent<HeroUltimate>();
-            var so = new SerializedObject(ult);
-            so.FindProperty("fallbackHeroData").objectReferenceValue = catalog.GetById("paladin");
-            so.FindProperty("enemyLayer").intValue = EnemyMask;
-            so.ApplyModifiedPropertiesWithoutUndo();
-            ult.Construct(health, null, null, bus, stats, new RunStatistics());
-
-            var enemy = SpawnEnemy("ConsecrationEnemy", new Vector3(2f, 0f, 0f), 1000, bus);
-            Physics.SyncTransforms();
-            int hpBefore = health.CurrentHp;
-            Assert.IsTrue(ult.TryActivate());
-            Assert.IsTrue(ult.IsConsecrationActive);
-            Assert.Less(enemy.CurrentHp, 1000, "Consecration burns enemies inside the circle");
-            Assert.Greater(health.CurrentHp, hpBefore, "Consecration heals the hero standing inside");
-            int enemyHp = enemy.CurrentHp;
-            ult.StepConsecration(0.5f);
-            Assert.Less(enemy.CurrentHp, enemyHp, "Pulses every 0.5s");
-
-            // Engineer — Mech Drop
-            var engHealth = CreateHeroHealth(stats, bus, 90);
-            var engUlt = engHealth.gameObject.AddComponent<HeroUltimate>();
-            var so2 = new SerializedObject(engUlt);
-            so2.FindProperty("fallbackHeroData").objectReferenceValue = catalog.GetById("engineer");
-            so2.FindProperty("enemyLayer").intValue = EnemyMask;
-            so2.ApplyModifiedPropertiesWithoutUndo();
-            engUlt.Construct(engHealth, null, null, bus, stats, new RunStatistics());
-            Assert.IsTrue(engUlt.TryActivate());
-            Assert.AreEqual(3, engUlt.LastTurretDropCount, "Mech Drop deploys 3 empowered turrets");
-
-            // Ultimate CDR talent node
             var ultTree = BuildTestTree();
             var ultNode = Track(ScriptableObject.CreateInstance<TalentNodeData>());
             ultNode.id = "ultcdr";
@@ -695,7 +627,7 @@ namespace ProjectB.Tests.EditMode
             weapon.attackCooldown = 0.5f;
             weapon.range = 10f;
             weapon.projectileSpeed = 10f;
-            weapon.projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Projectiles/HolyHammerProjectile.prefab");
+            weapon.projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Projectiles/RangerArrowProjectile.prefab");
 
             var stats = new HeroRuntimeStats();
             var bus = new GameEventBus();
@@ -729,7 +661,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void HolyHammer_PiercesAndRetargetsToNextEnemy()
+        public void PiercingProjectile_RetargetsToNextEnemy()
         {
             var bus = new GameEventBus();
             var a = SpawnEnemy("PierceA", new Vector3(0f, 0f, 2f), 500, bus);
@@ -742,7 +674,7 @@ namespace ProjectB.Tests.EditMode
             weapon.pierceCount = 2;
             weapon.pierceRetargetRadius = 4.5f;
 
-            var go = Track(new GameObject("HammerProjectile"));
+            var go = Track(new GameObject("PiercingProjectile"));
             go.transform.position = new Vector3(0f, 0f, 2f);
             var projectile = go.AddComponent<Projectile>();
             projectile.Initialize(weapon, a.transform, null, 1f, EnemyMask, null, null, null);
@@ -1036,9 +968,11 @@ namespace ProjectB.Tests.EditMode
             achievements.OnComboReached(50);
             Assert.IsTrue(save.IsAbilityUnlocked("ShadowDecoy"));
 
+            int coinsBefore = save.Data.coins;
             achievements.OnShrineCleared();
             achievements.OnShrineCleared();
-            Assert.IsTrue(save.IsHeroUnlocked("engineer"));
+            Assert.IsTrue(save.Data.completedAchievements.Contains("clear_5_shrines"));
+            Assert.AreEqual(coinsBefore + 300, save.Data.coins, "Shrine Master pays 300 coins");
         }
 
         [Test]
@@ -1067,7 +1001,7 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(coin.GetFloat("_SpinSpeed"), coinGlow.GetFloat("_SpinSpeed"));
 
             // Static background props and characters do not get the pickup motion
-            foreach (string name in new[] { "ForestMushroom_Mat", "WildFlower_Mat", "Knight_Mat", "Paladin_Mat" })
+            foreach (string name in new[] { "ForestMushroom_Mat", "WildFlower_Mat", "Knight_Mat", "Mage_Mat" })
             {
                 var m = LoadAsset<Material>($"Assets/_Materials/Voxels/{name}.mat");
                 Assert.IsFalse(m.IsKeywordEnabled("_PICKUP_MOTION"), $"{name} must stay static");

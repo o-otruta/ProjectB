@@ -33,7 +33,6 @@ MonoBehaviour:
   visualModelPrefab: {fileID: 6553997822085370749, guid: 0f41c76123ced6e408e0713568297ac9, type: 3}
   passiveType: 2
   passiveValue: 20
-  passiveSecondaryValue: 0
   passiveName: Arcane Mastery
   passiveDescription: '+20% Global Damage
 
@@ -64,16 +63,3 @@ MonoBehaviour:
   soulNovaSpeed: 16
   soulNovaHitRadius: 0.42
   soulNovaHealPercent: 0.35
-  consecrationRadius: 5.5
-  consecrationTickInterval: 0.5
-  consecrationDamagePerTick: 18
-  consecrationHealPerTick: 3
-  consecrationVisualPrefab: {fileID: 0}
-  turretDropCount: 3
-  turretDropRadius: 2.6
-  turretSearchRadius: 11
-  turretDps: 34
-  turretLifetime: 9
-  turretDropShockwaveRadius: 4
-  turretDropShockwaveDamage: 45
-  turretDropPrefab: {fileID: 0}

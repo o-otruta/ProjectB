@@ -20,7 +20,7 @@ using ProjectB.Visuals;
 namespace ProjectB.EditorScripts
 {
     /// <summary>
-    /// Sprint 11: Constellation Tree, Paladin &amp; Engineer heroes, weapon upgrade cards,
+    /// Sprint 11: Constellation Tree, weapon upgrade cards,
     /// 4 new active + 2 passive abilities and 4 reactive synergies.
     /// </summary>
     [System.Obsolete("Legacy one-shot setup tool. Scenes and prefabs are the source of truth (Sprint 15.4).")]
@@ -50,7 +50,6 @@ namespace ProjectB.EditorScripts
         private const string SYNERGY_CATALOG_PATH = "Assets/Resources/SynergyCatalog.asset";
         private const string ABILITY_CATALOG_PATH = "Assets/_ScriptableObjects/Abilities/AbilityCatalog.asset";
         private const string HERO_PREFAB_PATH = "Assets/_Prefabs/Hero.prefab";
-        private const string LASER_TURRET_PREFAB_PATH = "Assets/_Prefabs/LaserTurret.prefab";
         private const string GAMEPLAY_SCENE_PATH = "Assets/_Scenes/Gameplay.unity";
         private const string MAINMENU_SCENE_PATH = "Assets/_Scenes/MainMenu.unity";
         private const string NODE_SPRITE_PATH = "Assets/_UI/ConstellationNode.png";
@@ -61,21 +60,12 @@ namespace ProjectB.EditorScripts
             EnsureFolders();
 
             // 1. Palettes & materials
-            var paladinMats = VoxelPair("Paladin", $"{VOX}/Paladin/paladin.png", new Color(1.6f, 1.45f, 1.1f));
-            var engineerMats = VoxelPair("Engineer", $"{VOX}/Engineer/engineer.png", new Color(1.7f, 1.7f, 1.7f));
-            var hammerMats = VoxelPair("HolyHammer", $"{VOX}/HolyHammer/holy_hammer.png", new Color(1.9f, 1.7f, 1.2f));
-            var grenadeMats = VoxelPair("ClusterGrenade", $"{VOX}/ClusterGrenade/cluster_grenade.png", new Color(1.9f, 1.5f, 1.1f));
             var chakramMats = VoxelPair("BuzzsawChakram", $"{VOX}/BuzzsawChakram/buzzsaw_chakram.png", new Color(1.6f, 1.8f, 1.9f));
             var spireMats = VoxelPair("SkyfallSpire", $"{VOX}/SkyfallSpire/skyfall_spire.png", new Color(2.2f, 1.7f, 1.2f));
             var decoyMats = VoxelPair("ShadowDecoy", $"{VOX}/ShadowDecoy/shadow_decoy.png", new Color(1.8f, 1.5f, 2.2f));
-            var ringMats = VoxelPair("ConsecrationRing", $"{VOX}/ConsecrationRing/consecration_ring.png", new Color(2.0f, 1.8f, 1.2f));
             Material skyfallTelegraphMat = TransparentUnlit($"{MAT_DIR}/SkyfallTelegraphMat.mat", new Color(1f, 0.38f, 0.1f, 0.5f));
 
             // 2. Prefabs
-            GameObject paladinVisual = BuildHeroVisualPrefab("PaladinVisual", "PaladinModel", "Paladin", paladinMats);
-            GameObject engineerVisual = BuildHeroVisualPrefab("EngineerVisual", "EngineerModel", "Engineer", engineerMats);
-            GameObject hammerProjectile = BuildWeaponProjectilePrefab("HolyHammerProjectile", $"{VOX}/HolyHammer/HolyHammer.obj", hammerMats, 1.0f);
-            GameObject grenadeProjectile = BuildWeaponProjectilePrefab("ClusterGrenadeProjectile", $"{VOX}/ClusterGrenade/ClusterGrenade.obj", grenadeMats, 1.0f);
             GameObject chakramDisc = BuildSimpleVisualPrefab($"{ABILITY_PREFAB_DIR}/ChakramDiscVisual.prefab", "ChakramDisc", $"{VOX}/BuzzsawChakram/BuzzsawChakram.obj", chakramMats, typeof(ChakramDisc), Vector3.one);
             GameObject spireVisual = BuildSimpleVisualPrefab($"{ABILITY_PREFAB_DIR}/SkyfallSpireVisual.prefab", "SkyfallSpire", $"{VOX}/SkyfallSpire/SkyfallSpire.obj", spireMats, null, Vector3.one);
             GameObject spireTelegraph = BuildRingPrefab($"{ABILITY_PREFAB_DIR}/SkyfallTelegraph.prefab", "SkyfallTelegraph", $"{VOX}/IceAuraRing/IceAuraRing.obj", skyfallTelegraphMat, null);
@@ -85,15 +75,6 @@ namespace ProjectB.EditorScripts
                 typeof(GravityShardProjectile), Vector3.one * 1.1f);
             GameObject glacialWave = BuildRingPrefab($"{ABILITY_PREFAB_DIR}/GlacialWaveVisual.prefab", "GlacialWave", $"{VOX}/IceAuraRing/IceAuraRing.obj",
                 AssetDatabase.LoadAssetAtPath<Material>($"{VOXEL_MAT_DIR}/IceAuraRing_Mat.mat"), AssetDatabase.LoadAssetAtPath<Material>($"{VOXEL_MAT_DIR}/IceAuraRing_Glow_Mat.mat"));
-            GameObject consecrationVisual = BuildRingPrefab($"{ABILITY_PREFAB_DIR}/ConsecrationVisual.prefab", "Consecration", $"{VOX}/ConsecrationRing/ConsecrationRing.obj", ringMats.glowMat, null);
-
-            // 3. Weapons & heroes
-            WeaponData holyHammer = CreateWeapon("HolyHammerWeaponData", 14, 0.7f, 8.5f, 13f, 0f, 2, hammerProjectile);
-            WeaponData clusterGrenade = CreateWeapon("ClusterGrenadeWeaponData", 12, 0.85f, 9f, 11f, 2.2f, 0, grenadeProjectile);
-            GameObject laserTurretPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LASER_TURRET_PREFAB_PATH);
-            HeroData paladin = CreatePaladin(holyHammer, paladinVisual, consecrationVisual);
-            HeroData engineer = CreateEngineer(clusterGrenade, engineerVisual, laserTurretPrefab);
-            UpdateHeroCatalog(paladin, engineer);
 
             // 4. Abilities, cards, synergies
             var newAbilityCards = new List<CardData>();
@@ -325,70 +306,6 @@ namespace ProjectB.EditorScripts
 
         // ------------------------------------------------------------------ Prefabs
 
-        private static GameObject BuildHeroVisualPrefab(string prefabName, string modelChild, string folder, (Material baseMat, Material glowMat) mats)
-        {
-            string path = $"{HERO_PREFAB_DIR}/{prefabName}.prefab";
-            var root = new GameObject(prefabName) { layer = HERO_LAYER };
-            try
-            {
-                var model = new GameObject(modelChild) { layer = HERO_LAYER };
-                model.transform.SetParent(root.transform, false);
-                model.transform.localPosition = new Vector3(0f, -1f, 0f);
-
-                Mesh idle = LoadMesh($"{VOX}/{folder}/{folder}_Idle.obj");
-                var frames = new Mesh[4];
-                for (int i = 0; i < 4; i++) frames[i] = LoadMesh($"{VOX}/{folder}/{folder}_Walk_0{i}.obj");
-
-                var mf = model.AddComponent<MeshFilter>();
-                mf.sharedMesh = idle;
-                var mr = model.AddComponent<MeshRenderer>();
-                AssignMaterials(mr, idle, mats.baseMat, mats.glowMat);
-
-                var anim = model.AddComponent<VoxelMeshAnimator>();
-                var so = new SerializedObject(anim);
-                so.FindProperty("targetMeshFilter").objectReferenceValue = mf;
-                so.FindProperty("idleMesh").objectReferenceValue = idle;
-                var framesProp = so.FindProperty("frames");
-                framesProp.arraySize = frames.Length;
-                for (int i = 0; i < frames.Length; i++) framesProp.GetArrayElementAtIndex(i).objectReferenceValue = frames[i];
-                so.FindProperty("playOnEnable").boolValue = false;
-                so.FindProperty("framesPerSecond").floatValue = 10f;
-                so.FindProperty("loop").boolValue = true;
-                so.FindProperty("randomizeStartOffset").boolValue = false;
-                so.FindProperty("enableBobbing").boolValue = false;
-                so.ApplyModifiedPropertiesWithoutUndo();
-
-                return PrefabUtility.SaveAsPrefabAsset(root, path);
-            }
-            finally
-            {
-                Object.DestroyImmediate(root);
-            }
-        }
-
-        private static GameObject BuildWeaponProjectilePrefab(string prefabName, string objPath, (Material baseMat, Material glowMat) mats, float scale)
-        {
-            string path = $"{PROJ_PREFAB_DIR}/{prefabName}.prefab";
-            var root = new GameObject(prefabName) { layer = HERO_PROJECTILE_LAYER };
-            try
-            {
-                root.AddComponent<Projectile>();
-                var visuals = new GameObject("Visuals") { layer = HERO_PROJECTILE_LAYER };
-                visuals.transform.SetParent(root.transform, false);
-                visuals.transform.localScale = Vector3.one * scale;
-                Mesh mesh = LoadMesh(objPath);
-                visuals.AddComponent<MeshFilter>().sharedMesh = mesh;
-                var mr = visuals.AddComponent<MeshRenderer>();
-                mr.shadowCastingMode = ShadowCastingMode.Off;
-                AssignMaterials(mr, mesh, mats.baseMat, mats.glowMat);
-                return PrefabUtility.SaveAsPrefabAsset(root, path);
-            }
-            finally
-            {
-                Object.DestroyImmediate(root);
-            }
-        }
-
         private static GameObject BuildSimpleVisualPrefab(string path, string name, string objPath, (Material baseMat, Material glowMat) mats, System.Type component, Vector3 visualScale)
         {
             var root = new GameObject(name) { layer = HERO_PROJECTILE_LAYER };
@@ -446,97 +363,6 @@ namespace ProjectB.EditorScripts
                 AssetDatabase.CreateAsset(asset, path);
             }
             return asset;
-        }
-
-        private static WeaponData CreateWeapon(string assetName, int damage, float cooldown, float range, float speed, float splash, int pierce, GameObject prefab)
-        {
-            var w = LoadOrCreate<WeaponData>($"{SO_DIR}/{assetName}.asset");
-            w.damage = damage;
-            w.attackCooldown = cooldown;
-            w.range = range;
-            w.projectileSpeed = speed;
-            w.splashRadius = splash;
-            w.pierceCount = pierce;
-            w.pierceRetargetRadius = 4.5f;
-            w.lifestealChance = 0f;
-            w.lifestealAmount = 0;
-            w.projectilePrefab = prefab;
-            EditorUtility.SetDirty(w);
-            return w;
-        }
-
-        private static HeroData CreatePaladin(WeaponData weapon, GameObject visual, GameObject consecrationVisual)
-        {
-            var d = LoadOrCreate<HeroData>($"{SO_DIR}/PaladinData.asset");
-            d.id = "paladin";
-            d.heroName = "Paladin";
-            d.description = "Holy bastion hurling piercing Holy Hammers (14 dmg, pierces 2 enemies) and consecrating the ground beneath.";
-            d.unlockedByDefault = false;
-            d.moveSpeed = 4.8f;
-            d.rotationSpeed = 15f;
-            d.maxHp = 120;
-            d.startingWeapon = weapon;
-            d.visualModelPrefab = visual;
-            d.passiveType = HeroPassiveType.ArmorAndRegen;
-            d.passiveValue = 25f;
-            d.passiveSecondaryValue = 2f;
-            d.passiveName = "Sacred Bulwark";
-            d.passiveDescription = "+25 Armor & +2 HP/s\n<b>Weapon:</b> Holy Hammer (14 dmg, pierces 2 targets)";
-            d.ultimateType = HeroUltimateType.Consecration;
-            d.ultimateName = "Divine Consecration";
-            d.ultimateDescription = "Consecrates a 5.5m golden circle for 6s: burns enemies inside (18 dmg every 0.5s) and heals you 3 HP per pulse while you stand in it.";
-            d.ultimateDuration = 6f;
-            d.ultimateCooldown = 26f;
-            d.consecrationRadius = 5.5f;
-            d.consecrationTickInterval = 0.5f;
-            d.consecrationDamagePerTick = 18f;
-            d.consecrationHealPerTick = 3;
-            d.consecrationVisualPrefab = consecrationVisual;
-            EditorUtility.SetDirty(d);
-            return d;
-        }
-
-        private static HeroData CreateEngineer(WeaponData weapon, GameObject visual, GameObject turretPrefab)
-        {
-            var d = LoadOrCreate<HeroData>($"{SO_DIR}/EngineerData.asset");
-            d.id = "engineer";
-            d.heroName = "Engineer";
-            d.description = "Field inventor lobbing Cluster Grenades (12 dmg, 2.2m AoE) and calling down empowered auto-turrets.";
-            d.unlockedByDefault = false;
-            d.moveSpeed = 5.1f;
-            d.rotationSpeed = 15f;
-            d.maxHp = 90;
-            d.startingWeapon = weapon;
-            d.visualModelPrefab = visual;
-            d.passiveType = HeroPassiveType.AreaAndCooldown;
-            d.passiveValue = 20f;
-            d.passiveSecondaryValue = 12f;
-            d.passiveName = "Overengineered";
-            d.passiveDescription = "+20% Area & +12% Cooldown Reduction\n<b>Weapon:</b> Cluster Grenade (12 dmg, 2.2m AoE)";
-            d.ultimateType = HeroUltimateType.TurretDrop;
-            d.ultimateName = "Mech Drop";
-            d.ultimateDescription = "Drops 3 empowered auto-turrets around you (34 DPS lasers for 9s); each landing sends out a 45 dmg shockwave.";
-            d.ultimateDuration = 0.8f;
-            d.ultimateCooldown = 28f;
-            d.turretDropCount = 3;
-            d.turretDropRadius = 2.6f;
-            d.turretSearchRadius = 11f;
-            d.turretDps = 34f;
-            d.turretLifetime = 9f;
-            d.turretDropShockwaveRadius = 4f;
-            d.turretDropShockwaveDamage = 45f;
-            d.turretDropPrefab = turretPrefab;
-            EditorUtility.SetDirty(d);
-            return d;
-        }
-
-        private static void UpdateHeroCatalog(HeroData paladin, HeroData engineer)
-        {
-            var catalog = AssetDatabase.LoadAssetAtPath<HeroCatalog>(HERO_CATALOG_PATH);
-            if (catalog == null) return;
-            if (!catalog.heroes.Contains(paladin)) catalog.heroes.Add(paladin);
-            if (!catalog.heroes.Contains(engineer)) catalog.heroes.Add(engineer);
-            EditorUtility.SetDirty(catalog);
         }
 
         private static LayerMask EnemyMask()
@@ -797,22 +623,11 @@ namespace ProjectB.EditorScripts
         {
             Achievement("Clear3Shrines", "clear_3_shrines", "Shrine Seeker", "Clear 3 Challenge Shrines (cumulative) to unlock Skyfall Spire",
                 AchievementConditionType.ClearShrines, 3, AchievementRewardType.UnlockAbility, "SkyfallSpire");
-            Achievement("Clear5Shrines", "clear_5_shrines", "Shrine Master", "Clear 5 Challenge Shrines (cumulative) to unlock the Engineer hero",
-                AchievementConditionType.ClearShrines, 5, AchievementRewardType.UnlockHero, "engineer");
             Achievement("Combo50", "combo_50", "Combo Artist", "Reach a x50 kill combo to unlock Shadow Decoy",
                 AchievementConditionType.ReachCombo, 50, AchievementRewardType.UnlockAbility, "ShadowDecoy");
             Achievement("ReachWave35", "reach_wave_35", "Night Stalker", "Reach Wave 35 to unlock Vampiric Fang",
                 AchievementConditionType.ReachWave, 35, AchievementRewardType.UnlockAbility, "VampiricFang");
 
-            var lich = AssetDatabase.LoadAssetAtPath<AchievementData>($"{ACH_DIR}/DefeatFrostLich.asset");
-            if (lich != null)
-            {
-                lich.description = "Defeat the Frost Lich on Wave 75 to unlock the Paladin hero";
-                lich.rewardType = AchievementRewardType.UnlockHero;
-                lich.rewardId = "paladin";
-                lich.rewardValue = 0;
-                EditorUtility.SetDirty(lich);
-            }
         }
 
         private static void Achievement(string asset, string id, string title, string desc, AchievementConditionType cond, int target, AchievementRewardType reward, string rewardId)

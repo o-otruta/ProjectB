@@ -120,9 +120,7 @@ namespace ProjectB.Visuals
         private static readonly Color BlockedDamageColor = new Color(0.68f, 0.78f, 0.88f, 1f);
         private static readonly Color DemonEnrageColor = new Color(1f, 0.18f, 0.14f, 1f);
         private static readonly Color BossShardColor = new Color(0.78f, 0.55f, 1f, 1f);
-        private static readonly Color HolyGoldColor = new Color(1f, 0.9f, 0.45f, 1f);
         private static readonly Color DecoyShadowColor = new Color(0.55f, 0.3f, 0.95f, 1f);
-        private static readonly Color EngineerOrangeColor = new Color(1f, 0.62f, 0.18f, 1f);
         private static readonly string[] CachedShardLabels = BuildShardLabels();
 
         private static string[] BuildShardLabels()
@@ -766,19 +764,6 @@ namespace ProjectB.Visuals
                     break;
                 case AbilityVfxType.ChakramRicochet:
                     EmitBurst(p + Vector3.up * 0.5f, SteamWhiteColor, 3, 3.0f, 0.12f);
-                    break;
-                case AbilityVfxType.ConsecrationCast:
-                    EmitExplosionRing(p + Vector3.up * 0.3f, Mathf.Max(2f, evt.Radius), HolyGoldColor, LevelUpColor, 26, 8, 6.0f, 0.32f);
-                    audioManager?.PlaySfx(SfxType.ShieldUlt, volumeScale: 0.9f, randomizePitch: false);
-                    cameraController?.Shake(0.18f, 0.12f);
-                    break;
-                case AbilityVfxType.ConsecrationPulse:
-                    EmitBurst(p + Vector3.up * 0.25f, HolyGoldColor, 6, 3.2f, 0.18f);
-                    break;
-                case AbilityVfxType.TurretDrop:
-                    EmitExplosionRing(p + Vector3.up * 0.4f, Mathf.Max(1.5f, evt.Radius), EngineerOrangeColor, SteamWhiteColor, 18, 6, 6.0f, 0.3f);
-                    audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.55f, randomizePitch: true);
-                    cameraController?.Shake(0.14f, 0.1f);
                     break;
                 case AbilityVfxType.VampiricHeal:
                     EmitBurst(p + Vector3.up * 1.0f, CrimsonHealColor, 6, 2.6f, 0.16f);

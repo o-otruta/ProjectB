@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
   id: clear_5_shrines
   title: Shrine Master
-  description: Clear 5 Challenge Shrines (cumulative) to unlock the Engineer hero
+  description: Clear 5 Challenge Shrines (cumulative)
   nameKey: ach.clear_5_shrines.title
   descriptionKey: ach.clear_5_shrines.desc
   icon: {fileID: 21300000, guid: adc7206111291924b995acd724aa88f6, type: 3}
   conditionType: 7
   targetValue: 5
   targetId: 
-  rewardType: 2
-  rewardValue: 0
-  rewardId: engineer
+  rewardType: 3
+  rewardValue: 300
+  rewardId: 

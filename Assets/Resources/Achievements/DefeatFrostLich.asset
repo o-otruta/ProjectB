@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Data::ProjectB.Data.AchievementData
   id: defeat_frost_lich
   title: Frostbreaker
-  description: Defeat the Frost Lich on Wave 75 to unlock the Paladin hero
+  description: Defeat the Frost Lich on Wave 75
   nameKey: ach.defeat_frost_lich.title
   descriptionKey: ach.defeat_frost_lich.desc
   icon: {fileID: 21300000, guid: fa91e61ba6437a24f9a31070f5d1848b, type: 3}
   conditionType: 2
   targetValue: 1
   targetId: frost_lich
-  rewardType: 2
-  rewardValue: 0
-  rewardId: paladin
+  rewardType: 3
+  rewardValue: 400
+  rewardId: 

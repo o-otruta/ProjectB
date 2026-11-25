@@ -218,7 +218,7 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(melee.SupportsWeaponUpgrade(WeaponUpgradeType.FireRate));
 
             var ranged = Track(ScriptableObject.CreateInstance<WeaponData>());
-            ranged.projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Projectiles/HolyHammerProjectile.prefab");
+            ranged.projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/Projectiles/RangerArrowProjectile.prefab");
             var (rangedHero, _, _) = CreateHero(ranged);
             Assert.IsFalse(rangedHero.SupportsWeaponUpgrade(WeaponUpgradeType.Radius));
             Assert.IsTrue(rangedHero.SupportsWeaponUpgrade(WeaponUpgradeType.Multishot));
