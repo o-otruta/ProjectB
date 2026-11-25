@@ -14,6 +14,9 @@ using ProjectB.Combat;
 using ProjectB.Arena;
 using ProjectB.Data;
 using ProjectB.Visuals;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using ProjectB.Core.Telemetry;
+#endif
 
 namespace ProjectB.Core
 {
@@ -39,6 +42,9 @@ namespace ProjectB.Core
             builder.Register<MoveInputService>(Lifetime.Scoped);
             builder.RegisterEntryPoint<EnemyDeathHandler>();
             builder.RegisterEntryPoint<MetaRunRewardsHandler>().AsSelf();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            builder.RegisterEntryPoint<RunTelemetry>().AsSelf();
+#endif
 
             // Register Managers & Environment
             builder.RegisterComponentInHierarchy<GameManager>();

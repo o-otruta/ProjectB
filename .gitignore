@@ -115,3 +115,6 @@ InitTestScene*.unity*
 
 # Local project audit
 AUDIT.md
+
+# BalanceBot reports
+/BalanceReports/

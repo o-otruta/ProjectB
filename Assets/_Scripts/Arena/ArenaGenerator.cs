@@ -42,6 +42,13 @@ namespace ProjectB.Arena
         private Transform _interactablesContainer;
         private bool _isSubscribed;
 
+        private static int? s_nextRunSeedOverride;
+
+        public static void SetNextRunSeedOverride(int? seed)
+        {
+            s_nextRunSeedOverride = seed;
+        }
+
         public int CurrentSeed { get; private set; }
         public ArenaConfig Config => _config;
         public float ArenaSize => _config != null ? _config.ArenaSize : 100f;
@@ -124,6 +131,12 @@ namespace ProjectB.Arena
             {
                 Debug.LogError("ArenaConfig is missing on ArenaGenerator!");
                 return;
+            }
+
+            if (!overrideSeed.HasValue && s_nextRunSeedOverride.HasValue)
+            {
+                overrideSeed = s_nextRunSeedOverride.Value;
+                s_nextRunSeedOverride = null;
             }
 
             int seedToUse = 0;

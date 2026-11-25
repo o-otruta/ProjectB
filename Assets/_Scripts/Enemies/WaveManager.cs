@@ -81,6 +81,7 @@ namespace ProjectB.Enemies
             ? waveConfig.GetOverlapAliveThreshold(currentWave, currentWaveSpawnedCount, isFtueRun, currentWaveIsBoss)
             : 0;
         public IReadOnlyCollection<EnemyBase> ActiveEnemies => activeEnemies;
+        public IReadOnlyList<FrostSlowZone> ActiveFrostZones => activeFrostZones;
         public WaveConfig Config => waveConfig;
         public EnemyRuntimeModifiers RuntimeModifiers => ResolveEnemyModifiers();
         private bool isSpawning = false;

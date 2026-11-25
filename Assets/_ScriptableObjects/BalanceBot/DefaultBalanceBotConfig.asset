@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c53776f9e98c9f4e82954e8b502dea8, type: 3}
+  m_Name: DefaultBalanceBotConfig
+  m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.Core.BalanceBot.BalanceBotConfig
+  threatRadius: 12
+  repulsionWeight: 4.2
+  projectileDodgeRadius: 6.5
+  projectileDodgeWeight: 5
+  frostZoneAvoidWeight: 4.5
+  bossTelegraphAvoidWeight: 8
+  meleePreferredDistance: 2.4
+  rangedPreferredDistance: 5.8
+  engageWeight: 1.65
+  strafeWeight: 0.95
+  strafeFlipIntervalSeconds: 4.5
+  pickupSearchRadius: 15
+  pickupSafeThreatThreshold: 1.5
+  pickupMinEnemyDistance: 2.5
+  xpAttractWeight: 2.1
+  coinAttractWeight: 1.15
+  obstacleRayLength: 3.6
+  arenaWallMargin: 8
+  stuckWindowSeconds: 1.25
+  stuckMinDisplacement: 0.65
+  unstuckDurationSeconds: 0.65
+  decisionIntervalSeconds: 0.1
+  ultimateMinNearbyEnemies: 6
+  ultimateCheckRadius: 7.5
+  ultimateLowHpEmergencyThreshold: 0.35
+  heroIds:
+  - knight
+  - mage
+  - ranger
+  - necromancer
+  - paladin
+  - engineer
+  strategies: 0000000001000000
+  fixedBuildPreset: {fileID: 11400000, guid: a2d4fa86f975ce04bb6cbf37532c5755, type: 2}
+  metaProfiles:
+  - {fileID: 11400000, guid: ea0a75b40f216aa4fa7f6e7db6728257, type: 2}
+  runsPerCombination: 3
+  baseSeed: 1000
+  useFixedStepSimulation: 1
+  simulationFps: 60
+  timeScale: 6
+  maxWaveLimit: 100
+  maxRunMinutes: 30

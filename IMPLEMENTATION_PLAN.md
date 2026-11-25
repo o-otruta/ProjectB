@@ -324,6 +324,11 @@
 - [x] **12.3. Локализация EN + UK + RU:** `LocalizationService` (`Resources/Localization/{en,uk,ru}.json`, Zero-GC кэш), `LocalizedText` на статичные тексты + локализационные ключи для SO, проверка кириллицы/украинских букв `Ґґ Єє Іі Її` в атласах, переключатель языка в `SettingsPopupUI`.
 - [ ] **12.4. Стресс-тест v2** (`ReleasePlayModeStressTests`, на устройстве после Спринта 17): W50+, `maxActiveEnemies` врагов + separation + `VoxelLit` + 6 способностей с синергиями и Overdrive + событие + Demon Lord — `< 2.5 мс` боевой логики, `0 B` GC, p95 `< 16.6 мс`, отчёт в `Docs/Perf/`.
 - [x] **12.5. Синхронизация документации:** `CONTEXT.md` и `IMPLEMENTATION_PLAN.md` приведены к реальному составу проекта (обновлено и в 15.5).
+- [x] **12.6. Автоматизация баланса (RunTelemetry + BalanceBot):** *(только `UNITY_EDITOR || DEVELOPMENT_BUILD`)*
+  - `RunTelemetry` пишет `waves.csv` / `runs.csv` / `cards.csv` (длительность волн, урон по герою с источником, DPS по источникам, LevelUp, выбор карт, монеты/Осколки); ручной режим — кнопка в Debug Cheat Menu → `persistentDataPath/BalanceLogs/`.
+  - `BalanceBot`: кайтинг с уклонением от снарядов, телеграфов и зон, авто-ульта, стратегии карт `Random` / `GreedyDamage` / `FixedBuild`, мета-профили `Fresh` / `Mid` / `Full`, изоляция `SaveData` (in-memory хранилище + бэкап).
+  - Пакетный запуск: окно `ProjectB/Debug/Balance Bot` или `[Explicit]` PlayMode-тест `BalanceBot` (env `BALANCE_BOT_*`) → `BalanceReports/<дата>/summary.md`.
+  - Ускорение — фиксированный шаг `Time.captureDeltaTime = 1/60` (симуляция как на 60 FPS, кадры — максимально быстро). Legacy `timeScale 6×` занижал силу бота (медиана W13 против W16 на 1×).
 
 ### Спринт 13 — UI/UX редизайн (параллельно со Спринтом 12; ТЗ и аудит экранов — [AUDIT.md](./AUDIT.md), разделы 3.8 и «Спринт 13»)
 

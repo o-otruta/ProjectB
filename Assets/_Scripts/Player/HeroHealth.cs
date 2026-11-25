@@ -60,6 +60,7 @@ namespace ProjectB.Player
         public int MaxHp => currentMaxHp;
         public float Armor => runtimeStats != null ? runtimeStats.Armor : 0f;
         public HeroData ActiveHeroData => selectedHeroService?.GetSelectedHero() ?? heroData;
+        public string LastDamageSourceId { get; private set; }
 
         [Inject]
         public void Construct(
@@ -93,6 +94,7 @@ namespace ProjectB.Player
 
             currentMaxHp = runtimeStats != null ? runtimeStats.GetMaxHp(baseMaxHp) : baseMaxHp;
             currentHp = currentMaxHp;
+            LastDamageSourceId = null;
             RefreshRenderers();
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
         }
@@ -222,6 +224,7 @@ namespace ProjectB.Player
         {
             isDead = false;
             currentHp = currentMaxHp;
+            LastDamageSourceId = null;
             postHitInvulnerabilityTimer = 0f;
             hitFlashTimer = 0f;
             ApplyHitFlash(0f);
@@ -231,10 +234,18 @@ namespace ProjectB.Player
 
         public void TakeDamage(int amount)
         {
+            TakeDamage(amount, null);
+        }
+
+        public void TakeDamage(int amount, string sourceId)
+        {
             if (isDead || IsInvulnerable || amount <= 0) return;
 
             int finalDamage = runtimeStats != null ? runtimeStats.CalculateMitigatedDamage(amount) : amount;
             if (finalDamage <= 0) return;
+
+            string resolvedSource = !string.IsNullOrEmpty(sourceId) ? sourceId : "Unknown";
+            LastDamageSourceId = resolvedSource;
 
             currentHp -= finalDamage;
             if (currentHp < 0) currentHp = 0;
@@ -243,6 +254,7 @@ namespace ProjectB.Player
             {
                 OnDamageTaken?.Invoke(finalDamage);
                 OnHealthChanged?.Invoke(currentHp, currentMaxHp);
+                eventBus?.Publish(new HeroDamagedEvent(finalDamage, currentHp, currentMaxHp, resolvedSource));
                 return;
             }
 
@@ -264,6 +276,7 @@ namespace ProjectB.Player
 
             OnDamageTaken?.Invoke(finalDamage);
             OnHealthChanged?.Invoke(currentHp, currentMaxHp);
+            eventBus?.Publish(new HeroDamagedEvent(finalDamage, currentHp, currentMaxHp, resolvedSource));
             
             if (currentHp <= 0)
             {
@@ -334,8 +347,14 @@ namespace ProjectB.Player
         [ContextMenu("Debug Kill")]
         public void DebugKill()
         {
+            DebugKill("DebugKill");
+        }
+
+        public void DebugKill(string cause)
+        {
             if (!isDead)
             {
+                LastDamageSourceId = !string.IsNullOrEmpty(cause) ? cause : "DebugKill";
                 currentHp = 0;
                 OnHealthChanged?.Invoke(currentHp, currentMaxHp);
                 Die();

@@ -6,6 +6,7 @@ using VContainer;
 using ProjectB.Abilities;
 using ProjectB.Ads;
 using ProjectB.Core;
+using ProjectB.Core.Events;
 using ProjectB.Data;
 using ProjectB.Data.Platform;
 using ProjectB.UI;
@@ -44,6 +45,7 @@ namespace ProjectB.LevelUp
         private GameInputService gameInput;
         private InputModeService inputModeService;
         private InputConfig inputConfig;
+        private GameEventBus eventBus;
         private System.Func<float> unscaledTimeProvider;
         private System.Func<bool> cachedIsInputLockedCheck;
         private System.Action<InputMode> cachedInputModeHandler;
@@ -61,6 +63,15 @@ namespace ProjectB.LevelUp
 
         public bool IsActive => selectionPanel != null && selectionPanel.activeSelf;
         public bool IsInputLocked => IsActive && GetUnscaledTime() < inputUnlockTime;
+        public IReadOnlyList<CardData> CurrentOfferedCards => currentCards;
+        public int FreeSlotsCount => freeCardsCount;
+        public int FreeRerollsAvailable => freeRerollsAvailable;
+        public bool HasRerolledCurrentOffer => hasRerolledThisLevelUp;
+        public bool CanFreeReroll =>
+            IsActive
+            && onRerollCallback != null
+            && !hasRerolledThisLevelUp
+            && freeRerollsAvailable > 0;
 
         public bool CanRerollCurrentOffer =>
             onRerollCallback != null
@@ -87,7 +98,8 @@ namespace ProjectB.LevelUp
             HeroExperience heroExperience = null,
             GameInputService gameInput = null,
             InputModeService inputModeService = null,
-            InputConfig inputConfig = null)
+            InputConfig inputConfig = null,
+            GameEventBus eventBus = null)
         {
             UnsubscribeInputMode();
             this.adManager = adManager;
@@ -97,6 +109,7 @@ namespace ProjectB.LevelUp
             this.gameInput = gameInput;
             this.inputModeService = inputModeService;
             if (inputConfig != null) this.inputConfig = inputConfig;
+            if (eventBus != null) this.eventBus = eventBus;
             SubscribeInputMode();
         }
 
@@ -229,7 +242,69 @@ namespace ProjectB.LevelUp
 
             StartBounceAnimation();
             ArmInputLock();
+            PublishOfferShown(isReroll: false);
             OnCardsShown?.Invoke();
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Automation-only card pick: selects a free slot immediately, bypassing input lock and feedback delay.
+        /// Never picks ad-gated slots (>= freeCardsCount).
+        /// </summary>
+        public bool SelectCardForAutomation(int slotIndex)
+        {
+            if (!IsActive || onCardSelectedCallback == null || currentCards == null) return false;
+            if (slotIndex < 0 || slotIndex >= freeCardsCount || slotIndex >= currentCards.Count) return false;
+
+            CardData card = currentCards[slotIndex];
+            if (card == null) return false;
+
+            var callback = onCardSelectedCallback;
+            PublishCardSelected(card);
+            onCardSelectedCallback = null;
+            onRerollCallback = null;
+            currentCards = null;
+            freeRerollsAvailable = 0;
+            hasRerolledThisLevelUp = false;
+
+            OnCardChosen?.Invoke();
+            Hide();
+            callback.Invoke(card);
+            return true;
+        }
+
+        /// <summary>
+        /// Automation-only free reroll: consumes a free reroll if available, bypassing input lock.
+        /// Never uses rewarded ad rerolls.
+        /// </summary>
+        public bool TryFreeRerollForAutomation()
+        {
+            if (!CanFreeReroll) return false;
+            ExecuteReroll(usedFreeReroll: true);
+            return true;
+        }
+#endif
+
+        private void PublishOfferShown(bool isReroll)
+        {
+            if (eventBus == null || currentCards == null) return;
+            int count = currentCards.Count;
+            CardData c0 = count > 0 ? currentCards[0] : null;
+            CardData c1 = count > 1 ? currentCards[1] : null;
+            CardData c2 = count > 2 ? currentCards[2] : null;
+            int level = heroExperience != null ? heroExperience.CurrentLevel : 1;
+            eventBus.Publish(new CardOfferShownEvent(level, c0, c1, c2, count, freeCardsCount, isReroll));
+        }
+
+        private void PublishCardSelected(CardData selectedCard)
+        {
+            if (eventBus == null) return;
+            int count = currentCards != null ? currentCards.Count : 0;
+            CardData c0 = count > 0 ? currentCards[0] : null;
+            CardData c1 = count > 1 ? currentCards[1] : null;
+            CardData c2 = count > 2 ? currentCards[2] : null;
+            int level = heroExperience != null ? heroExperience.CurrentLevel : 1;
+            eventBus.Publish(new CardSelectedEvent(level, selectedCard, c0, c1, c2, count, freeCardsCount, hasRerolledThisLevelUp));
         }
 
         public bool TrySelectSlotByIndex(int slotIndex)
@@ -535,6 +610,7 @@ namespace ProjectB.LevelUp
                 RefreshSlots();
                 StartBounceAnimation();
                 ArmInputLock();
+                PublishOfferShown(isReroll: true);
             }
             RefreshRerollButton();
         }
@@ -568,6 +644,7 @@ namespace ProjectB.LevelUp
             if (onCardSelectedCallback == null) return;
 
             var callback = onCardSelectedCallback;
+            PublishCardSelected(card);
             onCardSelectedCallback = null; // Защита от двойного клика (мультитач на смартфонах)
             onRerollCallback = null;
             currentCards = null;

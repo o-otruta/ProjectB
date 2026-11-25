@@ -13,7 +13,10 @@ namespace ProjectB.Combat
     public class EnemyProjectilePool : IDisposable
     {
         private readonly Dictionary<WeaponData, IObjectPool<EnemyProjectile>> _pools = new Dictionary<WeaponData, IObjectPool<EnemyProjectile>>();
+        private readonly List<EnemyProjectile> _activeProjectiles = new List<EnemyProjectile>(64);
         private Transform _rootContainer;
+
+        public IReadOnlyList<EnemyProjectile> ActiveProjectiles => _activeProjectiles;
 
         public EnemyProjectile Spawn(
             WeaponData weaponData,
@@ -21,7 +24,8 @@ namespace ProjectB.Combat
             Vector3 direction,
             int damage,
             Transform heroTarget,
-            IDamageable heroDamageable)
+            IDamageable heroDamageable,
+            string sourceId = "EnemyProjectile")
         {
             if (weaponData == null) return null;
 
@@ -30,7 +34,7 @@ namespace ProjectB.Combat
             if (proj == null) return null;
 
             proj.transform.position = position;
-            proj.Initialize(damage, weaponData.projectileSpeed, direction, pool, heroTarget, heroDamageable);
+            proj.Initialize(damage, weaponData.projectileSpeed, direction, pool, heroTarget, heroDamageable, sourceId);
             return proj;
         }
 
@@ -48,12 +52,27 @@ namespace ProjectB.Combat
 
             IObjectPool<EnemyProjectile> pool = new ObjectPool<EnemyProjectile>(
                 createFunc: () => CreateProjectile(weaponData),
-                actionOnGet: p => { if (p != null) p.gameObject.SetActive(true); },
-                actionOnRelease: p => { if (p != null) p.gameObject.SetActive(false); },
+                actionOnGet: p =>
+                {
+                    if (p != null)
+                    {
+                        p.gameObject.SetActive(true);
+                        _activeProjectiles.Add(p);
+                    }
+                },
+                actionOnRelease: p =>
+                {
+                    if (p != null)
+                    {
+                        RemoveActiveProjectile(p);
+                        p.gameObject.SetActive(false);
+                    }
+                },
                 actionOnDestroy: p =>
                 {
                     if (p != null)
                     {
+                        RemoveActiveProjectile(p);
                         if (Application.isPlaying) UnityEngine.Object.Destroy(p.gameObject);
                         else UnityEngine.Object.DestroyImmediate(p.gameObject);
                     }
@@ -65,6 +84,20 @@ namespace ProjectB.Combat
 
             _pools[weaponData] = pool;
             return pool;
+        }
+
+        private void RemoveActiveProjectile(EnemyProjectile p)
+        {
+            for (int i = _activeProjectiles.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(_activeProjectiles[i], p))
+                {
+                    int last = _activeProjectiles.Count - 1;
+                    _activeProjectiles[i] = _activeProjectiles[last];
+                    _activeProjectiles.RemoveAt(last);
+                    return;
+                }
+            }
         }
 
         public void Prewarm(WeaponData weaponData, int count = 24)
@@ -114,6 +147,7 @@ namespace ProjectB.Combat
 
         public void Dispose()
         {
+            _activeProjectiles.Clear();
             foreach (var kvp in _pools)
             {
                 kvp.Value?.Clear();

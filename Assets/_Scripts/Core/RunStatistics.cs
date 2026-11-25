@@ -66,6 +66,21 @@ namespace ProjectB.Core
             return 0L;
         }
 
+        /// <summary>
+        /// Zero-GC copy of accumulated damage totals into caller-owned preallocated buffers.
+        /// </summary>
+        public int CopySnapshot(string[] outIds, long[] outTotals)
+        {
+            if (outIds == null || outTotals == null) return 0;
+            int count = Mathf.Min(sourceCount, Mathf.Min(outIds.Length, outTotals.Length));
+            for (int i = 0; i < count; i++)
+            {
+                outIds[i] = sourceIds[i];
+                outTotals[i] = sourceTotals[i];
+            }
+            return count;
+        }
+
         public void GetTopSources(List<DamageSourceEntry> results, float playTimeSeconds, int maxCount = 6)
         {
             if (results == null) return;

@@ -26,6 +26,9 @@ namespace ProjectB.Enemies
         private float nextSlamTime;
         private float slamImpactResetTime;
 
+        public bool IsTelegraphingSlam => isTelegraphingSlam;
+        public float SlamRadius => bossData != null ? bossData.slamRadius : 0f;
+
         protected override Color GetBossRimColor() => new Color(1.0f, 0.68f, 0.16f, 0.9f);
 
         private void SetBodyMesh(Mesh mesh)
@@ -156,7 +159,14 @@ namespace ProjectB.Enemies
             if (diff.sqrMagnitude <= radius * radius)
             {
                 int finalDamage = Mathf.Max(1, Mathf.RoundToInt(bossData.slamDamage * currentDamageMultiplier));
-                targetDamageable.TakeDamage(finalDamage);
+                if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                {
+                    heroHealth.TakeDamage(finalDamage, "StoneGolem_Slam");
+                }
+                else
+                {
+                    targetDamageable.TakeDamage(finalDamage);
+                }
             }
         }
 

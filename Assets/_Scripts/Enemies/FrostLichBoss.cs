@@ -292,7 +292,14 @@ namespace ProjectB.Enemies
                     if (targetSlowable == null) targetSlowable = target.GetComponent<ISlowable>();
 
                     int dmg = Mathf.Max(1, Mathf.RoundToInt(bossData.spikeDamage * currentDamageMultiplier));
-                    targetDamageable?.TakeDamage(dmg);
+                    if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                    {
+                        heroHealth.TakeDamage(dmg, "FrostLich_IceSpikes");
+                    }
+                    else
+                    {
+                        targetDamageable?.TakeDamage(dmg);
+                    }
                     targetSlowable?.ApplySlow(bossData.spikeSlowFactor, bossData.spikeSlowDuration);
                     hitHero = true;
                 }
@@ -346,7 +353,14 @@ namespace ProjectB.Enemies
             if (targetSlowable == null) targetSlowable = target.GetComponent<ISlowable>();
 
             int dmg = Mathf.Max(1, Mathf.RoundToInt(bossData.blizzardTickDamage * currentDamageMultiplier));
-            targetDamageable?.TakeDamage(dmg);
+            if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+            {
+                heroHealth.TakeDamage(dmg, "FrostLich_Blizzard");
+            }
+            else
+            {
+                targetDamageable?.TakeDamage(dmg);
+            }
             targetSlowable?.ApplySlow(bossData.blizzardSlowFactor, Mathf.Max(0.6f, bossData.blizzardTickInterval * 1.4f));
             return true;
         }

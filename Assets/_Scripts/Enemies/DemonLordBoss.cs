@@ -356,7 +356,14 @@ namespace ProjectB.Enemies
             if (diff.sqrMagnitude <= hitRadius * hitRadius)
             {
                 int dmg = Mathf.Max(1, Mathf.RoundToInt(bossData.demonChargeDamage * currentDamageMultiplier));
-                targetDamageable.TakeDamage(dmg);
+                if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                {
+                    heroHealth.TakeDamage(dmg, "DemonLord_FireCharge");
+                }
+                else
+                {
+                    targetDamageable.TakeDamage(dmg);
+                }
                 hitHeroThisCharge = true;
             }
         }
@@ -387,7 +394,8 @@ namespace ProjectB.Enemies
                         dir,
                         finalDmg,
                         target,
-                        targetDamageable);
+                        targetDamageable,
+                        "DemonLord_Fireball");
                 }
             }
 
@@ -450,7 +458,14 @@ namespace ProjectB.Enemies
                     {
                         if (targetDamageable == null) targetDamageable = target.GetComponent<IDamageable>();
                         int dmg = Mathf.Max(1, Mathf.RoundToInt(bossData.demonMeteorDamage * currentDamageMultiplier));
-                        targetDamageable?.TakeDamage(dmg);
+                        if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                        {
+                            heroHealth.TakeDamage(dmg, "DemonLord_Meteor");
+                        }
+                        else
+                        {
+                            targetDamageable?.TakeDamage(dmg);
+                        }
                         hitHero = true;
                     }
                 }

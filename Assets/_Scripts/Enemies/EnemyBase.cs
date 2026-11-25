@@ -10,6 +10,10 @@ namespace ProjectB.Enemies
     public class EnemyBase : MonoBehaviour, IDamageable, ISlowable
     {
         [SerializeField] protected EnemyData enemyData;
+
+        // Кэш id источника урона по герою (Object.name аллоцирует строку на каждом вызове).
+        private string heroDamageSourceId = "EnemyContact";
+        protected string HeroDamageSourceId => heroDamageSourceId;
         private IObjectPool<EnemyBase> pool;
         protected Transform target;
         protected GameEventBus eventBus;
@@ -160,6 +164,7 @@ namespace ProjectB.Enemies
             OnDied = null;
             ResetTransientStates();
             enemyData = data;
+            heroDamageSourceId = data != null ? data.name : "EnemyContact";
             target = heroTarget;
             pool = enemyPool;
             eventBus = bus;
@@ -714,7 +719,17 @@ namespace ProjectB.Enemies
             {
                 if (targetDamageable != null)
                 {
-                    targetDamageable.TakeDamage(currentDamage);
+                    if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                    {
+                        string src = IsBoss && !string.IsNullOrEmpty(BossId)
+                            ? BossId
+                            : heroDamageSourceId;
+                        heroHealth.TakeDamage(currentDamage, src);
+                    }
+                    else
+                    {
+                        targetDamageable.TakeDamage(currentDamage);
+                    }
                     lastDamageTime = Time.time;
                 }
             }

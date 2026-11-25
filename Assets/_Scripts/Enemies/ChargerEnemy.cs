@@ -235,7 +235,14 @@ namespace ProjectB.Enemies
             if (diff.sqrMagnitude <= hitRadius * hitRadius)
             {
                 int dmg = Mathf.Max(1, Mathf.RoundToInt(chargerData.chargeDamage * currentDamageMultiplier));
-                targetDamageable.TakeDamage(dmg);
+                if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                {
+                    heroHealth.TakeDamage(dmg, HeroDamageSourceId);
+                }
+                else
+                {
+                    targetDamageable.TakeDamage(dmg);
+                }
                 hitHeroThisCharge = true;
             }
         }

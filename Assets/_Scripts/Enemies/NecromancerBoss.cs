@@ -174,7 +174,8 @@ namespace ProjectB.Enemies
                     dir,
                     finalDamage,
                     target,
-                    targetDamageable);
+                    targetDamageable,
+                    "Necromancer_Volley");
             }
 
             TriggerCastPose();

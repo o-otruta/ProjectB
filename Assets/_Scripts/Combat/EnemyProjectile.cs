@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 using ProjectB.Enemies;
+using ProjectB.Player;
 
 namespace ProjectB.Combat
 {
@@ -19,8 +20,13 @@ namespace ProjectB.Combat
         private Vector3 direction;
         private int damage;
         private float speed;
+        private string sourceId;
         private bool isReturned;
         private float spawnTime;
+
+        public Vector3 Direction => direction;
+        public float Speed => speed;
+        public bool IsActive => !isReturned && gameObject.activeInHierarchy;
 
         private static void EnsureLayerMasks()
         {
@@ -37,7 +43,8 @@ namespace ProjectB.Combat
             Vector3 shootDirection,
             IObjectPool<EnemyProjectile> projectilePool,
             Transform targetHero = null,
-            IDamageable targetHeroDamageable = null)
+            IDamageable targetHeroDamageable = null,
+            string sourceId = "EnemyProjectile")
         {
             EnsureLayerMasks();
             this.damage = damage;
@@ -47,6 +54,7 @@ namespace ProjectB.Combat
             this.heroDamageable = targetHeroDamageable != null
                 ? targetHeroDamageable
                 : (targetHero != null ? targetHero.GetComponent<IDamageable>() : null);
+            this.sourceId = !string.IsNullOrEmpty(sourceId) ? sourceId : "EnemyProjectile";
             this.isReturned = false;
             this.spawnTime = Time.time;
 
@@ -71,7 +79,7 @@ namespace ProjectB.Combat
                 dir.y = 0f;
                 dir = dir.sqrMagnitude < 0.001f ? transform.forward : dir.normalized;
             }
-            Initialize(damage, speed, dir, projectilePool, target, null);
+            Initialize(damage, speed, dir, projectilePool, target, null, "EnemyProjectile");
         }
 
         private void Update()
@@ -92,7 +100,14 @@ namespace ProjectB.Combat
             {
                 if (IntersectsHeroSegmentXZ(currentPos, direction, step, heroTarget.position))
                 {
-                    heroDamageable.TakeDamage(damage);
+                    if (heroDamageable is HeroHealth heroHealth)
+                    {
+                        heroHealth.TakeDamage(damage, sourceId);
+                    }
+                    else
+                    {
+                        heroDamageable.TakeDamage(damage);
+                    }
                     ReturnToPool();
                     return;
                 }

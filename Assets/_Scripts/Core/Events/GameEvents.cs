@@ -2,6 +2,7 @@ using UnityEngine;
 using ProjectB.Data;
 using ProjectB.Data.Enemies;
 using ProjectB.Abilities;
+using ProjectB.LevelUp;
 
 namespace ProjectB.Core.Events
 {
@@ -749,6 +750,92 @@ namespace ProjectB.Core.Events
         {
             MutatorType = mutatorType;
             Completed = completed;
+        }
+    }
+
+    /// <summary>
+    /// Герой получил урон от врага, снаряда, босса или ловушки.
+    /// </summary>
+    public struct HeroDamagedEvent
+    {
+        public int Damage;
+        public int CurrentHp;
+        public int MaxHp;
+        public string SourceId;
+
+        public HeroDamagedEvent(int damage, int currentHp, int maxHp, string sourceId)
+        {
+            Damage = damage;
+            CurrentHp = currentHp;
+            MaxHp = maxHp;
+            SourceId = sourceId;
+        }
+    }
+
+    /// <summary>
+    /// Игроку показан набор карточек LevelUp (начальный или после реролла).
+    /// </summary>
+    public struct CardOfferShownEvent
+    {
+        public int HeroLevel;
+        public CardData Card0;
+        public CardData Card1;
+        public CardData Card2;
+        public int OfferedCount;
+        public int FreeSlotsCount;
+        public bool IsReroll;
+
+        public CardOfferShownEvent(
+            int heroLevel,
+            CardData card0,
+            CardData card1,
+            CardData card2,
+            int offeredCount,
+            int freeSlotsCount,
+            bool isReroll)
+        {
+            HeroLevel = heroLevel;
+            Card0 = card0;
+            Card1 = card1;
+            Card2 = card2;
+            OfferedCount = offeredCount;
+            FreeSlotsCount = freeSlotsCount;
+            IsReroll = isReroll;
+        }
+    }
+
+    /// <summary>
+    /// Карточка LevelUp выбрана игроком или автоматизацией.
+    /// </summary>
+    public struct CardSelectedEvent
+    {
+        public int HeroLevel;
+        public CardData SelectedCard;
+        public CardData Offered0;
+        public CardData Offered1;
+        public CardData Offered2;
+        public int OfferedCount;
+        public int FreeSlotsCount;
+        public bool WasRerolled;
+
+        public CardSelectedEvent(
+            int heroLevel,
+            CardData selectedCard,
+            CardData offered0,
+            CardData offered1,
+            CardData offered2,
+            int offeredCount,
+            int freeSlotsCount,
+            bool wasRerolled)
+        {
+            HeroLevel = heroLevel;
+            SelectedCard = selectedCard;
+            Offered0 = offered0;
+            Offered1 = offered1;
+            Offered2 = offered2;
+            OfferedCount = offeredCount;
+            FreeSlotsCount = freeSlotsCount;
+            WasRerolled = wasRerolled;
         }
     }
 }

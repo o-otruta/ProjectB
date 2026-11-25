@@ -109,6 +109,7 @@ namespace ProjectB.UI
 
         private float timeSpeedScale = 1f;
         private float nextInfoRefreshTime;
+        private TextMeshProUGUI telemetryLabel;
 
         private void Start()
         {
@@ -455,6 +456,28 @@ namespace ProjectB.UI
                 if (speedLabel != null) speedLabel.text = $"Speed: {timeSpeedScale:0}x";
             });
             speedLabel = speedBtn.GetComponentInChildren<TextMeshProUGUI>();
+
+            var telemetryBtn = AddFlexButton(
+                utilRow.transform,
+                ProjectB.Core.Telemetry.RunTelemetrySession.IsEnabled ? "Telemetry: ON" : "Telemetry: OFF",
+                ProjectB.Core.Telemetry.RunTelemetrySession.IsEnabled ? new Color(0.16f, 0.56f, 0.36f, 1f) : new Color(0.26f, 0.28f, 0.36f, 1f),
+                () =>
+                {
+                    if (ProjectB.Core.Telemetry.RunTelemetrySession.IsEnabled)
+                    {
+                        ProjectB.Core.Telemetry.RunTelemetrySession.Disable();
+                    }
+                    else
+                    {
+                        ProjectB.Core.Telemetry.RunTelemetrySession.EnableManualSession();
+                        DevLog.Log($"[RunTelemetry] Enabled -> {ProjectB.Core.Telemetry.RunTelemetrySession.SessionDirectory}");
+                    }
+                    if (telemetryLabel != null)
+                    {
+                        telemetryLabel.text = ProjectB.Core.Telemetry.RunTelemetrySession.IsEnabled ? "Telemetry: ON" : "Telemetry: OFF";
+                    }
+                });
+            telemetryLabel = telemetryBtn.GetComponentInChildren<TextMeshProUGUI>();
 
             AddFlexButton(utilRow.transform, "Kill Hero (GameOver)", new Color(0.55f, 0.12f, 0.12f, 1f), () =>
             {

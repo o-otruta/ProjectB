@@ -104,7 +104,8 @@ namespace ProjectB.Enemies
                 shootDirection,
                 finalDamage,
                 target,
-                targetDamageable);
+                targetDamageable,
+                HeroDamageSourceId);
         }
     }
 }

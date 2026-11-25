@@ -1,26 +1,98 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using VContainer;
 using ProjectB.Core;
 
 namespace ProjectB.Meta
 {
+    public interface ISaveStorage
+    {
+        bool HasKey(string key);
+        string GetString(string key);
+        void SetString(string key, string value);
+        void DeleteKey(string key);
+        void Save();
+    }
+
+    public sealed class PlayerPrefsSaveStorage : ISaveStorage
+    {
+        public static readonly PlayerPrefsSaveStorage Instance = new PlayerPrefsSaveStorage();
+
+        public bool HasKey(string key) => PlayerPrefs.HasKey(key);
+        public string GetString(string key) => PlayerPrefs.GetString(key);
+        public void SetString(string key, string value) => PlayerPrefs.SetString(key, value);
+        public void DeleteKey(string key) => PlayerPrefs.DeleteKey(key);
+        public void Save() => PlayerPrefs.Save();
+    }
+
+    public sealed class InMemorySaveStorage : ISaveStorage
+    {
+        private readonly Dictionary<string, string> entries = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        public bool HasKey(string key) => !string.IsNullOrEmpty(key) && entries.ContainsKey(key);
+        public string GetString(string key) => !string.IsNullOrEmpty(key) && entries.TryGetValue(key, out string val) ? val : string.Empty;
+        public void SetString(string key, string value)
+        {
+            if (!string.IsNullOrEmpty(key)) entries[key] = value ?? string.Empty;
+        }
+        public void DeleteKey(string key)
+        {
+            if (!string.IsNullOrEmpty(key)) entries.Remove(key);
+        }
+        public void Save() { }
+    }
+
     public class SaveManager : IDisposable
     {
         public const string SAVE_KEY = "ProjectB_SaveData";
         
+        private ISaveStorage storage;
+
         public SaveData Data { get; private set; }
+        public ISaveStorage Storage => storage;
         public bool IsDirty { get; private set; }
         public bool WasInterruptedRunRecovered { get; private set; }
         public bool IsFirstRun => Data == null || Data.totalRuns == 0;
         public bool IsFtueUpgradesHintDismissed => Data != null && Data.ftueUpgradesHintDismissed;
         public event Action OnDataChanged;
 
-        public SaveManager()
+        [Inject]
+        public SaveManager() : this(null)
         {
+        }
+
+        public SaveManager(ISaveStorage customStorage)
+        {
+            storage = customStorage ?? PlayerPrefsSaveStorage.Instance;
             Load();
             Application.quitting += HandleQuitting;
             Application.focusChanged += HandleFocusChanged;
+        }
+
+        public void SetStorage(ISaveStorage customStorage, bool reload = true)
+        {
+            storage = customStorage ?? PlayerPrefsSaveStorage.Instance;
+            IsDirty = false;
+            if (reload)
+            {
+                Load();
+            }
+        }
+
+        public void ReplaceDataInMemory(SaveData newData, bool saveToActiveStorage = true)
+        {
+            WasInterruptedRunRecovered = false;
+            Data = newData ?? new SaveData();
+            IsDirty = false;
+            if (saveToActiveStorage)
+            {
+                Save();
+            }
+            else
+            {
+                OnDataChanged?.Invoke();
+            }
         }
 
         private void HandleQuitting()
@@ -47,11 +119,11 @@ namespace ProjectB.Meta
         {
             WasInterruptedRunRecovered = false;
 
-            if (PlayerPrefs.HasKey(SAVE_KEY))
+            if (storage.HasKey(SAVE_KEY))
             {
                 try
                 {
-                    string json = PlayerPrefs.GetString(SAVE_KEY);
+                    string json = storage.GetString(SAVE_KEY);
                     Data = JsonUtility.FromJson<SaveData>(json);
                     
                     if (Data == null)
@@ -92,9 +164,12 @@ namespace ProjectB.Meta
             try
             {
                 string json = JsonUtility.ToJson(Data, false);
-                PlayerPrefs.SetString(SAVE_KEY, json);
-                PlayerPrefs.Save();
-                WebBrowserBridge.FlushStorage();
+                storage.SetString(SAVE_KEY, json);
+                storage.Save();
+                if (storage is PlayerPrefsSaveStorage)
+                {
+                    WebBrowserBridge.FlushStorage();
+                }
                 IsDirty = false;
                 OnDataChanged?.Invoke();
             }

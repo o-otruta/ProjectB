@@ -14,6 +14,9 @@ namespace ProjectB.Core
         private readonly GameInputService gameInput;
         private readonly VirtualJoystick virtualJoystick;
         private readonly float deadzone;
+        private Vector2? moveOverride;
+
+        public bool HasOverride => moveOverride.HasValue;
 
         [Inject]
         public MoveInputService(
@@ -26,10 +29,20 @@ namespace ProjectB.Core
             deadzone = config != null ? Mathf.Clamp(config.moveDeadzone, 0f, 0.5f) : 0.15f;
         }
 
+        public void SetOverride(Vector2? overrideDirection)
+        {
+            moveOverride = overrideDirection.HasValue ? ClampUnit(overrideDirection.Value) : (Vector2?)null;
+        }
+
         public Vector2 Direction
         {
             get
             {
+                if (moveOverride.HasValue)
+                {
+                    return moveOverride.Value;
+                }
+
                 Vector2 actionRaw = gameInput != null ? gameInput.ReadMove() : Vector2.zero;
                 Vector2 joyRaw = virtualJoystick != null ? virtualJoystick.Direction : Vector2.zero;
                 return Aggregate(actionRaw, joyRaw, deadzone);

@@ -147,7 +147,14 @@ namespace ProjectB.Enemies
                 heroDiff.y = 0f;
                 if (heroDiff.sqrMagnitude <= radiusSq)
                 {
-                    targetDamageable.TakeDamage(baseExplosionDamage);
+                    if (targetDamageable is ProjectB.Player.HeroHealth heroHealth)
+                    {
+                        heroHealth.TakeDamage(baseExplosionDamage, HeroDamageSourceId);
+                    }
+                    else
+                    {
+                        targetDamageable.TakeDamage(baseExplosionDamage);
+                    }
                     damagedCount++;
                 }
             }

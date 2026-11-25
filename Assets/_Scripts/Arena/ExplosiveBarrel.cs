@@ -168,6 +168,11 @@ namespace ProjectB.Arena
                     if (dealt > 0) runStatistics?.RecordDamage(DamageSourceIds.Barrel, dealt);
                     enemiesHit++;
                 }
+                else if (target is HeroHealth heroHealth)
+                {
+                    heroHealth.TakeDamage(explosionDamage, "ExplosiveBarrel");
+                    enemiesHit++;
+                }
                 else
                 {
                     target.TakeDamage(explosionDamage);
