@@ -12,10 +12,46 @@ namespace ProjectB.UI
         [SerializeField] private TMPro.TextMeshProUGUI hpText;
         [Tooltip("Sprint 13: themed bar with ghost-trail; when set, the legacy Slider is not needed.")]
         [SerializeField] private ProgressBarUI progressBar;
+        [Header("UI redesign: compact bar under the hero")]
+        [Tooltip("Pin the bar to the hero on screen (world → screen every LateUpdate) instead of a fixed HUD slot.")]
+        [SerializeField] private bool followHero;
+        [Tooltip("World offset from the hero pivot (pivot is ~1 m above the feet).")]
+        [SerializeField] private Vector3 followWorldOffset = new Vector3(0f, -1f, 0f);
+        [Tooltip("Extra offset in canvas units after projection (negative = lower).")]
+        [SerializeField] private Vector2 followScreenOffset = new Vector2(0f, -30f);
+
         private bool isInitialized = false;
         private int lastDisplayedHp = int.MinValue;
         private int lastDisplayedMaxHp = int.MinValue;
         private readonly char[] hpCharBuffer = new char[24];
+        private Camera followCamera;
+        private RectTransform rectTransform;
+        private RectTransform parentRect;
+        private Canvas canvas;
+
+        public bool FollowsHero => followHero;
+
+        private void LateUpdate()
+        {
+            if (!followHero || heroHealth == null) return;
+            if (followCamera == null) followCamera = Camera.main;
+            if (followCamera == null) return;
+            if (rectTransform == null)
+            {
+                rectTransform = (RectTransform)transform;
+                parentRect = rectTransform.parent as RectTransform;
+                canvas = GetComponentInParent<Canvas>();
+            }
+            if (parentRect == null || canvas == null) return;
+
+            Vector3 screen = followCamera.WorldToScreenPoint(heroHealth.transform.position + followWorldOffset);
+            if (screen.z < 0f) return;
+            Camera uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screen, uiCamera, out Vector2 local))
+            {
+                rectTransform.localPosition = new Vector3(local.x + followScreenOffset.x, local.y + followScreenOffset.y, 0f);
+            }
+        }
 
         [Inject]
         public void Construct(HeroHealth heroHealth)

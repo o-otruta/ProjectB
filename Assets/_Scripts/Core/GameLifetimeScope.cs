@@ -67,6 +67,7 @@ namespace ProjectB.Core
             builder.RegisterComponentInHierarchy<HpBarUI>();
             builder.RegisterComponentInHierarchy<XpBarUI>();
             builder.RegisterComponentInHierarchy<WaveHudUI>();
+            builder.RegisterComponentInHierarchy<WaveTrackUI>();
             builder.RegisterComponentInHierarchy<WaveEventBannerUI>();
             builder.RegisterComponentInHierarchy<CoinHudUI>();
             builder.RegisterComponentInHierarchy<ComboHudUI>();

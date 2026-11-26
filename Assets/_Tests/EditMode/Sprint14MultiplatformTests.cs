@@ -1410,9 +1410,11 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(topStack);
                 Assert.Less(topStack.LandscapeTopOffset, 0f);
 
+                // UI redesign: the HP bar follows the hero on screen in both modes (centre anchors, fixed size).
                 var hpRr = hud.Find("HpBar").GetComponent<ResponsiveRect>();
                 Assert.IsTrue(hpRr.HasPreset(LayoutMode.Landscape));
-                Assert.Less(hpRr.GetPreset(LayoutMode.Landscape).anchorMax.x, 0.2f, "HpBar sits in top-left hero block in Landscape");
+                Assert.IsTrue(hud.Find("HpBar").GetComponent<HpBarUI>().FollowsHero, "HpBar is pinned under the hero");
+                Assert.AreEqual(hpRr.GetPreset(LayoutMode.Landscape).anchorMin, hpRr.GetPreset(LayoutMode.Landscape).anchorMax, "fixed-size bar, not stretched");
 
                 var xpRr = hud.Find("XpBar").GetComponent<ResponsiveRect>();
                 Assert.IsTrue(xpRr.HasPreset(LayoutMode.Landscape));

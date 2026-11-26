@@ -8,7 +8,8 @@ namespace ProjectB.UI
     {
         None = 0,
         Ratio = 1,     // "176 / 200"
-        Percent = 2    // "88%"
+        Percent = 2,   // "88%"
+        Current = 3    // "176" (compact bars, e.g. HP under the hero)
     }
 
     /// <summary>
@@ -107,6 +108,10 @@ namespace ProjectB.UI
             {
                 len = UiFormat.WriteInt(buffer, 0, Mathf.RoundToInt(n * 100f));
                 buffer[len++] = '%';
+            }
+            else if (labelFormat == ProgressLabelFormat.Current)
+            {
+                len = UiFormat.WriteInt(buffer, 0, Mathf.Max(0, current));
             }
             else
             {
