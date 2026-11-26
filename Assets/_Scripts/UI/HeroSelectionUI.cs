@@ -53,6 +53,14 @@ namespace ProjectB.UI
         [SerializeField] private Button ultimateRowButton;
         [SerializeField] private PulseUI startPulse;
 
+        [Header("UI redesign: ability tiles + detail panel")]
+        [Tooltip("Holds the Passive / Weapon / Ultimate descriptions; shown only while one of them is expanded.")]
+        [SerializeField] private GameObject detailPanel;
+        [Tooltip("Speech-bubble tail under the detail panel, moved under the selected tile.")]
+        [SerializeField] private RectTransform detailPointer;
+        [Tooltip("Gold frames on the Passive / Weapon / Ultimate tiles, shown for the expanded one.")]
+        [SerializeField] private GameObject[] tileHighlights;
+
         [Header("Swipe Settings")]
         [SerializeField] private float swipeThreshold = 50f;
 
@@ -304,6 +312,9 @@ namespace ProjectB.UI
 
             if (heroStatusText != null)
             {
+                // Redesign: the goal card replaces "READY FOR BATTLE"; a locked hero is told by the lock overlay
+                // (with the unlocking achievement) and the LOCKED start button.
+                if (detailPanel != null) heroStatusText.gameObject.SetActive(false);
                 if (isUnlocked)
                 {
                     heroStatusText.text = Loc.Get("ui.hero.ready", "READY FOR BATTLE");
@@ -382,6 +393,31 @@ namespace ProjectB.UI
             RefreshPagination(heroes, currentIndex);
             UpdatePreviewModel(hero);
             ApplySilhouette(!isUnlocked);
+            RebuildAbilityBlock();
+        }
+
+        /// <summary>
+        /// Tiles change height with the hero's ability names; rebuild the tiles + detail stack now so the first
+        /// frame is laid out with the final sizes, and keep the bubble tail under the expanded tile.
+        /// </summary>
+        private void RebuildAbilityBlock()
+        {
+            if (detailPanel == null || detailPanel.transform.parent == null) return;
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)detailPanel.transform.parent);
+            AlignDetailPointer();
+        }
+
+        private void AlignDetailPointer()
+        {
+            if (detailPointer == null || tileHighlights == null) return;
+            for (int i = 0; i < tileHighlights.Length; i++)
+            {
+                if (tileHighlights[i] == null || !tileHighlights[i].activeSelf) continue;
+                Transform tile = tileHighlights[i].transform.parent;
+                Vector3 p = detailPointer.position;
+                detailPointer.position = new Vector3(tile.position.x, p.y, p.z);
+                return;
+            }
         }
 
         private int CalculateEffectiveHp(HeroData hero)
@@ -460,8 +496,35 @@ namespace ProjectB.UI
             if (ultimateDescriptionText != null) ultimateDescriptionText.gameObject.SetActive(false);
             text.gameObject.SetActive(expand);
 
+            if (detailPanel != null)
+            {
+                detailPanel.SetActive(expand);
+                SetTileHighlight(expand ? DescriptionIndex(text) : -1);
+                RebuildAbilityBlock();
+                if (expand && Application.isPlaying) UiTween.Punch(detailPanel.transform, 0.04f, 0.18f);
+                return;
+            }
+
             var layoutRoot = text.transform.parent != null ? text.transform.parent.parent as RectTransform : null;
             if (layoutRoot != null) LayoutRebuilder.MarkLayoutForRebuild(layoutRoot);
+        }
+
+        /// <summary>0 = passive, 1 = weapon, 2 = ultimate, -1 = unknown.</summary>
+        private int DescriptionIndex(TMP_Text text)
+        {
+            if (text == passiveText) return 0;
+            if (text == weaponDescriptionText) return 1;
+            if (text == ultimateDescriptionText) return 2;
+            return -1;
+        }
+
+        private void SetTileHighlight(int index)
+        {
+            if (tileHighlights == null) return;
+            for (int i = 0; i < tileHighlights.Length; i++)
+            {
+                if (tileHighlights[i] != null) tileHighlights[i].SetActive(i == index);
+            }
         }
 
         private void RefreshPagination(IReadOnlyList<HeroData> heroes, int index)

@@ -12,6 +12,7 @@ namespace ProjectB.Core
         {
             builder.RegisterComponentInHierarchy<MainMenuUI>();
             builder.RegisterComponentInHierarchy<HeroSelectionUI>();
+            builder.RegisterComponentInHierarchy<PlayGoalCardUI>();
             builder.RegisterComponentInHierarchy<MetaUpgradeUI>();
             builder.RegisterComponentInHierarchy<AbilitiesScreenUI>();
             builder.RegisterComponentInHierarchy<AchievementScreenUI>();

@@ -149,6 +149,90 @@ namespace ProjectB.UI
             if (summaryText != null) summaryText.text = Loc.Format("ui.achievements.summary", completed, sortBuffer.Count);
         }
 
+        /// <summary>
+        /// Deep link (Play tab goal card → achievement): switches to the achievement's category, scrolls it into view
+        /// and flashes a gold ring around it. Returns false when the id is unknown.
+        /// </summary>
+        public bool FocusAchievement(string achievementId)
+        {
+            if (achievementManager == null || string.IsNullOrEmpty(achievementId)) return false;
+            AchievementData target = null;
+            var all = achievementManager.GetAllAchievements();
+            for (int i = 0; i < all.Count; i++)
+            {
+                if (all[i] != null && all[i].id == achievementId)
+                {
+                    target = all[i];
+                    break;
+                }
+            }
+            if (target == null) return false;
+
+            selectedCategory = (int)target.category;
+            RefreshUI();
+            AchievementItemUI item = FindItem(achievementId);
+            if (item == null) return false;
+            if (isActiveAndEnabled && Application.isPlaying) StartCoroutine(FocusAfterLayout(item));
+            return true;
+        }
+
+        public AchievementItemUI FindItem(string achievementId)
+        {
+            for (int i = 0; i < spawnedItems.Count; i++)
+            {
+                if (spawnedItems[i] != null && spawnedItems[i].Data != null && spawnedItems[i].Data.id == achievementId) return spawnedItems[i];
+            }
+            return null;
+        }
+
+        private System.Collections.IEnumerator FocusAfterLayout(AchievementItemUI item)
+        {
+            // Items from the previous list are destroyed at the end of this frame: lay out once they are gone.
+            yield return null;
+            if (item == null || contentContainer == null) yield break;
+            var content = (RectTransform)contentContainer;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+            ScrollRect scroll = contentContainer.GetComponentInParent<ScrollRect>(true);
+            if (scroll != null)
+            {
+                RectTransform viewport = scroll.viewport != null ? scroll.viewport : (RectTransform)scroll.transform;
+                content.anchoredPosition = new Vector2(content.anchoredPosition.x,
+                    CalculateScrollToCenter(content, (RectTransform)item.transform, viewport.rect.height, CATEGORY_BAR_HEIGHT));
+                scroll.StopMovement();
+            }
+            HighlightItem(item);
+        }
+
+        /// <summary>Content offset (top-anchored content) that centres <paramref name="item"/> below the sticky bar.</summary>
+        public static float CalculateScrollToCenter(RectTransform content, RectTransform item, float viewportHeight, float stickyTop)
+        {
+            Bounds b = RectTransformUtility.CalculateRelativeRectTransformBounds(content, item);
+            float fromTop = content.rect.yMax - b.center.y;
+            float target = fromTop - (viewportHeight + stickyTop) * 0.5f;
+            float max = Mathf.Max(0f, content.rect.height - viewportHeight);
+            return Mathf.Clamp(target, 0f, max);
+        }
+
+        private static void HighlightItem(AchievementItemUI item)
+        {
+            UiTheme theme = UiTheme.Current;
+            var ring = new GameObject("FocusRing", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            var rt = (RectTransform)ring.transform;
+            rt.SetParent(item.transform, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(-6f, -6f);
+            rt.offsetMax = new Vector2(6f, 6f);
+            ring.GetComponent<LayoutElement>().ignoreLayout = true;
+            var image = ring.GetComponent<Image>();
+            image.sprite = theme.outlineSprite;
+            image.type = Image.Type.Sliced;
+            image.color = theme.gold;
+            image.raycastTarget = false;
+            UiTween.Punch(item.transform, 0.08f, 0.35f);
+            Destroy(ring, 1.8f);
+        }
+
         /// <summary>Shows only <paramref name="category"/> (null = all) and rebuilds the list.</summary>
         public void SetCategoryFilter(AchievementCategory? category)
         {

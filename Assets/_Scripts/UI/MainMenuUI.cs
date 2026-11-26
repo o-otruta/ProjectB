@@ -433,6 +433,16 @@ namespace ProjectB.UI
             FocusCurrentTab();
         }
 
+        /// <summary>Opens the Achievements tab focused on <paramref name="achievementId"/> (Play tab goal card).</summary>
+        public void OpenAchievement(string achievementId)
+        {
+            OnAchievementsClicked();
+            if (achievementScreenUI != null && !string.IsNullOrEmpty(achievementId))
+            {
+                achievementScreenUI.FocusAchievement(achievementId);
+            }
+        }
+
         public void OnBonusClicked()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);

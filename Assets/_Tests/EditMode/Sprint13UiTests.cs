@@ -351,9 +351,10 @@ namespace ProjectB.Tests.EditMode
                 HeroSelectionUI play = FindInScene<HeroSelectionUI>(scene)[0];
                 RectPreset Land(string child) => play.transform.Find(child).GetComponent<ResponsiveRect>().GetPreset(LayoutMode.Landscape);
 
-                RectPreset card = Land("HeroInfoCard");
+                // UI redesign: the ability tiles (+ detail panel) live in AbilityBlock.
+                RectPreset card = Land("AbilityBlock");
                 Assert.IsTrue(card.captured);
-                Assert.GreaterOrEqual(card.anchorMin.x, 0.5f, "stats card lives in the right half");
+                Assert.GreaterOrEqual(card.anchorMin.x, 0.5f, "ability tiles live in the right half");
                 Assert.GreaterOrEqual(Land("StartButton").anchorMin.x, 0.5f, "START in the right half");
                 Assert.LessOrEqual(Land("NamePlate").anchorMax.x, 0.5f, "name plate above the hero (left half)");
                 Assert.LessOrEqual(Land("NextHeroButton").anchorMax.x, 0.5f, "chevrons frame the hero in the left half");

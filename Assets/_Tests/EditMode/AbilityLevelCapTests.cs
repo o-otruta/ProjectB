@@ -214,7 +214,7 @@ namespace ProjectB.Tests.EditMode
             for (int i = 0; i < 3; i++) ha.UpgradeAbility("SwiftBoots", ModifierType.Damage, 1f);
             Assert.AreEqual(4, ha.GetAbilityLevel("SwiftBoots"));
             string badge = CardSelectionUI.FormatLevelBadge(mod, ha, out _);
-            StringAssert.Contains("MAX", badge);
+            StringAssert.Contains(Loc.Get("ui.card.max", "MAX"), badge, "MAX label in the current language");
             StringAssert.Contains("5", badge);
         }
 
