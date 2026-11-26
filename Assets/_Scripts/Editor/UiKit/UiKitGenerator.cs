@@ -119,20 +119,20 @@ namespace ProjectB.EditorScripts.UiKit
             var buf = new Color32[w * h];
             switch (spec.name)
             {
-                case "kit_panel": FillRounded(buf, w, h, 30f, rim: 3f, step: 10f, bodyTop: 0.9f, bodyBottom: 0.8f); break;
-                case "kit_card": FillRounded(buf, w, h, 22f, rim: 3f, step: 8f, bodyTop: 0.92f, bodyBottom: 0.82f); break;
-                case "kit_row": FillRounded(buf, w, h, 18f, rim: 2f, step: 6f, bodyTop: 0.92f, bodyBottom: 0.84f); break;
-                case "kit_button": FillButton(buf, w, h, 24f, step: 12f); break;
-                case "kit_button_pressed": FillButton(buf, w, h, 24f, step: 5f); break;
-                case "kit_pill": FillRounded(buf, w, h, h * 0.5f, rim: 2f, step: 0f, bodyTop: 0.95f, bodyBottom: 0.85f); break;
-                case "kit_circle": FillCircle(buf, w, h, rim: 5f, bevel: true); break;
+                case "kit_panel": FillBlock(buf, w, h, 30f, outline: 5f, ledge: 7f, highlight: 4f, shade: 6f); break;
+                case "kit_card": FillBlock(buf, w, h, 22f, outline: 5f, ledge: 6f, highlight: 3f, shade: 5f); break;
+                case "kit_row": FillBlock(buf, w, h, 18f, outline: 4f, ledge: 5f, highlight: 3f, shade: 4f); break;
+                case "kit_button": FillBlock(buf, w, h, 24f, outline: 5f, ledge: 10f, highlight: 6f, shade: 7f); break;
+                case "kit_button_pressed": FillBlock(buf, w, h, 24f, outline: 5f, ledge: 4f, highlight: 4f, shade: 5f); break;
+                case "kit_pill": FillBlock(buf, w, h, h * 0.5f, outline: 4f, ledge: 3f, highlight: 3f, shade: 3f); break;
+                case "kit_circle": FillCircleBlock(buf, w, h, outline: 5f, ledge: 6f, highlight: 6f, shade: 6f); break;
                 case "kit_slot_frame": FillRing(buf, w, h, 16f, 5f); break;
                 case "kit_bar_frame": FillBarFrame(buf, w, h); break;
                 case "kit_bar_fill": FillBarFill(buf, w, h); break;
                 case "kit_solid": Fill(buf, new Color32(255, 255, 255, 255)); break;
                 case "kit_glow": FillGlow(buf, w, h, 0.5f); break;
                 case "kit_outline": FillRing(buf, w, h, 24f, 6f); break;
-                case "kit_knob": FillCircle(buf, w, h, rim: 4f, bevel: true); break;
+                case "kit_knob": FillCircleBlock(buf, w, h, outline: 5f, ledge: 5f, highlight: 5f, shade: 5f); break;
                 case "kit_ring_thin": FillCircleRing(buf, w, h, 8f); break;
                 case "kit_vignette": FillVignette(buf, w, h); break;
                 case "kit_starfield": FillStarfield(buf, w, h); break;
@@ -159,10 +159,21 @@ namespace ProjectB.EditorScripts.UiKit
             for (int i = 0; i < buf.Length; i++) buf[i] = c;
         }
 
-        /// <summary>Rounded panel: light rim, vertical body gradient, darker bottom ledge ("step").</summary>
-        private static void FillRounded(Color32[] buf, int w, int h, float r, float rim, float step, float bodyTop, float bodyBottom)
+        // "Voxel block" look (UI redesign, variant A): a near-black outline that stays dark under any tint, a thicker
+        // dark ledge at the bottom (the block's drop), and inside it a lit top edge, a slightly darker face and a
+        // shaded bottom band. The face is < 1 so the top edge can read brighter than the tint colour.
+        private const float BLOCK_DARK = 0.06f;
+        private const float BLOCK_FACE = 0.9f;
+        private const float BLOCK_SHADE = 0.7f;
+        private const float BLOCK_HIGHLIGHT = 1f;
+
+        /// <summary>Rounded "voxel block": dark outline + bottom ledge, lit top edge, face, shaded bottom band.</summary>
+        private static void FillBlock(Color32[] buf, int w, int h, float r, float outline, float ledge, float highlight, float shade)
         {
             float pad = 1f;
+            float faceBottom = pad + ledge + outline;
+            float faceTop = h - pad - outline;
+            float faceR = Mathf.Max(1f, r - outline);
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
@@ -171,68 +182,41 @@ namespace ProjectB.EditorScripts.UiKit
                 float alpha = Mathf.Clamp01(0.5f - d);
                 if (alpha <= 0f) { buf[y * w + x] = default; continue; }
 
-                float l;
-                // Body occupies the area above the step; the step is a darker band at the bottom (y-up texture).
-                float dBody = RoundedRectSdf(px - pad, py - pad - step, w - pad * 2, h - pad * 2 - step, r);
-                if (step > 0f && dBody > 0f) l = 0.5f;
-                else if (-d < rim || -dBody < rim) l = 1f;
-                else
-                {
-                    float t = Mathf.Clamp01((py - step) / Mathf.Max(1f, h - step));
-                    l = Mathf.Lerp(bodyBottom, bodyTop, t);
-                }
+                // Face = the silhouette minus the outline ring and the bottom ledge (y-up texture).
+                float dFace = RoundedRectSdf(px - pad - outline, py - faceBottom, w - pad * 2 - outline * 2, faceTop - faceBottom, faceR);
+                float faceL;
+                if (faceTop - py < highlight) faceL = BLOCK_HIGHLIGHT;
+                else if (py - faceBottom < shade) faceL = BLOCK_SHADE;
+                else faceL = BLOCK_FACE;
+
+                float l = Mathf.Lerp(BLOCK_DARK, faceL, Mathf.Clamp01(0.5f - dFace));
                 buf[y * w + x] = Lum(l, alpha);
             }
         }
 
-        private static void FillButton(Color32[] buf, int w, int h, float r, float step)
-        {
-            float pad = 1f;
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                float px = x + 0.5f, py = y + 0.5f;
-                float d = RoundedRectSdf(px - pad, py - pad, w - pad * 2, h - pad * 2, r);
-                float alpha = Mathf.Clamp01(0.5f - d);
-                if (alpha <= 0f) { buf[y * w + x] = default; continue; }
-
-                float dFace = RoundedRectSdf(px - pad, py - pad - step, w - pad * 2, h - pad * 2 - step, r);
-                float l;
-                if (dFace > 0f) l = 0.55f; // bottom step
-                else if (-dFace < 2.5f) l = 0.72f; // dark rim of the face
-                else
-                {
-                    float t = Mathf.Clamp01((py - step) / Mathf.Max(1f, h - step));
-                    l = Mathf.Lerp(0.86f, 1f, t);
-                    // Glossy highlight band near the top.
-                    float top = h - pad - 2.5f;
-                    if (py > top - 10f && py < top - 4f && -dFace > 8f) l = 1f;
-                }
-                buf[y * w + x] = Lum(l, alpha);
-            }
-        }
-
-        private static void FillCircle(Color32[] buf, int w, int h, float rim, bool bevel)
+        /// <summary>Round "voxel block" (icon buttons, knobs): face circle shifted up so the bottom ledge is thicker.</summary>
+        private static void FillCircleBlock(Color32[] buf, int w, int h, float outline, float ledge, float highlight, float shade)
         {
             float cx = w * 0.5f, cy = h * 0.5f, r = w * 0.5f - 1f;
+            float fcy = cy + ledge * 0.5f;
+            float fr = r - outline - ledge * 0.5f;
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
-                float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
+                float px = x + 0.5f, py = y + 0.5f;
+                float dx = px - cx, dy = py - cy;
                 float d = Mathf.Sqrt(dx * dx + dy * dy) - r;
                 float alpha = Mathf.Clamp01(0.5f - d);
                 if (alpha <= 0f) { buf[y * w + x] = default; continue; }
-                float l;
-                if (-d < rim) l = 1f;
-                else if (bevel)
-                {
-                    float t = Mathf.Clamp01((dy / r + 1f) * 0.5f); // 0 bottom .. 1 top
-                    l = Mathf.Lerp(0.78f, 0.96f, t);
-                    // Bottom crescent "step".
-                    float sx = dx, sy = dy + 6f;
-                    if (Mathf.Sqrt(sx * sx + sy * sy) > r - rim && dy < 0f) l = 0.6f;
-                }
-                else l = 0.9f;
+
+                float fdy = py - fcy;
+                float dFace = Mathf.Sqrt(dx * dx + fdy * fdy) - fr;
+                float faceL;
+                if (fcy + fr - py < highlight) faceL = BLOCK_HIGHLIGHT;
+                else if (py - (fcy - fr) < shade) faceL = BLOCK_SHADE;
+                else faceL = BLOCK_FACE;
+
+                float l = Mathf.Lerp(BLOCK_DARK, faceL, Mathf.Clamp01(0.5f - dFace));
                 buf[y * w + x] = Lum(l, alpha);
             }
         }
@@ -272,7 +256,8 @@ namespace ProjectB.EditorScripts.UiKit
                 float d = RoundedRectSdf(x + 0.5f - 1f, y + 0.5f - 1f, w - 2f, h - 2f, h * 0.5f - 1f);
                 float alpha = Mathf.Clamp01(0.5f - d);
                 if (alpha <= 0f) { buf[y * w + x] = default; continue; }
-                float l = -d < 2f ? 1f : (y > h - 9 ? 0.7f : 0.85f); // rim + inner top shadow
+                // Dark outline (matches the block kit) + recessed track with an inner top shadow.
+                float l = -d < 4f ? Mathf.Lerp(0.85f, BLOCK_DARK, Mathf.Clamp01(4.5f + d)) : (y > h - 10 ? 0.7f : 0.85f);
                 buf[y * w + x] = Lum(l, alpha);
             }
         }

@@ -106,7 +106,8 @@ namespace ProjectB.UI
             }
             if (themedBuyButton != null)
             {
-                themedBuyButton.SetStyle(isMaxLevel ? ButtonStyle.Secondary : ButtonStyle.Primary);
+                // Green only when the purchase is actually possible; MAX / not enough coins → neutral grey-blue face.
+                themedBuyButton.SetStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary);
                 if (costText != null) costText.color = isMaxLevel ? theme.gold : (canAfford ? theme.white : theme.danger);
             }
 

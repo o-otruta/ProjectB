@@ -62,7 +62,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.27058825, g: 0.83137256, b: 0.5137255, a: 1}
+  m_Color: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -103,7 +103,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.94, g: 0.95, b: 1, a: 1}
     m_PressedColor: {r: 0.82, g: 0.82, b: 0.86, a: 1}
-    m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+    m_SelectedColor: {r: 1, g: 0.9470588, b: 0.8088235, a: 1}
     m_DisabledColor: {r: 0.55, g: 0.55, b: 0.62, a: 0.85}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.06
@@ -143,6 +143,7 @@ MonoBehaviour:
   errorFeedbackWhenDisabled: 1
   tintIcon: 1
   keepCustomSprite: 0
+  hoverScale: 1.04
 --- !u!114 &4939020350803961740
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1408,7 +1409,7 @@ MonoBehaviour:
   m_text: Lv 0/20
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
-  m_sharedMaterial: {fileID: -3899027541049219787, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
+  m_sharedMaterial: {fileID: 2683604384249215165, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

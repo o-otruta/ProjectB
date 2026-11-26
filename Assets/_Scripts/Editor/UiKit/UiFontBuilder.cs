@@ -26,6 +26,11 @@ namespace ProjectB.EditorScripts.UiKit
         public const string LIBERATION_PATH = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
 
         private static readonly Color OutlineColor = new Color32(20, 16, 40, 255);
+        public const float TITLE_OUTLINE = 0.3f;
+        public const float TITLE_DILATE = 0.1f;
+        public const float NUMBER_OUTLINE = 0.38f;
+        public const float NUMBER_DILATE = 0.14f;
+        public const float UNDERLAY_OFFSET_Y = -1.2f;
 
         public static uint[] BuildCharacterSet()
         {
@@ -60,8 +65,9 @@ namespace ProjectB.EditorScripts.UiKit
 
             if (display != null)
             {
-                BuildMaterial(display, TITLE_MATERIAL, outline: 0.2f, underlay: true, dilate: 0.08f);
-                BuildMaterial(display, NUMBER_MATERIAL, outline: 0.3f, underlay: true, dilate: 0.12f);
+                // Thick dark outline + hard drop (UI redesign, variant A) so titles read on any background.
+                BuildMaterial(display, TITLE_MATERIAL, outline: TITLE_OUTLINE, underlay: true, dilate: TITLE_DILATE);
+                BuildMaterial(display, NUMBER_MATERIAL, outline: NUMBER_OUTLINE, underlay: true, dilate: NUMBER_DILATE);
             }
             if (body != null)
             {
@@ -212,10 +218,10 @@ namespace ProjectB.EditorScripts.UiKit
             if (underlay)
             {
                 mat.EnableKeyword(ShaderUtilities.Keyword_Underlay);
-                mat.SetColor(ShaderUtilities.ID_UnderlayColor, new Color(0.04f, 0.02f, 0.1f, 0.85f));
+                mat.SetColor(ShaderUtilities.ID_UnderlayColor, new Color(0.04f, 0.02f, 0.1f, 1f));
                 mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, 0f);
-                mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, -0.9f);
-                mat.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0.05f);
+                mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, UNDERLAY_OFFSET_Y);
+                mat.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0f);
                 mat.SetFloat(ShaderUtilities.ID_UnderlayDilate, outline);
             }
             else

@@ -140,12 +140,14 @@ namespace ProjectB.UI
         public Color overdriveTier3 = Hex(0xFF6AE6);
 
         [Header("Buttons")]
-        public ButtonStyleColors primaryButton = new ButtonStyleColors { face = UiColor.Success, label = UiColor.White };
+        [Tooltip("Primary = the one main action of a screen (START, CLAIM, RESUME): warm gold face, white outlined label.")]
+        public ButtonStyleColors primaryButton = new ButtonStyleColors { face = UiColor.Gold, label = UiColor.White };
         public ButtonStyleColors secondaryButton = new ButtonStyleColors { face = UiColor.SurfaceRaised, label = UiColor.TextPrimary };
         public ButtonStyleColors dangerButton = new ButtonStyleColors { face = UiColor.Danger, label = UiColor.White };
         public ButtonStyleColors adButton = new ButtonStyleColors { face = UiColor.Ad, label = UiColor.White };
         public ButtonStyleColors iconButton = new ButtonStyleColors { face = UiColor.SurfaceRaised, label = UiColor.TextPrimary };
-        public ButtonStyleColors successButton = new ButtonStyleColors { face = UiColor.Gold, label = UiColor.Background };
+        [Tooltip("Success = an affordable coin purchase (upgrade buy, coin unlock). Unaffordable buys switch to Secondary.")]
+        public ButtonStyleColors successButton = new ButtonStyleColors { face = UiColor.Success, label = UiColor.White };
         [Range(0.8f, 1f)] public float pressScale = 0.94f;
         public Color disabledTint = new Color(0.55f, 0.55f, 0.62f, 0.85f);
         public Color hoverTint = new Color(0.94f, 0.95f, 1f, 1f);

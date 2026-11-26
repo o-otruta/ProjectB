@@ -42,7 +42,7 @@ MonoBehaviour:
   overdriveTier2: {r: 0.36078432, g: 0.95686275, b: 1, a: 1}
   overdriveTier3: {r: 1, g: 0.41568628, b: 0.9019608, a: 1}
   primaryButton:
-    face: 8
+    face: 11
     label: 25
   secondaryButton:
     face: 2
@@ -57,8 +57,8 @@ MonoBehaviour:
     face: 2
     label: 4
   successButton:
-    face: 11
-    label: 0
+    face: 8
+    label: 25
   pressScale: 0.94
   disabledTint: {r: 0.55, g: 0.55, b: 0.62, a: 0.85}
   hoverTint: {r: 0.94, g: 0.95, b: 1, a: 1}
