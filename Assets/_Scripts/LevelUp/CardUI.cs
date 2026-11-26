@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System;
+using System.Text;
 using ProjectB.Core;
 using ProjectB.UI;
 
@@ -35,6 +36,17 @@ namespace ProjectB.LevelUp
         [SerializeField] private RectTransform shine;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private KeyHintBadgeUI keyHintBadge;
+
+        [Header("UI redesign (variant A): rarity header band")]
+        [Tooltip("The Tag image becomes a full-width band in the rarity colour: 'RARITY · CATEGORY' left, level pips + 'Lv a → b' right.")]
+        [SerializeField] private bool rarityBand;
+        [SerializeField] private Image[] levelPips;
+        [SerializeField] private GameObject newTag;
+        [SerializeField] private TMP_Text newTagText;
+
+        private static readonly string[] RarityKeys = { "ui.rarity.common", "ui.rarity.rare", "ui.rarity.epic", "ui.rarity.legendary" };
+        private static readonly string[] RarityFallbacks = { "Common", "Rare", "Epic", "Legendary" };
+        private static readonly System.Text.StringBuilder HighlightBuilder = new System.Text.StringBuilder(256);
 
         private CardData currentData;
         private Action<CardData> onCardClicked;
@@ -90,7 +102,11 @@ namespace ProjectB.LevelUp
             SetDimmed(false);
 
             if (nameText != null) nameText.text = Loc.Name(data);
-            if (descriptionText != null) descriptionText.text = Loc.Desc(data);
+            if (descriptionText != null)
+            {
+                string desc = Loc.Desc(data);
+                descriptionText.text = rarityBand ? HighlightNumbers(desc, ColorUtility.ToHtmlStringRGB(theme.success)) : desc;
+            }
 
             if (iconImage != null)
             {
@@ -137,7 +153,7 @@ namespace ProjectB.LevelUp
 
             if (tagText != null)
             {
-                tagText.text = FormatCardTag(data);
+                tagText.text = rarityBand ? FormatBandLabel(data) : FormatCardTag(data);
             }
 
             Color rarityColor = theme.GetRarityColor(data.rarity);
@@ -146,7 +162,8 @@ namespace ProjectB.LevelUp
             if (frameImage != null)
             {
                 // Sprint 13 layout: rarity in the frame and glow, neutral card body.
-                frameImage.color = rarityColor;
+                // Redesign: the band carries the rarity, the inner ring only highlights Epic / Legendary.
+                frameImage.color = rarityBand && data.rarity < CardRarity.Epic ? Color.clear : rarityColor;
                 if (bgImage != null) bgImage.color = isInteractable ? theme.surfaceRaised : theme.surfaceSunken;
             }
             else if (bgImage != null)
@@ -160,8 +177,23 @@ namespace ProjectB.LevelUp
                 glowImage.color = UiTheme.WithAlpha(rarityColor, data.rarity >= CardRarity.Epic ? 0.55f : 0.28f);
             }
             if (iconFrameImage != null) iconFrameImage.color = rarityColor;
-            if (tagBg != null) tagBg.color = UiTheme.WithAlpha(rarityColor, 0.25f);
-            if (tagText != null) tagText.color = rarityColor;
+            if (rarityBand)
+            {
+                // Solid rarity band with dark text; the level badge sits inside it without its own pill.
+                if (tagBg != null) tagBg.color = rarityColor;
+                if (tagText != null) tagText.color = theme.background;
+                if (levelBadgeBg != null) levelBadgeBg.color = Color.clear;
+                if (levelBadgeText != null) levelBadgeText.color = theme.background;
+                bool isNew = data is AbilityCardData;
+                if (newTag != null) newTag.SetActive(isNew);
+                if (newTagText != null && isNew) newTagText.text = Loc.Get("ui.card.new", "NEW!");
+                SetLevelProgress(0, 0, 0);
+            }
+            else
+            {
+                if (tagBg != null) tagBg.color = UiTheme.WithAlpha(rarityColor, 0.25f);
+                if (tagText != null) tagText.color = rarityColor;
+            }
 
             shineActive = shine != null && data.rarity == CardRarity.Legendary && isInteractable;
             if (shine != null) shine.gameObject.SetActive(shineActive);
@@ -194,6 +226,108 @@ namespace ProjectB.LevelUp
                 default:
                     return string.Empty;
             }
+        }
+
+        /// <summary>
+        /// Level pips in the rarity band: <paramref name="current"/> filled, the pip the card grants highlighted, the
+        /// rest empty. Hidden when <paramref name="cap"/> is 0 (stat / weapon cards) or exceeds the pip count
+        /// (Path of Mastery caps 20 / 50 — the "Lv a → b" label carries the progress then).
+        /// </summary>
+        public void SetLevelProgress(int current, int next, int cap)
+        {
+            if (levelPips == null) return;
+            UiTheme theme = UiTheme.Current;
+            bool show = rarityBand && cap > 0 && cap <= levelPips.Length;
+            for (int i = 0; i < levelPips.Length; i++)
+            {
+                Image pip = levelPips[i];
+                if (pip == null) continue;
+                bool visible = show && i < cap;
+                pip.gameObject.SetActive(visible);
+                if (!visible) continue;
+                // Owned levels solid dark, the level this card grants bright white, the rest faint.
+                if (i < current) pip.color = theme.background;
+                else if (i < next) pip.color = theme.white;
+                else pip.color = UiTheme.WithAlpha(theme.background, 0.28f);
+            }
+        }
+
+        public int VisibleLevelPips
+        {
+            get
+            {
+                int count = 0;
+                if (levelPips == null) return 0;
+                for (int i = 0; i < levelPips.Length; i++)
+                {
+                    if (levelPips[i] != null && levelPips[i].gameObject.activeSelf) count++;
+                }
+                return count;
+            }
+        }
+
+        /// <summary>Band label: "RARE · UPGRADE".</summary>
+        public static string FormatBandLabel(CardData card)
+        {
+            int r = Mathf.Clamp((int)card.rarity, 0, RarityKeys.Length - 1);
+            string rarity = Loc.Get(RarityKeys[r], RarityFallbacks[r]).ToUpperInvariant();
+            string category = FormatCardTag(card);
+            return string.IsNullOrEmpty(category) ? rarity : rarity + " · " + category;
+        }
+
+        /// <summary>
+        /// Wraps numeric tokens (<c>+12%</c>, <c>0.5</c>, <c>×2</c>, <c>-10%</c>) outside rich-text tags in
+        /// <c>&lt;color=#hex&gt;</c> so the effect of a card reads at a glance. Runs once per shown card, not per frame.
+        /// </summary>
+        public static string HighlightNumbers(string text, string hexColor)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            StringBuilder sb = HighlightBuilder;
+            sb.Clear();
+            int i = 0;
+            int n = text.Length;
+            bool inTag = false;
+            while (i < n)
+            {
+                char c = text[i];
+                if (inTag)
+                {
+                    sb.Append(c);
+                    if (c == '>') inTag = false;
+                    i++;
+                    continue;
+                }
+                if (c == '<')
+                {
+                    inTag = true;
+                    sb.Append(c);
+                    i++;
+                    continue;
+                }
+
+                // A number (optionally signed or "×"-prefixed) only counts when not glued to a word: "x2" yes, "box2" / "Lv2" no.
+                bool gluedToWord = i > 0 && char.IsLetterOrDigit(text[i - 1]);
+                bool signed = (c == '+' || c == '-' || c == '−' || c == '×' || c == 'x') && i + 1 < n && char.IsDigit(text[i + 1]);
+                if (!gluedToWord && (signed || char.IsDigit(c)))
+                {
+                    int start = i;
+                    int j = signed ? i + 1 : i;
+                    while (j < n && char.IsDigit(text[j])) j++;
+                    if (j + 1 < n && (text[j] == '.' || text[j] == ',') && char.IsDigit(text[j + 1]))
+                    {
+                        j++;
+                        while (j < n && char.IsDigit(text[j])) j++;
+                    }
+                    if (j < n && (text[j] == '%' || text[j] == '×' || text[j] == 'x')) j++;
+                    sb.Append("<color=#").Append(hexColor).Append('>').Append(text, start, j - start).Append("</color>");
+                    i = j;
+                    continue;
+                }
+
+                sb.Append(c);
+                i++;
+            }
+            return sb.ToString();
         }
 
         public void SetDimmed(bool dimmed)

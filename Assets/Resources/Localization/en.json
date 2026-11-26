@@ -654,6 +654,7 @@
   "ui.levelup.reroll_unavailable": "Reroll unavailable",
   "ui.levelup.rerolled": "Rerolled",
   "ui.levelup.title": "LEVEL UP!",
+  "ui.levelup.your_build": "YOUR BUILD",
   "ui.pause.active_synergies": "ACTIVE SYNERGIES",
   "ui.pause.build": "BUILD",
   "ui.pause.coins_caption": "COINS",

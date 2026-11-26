@@ -29,6 +29,9 @@ namespace ProjectB.LevelUp
         [SerializeField] private TMP_Text levelText;
         [SerializeField] private CanvasGroup panelGroup;
 
+        [Header("UI redesign: current build strip")]
+        [SerializeField] private LevelUpBuildBarUI buildBar;
+
         [Header("Animation")]
         [SerializeField] private float cardBounceDuration = 0.28f;
         [SerializeField] private float cardStaggerDelay = 0.06f;
@@ -226,6 +229,7 @@ namespace ProjectB.LevelUp
             RefreshSlots();
             RefreshRerollButton();
             RefreshHeader();
+            if (buildBar != null) buildBar.Refresh(heroAbilities);
 
             if (selectionPanel != null)
                 selectionPanel.SetActive(true);
@@ -452,6 +456,32 @@ namespace ProjectB.LevelUp
             }
         }
 
+        /// <summary>
+        /// Level progress a card grants: a new ability goes 0 → 1, an ability modifier cur → cur + 1, both against the
+        /// current ability level cap. Stat / weapon cards have no ability level (cap 0).
+        /// </summary>
+        public static void GetLevelProgress(CardData card, HeroAbilities heroAbilities, out int current, out int next, out int cap)
+        {
+            current = 0;
+            next = 0;
+            cap = 0;
+            int maxLevel = heroAbilities != null ? heroAbilities.MaxAbilityLevel : 0;
+            switch (card)
+            {
+                case AbilityCardData:
+                    current = 0;
+                    next = 1;
+                    cap = maxLevel;
+                    break;
+                case AbilityModifierCardData modCard:
+                    current = heroAbilities != null ? heroAbilities.GetAbilityLevel(modCard.targetAbilityId) : 0;
+                    if (current <= 0) return;
+                    next = current + 1;
+                    cap = maxLevel;
+                    break;
+            }
+        }
+
         public static float EvaluateBounceScale(float normalizedTime, float overshoot = 1.08f)
         {
             float t = Mathf.Clamp01(normalizedTime);
@@ -506,6 +536,8 @@ namespace ProjectB.LevelUp
                         badgeLabel,
                         badgeColor,
                         cachedIsInputLockedCheck);
+                    GetLevelProgress(cardData, heroAbilities, out int current, out int next, out int cap);
+                    cardSlots[i].SetLevelProgress(current, next, cap);
                 }
                 else
                 {
