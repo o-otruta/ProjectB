@@ -79,10 +79,14 @@ namespace ProjectB.UI
         public void ApplyTheme(UiTheme theme)
         {
             if (theme == null) return;
-            plateColor = theme.accent;
-            labelColor = theme.textPrimary;
+            plateColor = theme.gold;
+            labelColor = theme.textDark;
             iconActiveColor = theme.white;
-            iconInactiveColor = UiTheme.WithAlpha(theme.white, 0.7f);
+            iconInactiveColor = UiTheme.WithAlpha(theme.white, 0.78f);
+            if (labelText != null && labelText.font != null)
+            {
+                labelText.fontSharedMaterial = labelText.font.material;
+            }
             ApplyState(isActive ? 1f : 0f);
         }
 
@@ -172,6 +176,12 @@ namespace ProjectB.UI
                 Color c = plateColor;
                 c.a = weight;
                 bgImage.color = c;
+                float popTop = currentMode == LayoutMode.Portrait ? Mathf.Lerp(0f, 26f, weight) : 0f;
+                Vector2 max = bgImage.rectTransform.offsetMax;
+                if (!Mathf.Approximately(max.y, popTop))
+                {
+                    bgImage.rectTransform.offsetMax = new Vector2(max.x, popTop);
+                }
             }
         }
     }

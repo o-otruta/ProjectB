@@ -38,11 +38,12 @@ namespace ProjectB.LevelUp
         [SerializeField] private KeyHintBadgeUI keyHintBadge;
 
         [Header("UI redesign (variant A): rarity header band")]
-        [Tooltip("The Tag image becomes a full-width band in the rarity colour: 'RARITY · CATEGORY' left, level pips + 'Lv a → b' right.")]
+        [Tooltip("The Tag image becomes a full-width band in the rarity colour: 'RARITY · CATEGORY' left, 'Lv a → b' right.")]
         [SerializeField] private bool rarityBand;
         [SerializeField] private Image[] levelPips;
         [SerializeField] private GameObject newTag;
         [SerializeField] private TMP_Text newTagText;
+        [SerializeField] private Image iconInnerImage;
 
         private static readonly string[] RarityKeys = { "ui.rarity.common", "ui.rarity.rare", "ui.rarity.epic", "ui.rarity.legendary" };
         private static readonly string[] RarityFallbacks = { "Common", "Rare", "Epic", "Legendary" };
@@ -162,9 +163,18 @@ namespace ProjectB.LevelUp
             if (frameImage != null)
             {
                 // Sprint 13 layout: rarity in the frame and glow, neutral card body.
-                // Redesign: the band carries the rarity, the inner ring only highlights Epic / Legendary.
-                frameImage.color = rarityBand && data.rarity < CardRarity.Epic ? Color.clear : rarityColor;
-                if (bgImage != null) bgImage.color = isInteractable ? theme.surfaceRaised : theme.surfaceSunken;
+                // Redesign v2: the band carries the rarity; Epic/Legendary get full rarity ring, Rare gets a subtle tint.
+                if (rarityBand)
+                {
+                    frameImage.color = data.rarity >= CardRarity.Epic
+                        ? rarityColor
+                        : (data.rarity == CardRarity.Rare ? UiTheme.WithAlpha(rarityColor, 0.45f) : Color.clear);
+                }
+                else
+                {
+                    frameImage.color = rarityColor;
+                }
+                if (bgImage != null) bgImage.color = isInteractable ? (rarityBand ? theme.surface : theme.surfaceRaised) : theme.surfaceSunken;
             }
             else if (bgImage != null)
             {
@@ -174,9 +184,24 @@ namespace ProjectB.LevelUp
 
             if (glowImage != null)
             {
-                glowImage.color = UiTheme.WithAlpha(rarityColor, data.rarity >= CardRarity.Epic ? 0.55f : 0.28f);
+                if (rarityBand)
+                {
+                    glowImage.color = data.rarity == CardRarity.Legendary
+                        ? UiTheme.WithAlpha(rarityColor, 0.68f)
+                        : (data.rarity == CardRarity.Epic ? UiTheme.WithAlpha(rarityColor, 0.45f) : Color.clear);
+                }
+                else
+                {
+                    glowImage.color = UiTheme.WithAlpha(rarityColor, data.rarity >= CardRarity.Epic ? 0.55f : 0.28f);
+                }
             }
             if (iconFrameImage != null) iconFrameImage.color = rarityColor;
+            if (iconInnerImage != null)
+            {
+                iconInnerImage.color = rarityBand && data.rarity == CardRarity.Legendary
+                    ? UiTheme.Hex(0x3A2C0E)
+                    : theme.surfaceSunken;
+            }
             if (rarityBand)
             {
                 // Solid rarity band with dark text; the level badge sits inside it without its own pill.
@@ -238,6 +263,8 @@ namespace ProjectB.LevelUp
             if (levelPips == null) return;
             UiTheme theme = UiTheme.Current;
             bool show = rarityBand && cap > 0 && cap <= levelPips.Length;
+            float pipW = cap > 5 ? 24f : 38f;
+            float pipH = cap > 5 ? 12f : 14f;
             for (int i = 0; i < levelPips.Length; i++)
             {
                 Image pip = levelPips[i];
@@ -245,10 +272,23 @@ namespace ProjectB.LevelUp
                 bool visible = show && i < cap;
                 pip.gameObject.SetActive(visible);
                 if (!visible) continue;
-                // Owned levels solid dark, the level this card grants bright white, the rest faint.
-                if (i < current) pip.color = theme.background;
-                else if (i < next) pip.color = theme.white;
-                else pip.color = UiTheme.WithAlpha(theme.background, 0.28f);
+                pip.rectTransform.sizeDelta = new Vector2(pipW, pipH);
+                // Owned levels gold, the level this card grants bright white (slightly taller), future levels dark recessed.
+                if (i < current)
+                {
+                    pip.color = theme.gold;
+                    pip.rectTransform.localScale = Vector3.one;
+                }
+                else if (i < next)
+                {
+                    pip.color = theme.white;
+                    pip.rectTransform.localScale = new Vector3(1.06f, 1.15f, 1f);
+                }
+                else
+                {
+                    pip.color = UiTheme.WithAlpha(theme.surfaceSunken, 0.9f);
+                    pip.rectTransform.localScale = Vector3.one;
+                }
             }
         }
 

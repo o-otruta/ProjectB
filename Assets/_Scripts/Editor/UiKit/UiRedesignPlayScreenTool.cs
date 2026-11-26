@@ -45,10 +45,13 @@ namespace ProjectB.EditorScripts.UiKit
 
             BuildPodium(scene);
             ConfigureCamera(scene);
+            BuildBackdrop(scene);
+            RestyleTopBar(scene);
             RestyleHeader(hero.transform);
             BuildGoalCard(hero.transform);
             RestyleTiles(hero);
             RelayoutPreviewControls(hero.transform);
+            RestyleStartAndBottomBar(scene, hero.transform);
 
             EditorUtility.SetDirty(hero);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -115,6 +118,67 @@ namespace ProjectB.EditorScripts.UiKit
             Decor(podium.transform, "Assets/_Prefabs/Obstacles/BoulderSmall.prefab", new Vector3(-1.25f, 0f, -1.1f), 0.38f, 35f);
 
             podium.transform.localScale = Vector3.one * PODIUM_SCALE;
+
+            // Soft dark oval shadow under the floating island podium.
+            var glowTex = AssetDatabase.LoadAssetAtPath<Texture2D>(UiKitGenerator.FRAMES_DIR + "/kit_glow.png");
+            if (glowTex != null)
+            {
+                var shadowGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                shadowGo.name = "PodiumShadow";
+                Object.DestroyImmediate(shadowGo.GetComponent<Collider>());
+                shadowGo.transform.SetParent(podium.transform, false);
+                shadowGo.transform.localPosition = new Vector3(0f, -1.46f, 0f);
+                shadowGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                shadowGo.transform.localScale = new Vector3(5.4f, 5.4f, 1f);
+                var sr = shadowGo.GetComponent<MeshRenderer>();
+                sr.sharedMaterial = SpriteUnlitMaterial("PodiumShadow", glowTex, new Color(0.035f, 0.039f, 0.133f, 0.78f));
+                sr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                sr.receiveShadows = false;
+            }
+        }
+
+        private static void BuildBackdrop(Scene scene)
+        {
+            Camera cam = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.TryGetComponent(out Camera c) && c.CompareTag("MainCamera")) { cam = c; break; }
+            }
+            if (cam == null) return;
+
+            Transform old = cam.transform.Find("MenuBackdrop");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var bgTex = AssetDatabase.LoadAssetAtPath<Texture2D>(UiKitGenerator.FRAMES_DIR + "/kit_menu_bg.png");
+            if (bgTex == null) return;
+
+            var bg = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            bg.name = "MenuBackdrop";
+            Object.DestroyImmediate(bg.GetComponent<Collider>());
+            bg.transform.SetParent(cam.transform, false);
+            bg.transform.localPosition = new Vector3(0f, 0f, 24f);
+            bg.transform.localRotation = Quaternion.identity;
+            bg.transform.localScale = new Vector3(60f, 60f, 1f);
+            var mr = bg.GetComponent<MeshRenderer>();
+            mr.sharedMaterial = SpriteUnlitMaterial("MenuBackdrop", bgTex, Color.white);
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
+
+        private static Material SpriteUnlitMaterial(string name, Texture2D tex, Color tint)
+        {
+            if (!AssetDatabase.IsValidFolder(PODIUM_MATERIAL_DIR)) AssetDatabase.CreateFolder("Assets/_Materials", "MenuPodium");
+            string path = $"{PODIUM_MATERIAL_DIR}/{name}.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                Shader shader = Shader.Find("Sprites/Default");
+                mat = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.mainTexture = tex;
+            mat.color = tint;
+            EditorUtility.SetDirty(mat);
+            return mat;
         }
 
         private static Material PodiumMaterial(string name, Color color)
@@ -185,6 +249,78 @@ namespace ProjectB.EditorScripts.UiKit
             if (p == null) return;
             p.vector2Value = value;
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // ------------------------------------------------------------------ floating top bar
+
+        private static void RestyleTopBar(Scene scene)
+        {
+            Transform topBar = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                Transform found = root.transform.Find("SafeAreaRoot/TopBar");
+                if (found != null) { topBar = found; break; }
+            }
+            if (topBar == null) return;
+
+            GetOrAdd<ThemedGraphic>(topBar.gameObject).Configure(UiColor.SurfaceSunken, 0f, UiSprite.Solid);
+            Transform bottomLine = topBar.Find("BottomLine");
+            if (bottomLine != null) bottomLine.gameObject.SetActive(false);
+
+            Transform settings = topBar.Find("SettingsButton");
+            if (settings != null)
+            {
+                Rt(settings).sizeDelta = new Vector2(96f, 96f);
+                var img = settings.GetComponent<Image>();
+                if (img != null && Theme.squircleSprite != null)
+                {
+                    img.sprite = Theme.squircleSprite;
+                    img.type = Image.Type.Sliced;
+                }
+                if (settings.TryGetComponent(out ThemedButton tb))
+                {
+                    tb.EditorSetup(ButtonStyle.Icon, img, null, settings.Find("Icon")?.GetComponent<Image>(), ButtonSound.Click, customSprite: true);
+                }
+            }
+
+            Transform currencies = topBar.Find("Currencies");
+            if (currencies != null)
+            {
+                Transform coins = currencies.Find("CoinsPill");
+                Transform shards = currencies.Find("ShardsPill");
+                if (coins != null) coins.SetSiblingIndex(0);
+                if (shards != null) shards.SetSiblingIndex(1);
+
+                StyleCurrencyPill(coins, 236f, 72f);
+                StyleCurrencyPill(shards, 172f, 72f);
+            }
+        }
+
+        private static void StyleCurrencyPill(Transform pill, float width, float height)
+        {
+            if (pill == null) return;
+            Rt(pill).sizeDelta = new Vector2(width, height);
+            GetOrAdd<ThemedGraphic>(pill.gameObject).Configure(UiColor.Surface, 0.96f, UiSprite.Pill);
+            if (pill.TryGetComponent(out HorizontalLayoutGroup hl))
+            {
+                hl.padding = new RectOffset(16, 22, 6, 8);
+                hl.spacing = 10f;
+            }
+            Transform icon = pill.Find("Icon");
+            if (icon != null) LE(icon.gameObject, prefW: 44f, prefH: 44f);
+            Transform amount = pill.Find("Amount");
+            if (amount != null)
+            {
+                var tmp = amount.GetComponent<TMP_Text>();
+                if (tmp != null) tmp.alignment = TextAlignmentOptions.MidlineRight;
+                GetOrAdd<ThemedText>(amount.gameObject).Configure(UiTextStyle.Number, 0.78f);
+            }
+            if (pill.TryGetComponent(out CurrencyLabel cl))
+            {
+                SetBool(cl, "useWhiteText", true);
+                cl.ApplyTheme(Theme);
+                EditorUtility.SetDirty(cl);
+            }
         }
 
         // ------------------------------------------------------------------ header
@@ -331,16 +467,17 @@ namespace ProjectB.EditorScripts.UiKit
             rwt.sizeDelta = new Vector2(-218f, 40f);
             reward.textWrappingMode = TextWrappingModes.NoWrap;
 
-            // Tap affordance: the card opens the goal achievement.
+            // Tap affordance: clean golden squircle reward frame without cramped chevron.
             var chevron = Icon(card.transform, "Chevron", Theme.iconChevronRight, 30f, Theme.textSecondary);
             Place(Rt(chevron), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-144f, 22f), new Vector2(30f, 30f));
+            chevron.gameObject.SetActive(false);
 
-            var frame = Img(card.transform, "RewardFrame", UiSprite.Row, UiColor.SurfaceSunken, 1f, false, true);
+            var frame = Img(card.transform, "RewardFrame", UiSprite.Squircle, UiColor.SurfaceSunken, 1f, false, true);
             Place(Rt(frame), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-22f, 2f), new Vector2(108f, 108f));
             var ring = Img(frame.transform, "Ring", UiSprite.Outline, UiColor.Gold, 1f, false, true);
-            Stretch(Rt(ring), 4f, 8f, 4f, 4f);
+            Stretch(Rt(ring), 0f, 0f, 0f, 0f);
             var icon = Icon(frame.transform, "Icon", null, 70f);
-            Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), new Vector2(70f, 70f));
+            Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(70f, 70f));
 
             var ui = card.gameObject.AddComponent<PlayGoalCardUI>();
             ui.EditorSetup(value, fill, reward, icon, button);
@@ -374,7 +511,7 @@ namespace ProjectB.EditorScripts.UiKit
             }
             block.SetSiblingIndex(card.GetSiblingIndex());
             Presets(Rt(block),
-                P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 214f), new Vector2(-64f, 0f)),
+                P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 204f), new Vector2(-64f, 0f)),
                 P(new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-12f, 196f), new Vector2(-72f, 0f)));
 
             // Detail panel: speech bubble above the tiles; its tail is moved under the expanded tile at runtime.
@@ -400,7 +537,7 @@ namespace ProjectB.EditorScripts.UiKit
             if (oldPointer != null) Object.DestroyImmediate(oldPointer.gameObject);
             var pointer = Img(detail.transform, "Pointer", UiSprite.Solid, UiColor.SurfaceRaised, 1f, false, true);
             LE(pointer.gameObject, ignore: true);
-            Place(Rt(pointer), new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(30f, 30f));
+            Place(Rt(pointer), new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(26f, 26f));
             Rt(pointer).localRotation = Quaternion.Euler(0f, 0f, 45f);
             pointer.transform.SetAsFirstSibling();
 
@@ -428,6 +565,15 @@ namespace ProjectB.EditorScripts.UiKit
             {
                 Transform tile = card.Find(rows[i]);
                 if (tile != null) highlights[i] = RestyleTile(tile);
+                if (i == 2 && tile != null)
+                {
+                    Transform ultCap = tile.Find("Caption");
+                    if (ultCap != null)
+                    {
+                        Object.DestroyImmediate(ultCap.GetComponent<LocalizedText>());
+                        Set(hero, "ultimateCaptionText", ultCap.GetComponent<TMP_Text>());
+                    }
+                }
                 Transform text = card.Find(texts[i]) ?? detail.transform.Find(texts[i]);
                 if (text != null)
                 {
@@ -450,7 +596,7 @@ namespace ProjectB.EditorScripts.UiKit
             Object.DestroyImmediate(tile.GetComponent<AdaptiveLayoutGroup>());
             Object.DestroyImmediate(tile.GetComponent<HorizontalLayoutGroup>());
             var stack = GetOrAdd<VerticalLayoutGroup>(tile.gameObject);
-            stack.padding = new RectOffset(14, 14, 16, 24);
+            stack.padding = new RectOffset(14, 14, 18, 22);
             stack.spacing = 6f;
             stack.childAlignment = TextAnchor.UpperCenter;
             stack.childControlWidth = true;
@@ -460,12 +606,12 @@ namespace ProjectB.EditorScripts.UiKit
 
             var le = GetOrAdd<LayoutElement>(tile.gameObject);
             le.preferredHeight = -1f;
-            le.minHeight = 84f;
+            le.minHeight = 200f;
             le.preferredWidth = 0f;
             le.flexibleWidth = 1f;
 
             Transform icon = tile.Find("Icon");
-            if (icon != null) LE(icon.gameObject, prefH: 68f, prefW: 68f);
+            if (icon != null) LE(icon.gameObject, prefH: 72f, prefW: 72f);
 
             Transform caption = tile.Find("Caption");
             Transform name = tile.Find("Name");
@@ -514,10 +660,103 @@ namespace ProjectB.EditorScripts.UiKit
 
         private static void RelayoutPreviewControls(Transform panel)
         {
-            SetPortrait(panel.Find("PrevHeroButton"), P(new Vector2(0f, 0.56f), new Vector2(0f, 0.56f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(112f, 112f)));
-            SetPortrait(panel.Find("NextHeroButton"), P(new Vector2(1f, 0.56f), new Vector2(1f, 0.56f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(112f, 112f)));
-            SetPortrait(panel.Find("LockOverlay"), P(new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(600f, 230f)));
-            SetPortrait(panel.Find("Pagination"), P(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -372f), new Vector2(-400f, 30f)));
+            StyleSquircleNavButton(panel.Find("PrevHeroButton"));
+            StyleSquircleNavButton(panel.Find("NextHeroButton"));
+            SetPortrait(panel.Find("PrevHeroButton"), P(new Vector2(0f, 0.56f), new Vector2(0f, 0.56f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(96f, 96f)));
+            SetPortrait(panel.Find("NextHeroButton"), P(new Vector2(1f, 0.56f), new Vector2(1f, 0.56f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(96f, 96f)));
+            Transform lockOv = panel.Find("LockOverlay");
+            if (lockOv != null)
+            {
+                GetOrAdd<ThemedGraphic>(lockOv.gameObject).Configure(UiColor.Surface, 0.94f, UiSprite.Card);
+                Transform lockIcon = lockOv.Find("LockIcon");
+                if (lockIcon != null)
+                {
+                    Place(Rt(lockIcon), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(64f, 64f));
+                }
+                Transform lockText = lockOv.Find("Requirement");
+                if (lockText != null)
+                {
+                    Band(Rt(lockText), false, 18f, 54f, 20f, 20f);
+                }
+            }
+            SetPortrait(lockOv, P(new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(460f, 162f)));
+            Transform pagination = panel.Find("Pagination");
+            if (pagination != null)
+            {
+                var hl = GetOrAdd<HorizontalLayoutGroup>(pagination.gameObject);
+                hl.spacing = 12f;
+                hl.childAlignment = TextAnchor.MiddleCenter;
+                hl.childControlWidth = false;
+                hl.childControlHeight = false;
+                hl.childForceExpandWidth = false;
+                hl.childForceExpandHeight = false;
+                SetPortrait(pagination, P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 462f), new Vector2(360f, 28f)));
+                Transform abilityBlock = panel.Find("AbilityBlock");
+                if (abilityBlock != null && abilityBlock.GetSiblingIndex() < pagination.GetSiblingIndex())
+                {
+                    abilityBlock.SetSiblingIndex(pagination.GetSiblingIndex() + 1);
+                }
+            }
+        }
+
+        private static void StyleSquircleNavButton(Transform t)
+        {
+            if (t == null) return;
+            var img = t.GetComponent<Image>();
+            if (img != null && Theme.squircleSprite != null)
+            {
+                img.sprite = Theme.squircleSprite;
+                img.type = Image.Type.Sliced;
+            }
+            if (t.TryGetComponent(out ThemedButton tb))
+            {
+                tb.EditorSetup(ButtonStyle.Icon, img, null, t.Find("Icon")?.GetComponent<Image>(), ButtonSound.Click, customSprite: true);
+            }
+        }
+
+        private static void RestyleStartAndBottomBar(Scene scene, Transform panel)
+        {
+            Transform start = panel.Find("StartButton");
+            if (start != null)
+            {
+                Presets(Rt(start),
+                    P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 32f), new Vector2(-64f, 148f)),
+                    P(new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-12f, 32f), new Vector2(-72f, 142f)));
+                Transform startText = start.Find("Text");
+                if (startText != null)
+                {
+                    var tg = startText.GetComponent<ThemedGraphic>();
+                    if (tg != null) Object.DestroyImmediate(tg);
+                }
+                if (start.TryGetComponent(out ThemedButton tb)) tb.ApplyTheme(Theme);
+            }
+
+            Transform bottomBar = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                Transform found = root.transform.Find("SafeAreaRoot/BottomBar");
+                if (found != null) { bottomBar = found; break; }
+            }
+            if (bottomBar == null) return;
+
+            Transform topLine = bottomBar.Find("TopLine");
+            if (topLine != null) GetOrAdd<ThemedGraphic>(topLine.gameObject).Configure(UiColor.Outline, 0.45f, UiSprite.Solid);
+
+            foreach (BottomTabUI tab in bottomBar.GetComponentsInChildren<BottomTabUI>(true))
+            {
+                tab.activeIconY = 26f;
+                if (tab.bgImage != null && Theme.buttonSprite != null)
+                {
+                    tab.bgImage.sprite = Theme.buttonSprite;
+                    tab.bgImage.type = Image.Type.Sliced;
+                }
+                if (tab.labelText != null)
+                {
+                    Rt(tab.labelText).anchoredPosition = new Vector2(0f, 16f);
+                }
+                tab.ApplyTheme(Theme);
+                EditorUtility.SetDirty(tab);
+            }
         }
 
         private static void SetPortrait(Transform t, RectPreset portrait)

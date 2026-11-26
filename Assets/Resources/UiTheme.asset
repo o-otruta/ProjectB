@@ -12,38 +12,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2e57d0cf500cde45a698810fe4cc834, type: 3}
   m_Name: UiTheme
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.UI.UiTheme
-  background: {r: 0.078431375, g: 0.07450981, b: 0.15294118, a: 1}
-  surface: {r: 0.13725491, g: 0.13333334, b: 0.27450982, a: 1}
-  surfaceRaised: {r: 0.1882353, g: 0.18431373, b: 0.36862746, a: 1}
-  surfaceSunken: {r: 0.05490196, g: 0.050980393, b: 0.11764706, a: 1}
-  outline: {r: 0.2901961, g: 0.28235295, b: 0.5254902, a: 1}
+  background: {r: 0.07450981, g: 0.07058824, b: 0.18039216, a: 1}
+  surface: {r: 0.15686275, g: 0.15294118, b: 0.34509805, a: 1}
+  surfaceRaised: {r: 0.20392157, g: 0.2, b: 0.4392157, a: 1}
+  surfaceSunken: {r: 0.07450981, g: 0.07058824, b: 0.17254902, a: 1}
+  outline: {r: 0.32156864, g: 0.3137255, b: 0.6039216, a: 1}
   overlay: {r: 0.03, g: 0.03, b: 0.08, a: 0.78}
   textPrimary: {r: 0.95686275, g: 0.94509804, b: 1, a: 1}
   textSecondary: {r: 0.6627451, g: 0.6509804, b: 0.8392157, a: 1}
   textDisabled: {r: 0.38431373, g: 0.37254903, b: 0.5568628, a: 1}
+  textDark: {r: 0.2, g: 0.11372549, b: 0, a: 1}
   accent: {r: 0.4862745, g: 0.36078432, b: 1, a: 1}
   success: {r: 0.27058825, g: 0.83137256, b: 0.5137255, a: 1}
   danger: {r: 1, g: 0.3019608, b: 0.41568628, a: 1}
   warning: {r: 1, g: 0.63529414, b: 0.22745098, a: 1}
-  gold: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
+  gold: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
   shard: {r: 0.24705882, g: 0.8784314, b: 0.8156863, a: 1}
-  ad: {r: 0.18431373, g: 0.65882355, b: 1, a: 1}
+  ad: {r: 0.19607843, g: 0.65882355, b: 1, a: 1}
   white: {r: 1, g: 1, b: 1, a: 1}
   rarityCommon: {r: 0.7254902, g: 0.7607843, b: 0.8156863, a: 1}
   rarityRare: {r: 0.23921569, g: 0.60784316, b: 1, a: 1}
   rarityEpic: {r: 0.7137255, g: 0.36078432, b: 1, a: 1}
-  rarityLegendary: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
+  rarityLegendary: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
   activeSlot: {r: 1, g: 0.5882353, b: 0.2509804, a: 1}
   passiveSlot: {r: 0.23529412, g: 0.78431374, b: 0.8784314, a: 1}
-  hpFill: {r: 1, g: 0.3019608, b: 0.41568628, a: 1}
-  xpFill: {r: 0.43137255, g: 0.85882354, b: 0.23529412, a: 1}
+  hpFill: {r: 1, g: 0.30980393, b: 0.47058824, a: 1}
+  xpFill: {r: 0.43137255, g: 0.8784314, b: 0.25882354, a: 1}
   ghost: {r: 1, g: 0.8901961, b: 0.6392157, a: 1}
-  overdriveTier1: {r: 1, g: 0.7882353, b: 0.23529412, a: 1}
+  overdriveTier1: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
   overdriveTier2: {r: 0.36078432, g: 0.95686275, b: 1, a: 1}
   overdriveTier3: {r: 1, g: 0.41568628, b: 0.9019608, a: 1}
   primaryButton:
     face: 11
-    label: 25
+    label: 26
   secondaryButton:
     face: 2
     label: 4
@@ -101,6 +102,12 @@ MonoBehaviour:
   ringThinSprite: {fileID: 21300000, guid: a3af21557e7a133488e557fea1f8d2c3, type: 3}
   vignetteSprite: {fileID: 21300000, guid: b7ca2c0b9e144c24790b6bcfb81e71f1, type: 3}
   starfieldSprite: {fileID: 21300000, guid: e179ed359ffcac64b954ece0a4f865b1, type: 3}
+  squircleSprite: {fileID: 21300000, guid: 4b3c0b9255826394c98d9d40a191b53a, type: 3}
+  slotDashedSprite: {fileID: 21300000, guid: 655bcbc790feb174690af72d26b45019, type: 3}
+  cardHeaderSprite: {fileID: 21300000, guid: ec646255fb8e34a4688361db22ab239f, type: 3}
+  shineSprite: {fileID: 21300000, guid: 621edf2072895984c902907128dde51f, type: 3}
+  ribbonTailSprite: {fileID: 21300000, guid: 5c328d166f4e23c4f850ce25ec8eedca, type: 3}
+  menuBgSprite: {fileID: 21300000, guid: d001b3b4f671d2641a297db7f0cfc285, type: 3}
   iconCoin: {fileID: 21300000, guid: e3fa1a4e170f02049a98ffc822aff0de, type: 3}
   iconShard: {fileID: 21300000, guid: 46a4d2f13c7caac449242f4e5b24f938, type: 3}
   iconAd: {fileID: 21300000, guid: 1fe7f9043bce78b478e605437e367464, type: 3}

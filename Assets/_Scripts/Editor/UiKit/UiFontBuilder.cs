@@ -26,11 +26,11 @@ namespace ProjectB.EditorScripts.UiKit
         public const string LIBERATION_PATH = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
 
         private static readonly Color OutlineColor = new Color32(20, 16, 40, 255);
-        public const float TITLE_OUTLINE = 0.3f;
-        public const float TITLE_DILATE = 0.1f;
-        public const float NUMBER_OUTLINE = 0.38f;
-        public const float NUMBER_DILATE = 0.14f;
-        public const float UNDERLAY_OFFSET_Y = -1.2f;
+        public const float TITLE_OUTLINE = 0.26f;
+        public const float TITLE_DILATE = 0.08f;
+        public const float NUMBER_OUTLINE = 0.28f;
+        public const float NUMBER_DILATE = 0.08f;
+        public const float UNDERLAY_OFFSET_Y = -1.0f;
 
         public static uint[] BuildCharacterSet()
         {

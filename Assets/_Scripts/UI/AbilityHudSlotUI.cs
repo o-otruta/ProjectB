@@ -17,6 +17,7 @@ namespace ProjectB.UI
         [SerializeField] private Image iconImage;
         [SerializeField] private TextMeshProUGUI initialsText;
         [SerializeField] private TextMeshProUGUI levelText;
+        [SerializeField] private Image levelBadgeBackground;
         [SerializeField] private Sprite lockedIconSprite;
         [Tooltip("Sprint 13: Overdrive glow behind the frame (tier 2+).")]
         [SerializeField] private Image glowImage;
@@ -47,11 +48,15 @@ namespace ProjectB.UI
             overdriveTier = data.type == AbilityType.Active ? ActiveAbility.CalculateOverdriveTier(level) : 0;
             Color frameColor = theme.GetOverdriveColor(overdriveTier, rarityColor);
 
-            if (borderImage != null) borderImage.color = frameColor;
+            if (borderImage != null)
+            {
+                if (theme.slotFrameSprite != null) borderImage.sprite = theme.slotFrameSprite;
+                borderImage.color = frameColor;
+            }
             if (backgroundImage != null)
             {
                 backgroundImage.color = UiTheme.WithAlpha(
-                    data.type == AbilityType.Passive ? UiTheme.Shade(theme.passiveSlot, 0.25f) : theme.surface, 0.94f);
+                    data.type == AbilityType.Passive ? UiTheme.Shade(theme.passiveSlot, 0.25f) : theme.surface, 0.96f);
             }
             if (glowImage != null)
             {
@@ -82,13 +87,28 @@ namespace ProjectB.UI
             }
 
             SetLevelBadgeVisible(true);
+            bool circularBadge = levelBadgeBackground != null;
             if (levelText != null)
             {
-                levelBuffer[0] = 'L';
-                levelBuffer[1] = 'v';
-                int len = UiFormat.WriteInt(levelBuffer, 2, Mathf.Max(0, level));
+                int len;
+                if (circularBadge)
+                {
+                    len = UiFormat.WriteInt(levelBuffer, 0, Mathf.Max(0, level));
+                }
+                else
+                {
+                    levelBuffer[0] = 'L';
+                    levelBuffer[1] = 'v';
+                    len = UiFormat.WriteInt(levelBuffer, 2, Mathf.Max(0, level));
+                }
                 levelText.SetCharArray(levelBuffer, 0, len);
-                levelText.color = overdriveTier > 0 ? theme.GetOverdriveColor(overdriveTier, theme.textPrimary) : theme.textPrimary;
+                levelText.color = circularBadge
+                    ? theme.textDark
+                    : (overdriveTier > 0 ? theme.GetOverdriveColor(overdriveTier, theme.textPrimary) : theme.textPrimary);
+            }
+            if (circularBadge)
+            {
+                levelBadgeBackground.color = overdriveTier >= 2 ? frameColor : theme.gold;
             }
         }
 
@@ -102,11 +122,12 @@ namespace ProjectB.UI
 
             if (borderImage != null)
             {
-                borderImage.color = UiTheme.WithAlpha(slotType == AbilityType.Passive ? theme.passiveSlot : theme.activeSlot, 0.35f);
+                if (theme.slotDashedSprite != null) borderImage.sprite = theme.slotDashedSprite;
+                borderImage.color = UiTheme.WithAlpha(slotType == AbilityType.Passive ? theme.passiveSlot : theme.activeSlot, 0.72f);
             }
             if (backgroundImage != null)
             {
-                backgroundImage.color = UiTheme.WithAlpha(theme.surfaceSunken, 0.55f);
+                backgroundImage.color = UiTheme.WithAlpha(theme.surfaceSunken, 0.28f);
             }
             if (glowImage != null) glowImage.gameObject.SetActive(false);
             if (iconImage != null)
@@ -130,6 +151,7 @@ namespace ProjectB.UI
 
             if (borderImage != null)
             {
+                if (theme.slotFrameSprite != null) borderImage.sprite = theme.slotFrameSprite;
                 borderImage.color = UiTheme.WithAlpha(theme.outline, 0.35f);
             }
             if (backgroundImage != null)

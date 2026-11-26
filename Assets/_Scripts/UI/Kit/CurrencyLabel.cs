@@ -21,6 +21,7 @@ namespace ProjectB.UI
         [SerializeField] private TMP_Text amountText;
         [SerializeField] private Image iconImage;
         [SerializeField] private string prefix = string.Empty;
+        [SerializeField] private bool useWhiteText;
         [SerializeField, Min(0f)] private float countUpDuration = 0.6f;
         [SerializeField] private bool punchOnChange = true;
 
@@ -55,7 +56,9 @@ namespace ProjectB.UI
             }
             if (amountText != null)
             {
-                amountText.color = currency == CurrencyType.Coins ? theme.gold : theme.shard;
+                amountText.color = useWhiteText
+                    ? theme.textPrimary
+                    : (currency == CurrencyType.Coins ? theme.gold : theme.shard);
             }
         }
 

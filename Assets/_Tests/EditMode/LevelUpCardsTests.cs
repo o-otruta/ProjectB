@@ -128,9 +128,9 @@ namespace ProjectB.Tests.EditMode
 
             card.SetLevelProgress(2, 3, 5);
             Assert.AreEqual(5, card.VisibleLevelPips, "one pip per level up to the cap");
-            Assert.AreEqual(theme.background, pips[0].color, "owned level: solid dark");
-            Assert.AreEqual(theme.white, pips[2].color, "granted level: bright");
-            Assert.Less(pips[4].color.a, 0.5f, "future level: faint");
+            Assert.AreEqual(theme.gold, pips[0].color, "owned level: gold");
+            Assert.AreEqual(theme.white, pips[2].color, "granted level: bright white");
+            Assert.Less(pips[4].color.r, 0.2f, "future level: dark recessed");
 
             card.SetLevelProgress(12, 13, 20);
             Assert.AreEqual(0, card.VisibleLevelPips, "Path of Mastery caps above the pip count fall back to the text badge");

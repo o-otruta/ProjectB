@@ -23,6 +23,9 @@ namespace ProjectB.LevelUp
         [SerializeField] private Button rerollButton;
         [SerializeField] private TMP_Text rerollButtonText;
         [SerializeField] private KeyHintBadgeUI rerollKeyHint;
+        [SerializeField] private GameObject rerollFreeBadge;
+        [SerializeField] private TMP_Text rerollFreeBadgeText;
+        [SerializeField] private Image rerollIcon;
 
         [Header("Sprint 13: header")]
         [SerializeField] private TMP_Text titleText;
@@ -381,9 +384,17 @@ namespace ProjectB.LevelUp
             if (titleText != null) titleText.text = Loc.Get("ui.levelup.title", "LEVEL UP!");
             if (levelText != null && heroExperience != null)
             {
-                int len = UiFormat.WriteString(levelBuffer, 0, Loc.Get("ui.levelup.level_prefix", "Level "));
-                len = UiFormat.WriteInt(levelBuffer, len, heroExperience.CurrentLevel);
-                levelText.SetCharArray(levelBuffer, 0, len);
+                int lv = heroExperience.CurrentLevel;
+                if (LocalizationService.Current.ActiveEntries.ContainsKey("ui.levelup.subtitle"))
+                {
+                    levelText.text = Loc.Format("ui.levelup.subtitle", lv);
+                }
+                else
+                {
+                    int len = UiFormat.WriteString(levelBuffer, 0, Loc.Get("ui.levelup.level_prefix", "Level "));
+                    len = UiFormat.WriteInt(levelBuffer, len, lv);
+                    levelText.SetCharArray(levelBuffer, 0, len);
+                }
             }
         }
 
@@ -559,9 +570,42 @@ namespace ProjectB.LevelUp
                 }
             }
 
+            bool hasFreeBadge = rerollFreeBadge != null;
+            bool showFree = showButton && !hasRerolledThisLevelUp && freeRerollsAvailable > 0;
+            if (hasFreeBadge) rerollFreeBadge.SetActive(showFree);
+            if (rerollIcon != null)
+            {
+                rerollIcon.gameObject.SetActive(showButton && !hasRerolledThisLevelUp);
+            }
+            if (rerollFreeBadgeText != null && showFree)
+            {
+                rerollFreeBadgeText.text = freeRerollsAvailable == 1
+                    ? Loc.Get("ui.levelup.free_badge", "FREE")
+                    : Loc.Format("ui.levelup.free_badge_multi", freeRerollsAvailable);
+            }
+
             if (rerollButtonText != null && showButton)
             {
-                rerollButtonText.text = RerollButtonLabel;
+                if (!hasFreeBadge)
+                {
+                    rerollButtonText.text = RerollButtonLabel;
+                }
+                else if (hasRerolledThisLevelUp)
+                {
+                    rerollButtonText.text = Loc.Get("ui.levelup.rerolled", "Rerolled");
+                }
+                else if (freeRerollsAvailable > 0)
+                {
+                    rerollButtonText.text = Loc.Get("ui.levelup.reroll_cards", "Reroll cards");
+                }
+                else if (adManager != null && adManager.CanShowRewarded())
+                {
+                    rerollButtonText.text = Loc.Get("ui.levelup.reroll_ad", "<sprite name=\"ad\"> Reroll");
+                }
+                else
+                {
+                    rerollButtonText.text = Loc.Get("ui.levelup.reroll_unavailable", "Reroll unavailable");
+                }
             }
             if (rerollKeyHint != null)
             {

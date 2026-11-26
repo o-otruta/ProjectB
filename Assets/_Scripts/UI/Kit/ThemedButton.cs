@@ -122,7 +122,18 @@ namespace ProjectB.UI
             }
 
             Color labelColor = theme.GetColor(colors.label);
-            if (label != null) label.color = labelColor;
+            if (label != null)
+            {
+                label.color = labelColor;
+                if (style == ButtonStyle.Primary && label.font != null)
+                {
+                    label.fontSharedMaterial = label.font.material;
+                }
+                else if (label.TryGetComponent(out ThemedText themedLabel))
+                {
+                    themedLabel.ApplyTheme(theme);
+                }
+            }
             if (icon != null && tintIcon) icon.color = labelColor;
 
             if (button != null)
@@ -148,7 +159,7 @@ namespace ProjectB.UI
             if (label != null)
             {
                 Color c = label.color;
-                c.a = interactable ? 1f : 0.55f;
+                c.a = interactable ? 1f : 0.78f;
                 label.color = c;
             }
             if (icon != null)

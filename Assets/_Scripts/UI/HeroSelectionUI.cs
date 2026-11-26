@@ -46,6 +46,7 @@ namespace ProjectB.UI
         [SerializeField] private TMP_Text weaponNameText;
         [SerializeField] private TMP_Text weaponDescriptionText;
         [SerializeField] private Image ultimateIcon;
+        [SerializeField] private TMP_Text ultimateCaptionText;
         [SerializeField] private TMP_Text ultimateNameText;
         [SerializeField] private TMP_Text ultimateDescriptionText;
         [SerializeField] private Button passiveRowButton;
@@ -360,7 +361,16 @@ namespace ProjectB.UI
             {
                 ultimateText.text = Loc.Format("ui.hero.ultimate_inline", localizedUltimateName, localizedUltimateDesc, $"{hero.ultimateCooldown:0}");
             }
-            if (ultimateNameText != null) ultimateNameText.text = $"{localizedUltimateName}  <color=#{ColorUtility.ToHtmlStringRGB(theme.textSecondary)}><size=80%>{hero.ultimateCooldown:0}{Loc.Get("ui.unit.seconds", "s")}</size></color>";
+            if (ultimateCaptionText != null)
+            {
+                ultimateCaptionText.text = $"{Loc.Get("ui.hero.ultimate_caption", "ULTIMATE")} · {hero.ultimateCooldown:0}{Loc.Get("ui.unit.seconds", "s")}";
+            }
+            if (ultimateNameText != null)
+            {
+                ultimateNameText.text = ultimateCaptionText != null
+                    ? localizedUltimateName
+                    : $"{localizedUltimateName}  <color=#{ColorUtility.ToHtmlStringRGB(theme.textSecondary)}><size=80%>{hero.ultimateCooldown:0}{Loc.Get("ui.unit.seconds", "s")}</size></color>";
+            }
             if (ultimateDescriptionText != null) ultimateDescriptionText.text = localizedUltimateDesc;
             if (ultimateIcon != null)
             {
@@ -381,6 +391,10 @@ namespace ProjectB.UI
             if (startRunButton != null)
             {
                 startRunButton.interactable = isUnlocked;
+                if (startRunButton.TryGetComponent(out ThemedButton startThemed))
+                {
+                    startThemed.SetStyle(isUnlocked ? ButtonStyle.Primary : ButtonStyle.Secondary);
+                }
             }
 
             if (startButtonText != null)
@@ -547,8 +561,25 @@ namespace ProjectB.UI
 
                 bool active = i == index;
                 bool unlocked = selectedHeroService.IsHeroUnlocked(heroes[i]);
-                paginationDots[i].color = active ? theme.gold : (unlocked ? theme.textSecondary : theme.textDisabled);
-                paginationDots[i].rectTransform.localScale = active ? new Vector3(1.4f, 1.4f, 1f) : Vector3.one;
+                Image dot = paginationDots[i];
+                if (active && theme.pillSprite != null)
+                {
+                    dot.sprite = theme.pillSprite;
+                    dot.type = Image.Type.Sliced;
+                    dot.rectTransform.sizeDelta = new Vector2(52f, 18f);
+                }
+                else
+                {
+                    if (theme.circleSprite != null) dot.sprite = theme.circleSprite;
+                    dot.type = Image.Type.Simple;
+                    dot.rectTransform.sizeDelta = new Vector2(18f, 18f);
+                }
+                dot.color = active ? theme.gold : (unlocked ? theme.surfaceRaised : theme.textDisabled);
+                dot.rectTransform.localScale = Vector3.one;
+            }
+            if (paginationContainer is RectTransform prt)
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(prt);
             }
         }
 

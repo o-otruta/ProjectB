@@ -12,6 +12,7 @@ namespace ProjectB.UI
     {
         private static readonly string[] CachedTenthsStrings = BuildTenthsCache(151);
         private static readonly string[] CachedSecondsStrings = BuildSecondsCache(121);
+        private static readonly string[] CachedPercentStrings = BuildPercentCache(101);
 
         [SerializeField] private Button button;
         [SerializeField] private Image backgroundImage;
@@ -25,6 +26,10 @@ namespace ProjectB.UI
         [SerializeField] private GameObject readyGlow;
         [SerializeField] private bool playReadySfx = true;
         [SerializeField] private KeyHintBadgeUI keyHintBadge;
+
+        [Header("UI redesign v2: radial charge ring + percent")]
+        [SerializeField] private Image chargeRingImage;
+        [SerializeField] private bool showChargePercent;
 
         private HeroUltimate heroUltimate;
         private int lastDisplayedState = -1; // 0 = ready, 1 = active, 2 = cooldown
@@ -52,6 +57,25 @@ namespace ProjectB.UI
                 arr[i] = $"{i}s";
             }
             return arr;
+        }
+
+        private static string[] BuildPercentCache(int count)
+        {
+            var arr = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                arr[i] = $"{i}%";
+            }
+            return arr;
+        }
+
+        public static string GetCachedPercentText(int percent)
+        {
+            if (percent >= 0 && percent < CachedPercentStrings.Length)
+            {
+                return CachedPercentStrings[percent];
+            }
+            return $"{percent}%";
         }
 
         public static string GetCachedTenthsText(int tenths)
@@ -179,11 +203,23 @@ namespace ProjectB.UI
             if (heroUltimate.IsActive)
             {
                 float ratio = Mathf.Clamp01(heroUltimate.ActiveRemaining / heroUltimate.ActiveDuration);
+                if (showChargePercent && chargeRingImage != null)
+                {
+                    chargeRingImage.fillAmount = ratio;
+                    if (lastDisplayedState != 1) chargeRingImage.color = UiTheme.Current.gold;
+                }
                 if (cooldownFillImage != null)
                 {
-                    if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
-                    cooldownFillImage.fillAmount = ratio;
-                    if (lastDisplayedState != 1) cooldownFillImage.color = UiTheme.WithAlpha(UiTheme.Current.gold, 0.45f);
+                    if (showChargePercent)
+                    {
+                        if (cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
+                        cooldownFillImage.fillAmount = ratio;
+                        if (lastDisplayedState != 1) cooldownFillImage.color = UiTheme.WithAlpha(UiTheme.Current.gold, 0.45f);
+                    }
                 }
 
                 int tenths = Mathf.CeilToInt(heroUltimate.ActiveRemaining * 10f);
@@ -192,30 +228,64 @@ namespace ProjectB.UI
                     lastDisplayedState = 1;
                     lastDisplayedValue = tenths;
                     if (button != null) button.interactable = false;
-                    if (backgroundImage != null) backgroundImage.color = UiTheme.Current.gold;
+                    if (backgroundImage != null) backgroundImage.color = showChargePercent ? UiTheme.Current.surfaceRaised : UiTheme.Current.gold;
                     SetReadyGlow(false);
-                    if (statusText != null) statusText.text = GetCachedTenthsText(tenths);
+                    if (statusText != null)
+                    {
+                        statusText.text = GetCachedTenthsText(tenths);
+                        if (showChargePercent) statusText.color = UiTheme.Current.gold;
+                    }
                 }
             }
             else if (heroUltimate.CooldownRemaining > 0f)
             {
                 float ratio = Mathf.Clamp01(heroUltimate.CooldownRemaining / heroUltimate.CooldownDuration);
-                if (cooldownFillImage != null)
+                if (showChargePercent)
                 {
-                    if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
-                    cooldownFillImage.fillAmount = ratio;
-                    if (lastDisplayedState != 2) cooldownFillImage.color = UiTheme.WithAlpha(UiTheme.Current.surfaceSunken, 0.72f);
+                    float charge = 1f - ratio;
+                    if (chargeRingImage != null)
+                    {
+                        chargeRingImage.fillAmount = charge;
+                        if (lastDisplayedState != 2) chargeRingImage.color = UiTheme.Current.gold;
+                    }
+                    if (cooldownFillImage != null && cooldownFillImage.gameObject.activeSelf)
+                    {
+                        cooldownFillImage.gameObject.SetActive(false);
+                    }
+                    int percent = Mathf.Clamp(Mathf.FloorToInt(charge * 100f), 0, 99);
+                    if (force || lastDisplayedState != 2 || lastDisplayedValue != percent)
+                    {
+                        lastDisplayedState = 2;
+                        lastDisplayedValue = percent;
+                        if (button != null) button.interactable = false;
+                        if (backgroundImage != null) backgroundImage.color = UiTheme.Current.surface;
+                        SetReadyGlow(false);
+                        if (statusText != null)
+                        {
+                            statusText.text = GetCachedPercentText(percent);
+                            statusText.color = UiTheme.Current.textPrimary;
+                        }
+                    }
                 }
-
-                int seconds = Mathf.CeilToInt(heroUltimate.CooldownRemaining);
-                if (force || lastDisplayedState != 2 || lastDisplayedValue != seconds)
+                else
                 {
-                    lastDisplayedState = 2;
-                    lastDisplayedValue = seconds;
-                    if (button != null) button.interactable = false;
-                    if (backgroundImage != null) backgroundImage.color = UiTheme.Current.surfaceRaised;
-                    SetReadyGlow(false);
-                    if (statusText != null) statusText.text = GetCachedSecondsText(seconds);
+                    if (cooldownFillImage != null)
+                    {
+                        if (!cooldownFillImage.gameObject.activeSelf) cooldownFillImage.gameObject.SetActive(true);
+                        cooldownFillImage.fillAmount = ratio;
+                        if (lastDisplayedState != 2) cooldownFillImage.color = UiTheme.WithAlpha(UiTheme.Current.surfaceSunken, 0.72f);
+                    }
+
+                    int seconds = Mathf.CeilToInt(heroUltimate.CooldownRemaining);
+                    if (force || lastDisplayedState != 2 || lastDisplayedValue != seconds)
+                    {
+                        lastDisplayedState = 2;
+                        lastDisplayedValue = seconds;
+                        if (button != null) button.interactable = false;
+                        if (backgroundImage != null) backgroundImage.color = UiTheme.Current.surfaceRaised;
+                        SetReadyGlow(false);
+                        if (statusText != null) statusText.text = GetCachedSecondsText(seconds);
+                    }
                 }
             }
             else
@@ -227,14 +297,31 @@ namespace ProjectB.UI
                 }
 
                 bool ready = heroUltimate.IsReady;
+                if (showChargePercent && chargeRingImage != null)
+                {
+                    chargeRingImage.fillAmount = ready ? 1f : 0f;
+                    chargeRingImage.color = UiTheme.Current.gold;
+                }
+
                 int readyFlag = ready ? 1 : 0;
                 if (force || lastDisplayedState != 0 || lastDisplayedValue != readyFlag)
                 {
                     lastDisplayedState = 0;
                     lastDisplayedValue = readyFlag;
                     if (button != null) button.interactable = ready;
-                    if (backgroundImage != null) backgroundImage.color = ready ? UiTheme.Current.accent : UiTheme.Current.surfaceRaised;
-                    if (statusText != null) statusText.text = ready ? string.Empty : cachedReadyLabel;
+                    if (backgroundImage != null)
+                    {
+                        backgroundImage.color = showChargePercent
+                            ? (ready ? UiTheme.Current.surfaceRaised : UiTheme.Current.surface)
+                            : (ready ? UiTheme.Current.accent : UiTheme.Current.surfaceRaised);
+                    }
+                    if (statusText != null)
+                    {
+                        statusText.text = showChargePercent
+                            ? (ready ? cachedReadyLabel : string.Empty)
+                            : (ready ? string.Empty : cachedReadyLabel);
+                        if (showChargePercent) statusText.color = UiTheme.Current.gold;
+                    }
                     SetReadyGlow(ready);
                 }
             }

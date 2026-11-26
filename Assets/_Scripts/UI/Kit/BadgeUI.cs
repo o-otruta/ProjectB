@@ -64,12 +64,16 @@ namespace ProjectB.UI
             countText.SetCharArray(buffer, 0, len);
         }
 
-        /// <summary>Dot badge (no number), e.g. "reward available".</summary>
+        /// <summary>Dot badge with an exclamation mark ("!"), e.g. "reward available".</summary>
         public void SetDot(bool visible)
         {
             count = visible ? 1 : 0;
             if (gameObject.activeSelf != visible) gameObject.SetActive(visible);
-            if (countText != null) countText.gameObject.SetActive(false);
+            if (countText != null)
+            {
+                countText.gameObject.SetActive(visible);
+                if (visible) countText.text = "!";
+            }
         }
 
         private void Update()

@@ -33,7 +33,8 @@ namespace ProjectB.UI
         XpFill = 22,
         Ghost = 23,
         SurfaceSunken = 24,
-        White = 25
+        White = 25,
+        TextDark = 26
     }
 
     /// <summary>Typographic scale (sizes at the 1080×1920 reference resolution).</summary>
@@ -79,7 +80,13 @@ namespace ProjectB.UI
         Knob = 14,
         RingThin = 15,
         Vignette = 16,
-        Starfield = 17
+        Starfield = 17,
+        Squircle = 18,
+        SlotDashed = 19,
+        CardHeader = 20,
+        Shine = 21,
+        RibbonTail = 22,
+        MenuBg = 23
     }
 
     [Serializable]
@@ -100,48 +107,49 @@ namespace ProjectB.UI
         public const string RESOURCE_PATH = "UiTheme";
 
         [Header("Palette — night surfaces")]
-        public Color background = Hex(0x141327);
-        public Color surface = Hex(0x232246);
-        public Color surfaceRaised = Hex(0x302F5E);
-        public Color surfaceSunken = Hex(0x0E0D1E);
-        public Color outline = Hex(0x4A4886);
+        public Color background = Hex(0x13122E);
+        public Color surface = Hex(0x282758);
+        public Color surfaceRaised = Hex(0x343370);
+        public Color surfaceSunken = Hex(0x13122C);
+        public Color outline = Hex(0x52509A);
         public Color overlay = new Color(0.03f, 0.03f, 0.08f, 0.78f);
 
         [Header("Palette — text")]
         public Color textPrimary = Hex(0xF4F1FF);
         public Color textSecondary = Hex(0xA9A6D6);
         public Color textDisabled = Hex(0x625F8E);
+        public Color textDark = Hex(0x331D00);
 
         [Header("Palette — accents")]
         public Color accent = Hex(0x7C5CFF);
         public Color success = Hex(0x45D483);
         public Color danger = Hex(0xFF4D6A);
         public Color warning = Hex(0xFFA23A);
-        public Color gold = Hex(0xFFC93C);
+        public Color gold = Hex(0xFFD038);
         public Color shard = Hex(0x3FE0D0);
-        public Color ad = Hex(0x2FA8FF);
+        public Color ad = Hex(0x32A8FF);
         public Color white = Color.white;
 
         [Header("Rarity (cards, HUD slots, collection, constellation)")]
         public Color rarityCommon = Hex(0xB9C2D0);
         public Color rarityRare = Hex(0x3D9BFF);
         public Color rarityEpic = Hex(0xB65CFF);
-        public Color rarityLegendary = Hex(0xFFC93C);
+        public Color rarityLegendary = Hex(0xFFD038);
 
         [Header("Gameplay HUD")]
         public Color activeSlot = Hex(0xFF9640);
         public Color passiveSlot = Hex(0x3CC8E0);
-        public Color hpFill = Hex(0xFF4D6A);
-        public Color xpFill = Hex(0x6EDB3C);
+        public Color hpFill = Hex(0xFF4F78);
+        public Color xpFill = Hex(0x6EE042);
         public Color ghost = Hex(0xFFE3A3);
         [Tooltip("Overdrive tiers: Lv 10 (gold), Lv 20 (glow), Lv 30+ (iridescent base).")]
-        public Color overdriveTier1 = Hex(0xFFC93C);
+        public Color overdriveTier1 = Hex(0xFFD038);
         public Color overdriveTier2 = Hex(0x5CF4FF);
         public Color overdriveTier3 = Hex(0xFF6AE6);
 
         [Header("Buttons")]
-        [Tooltip("Primary = the one main action of a screen (START, CLAIM, RESUME): warm gold face, white outlined label.")]
-        public ButtonStyleColors primaryButton = new ButtonStyleColors { face = UiColor.Gold, label = UiColor.White };
+        [Tooltip("Primary = the one main action of a screen (START, CLAIM, RESUME): warm gold face, dark label.")]
+        public ButtonStyleColors primaryButton = new ButtonStyleColors { face = UiColor.Gold, label = UiColor.TextDark };
         public ButtonStyleColors secondaryButton = new ButtonStyleColors { face = UiColor.SurfaceRaised, label = UiColor.TextPrimary };
         public ButtonStyleColors dangerButton = new ButtonStyleColors { face = UiColor.Danger, label = UiColor.White };
         public ButtonStyleColors adButton = new ButtonStyleColors { face = UiColor.Ad, label = UiColor.White };
@@ -198,6 +206,12 @@ namespace ProjectB.UI
         public Sprite ringThinSprite;
         public Sprite vignetteSprite;
         public Sprite starfieldSprite;
+        public Sprite squircleSprite;
+        public Sprite slotDashedSprite;
+        public Sprite cardHeaderSprite;
+        public Sprite shineSprite;
+        public Sprite ribbonTailSprite;
+        public Sprite menuBgSprite;
 
         [Header("Icons")]
         public Sprite iconCoin;
@@ -293,6 +307,7 @@ namespace ProjectB.UI
                 case UiColor.XpFill: return xpFill;
                 case UiColor.Ghost: return ghost;
                 case UiColor.White: return white;
+                case UiColor.TextDark: return textDark;
                 default: return Color.magenta;
             }
         }
@@ -415,6 +430,12 @@ namespace ProjectB.UI
                 case UiSprite.RingThin: return ringThinSprite;
                 case UiSprite.Vignette: return vignetteSprite;
                 case UiSprite.Starfield: return starfieldSprite;
+                case UiSprite.Squircle: return squircleSprite;
+                case UiSprite.SlotDashed: return slotDashedSprite;
+                case UiSprite.CardHeader: return cardHeaderSprite;
+                case UiSprite.Shine: return shineSprite;
+                case UiSprite.RibbonTail: return ribbonTailSprite;
+                case UiSprite.MenuBg: return menuBgSprite;
                 default: return null;
             }
         }

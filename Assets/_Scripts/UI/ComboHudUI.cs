@@ -204,7 +204,7 @@ namespace ProjectB.UI
             }
             if (bonusText != null)
             {
-                bonusText.color = tierColor;
+                bonusText.color = UiTheme.Current.textSecondary;
             }
 
             if (timerFillImage != null)
@@ -215,10 +215,11 @@ namespace ProjectB.UI
 
             if (backgroundImage != null)
             {
+                backgroundImage.enabled = true;
                 UiTheme theme = UiTheme.Current;
                 backgroundImage.color = tier > 0
-                    ? UiTheme.WithAlpha(theme.surfaceRaised, 0.94f)
-                    : UiTheme.WithAlpha(theme.surface, 0.9f);
+                    ? UiTheme.WithAlpha(theme.surfaceRaised, 0.96f)
+                    : UiTheme.WithAlpha(theme.surface, 0.96f);
             }
         }
 
@@ -231,7 +232,7 @@ namespace ProjectB.UI
                 2 => theme.warning,
                 3 => theme.danger,
                 4 => theme.rarityEpic,
-                _ => theme.textPrimary
+                _ => theme.gold
             };
         }
     }

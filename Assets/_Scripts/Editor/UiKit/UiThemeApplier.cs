@@ -71,6 +71,27 @@ namespace ProjectB.EditorScripts.UiKit
             theme.ringThinSprite = UiKitGenerator.LoadFrame("kit_ring_thin");
             theme.vignetteSprite = UiKitGenerator.LoadFrame("kit_vignette");
             theme.starfieldSprite = UiKitGenerator.LoadFrame("kit_starfield");
+            theme.squircleSprite = UiKitGenerator.LoadFrame("kit_squircle");
+            theme.slotDashedSprite = UiKitGenerator.LoadFrame("kit_slot_dashed");
+            theme.cardHeaderSprite = UiKitGenerator.LoadFrame("kit_card_header");
+            theme.shineSprite = UiKitGenerator.LoadFrame("kit_shine");
+            theme.ribbonTailSprite = UiKitGenerator.LoadFrame("kit_ribbon_tail");
+            theme.menuBgSprite = UiKitGenerator.LoadFrame("kit_menu_bg");
+
+            // Sync v2 palette tokens onto the serialized asset.
+            theme.background = UiTheme.Hex(0x13122E);
+            theme.surface = UiTheme.Hex(0x282758);
+            theme.surfaceRaised = UiTheme.Hex(0x343370);
+            theme.surfaceSunken = UiTheme.Hex(0x13122C);
+            theme.outline = UiTheme.Hex(0x52509A);
+            theme.textDark = UiTheme.Hex(0x331D00);
+            theme.gold = UiTheme.Hex(0xFFD038);
+            theme.rarityLegendary = UiTheme.Hex(0xFFD038);
+            theme.overdriveTier1 = UiTheme.Hex(0xFFD038);
+            theme.hpFill = UiTheme.Hex(0xFF4F78);
+            theme.xpFill = UiTheme.Hex(0x6EE042);
+            theme.ad = UiTheme.Hex(0x32A8FF);
+            theme.primaryButton = new ButtonStyleColors { face = UiColor.Gold, label = UiColor.TextDark };
 
             theme.iconCoin = UiKitGenerator.LoadIcon("coin");
             theme.iconShard = UiKitGenerator.LoadIcon("shard");

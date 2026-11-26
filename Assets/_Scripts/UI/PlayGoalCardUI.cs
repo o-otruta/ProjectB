@@ -114,7 +114,12 @@ namespace ProjectB.UI
             }
 
             int target = Mathf.Max(1, goal.targetValue);
-            if (bestValueText != null) bestValueText.text = Loc.Format("ui.play.wave_progress", best, target);
+            if (bestValueText != null)
+            {
+                bestValueText.text = Core.LocalizationService.Current.ActiveEntries.ContainsKey("ui.play.wave_progress_dim")
+                    ? Loc.Format("ui.play.wave_progress_dim", best, target)
+                    : Loc.Format("ui.play.wave_progress", best, target);
+            }
             if (progressFill != null) progressFill.fillAmount = Mathf.Clamp01((float)best / target);
             if (rewardText != null)
             {
