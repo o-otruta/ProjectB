@@ -34,6 +34,13 @@ namespace ProjectB.EditorScripts.UiKit
             "coin", "shard", "ad", "heart", "speed", "sword", "clock", "skull", "star", "flame", "lock", "check", "play", "reroll"
         };
 
+        // Blender-rendered 3D voxel icons live directly at Assets/_UI/Kit/Icons/icon_<name>.png
+        // (ArtSources/Blender/render_menu_tab_icons.py) and must not be overwritten by 24x24 pixel art.
+        private static readonly HashSet<string> BlenderAuthoredIcons = new HashSet<string>
+        {
+            "tab_upgrades", "tab_abilities", "tab_play", "tab_achievements", "tab_bonus"
+        };
+
         public struct FrameSpec
         {
             public string name;
@@ -108,14 +115,21 @@ namespace ProjectB.EditorScripts.UiKit
 
             var iconPixels = new Dictionary<string, Color32[]>();
             var iconSizes = new Dictionary<string, int>();
+            var allIconNames = new List<string>();
             foreach (UiKitIcons.IconDef def in UiKitIcons.All())
             {
+                string file = $"{ICONS_DIR}/icon_{def.name}.png";
+                allIconNames.Add(def.name);
+                if (BlenderAuthoredIcons.Contains(def.name) && File.Exists(file))
+                {
+                    continue;
+                }
+
                 var canvas = new PixelCanvas(def.grid);
                 def.draw(canvas);
                 canvas.Bevel(def.mono ? 0f : 0.28f, def.mono ? 0.18f : 0.3f);
                 canvas.Outline(PixelCanvas.OutlineColor);
                 Color32[] pixels = canvas.ToPixels(ICON_SCALE, out int size);
-                string file = $"{ICONS_DIR}/icon_{def.name}.png";
                 WritePng(file, size, size, pixels);
                 iconPixels[def.name] = pixels;
                 iconSizes[def.name] = size;
@@ -127,7 +141,7 @@ namespace ProjectB.EditorScripts.UiKit
             {
                 ConfigureSprite($"{FRAMES_DIR}/{spec.name}.png", spec.border, spec.name == "kit_starfield");
             }
-            foreach (string name in iconPixels.Keys)
+            foreach (string name in allIconNames)
             {
                 ConfigureSprite($"{ICONS_DIR}/icon_{name}.png", Vector4.zero, false);
             }
