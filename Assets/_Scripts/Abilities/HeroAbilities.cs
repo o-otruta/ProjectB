@@ -47,8 +47,8 @@ namespace ProjectB.Abilities
         public int UnlockedPassiveSlots => abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : DEFAULT_PASSIVE_SLOTS;
 
         /// <summary>
-        /// Per-run ability level cap: <see cref="RunRulesConfig.baseAbilityMaxLevel"/> (5) raised by the Constellation
-        /// Path of Mastery (10 / 20 / 50). Applies to active and passive abilities alike.
+        /// Per-run ability level cap: <see cref="RunRulesConfig.baseAbilityMaxLevel"/> (3) raised by the Constellation
+        /// Path of Mastery (5 / 20 / 50). Applies to active and passive abilities alike.
         /// </summary>
         public int MaxAbilityLevel
         {

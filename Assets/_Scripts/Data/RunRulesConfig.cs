@@ -8,7 +8,7 @@ namespace ProjectB.Data
         public const string DEFAULT_RESOURCE_PATH = "RunRulesConfig";
 
         public const int DEFAULT_FREE_REROLLS_PER_RUN = 1;
-        public const int DEFAULT_BASE_ABILITY_MAX_LEVEL = 5;
+        public const int DEFAULT_BASE_ABILITY_MAX_LEVEL = 3;
         public const float DEFAULT_POST_HIT_IFRAMES = 0.18f;
         public const float DEFAULT_SECOND_WIND_HP_PERCENT = 0.30f;
         public const float DEFAULT_SECOND_WIND_INVULNERABILITY = 2.5f;

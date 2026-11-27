@@ -577,7 +577,7 @@ namespace ProjectB.Tests.EditMode
 
             var heroGo = Track(new GameObject("OverdriveHero"));
             var ha = CreateHeroAbilities(stats, bus, runStats, null, null, heroGo);
-            // Overdrive tiers past Lv 5 need the Constellation Path of Mastery; emulate Mythic Ascension (Lv 50 cap).
+            // Overdrive tiers past Lv 3 need the Constellation Path of Mastery; emulate Mythic Ascension (Lv 50 cap).
             ha.SetAbilityLevelCapOverride(50);
 
             var fireData = Track(ScriptableObject.CreateInstance<FireballAbilityData>());

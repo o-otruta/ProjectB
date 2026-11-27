@@ -13,8 +13,8 @@ using ProjectB.Player;
 namespace ProjectB.Tests.EditMode
 {
     /// <summary>
-    /// Ability level cap: base Lv 5 from <see cref="RunRulesConfig"/>, raised by the Constellation Path of Mastery
-    /// (Lv 10 / 20 / 50, highest unlocked star wins) and the <see cref="TalentNodeData.minUnlockedStars"/> gate.
+    /// Ability level cap: base Lv 3 from <see cref="RunRulesConfig"/>, raised by the Constellation Path of Mastery
+    /// (Lv 5 / 20 / 50, highest unlocked star wins) and the <see cref="TalentNodeData.minUnlockedStars"/> gate.
     /// </summary>
     public class AbilityLevelCapTests
     {
@@ -106,24 +106,24 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void BaseCap_IsFiveFromRunRules_AndUpgradesPastItAreIgnored()
+        public void BaseCap_IsThreeFromRunRules_AndUpgradesPastItAreIgnored()
         {
             var rules = Resources.Load<RunRulesConfig>(RunRulesConfig.DEFAULT_RESOURCE_PATH);
             Assert.IsNotNull(rules);
-            Assert.AreEqual(5, rules.baseAbilityMaxLevel, "Base ability cap is Lv 5");
+            Assert.AreEqual(3, rules.baseAbilityMaxLevel, "Base ability cap is Lv 3");
 
             var ha = CreateHeroAbilities(new HeroRuntimeStats(), rules);
-            Assert.AreEqual(5, ha.MaxAbilityLevel);
+            Assert.AreEqual(3, ha.MaxAbilityLevel);
 
             Assert.IsTrue(ha.AddAbility(MakePassive("BattleFury")));
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 2; i++)
             {
                 Assert.IsTrue(ha.UpgradeAbility("BattleFury", ModifierType.Damage, 1f));
             }
-            Assert.AreEqual(5, ha.GetAbilityLevel("BattleFury"));
+            Assert.AreEqual(3, ha.GetAbilityLevel("BattleFury"));
             Assert.IsTrue(ha.IsAbilityAtMaxLevel("BattleFury"));
             Assert.IsFalse(ha.UpgradeAbility("BattleFury", ModifierType.Damage, 1f));
-            Assert.AreEqual(5, ha.GetAbilityLevel("BattleFury"));
+            Assert.AreEqual(3, ha.GetAbilityLevel("BattleFury"));
 
             // Fallback without config uses the same default.
             Assert.AreEqual(RunRulesConfig.DEFAULT_BASE_ABILITY_MAX_LEVEL, CreateHeroAbilities(new HeroRuntimeStats()).MaxAbilityLevel);
@@ -141,7 +141,7 @@ namespace ProjectB.Tests.EditMode
             var stats = new HeroRuntimeStats(null, null, mgr);
             Assert.AreEqual(0, stats.TalentAbilityLevelCap);
             var ha = CreateHeroAbilities(stats);
-            Assert.AreEqual(5, ha.MaxAbilityLevel);
+            Assert.AreEqual(3, ha.MaxAbilityLevel);
 
             Assert.AreEqual(TalentUnlockResult.Success, mgr.TryUnlock("lv10"));
             stats.ApplyTalentBonuses(mgr);
@@ -195,8 +195,8 @@ namespace ProjectB.Tests.EditMode
             mgr.InitializeRunPool();
             Assert.AreEqual(2, mgr.GetRandomCards(3).Count);
 
-            for (int i = 0; i < 4; i++) applier.ApplyCard(mod, mgr);
-            Assert.AreEqual(5, ha.GetAbilityLevel("IronSkin"));
+            for (int i = 0; i < 2; i++) applier.ApplyCard(mod, mgr);
+            Assert.AreEqual(3, ha.GetAbilityLevel("IronSkin"));
 
             var offered = mgr.GetRandomCards(3);
             Assert.AreEqual(1, offered.Count);
@@ -211,15 +211,15 @@ namespace ProjectB.Tests.EditMode
             var mod = Track(ScriptableObject.CreateInstance<AbilityModifierCardData>());
             mod.targetAbilityId = "SwiftBoots";
 
-            for (int i = 0; i < 3; i++) ha.UpgradeAbility("SwiftBoots", ModifierType.Damage, 1f);
-            Assert.AreEqual(4, ha.GetAbilityLevel("SwiftBoots"));
+            ha.UpgradeAbility("SwiftBoots", ModifierType.Damage, 1f);
+            Assert.AreEqual(2, ha.GetAbilityLevel("SwiftBoots"));
             string badge = CardSelectionUI.FormatLevelBadge(mod, ha, out _);
             StringAssert.Contains(Loc.Get("ui.card.max", "MAX"), badge, "MAX label in the current language");
-            StringAssert.Contains("5", badge);
+            StringAssert.Contains("3", badge);
         }
 
         [Test]
-        public void TalentTreeAsset_HasPathOfMastery_10_20_50()
+        public void TalentTreeAsset_HasPathOfMastery_5_20_50()
         {
             var tree = Resources.Load<TalentTreeData>(TalentTreeData.RESOURCE_PATH);
             Assert.IsNotNull(tree);
@@ -231,11 +231,11 @@ namespace ProjectB.Tests.EditMode
             Assert.IsNotNull(lv20);
             Assert.IsNotNull(lv50);
 
-            Assert.AreEqual(10f, lv10.GetEffectValue(TalentEffectType.AbilityMaxLevel));
+            Assert.AreEqual(5f, lv10.GetEffectValue(TalentEffectType.AbilityMaxLevel), "First mastery star raises the cap to Lv 5");
             Assert.AreEqual(20f, lv20.GetEffectValue(TalentEffectType.AbilityMaxLevel));
             Assert.AreEqual(50f, lv50.GetEffectValue(TalentEffectType.AbilityMaxLevel));
 
-            // Lv 10 is a cheap root star (also for coins), Lv 20 sits mid-tree, Lv 50 is the end-game star.
+            // Lv 5 is a cheap root star (also for coins), Lv 20 sits mid-tree, Lv 50 is the end-game star.
             Assert.AreEqual(0, lv10.prerequisiteIds.Count);
             Assert.Greater(lv10.coinCost, 0);
             Assert.LessOrEqual(lv10.shardCost, 2);

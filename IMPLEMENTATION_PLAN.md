@@ -139,7 +139,7 @@
 ### 2.1 Система способностей — архитектура
 - [x] Базовый класс `AbilityBase` (MonoBehaviour), разделение на `ActiveAbility` и `PassiveAbility`
 - [x] ScriptableObject `AbilityData` (имя, описание, тип, префаб, статы, редкость, `unlockedByDefault`)
-- [x] `HeroAbilities` на герое — списки активных и пассивных способностей, потолок уровня Lv 5 → 10 / 20 / 50 через «Путь мастерства» Созвездия
+- [x] `HeroAbilities` на герое — списки активных и пассивных способностей, потолок уровня Lv 3 → 5 / 20 / 50 через «Путь мастерства» Созвездия
 - [x] Object pooling для снарядов способностей
 - [x] Система модификаторов `ApplyModifier(ModifierType, value)`
 - [x] Слоты способностей `2+2 → 6+6` (`AbilitySlotService` + `IAbilitySlotBonusProvider`; база снижена с 3+3 в 12.7): ачивки дают 1+1 (первый мини-босс → активный, Golem → пассивный), Созвездия — 3+3
@@ -406,7 +406,7 @@
 - [x] **16.1.** Рост плотности, ускорение спавна (`0.50s → 0.16s`), перекрытие волн (`≤ 30%` живых), рост стай и смягчение HP-губки + «орды-коридоры» (`CorridorHorde`) каждые ~10 волн начиная с W19.
 - [x] **16.2.** Три новых врага W30–W90: W32 `Splitter Slime`, W46 `Frost Wisp`, W61 `Siege Golemite` (двухфазный «Каменный панцирь → Ядро»), воксельные модели, префабы, волны знакомства и `EnemyData.icon` (`VoxelIconGenerator`).
 - [x] **16.3.** Модификаторы волн (`WaveMutatorData` SO): `Fog`, `Elite Surge`, `Glass Horde`.
-- [x] **16.6. Созвездие: «Путь мастерства» и ребаланс** — потолок уровня способностей Lv 5 (`RunRulesConfig.baseAbilityMaxLevel`) → 10 / 20 / 50 (`TalentNodeType.Mastery`, эффект `AbilityMaxLevel`, гейт `minUnlockedStars`), фильтр модификаторов на потолке и бейдж `MAX`; ребаланс узлов (Keystone 8 → 12, асимметричные цены внешнего кольца, +8% Damage, +25% Healing); дерево — 40 узлов / 173 Осколка; тесты `AbilityLevelCapTests`.
+- [x] **16.6. Созвездие: «Путь мастерства» и ребаланс** — потолок уровня способностей Lv 3 (`RunRulesConfig.baseAbilityMaxLevel`, было 5) → 5 / 20 / 50 (было 10 / 20 / 50) (`TalentNodeType.Mastery`, эффект `AbilityMaxLevel`, гейт `minUnlockedStars`), фильтр модификаторов на потолке и бейдж `MAX`; ребаланс узлов (Keystone 8 → 12, асимметричные цены внешнего кольца, +8% Damage, +25% Healing); дерево — 40 узлов / 173 Осколка; тесты `AbilityLevelCapTests`.
 - [ ] **16.4.** Режим `Ascension A1–A10` (`AscensionLevelData` SO) после победы над Demon Lord (допустим перенос в Post-Launch).
 - [ ] **16.5.** Тесты Спринта 16.
 

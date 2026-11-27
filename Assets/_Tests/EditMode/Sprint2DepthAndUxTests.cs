@@ -247,11 +247,11 @@ namespace ProjectB.Tests.EditMode
 
             heroAbilities.AddAbility(shooterData);
             Assert.AreEqual("Lv 1 -> Lv 2", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _));
-            for (int i = 0; i < 3; i++) heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
-            Assert.AreEqual("Lv 4 -> Lv 5 MAX", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _), "Base cap Lv 5");
+            heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
+            Assert.AreEqual("Lv 2 -> Lv 3 MAX", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _), "Base cap Lv 3");
             heroAbilities.SetAbilityLevelCapOverride(10);
             heroAbilities.UpgradeAbility("Shooter", ModifierType.Damage, 5f);
-            Assert.AreEqual("Lv 5 -> Lv 6", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _));
+            Assert.AreEqual("Lv 3 -> Lv 4", CardSelectionUI.FormatLevelBadge(modCard, heroAbilities, out _));
 
             // Bounce scale curve
             Assert.AreEqual(0f, CardSelectionUI.EvaluateBounceScale(0f), 0.001f);
