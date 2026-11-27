@@ -495,7 +495,7 @@ namespace ProjectB.UI
             row.sizeDelta = Vector2.zero;
             var rowLayout = rowGo.GetComponent<HorizontalLayoutGroup>();
             rowLayout.spacing = 12f;
-            rowLayout.padding = new RectOffset(8, 8, 0, 0);
+            rowLayout.padding = new RectOffset(40, 40, 0, 0);
             rowLayout.childAlignment = TextAnchor.MiddleLeft;
             rowLayout.childControlWidth = true;
             rowLayout.childControlHeight = true;
@@ -559,7 +559,7 @@ namespace ProjectB.UI
             bg.type = Image.Type.Sliced;
 
             var layout = chipGo.GetComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(30, 30, 0, 0);
+            layout.padding = new RectOffset(28, 28, 0, 6);
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;

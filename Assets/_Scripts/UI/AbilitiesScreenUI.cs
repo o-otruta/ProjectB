@@ -84,6 +84,9 @@ namespace ProjectB.UI
         private bool eventsSubscribed;
         private Coroutine populateCoroutine;
         private int lastAppliedFilter = -1;
+        private int unlockedActiveCount;
+        private int unlockedPassiveCount;
+        private int unlockedSynergyCount;
 
         private SaveManager subscribedSaveManager;
         private AbilitySlotService subscribedSlotService;
@@ -412,16 +415,19 @@ namespace ProjectB.UI
 
         private void RefreshHeader()
         {
-            int unlockedCount = 0;
-            int totalCount = activeAbilities.Count + passiveAbilities.Count;
+            int unlockedActive = 0;
             for (int i = 0; i < activeAbilities.Count; i++)
             {
-                if (IsAbilityUnlocked(activeAbilities[i])) unlockedCount++;
+                if (IsAbilityUnlocked(activeAbilities[i])) unlockedActive++;
             }
+            int unlockedPassive = 0;
             for (int i = 0; i < passiveAbilities.Count; i++)
             {
-                if (IsAbilityUnlocked(passiveAbilities[i])) unlockedCount++;
+                if (IsAbilityUnlocked(passiveAbilities[i])) unlockedPassive++;
             }
+
+            int unlockedCount = unlockedActive + unlockedPassive;
+            int totalCount = activeAbilities.Count + passiveAbilities.Count;
 
             int synergyCount = allSynergies.Count;
             int unlockedSynergies = 0;
@@ -433,6 +439,10 @@ namespace ProjectB.UI
                     unlockedSynergies++;
                 }
             }
+
+            unlockedActiveCount = unlockedActive;
+            unlockedPassiveCount = unlockedPassive;
+            unlockedSynergyCount = unlockedSynergies;
 
             int act = abilitySlotService != null ? abilitySlotService.MaxActiveSlots : AbilitySlotService.BASE_ACTIVE_SLOTS;
             int pas = abilitySlotService != null ? abilitySlotService.MaxPassiveSlots : AbilitySlotService.BASE_PASSIVE_SLOTS;
@@ -455,6 +465,7 @@ namespace ProjectB.UI
             }
 
             headerDirty = false;
+            UpdateFilterVisuals();
         }
 
         private void EnsureCategoryPopulatedAndUpdated(AbilityCollectionFilter targetFilter, bool immediate)
@@ -651,11 +662,33 @@ namespace ProjectB.UI
             for (int i = 0; filterBackgrounds != null && i < filterBackgrounds.Length; i++)
             {
                 bool selected = i == (int)filter;
-                if (filterBackgrounds[i] != null) filterBackgrounds[i].color = selected ? theme.accent : UiTheme.WithAlpha(theme.surfaceRaised, 0f);
+                if (filterBackgrounds[i] != null)
+                {
+                    filterBackgrounds[i].color = selected ? theme.accent : theme.surfaceRaised;
+                    if (theme.surfaceMaterial != null && filterBackgrounds[i].material == theme.surfaceMaterial)
+                    {
+                        filterBackgrounds[i].material = null;
+                    }
+                }
                 if (filterLabels != null && i < filterLabels.Length && filterLabels[i] != null)
                 {
                     filterLabels[i].color = selected ? theme.white : theme.textSecondary;
+                    if (catalogIndexesBuilt)
+                    {
+                        string chipText = i switch
+                        {
+                            (int)AbilityCollectionFilter.Passive => $"{Loc.Get("ui.abilities.passive", "Passive")}  {unlockedPassiveCount}/{passiveAbilities.Count}",
+                            (int)AbilityCollectionFilter.Synergies => $"{Loc.Get("ui.abilities.synergies", "Synergies")}  {unlockedSynergyCount}/{allSynergies.Count}",
+                            _ => $"{Loc.Get("ui.abilities.active", "Active")}  {unlockedActiveCount}/{activeAbilities.Count}"
+                        };
+                        SetTextIfChanged(filterLabels[i], chipText);
+                    }
                 }
+            }
+
+            if (filterButtons[0].transform.parent is RectTransform filterParent)
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(filterParent);
             }
         }
 

@@ -154,6 +154,7 @@ MonoBehaviour:
   style: 3
   applySize: 1
   sizeScale: 0.9
+  useHeavyFlat: 0
 --- !u!114 &7766286392767300275
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -328,6 +329,7 @@ MonoBehaviour:
   style: 3
   applySize: 1
   sizeScale: 0.9
+  useHeavyFlat: 0
 --- !u!114 &4537415536866174434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -366,7 +368,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6867659482764249440
 RectTransform:
   m_ObjectHideFlags: 0
@@ -538,8 +540,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 35.2
-  m_fontSizeBase: 35.2
+  m_fontSize: 33
+  m_fontSizeBase: 33
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -597,7 +599,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.UI.ThemedText
   style: 2
   applySize: 1
-  sizeScale: 0.8
+  sizeScale: 0.75
+  useHeavyFlat: 0
 --- !u!114 &563184559391568590
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -612,9 +615,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 46
+  m_MinHeight: 42
   m_PreferredWidth: -1
-  m_PreferredHeight: 46
+  m_PreferredHeight: 42
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -771,6 +774,7 @@ MonoBehaviour:
   style: 4
   applySize: 1
   sizeScale: 1
+  useHeavyFlat: 0
 --- !u!1 &2970006657744813254
 GameObject:
   m_ObjectHideFlags: 0
@@ -924,6 +928,7 @@ MonoBehaviour:
   style: 2
   applySize: 1
   sizeScale: 1
+  useHeavyFlat: 0
 --- !u!1 &2997062794634826301
 GameObject:
   m_ObjectHideFlags: 0
@@ -1165,6 +1170,7 @@ MonoBehaviour:
   style: 4
   applySize: 1
   sizeScale: 1
+  useHeavyFlat: 0
 --- !u!1 &5721700068338971609
 GameObject:
   m_ObjectHideFlags: 0
@@ -1256,8 +1262,8 @@ MonoBehaviour:
   m_IgnoreLayout: 0
   m_MinWidth: -1
   m_MinHeight: -1
-  m_PreferredWidth: 48
-  m_PreferredHeight: 48
+  m_PreferredWidth: 38
+  m_PreferredHeight: 38
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -1371,7 +1377,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 4}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 88, y: 88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4647387820937759160
 CanvasRenderer:
@@ -1429,7 +1435,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6942738379065176029
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1647,12 +1653,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
-    m_Left: 28
+    m_Left: 24
     m_Right: 24
     m_Top: 22
     m_Bottom: 30
   m_ChildAlignment: 0
-  m_Spacing: 22
+  m_Spacing: 20
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 1
@@ -1756,7 +1762,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
     m_Left: 10
-    m_Right: 20
+    m_Right: 18
     m_Top: 4
     m_Bottom: 4
   m_ChildAlignment: 3
@@ -1784,7 +1790,7 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: -1
-  m_PreferredHeight: 60
+  m_PreferredHeight: 52
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -1879,8 +1885,8 @@ MonoBehaviour:
   m_IgnoreLayout: 0
   m_MinWidth: -1
   m_MinHeight: -1
-  m_PreferredWidth: 48
-  m_PreferredHeight: 48
+  m_PreferredWidth: 38
+  m_PreferredHeight: 38
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -2100,6 +2106,7 @@ MonoBehaviour:
   style: 4
   applySize: 1
   sizeScale: 1
+  useHeavyFlat: 0
 --- !u!1 &7404138935502807240
 GameObject:
   m_ObjectHideFlags: 0
@@ -2168,8 +2175,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Description
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 08f47e1d20a54a5479988adef3f50071, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: 9fafc264980f6f24392350755d09efe2, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
+  m_sharedMaterial: {fileID: 2683604384249215165, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2193,8 +2200,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 27.2
-  m_fontSizeBase: 27.2
+  m_fontSize: 26.400002
+  m_fontSizeBase: 26.400002
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2250,9 +2257,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d64faeb5ee2793b42b685164c140e9be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.UI.ThemedText
-  style: 3
+  style: 4
   applySize: 1
-  sizeScale: 0.85
+  sizeScale: 1.1
+  useHeavyFlat: 0
 --- !u!1 &8056009503127629620
 GameObject:
   m_ObjectHideFlags: 0
@@ -2421,10 +2429,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
-  m_MinWidth: 132
-  m_MinHeight: 132
-  m_PreferredWidth: 132
-  m_PreferredHeight: 132
+  m_MinWidth: 116
+  m_MinHeight: 116
+  m_PreferredWidth: 116
+  m_PreferredHeight: 116
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1

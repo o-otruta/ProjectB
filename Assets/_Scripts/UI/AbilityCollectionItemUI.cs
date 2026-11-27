@@ -120,11 +120,12 @@ namespace ProjectB.UI
             UiTheme theme = UiTheme.Current;
             Color rarityColor = theme.GetRarityColor(data.rarity);
             Color lockedRarity = UiTheme.Shade(rarityColor, 0.45f);
+            Color iconFrameColor = data.rarity == CardRarity.Common ? theme.outline : rarityColor;
 
             if (cardBackground != null) cardBackground.color = isUnlocked ? theme.surface : theme.surfaceSunken;
             if (frameImage != null) frameImage.color = isUnlocked ? rarityColor : UiTheme.WithAlpha(lockedRarity, 0.7f);
             if (rarityStripe != null) rarityStripe.color = isUnlocked ? rarityColor : lockedRarity;
-            if (iconBackground != null) iconBackground.color = isUnlocked ? theme.surfaceRaised : theme.surfaceSunken;
+            if (iconBackground != null) iconBackground.color = isUnlocked ? iconFrameColor : theme.surfaceSunken;
             if (lockBadge != null && lockBadge.activeSelf != !isUnlocked) lockBadge.SetActive(!isUnlocked);
 
             bool hasIcon = data.icon != null;
@@ -164,7 +165,7 @@ namespace ProjectB.UI
                 string typeLabel = data.type == AbilityType.Passive ? Loc.Get("ui.abilities.passive", "Passive") : Loc.Get("ui.abilities.active", "Active");
                 string rarityLabel = Loc.Get($"ui.rarity.{data.rarity.ToString().ToLowerInvariant()}", data.rarity.ToString());
                 SetTextIfChanged(metaTagText, $"{typeLabel} • {rarityLabel}");
-                metaTagText.color = isUnlocked ? rarityColor : theme.textDisabled;
+                metaTagText.color = isUnlocked ? (data.rarity == CardRarity.Common ? theme.textSecondary : rarityColor) : theme.textDisabled;
             }
 
             if (descriptionText != null)
@@ -242,7 +243,7 @@ namespace ProjectB.UI
             if (cardBackground != null) cardBackground.color = isUnlocked ? theme.surface : theme.surfaceSunken;
             if (frameImage != null) frameImage.color = isUnlocked ? accentColor : UiTheme.WithAlpha(UiTheme.Shade(accentColor, 0.45f), 0.7f);
             if (rarityStripe != null) rarityStripe.color = isUnlocked ? accentColor : UiTheme.Shade(accentColor, 0.45f);
-            if (iconBackground != null) iconBackground.color = theme.surfaceRaised;
+            if (iconBackground != null) iconBackground.color = isUnlocked ? accentColor : UiTheme.Shade(accentColor, 0.45f);
             if (lockBadge != null && lockBadge.activeSelf != !isUnlocked) lockBadge.SetActive(!isUnlocked);
 
             Sprite icon = synergy.icon;
@@ -379,7 +380,7 @@ namespace ProjectB.UI
                 if (view.label != null)
                 {
                     SetTextIfChanged(view.label, data.name);
-                    view.label.color = data.unlocked ? theme.shard : theme.textDisabled;
+                    view.label.color = data.unlocked ? theme.shard : UiTheme.WithAlpha(theme.textSecondary, 0.78f);
                 }
                 if (view.background != null)
                 {

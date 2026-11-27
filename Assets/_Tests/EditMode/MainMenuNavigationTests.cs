@@ -11,6 +11,7 @@ using UnityEngine.UI;
 using ProjectB.Abilities;
 using ProjectB.Core;
 using ProjectB.Data;
+using ProjectB.Data.Platform;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
 using ProjectB.UI;
@@ -439,6 +440,172 @@ namespace ProjectB.Tests.EditMode
             {
                 if (openedHere) EditorSceneManager.CloseScene(scene, true);
             }
+        }
+
+        [Test]
+        public void MainMenuScene_AbilitiesAndAchievements_ShareUnifiedHeaderFilterAndCardStyle()
+        {
+            UiTheme theme = UiTheme.Current;
+
+            // 1. Card prefabs share clean surface + 116x116 icon frame (no harsh full-card frame or stripe).
+            GameObject abilityPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(AbilityItemPrefabPath);
+            GameObject achievementPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Prefabs/UI/AchievementItem.prefab");
+            Assert.IsNotNull(abilityPrefab);
+            Assert.IsNotNull(achievementPrefab);
+
+            Transform abilityFrame = abilityPrefab.transform.Find("Frame");
+            Transform abilityStripe = abilityPrefab.transform.Find("RarityStripe");
+            Assert.IsNotNull(abilityFrame);
+            Assert.IsNotNull(abilityStripe);
+            Assert.IsFalse(abilityFrame.gameObject.activeSelf, "AbilityCollectionItem Frame must be inactive to match AchievementItem");
+            Assert.IsFalse(abilityStripe.gameObject.activeSelf, "AbilityCollectionItem RarityStripe must be inactive to match AchievementItem");
+
+            var abilityIconLe = abilityPrefab.transform.Find("IconBg")?.GetComponent<LayoutElement>();
+            var achIconLe = achievementPrefab.transform.Find("TopRow/IconFrame")?.GetComponent<LayoutElement>();
+            Assert.IsNotNull(abilityIconLe);
+            Assert.IsNotNull(achIconLe);
+            Assert.AreEqual(achIconLe.preferredWidth, abilityIconLe.preferredWidth, 0.01f);
+            Assert.AreEqual(achIconLe.preferredHeight, abilityIconLe.preferredHeight, 0.01f);
+
+            // 2. MainMenu scene alignment & filter pill styling.
+            Scene loaded = SceneManager.GetSceneByPath(MainMenuPath);
+            bool openedHere = !loaded.isLoaded;
+            Scene scene = openedHere ? EditorSceneManager.OpenScene(MainMenuPath, OpenSceneMode.Additive) : loaded;
+            try
+            {
+                Transform safe = null;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    if (root.name == "Canvas")
+                    {
+                        safe = root.transform.Find("SafeAreaRoot");
+                        break;
+                    }
+                }
+                Assert.IsNotNull(safe, "Canvas/SafeAreaRoot");
+
+                Transform abPanel = safe.Find("AbilitiesPanel");
+                Transform achPanel = safe.Find("AchievementsPanel");
+                Assert.IsNotNull(abPanel);
+                Assert.IsNotNull(achPanel);
+
+                foreach (LayoutMode mode in new[] { LayoutMode.Portrait, LayoutMode.Landscape })
+                {
+                    RectPreset abTitle = abPanel.Find("Title").GetComponent<ResponsiveRect>().GetPreset(mode);
+                    RectPreset achTitle = achPanel.Find("Title").GetComponent<ResponsiveRect>().GetPreset(mode);
+                    Assert.AreEqual(achTitle.anchoredPosition, abTitle.anchoredPosition, $"Title position must match in {mode}");
+                    Assert.AreEqual(achTitle.sizeDelta, abTitle.sizeDelta, $"Title size must match in {mode}");
+
+                    RectPreset abSub = abPanel.Find("HeaderChips").GetComponent<ResponsiveRect>().GetPreset(mode);
+                    RectPreset achSub = achPanel.Find("Summary").GetComponent<ResponsiveRect>().GetPreset(mode);
+                    Assert.AreEqual(achSub.anchoredPosition, abSub.anchoredPosition, $"Subtitle band position must match in {mode}");
+                    Assert.AreEqual(achSub.sizeDelta, abSub.sizeDelta, $"Subtitle band size must match in {mode}");
+                }
+
+                Transform filter = abPanel.Find("Filter");
+                Assert.IsNotNull(filter);
+                var filterImg = filter.GetComponent<Image>();
+                Assert.IsNotNull(filterImg);
+                Assert.LessOrEqual(filterImg.color.a, 0.01f, "Filter container must be frameless");
+                Assert.AreNotSame(theme.surfaceMaterial, filterImg.material, "Filter container must not use ToySurface material");
+
+                RectPreset filterPortrait = filter.GetComponent<ResponsiveRect>().GetPreset(LayoutMode.Portrait);
+                RectPreset achScrollPortrait = achPanel.Find("ScrollView").GetComponent<ResponsiveRect>().GetPreset(LayoutMode.Portrait);
+                float achCategoryTop = achScrollPortrait.anchoredPosition.y + achScrollPortrait.sizeDelta.y * 0.5f;
+                Assert.AreEqual(achCategoryTop, filterPortrait.anchoredPosition.y, 0.01f, "Filter top aligns with Achievements CategoryBar top in Portrait");
+
+                foreach (string chipName in new[] { "FilterActive", "FilterPassive", "FilterSynergies" })
+                {
+                    Transform chip = filter.Find(chipName);
+                    Assert.IsNotNull(chip, chipName);
+                    var chipImg = chip.GetComponent<Image>();
+                    Assert.IsNotNull(chipImg);
+                    Assert.AreSame(theme.pillSprite, chipImg.sprite, $"{chipName} must use pillSprite");
+                    Assert.AreNotSame(theme.surfaceMaterial, chipImg.material, $"{chipName} must not use ToySurface material");
+                    var chipLe = chip.GetComponent<LayoutElement>();
+                    Assert.IsNotNull(chipLe);
+                    Assert.AreEqual(72f, chipLe.minHeight, 0.01f, $"{chipName} height matches AchievementScreenUI chips");
+
+                    Transform labelT = chip.Find("Label");
+                    Assert.IsNotNull(labelT);
+                    Assert.IsNull(labelT.GetComponent<LocalizedText>(), $"{chipName}/Label must not keep LocalizedText over dynamic counts");
+                }
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+
+            // 3. Runtime AbilitiesScreenUI populates filter chip counts and applies pill colors (on isolated test objects).
+            AbilityCatalog abilityCatalog = AssetDatabase.LoadAssetAtPath<AbilityCatalog>(AbilityCatalogPath);
+            SynergyCatalog synergyCatalog = Resources.Load<SynergyCatalog>("SynergyCatalog");
+            var save = new SaveManager(new InMemorySaveStorage());
+            disposables.Add(save);
+            TalentTreeData realTree = Resources.Load<TalentTreeData>(TalentTreeData.RESOURCE_PATH);
+            var talentMgr = new TalentTreeManager(save, realTree, null);
+            disposables.Add(talentMgr);
+
+            var rootGo = Track(new GameObject("TestCanvas", typeof(RectTransform), typeof(Canvas)));
+            var testPanelGo = new GameObject("AbilitiesPanel", typeof(RectTransform), typeof(CanvasGroup), typeof(AbilitiesScreenUI));
+            testPanelGo.transform.SetParent(rootGo.transform, false);
+            testPanelGo.SetActive(false);
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            contentGo.transform.SetParent(testPanelGo.transform, false);
+
+            var filterBtns = new Button[3];
+            var filterBgs = new Image[3];
+            var filterTxts = new TMP_Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var chipGo = new GameObject($"Filter_{i}", typeof(RectTransform), typeof(Image), typeof(Button));
+                chipGo.transform.SetParent(testPanelGo.transform, false);
+                var txtGo = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+                txtGo.transform.SetParent(chipGo.transform, false);
+                filterBtns[i] = chipGo.GetComponent<Button>();
+                filterBgs[i] = chipGo.GetComponent<Image>();
+                filterTxts[i] = txtGo.GetComponent<TMP_Text>();
+            }
+
+            var abUi = testPanelGo.GetComponent<AbilitiesScreenUI>();
+            SetPrivate(abUi, "abilityCatalog", abilityCatalog);
+            SetPrivate(abUi, "synergyCatalog", synergyCatalog);
+            SetPrivate(abUi, "contentContainer", contentGo.transform);
+            SetPrivate(abUi, "itemPrefab", abilityPrefab.GetComponent<AbilityCollectionItemUI>());
+            SetPrivate(abUi, "filterButtons", filterBtns);
+            SetPrivate(abUi, "filterBackgrounds", filterBgs);
+            SetPrivate(abUi, "filterLabels", filterTxts);
+            abUi.Construct(save, null, null, talentMgr, null);
+            abUi.Show();
+
+            Assert.AreEqual(theme.accent, filterBgs[0].color);
+            Assert.AreEqual(theme.surfaceRaised, filterBgs[1].color);
+            Assert.AreEqual(theme.surfaceRaised, filterBgs[2].color);
+            StringAssert.Contains($"/{abilityCatalog.abilities.FindAll(a => a != null && a.type != AbilityType.Passive).Count}", filterTxts[0].text);
+            StringAssert.Contains($"/{abilityCatalog.abilities.FindAll(a => a != null && a.type == AbilityType.Passive).Count}", filterTxts[1].text);
+            StringAssert.Contains($"/{synergyCatalog.synergies.Count}", filterTxts[2].text);
+
+            abUi.SetFilter(AbilityCollectionFilter.Passive);
+            Assert.AreEqual(theme.surfaceRaised, filterBgs[0].color);
+            Assert.AreEqual(theme.accent, filterBgs[1].color);
+        }
+
+        [Test]
+        public void ScreenTransition_StopAndReset_WhenIdle_DoesNotClobberResponsivePosition()
+        {
+            var go = Track(new GameObject("Panel", typeof(RectTransform), typeof(CanvasGroup), typeof(ScreenTransition)));
+            var rt = go.GetComponent<RectTransform>();
+            var transition = go.GetComponent<ScreenTransition>();
+            transition.EditorSetup(rt, new Vector2(0f, -48f));
+
+            // Simulate prior Portrait PlayIn capturing restPosition, followed by Landscape ResponsiveRect repositioning while idle.
+            SetPrivate(transition, "restPosition", new Vector2(0f, 25f));
+            SetPrivate(transition, "hasRestPosition", true);
+            rt.anchoredPosition = new Vector2(100f, -60f);
+
+            transition.StopAndReset();
+
+            Assert.AreEqual(new Vector2(100f, -60f), rt.anchoredPosition);
+            Assert.IsFalse((bool)GetPrivate(transition, "hasRestPosition"));
         }
     }
 }

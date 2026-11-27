@@ -34,10 +34,12 @@ namespace ProjectB.UI
 
         public void StopAndReset()
         {
+            bool wasSliding = slideTarget != null && UiTween.IsTweening(slideTarget);
             UiTween.Kill(Group, complete: true);
             if (slideTarget != null) UiTween.Kill(slideTarget, complete: true);
             UiTween.Kill(transform, complete: true);
-            if (hasRestPosition && slideTarget != null) slideTarget.anchoredPosition = restPosition;
+            if (wasSliding && hasRestPosition && slideTarget != null) slideTarget.anchoredPosition = restPosition;
+            hasRestPosition = false;
             Group.alpha = 1f;
         }
 

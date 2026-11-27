@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using ProjectB.Data.Platform;
 using ProjectB.UI;
 using static ProjectB.EditorScripts.UiKit.UiBuilder;
 
@@ -46,98 +47,225 @@ namespace ProjectB.EditorScripts.UiKit
 
         public static void RestyleAbilitiesHeaderReadouts(Scene scene)
         {
-            Transform headerChips = FindChildRecursive(scene, "AbilitiesPanel/HeaderChips");
-            if (headerChips == null) return;
+            Transform abilitiesPanel = FindChildRecursive(scene, "AbilitiesPanel");
+            if (abilitiesPanel == null) return;
 
-            if (headerChips.TryGetComponent(out HorizontalLayoutGroup rowHl))
+            Transform title = abilitiesPanel.Find("Title");
+            if (title != null)
             {
-                rowHl.spacing = 36f;
-                rowHl.padding = new RectOffset(0, 0, 0, 0);
-                rowHl.childAlignment = TextAnchor.MiddleCenter;
-                rowHl.childControlWidth = true;
-                rowHl.childControlHeight = true;
-                rowHl.childForceExpandWidth = false;
-                rowHl.childForceExpandHeight = true;
-                EditorUtility.SetDirty(rowHl);
+                SetResponsivePresets(Rt(title),
+                    Preset(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -28f), new Vector2(-80f, 80f)),
+                    Preset(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(-80f, 68f)));
+                EditorUtility.SetDirty(title.gameObject);
             }
 
-            foreach (string chipName in new[] { "CollectedChip", "SynergiesChip", "SlotsChip" })
+            Transform headerChips = abilitiesPanel.Find("HeaderChips");
+            if (headerChips != null)
             {
-                Transform chip = headerChips.Find(chipName);
-                if (chip == null) continue;
+                SetResponsivePresets(Rt(headerChips),
+                    Preset(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(-80f, 40f)),
+                    Preset(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -88f), new Vector2(-80f, 36f)));
 
-                foreach (ThemedButton tb in chip.GetComponents<ThemedButton>())
+                if (headerChips.TryGetComponent(out HorizontalLayoutGroup rowHl))
                 {
-                    Object.DestroyImmediate(tb);
-                }
-                foreach (Button btn in chip.GetComponents<Button>())
-                {
-                    Object.DestroyImmediate(btn);
-                }
-
-                var tg = GetOrAdd<ThemedGraphic>(chip.gameObject);
-                tg.Configure(UiColor.SurfaceSunken, 0f, UiSprite.Pill);
-                EditorUtility.SetDirty(tg);
-
-                if (chip.TryGetComponent(out Image img))
-                {
-                    img.raycastTarget = false;
-                    if (img.material == Theme.surfaceMaterial) img.material = null;
-                    EditorUtility.SetDirty(img);
+                    rowHl.spacing = 32f;
+                    rowHl.padding = new RectOffset(0, 0, 0, 0);
+                    rowHl.childAlignment = TextAnchor.MiddleCenter;
+                    rowHl.childControlWidth = true;
+                    rowHl.childControlHeight = true;
+                    rowHl.childForceExpandWidth = false;
+                    rowHl.childForceExpandHeight = true;
+                    EditorUtility.SetDirty(rowHl);
                 }
 
-                if (chip.TryGetComponent(out HorizontalLayoutGroup hl))
+                foreach (string chipName in new[] { "CollectedChip", "SynergiesChip", "SlotsChip" })
                 {
-                    hl.padding = new RectOffset(4, 4, 0, 0);
-                    hl.spacing = 8f;
-                    hl.childAlignment = TextAnchor.MiddleCenter;
-                    hl.childControlWidth = true;
-                    hl.childControlHeight = true;
-                    hl.childForceExpandWidth = false;
-                    hl.childForceExpandHeight = false;
-                    EditorUtility.SetDirty(hl);
-                }
+                    Transform chip = headerChips.Find(chipName);
+                    if (chip == null) continue;
 
-                Transform icon = chip.Find("Icon");
-                if (icon != null)
-                {
-                    var iconLe = LE(icon.gameObject, minH: 36f, prefH: 36f, minW: 36f, prefW: 36f);
-                    EditorUtility.SetDirty(iconLe);
-
-                    var iconTg = GetOrAdd<ThemedGraphic>(icon.gameObject);
-                    if (chipName == "SlotsChip")
+                    foreach (ThemedButton tb in chip.GetComponents<ThemedButton>())
                     {
-                        iconTg.Configure(UiColor.TextSecondary, 1f, UiSprite.None);
+                        Object.DestroyImmediate(tb);
                     }
-                    else
+                    foreach (Button btn in chip.GetComponents<Button>())
                     {
-                        iconTg.Configure(UiColor.White, 0.85f, UiSprite.None);
+                        Object.DestroyImmediate(btn);
                     }
-                    EditorUtility.SetDirty(iconTg);
-                    if (icon.TryGetComponent(out Image iconImg)) EditorUtility.SetDirty(iconImg);
+
+                    var tg = GetOrAdd<ThemedGraphic>(chip.gameObject);
+                    tg.Configure(UiColor.SurfaceSunken, 0f, UiSprite.Pill);
+                    EditorUtility.SetDirty(tg);
+
+                    if (chip.TryGetComponent(out Image img))
+                    {
+                        img.raycastTarget = false;
+                        if (img.material == Theme.surfaceMaterial) img.material = null;
+                        EditorUtility.SetDirty(img);
+                    }
+
+                    if (chip.TryGetComponent(out HorizontalLayoutGroup hl))
+                    {
+                        hl.padding = new RectOffset(4, 4, 0, 0);
+                        hl.spacing = 8f;
+                        hl.childAlignment = TextAnchor.MiddleCenter;
+                        hl.childControlWidth = true;
+                        hl.childControlHeight = true;
+                        hl.childForceExpandWidth = false;
+                        hl.childForceExpandHeight = false;
+                        EditorUtility.SetDirty(hl);
+                    }
+
+                    Transform icon = chip.Find("Icon");
+                    if (icon != null)
+                    {
+                        var iconLe = LE(icon.gameObject, minH: 30f, prefH: 30f, minW: 30f, prefW: 30f);
+                        EditorUtility.SetDirty(iconLe);
+
+                        var iconTg = GetOrAdd<ThemedGraphic>(icon.gameObject);
+                        if (chipName == "SlotsChip")
+                        {
+                            iconTg.Configure(UiColor.TextSecondary, 1f, UiSprite.None);
+                        }
+                        else
+                        {
+                            iconTg.Configure(UiColor.White, 0.85f, UiSprite.None);
+                        }
+                        EditorUtility.SetDirty(iconTg);
+                        if (icon.TryGetComponent(out Image iconImg)) EditorUtility.SetDirty(iconImg);
+                    }
+
+                    Transform text = chip.Find("Text");
+                    if (text != null)
+                    {
+                        var textTg = GetOrAdd<ThemedGraphic>(text.gameObject);
+                        textTg.Configure(UiColor.TextSecondary, 1f, UiSprite.None);
+                        EditorUtility.SetDirty(textTg);
+
+                        if (text.TryGetComponent(out TMP_Text tmp))
+                        {
+                            tmp.raycastTarget = false;
+                            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                            tmp.overflowMode = TextOverflowModes.Overflow;
+                            tmp.alignment = TextAlignmentOptions.MidlineLeft;
+                            EditorUtility.SetDirty(tmp);
+                        }
+                    }
+
+                    EditorUtility.SetDirty(chip.gameObject);
                 }
 
-                Transform text = chip.Find("Text");
-                if (text != null)
-                {
-                    var textTg = GetOrAdd<ThemedGraphic>(text.gameObject);
-                    textTg.Configure(UiColor.TextSecondary, 1f, UiSprite.None);
-                    EditorUtility.SetDirty(textTg);
-
-                    if (text.TryGetComponent(out TMP_Text tmp))
-                    {
-                        tmp.raycastTarget = false;
-                        tmp.textWrappingMode = TextWrappingModes.NoWrap;
-                        tmp.overflowMode = TextOverflowModes.Overflow;
-                        tmp.alignment = TextAlignmentOptions.MidlineLeft;
-                        EditorUtility.SetDirty(tmp);
-                    }
-                }
-
-                EditorUtility.SetDirty(chip.gameObject);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(Rt(headerChips));
             }
 
-            LayoutRebuilder.ForceRebuildLayoutImmediate(Rt(headerChips));
+            Transform filter = abilitiesPanel.Find("Filter");
+            if (filter != null)
+            {
+                SetResponsivePresets(Rt(filter),
+                    Preset(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -168f), new Vector2(-80f, 92f)),
+                    Preset(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -136f), new Vector2(-80f, 92f)));
+
+                var filterTg = GetOrAdd<ThemedGraphic>(filter.gameObject);
+                filterTg.Configure(UiColor.SurfaceSunken, 0f, UiSprite.Pill);
+                EditorUtility.SetDirty(filterTg);
+
+                if (filter.TryGetComponent(out Image filterImg))
+                {
+                    filterImg.raycastTarget = false;
+                    if (Theme.surfaceMaterial != null && filterImg.material == Theme.surfaceMaterial) filterImg.material = null;
+                    EditorUtility.SetDirty(filterImg);
+                }
+
+                if (filter.TryGetComponent(out HorizontalLayoutGroup filterHl))
+                {
+                    filterHl.spacing = 12f;
+                    filterHl.padding = new RectOffset(0, 0, 0, 0);
+                    filterHl.childAlignment = TextAnchor.MiddleCenter;
+                    filterHl.childControlWidth = true;
+                    filterHl.childControlHeight = true;
+                    filterHl.childForceExpandWidth = false;
+                    filterHl.childForceExpandHeight = false;
+                    EditorUtility.SetDirty(filterHl);
+                }
+
+                string[] chipNames = { "FilterActive", "FilterPassive", "FilterSynergies" };
+                for (int i = 0; i < chipNames.Length; i++)
+                {
+                    Transform seg = filter.Find(chipNames[i]);
+                    if (seg == null) continue;
+
+                    if (seg.TryGetComponent(out Image segImg))
+                    {
+                        if (Theme.pillSprite != null)
+                        {
+                            segImg.sprite = Theme.pillSprite;
+                            segImg.type = Image.Type.Sliced;
+                        }
+                        if (Theme.surfaceMaterial != null && segImg.material == Theme.surfaceMaterial)
+                        {
+                            segImg.material = null;
+                        }
+                        segImg.raycastTarget = true;
+                        segImg.color = i == 0 ? Theme.accent : Theme.surfaceRaised;
+                        EditorUtility.SetDirty(segImg);
+                    }
+
+                    if (seg.TryGetComponent(out Button segBtn))
+                    {
+                        segBtn.transition = Selectable.Transition.ColorTint;
+                        EditorUtility.SetDirty(segBtn);
+                    }
+
+                    var segHl = HL(seg.gameObject, 0f, new RectOffset(28, 28, 0, 6), TextAnchor.MiddleCenter, true, true, false, true);
+                    EditorUtility.SetDirty(segHl);
+
+                    var segLe = LE(seg.gameObject, minH: 72f, prefH: 72f, flexH: -1f, minW: 120f, prefW: -1f, flexW: -1f);
+                    EditorUtility.SetDirty(segLe);
+
+                    Transform labelT = seg.Find("Label");
+                    if (labelT != null)
+                    {
+                        foreach (LocalizedText loc in labelT.GetComponents<LocalizedText>())
+                        {
+                            Object.DestroyImmediate(loc);
+                        }
+
+                        var tt = GetOrAdd<ThemedText>(labelT.gameObject);
+                        tt.Configure(UiTextStyle.Caption, 1.25f);
+                        EditorUtility.SetDirty(tt);
+
+                        if (labelT.TryGetComponent(out TMP_Text labelTmp))
+                        {
+                            labelTmp.alignment = TextAlignmentOptions.Center;
+                            labelTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                            labelTmp.overflowMode = TextOverflowModes.Overflow;
+                            labelTmp.raycastTarget = false;
+                            labelTmp.color = i == 0 ? Theme.white : Theme.textSecondary;
+                            EditorUtility.SetDirty(labelTmp);
+                        }
+                    }
+
+                    EditorUtility.SetDirty(seg.gameObject);
+                }
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(Rt(filter));
+            }
+
+            Transform scrollView = abilitiesPanel.Find("ScrollView");
+            if (scrollView != null)
+            {
+                SetResponsivePresets(Rt(scrollView),
+                    Preset(new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -130f), new Vector2(0f, -260f)),
+                    Preset(new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -114f), new Vector2(0f, -228f)));
+                EditorUtility.SetDirty(scrollView.gameObject);
+
+                Transform content = scrollView.Find("Viewport/Content");
+                if (content != null && content.TryGetComponent(out GridLayoutGroup grid))
+                {
+                    grid.padding = new RectOffset(40, 40, 20, 28);
+                    EditorUtility.SetDirty(grid);
+                }
+            }
+
             EditorSceneManager.MarkSceneDirty(scene);
         }
 
@@ -187,38 +315,91 @@ namespace ProjectB.EditorScripts.UiKit
             if (root == null) return;
             try
             {
+                if (root.TryGetComponent(out HorizontalLayoutGroup rootHl))
+                {
+                    rootHl.padding = Pad(24, 24, 22, 30);
+                    rootHl.spacing = 20f;
+                    EditorUtility.SetDirty(rootHl);
+                }
+
                 Transform frame = root.transform.Find("Frame");
                 if (frame != null)
                 {
-                    Stretch(Rt(frame), 3f, 10f, 3f, 1f);
+                    frame.gameObject.SetActive(false);
                 }
                 Transform stripe = root.transform.Find("RarityStripe");
                 if (stripe != null)
                 {
-                    var img = stripe.GetComponent<Image>();
-                    if (img != null && Theme.solidSprite != null)
-                    {
-                        img.sprite = Theme.solidSprite;
-                        img.type = Image.Type.Simple;
-                    }
-                    RectTransform srt = Rt(stripe);
-                    srt.anchorMin = new Vector2(0f, 0.16f);
-                    srt.anchorMax = new Vector2(0f, 0.84f);
-                    srt.pivot = new Vector2(0f, 0.5f);
-                    srt.anchoredPosition = new Vector2(12f, 3f);
-                    srt.sizeDelta = new Vector2(6f, 0f);
+                    stripe.gameObject.SetActive(false);
                 }
+
+                Transform iconBg = root.transform.Find("IconBg");
+                if (iconBg != null)
+                {
+                    LE(iconBg.gameObject, minH: 116f, prefH: 116f, minW: 116f, prefW: 116f);
+                    Transform icon = iconBg.Find("Icon");
+                    if (icon != null)
+                    {
+                        Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 4f), new Vector2(88f, 88f));
+                    }
+                }
+
                 Transform nameT = root.transform.Find("Info/Name");
                 if (nameT != null)
                 {
-                    LE(nameT.gameObject, minH: 46f, prefH: 46f);
+                    GetOrAdd<ThemedText>(nameT.gameObject).Configure(UiTextStyle.H2, 0.75f);
+                    LE(nameT.gameObject, minH: 42f, prefH: 42f);
                 }
+
+                Transform descT = root.transform.Find("Info/Description");
+                if (descT != null)
+                {
+                    GetOrAdd<ThemedText>(descT.gameObject).Configure(UiTextStyle.Caption, 1.1f);
+                }
+
+                Transform chipT = root.transform.Find("Info/SynergyChips/ChipTemplate");
+                if (chipT != null)
+                {
+                    LE(chipT.gameObject, prefH: 52f);
+                    if (chipT.TryGetComponent(out HorizontalLayoutGroup chipHl))
+                    {
+                        chipHl.padding = Pad(10, 18, 4, 4);
+                        EditorUtility.SetDirty(chipHl);
+                    }
+                    Transform left = chipT.Find("Left");
+                    if (left != null) LE(left.gameObject, prefH: 38f, prefW: 38f);
+                    Transform right = chipT.Find("Right");
+                    if (right != null) LE(right.gameObject, prefH: 38f, prefW: 38f);
+                }
+
                 PrefabUtility.SaveAsPrefabAsset(root, ABILITY_ITEM_PREFAB);
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        private static void SetResponsivePresets(RectTransform rt, RectPreset portrait, RectPreset landscape)
+        {
+            portrait.ApplyTo(rt);
+            var rr = GetOrAdd<ResponsiveRect>(rt.gameObject);
+            rr.SetPreset(LayoutMode.Portrait, portrait);
+            rr.SetPreset(LayoutMode.Landscape, landscape);
+            EditorUtility.SetDirty(rr);
+        }
+
+        private static RectPreset Preset(Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 pos, Vector2 size)
+        {
+            return new RectPreset
+            {
+                captured = true,
+                anchorMin = anchorMin,
+                anchorMax = anchorMax,
+                pivot = pivot,
+                anchoredPosition = pos,
+                sizeDelta = size
+            };
         }
 
         public static void CenterSettingsTitle(Scene scene)
