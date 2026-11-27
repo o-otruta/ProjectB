@@ -51,6 +51,7 @@ namespace ProjectB.EditorScripts.UiKit
             BuildGoalCard(hero.transform);
             RestyleTiles(hero);
             RelayoutPreviewControls(hero.transform);
+            RestyleLockBar(hero);
             RestyleStartAndBottomBar(scene, hero.transform);
 
             EditorUtility.SetDirty(hero);
@@ -253,7 +254,7 @@ namespace ProjectB.EditorScripts.UiKit
 
         // ------------------------------------------------------------------ floating top bar
 
-        private static void RestyleTopBar(Scene scene)
+        public static void RestyleTopBar(Scene scene)
         {
             Transform topBar = null;
             foreach (GameObject root in scene.GetRootGameObjects())
@@ -292,60 +293,82 @@ namespace ProjectB.EditorScripts.UiKit
                 crt.anchorMin = new Vector2(1f, 0.5f);
                 crt.anchorMax = new Vector2(1f, 0.5f);
                 crt.pivot = new Vector2(1f, 0.5f);
-                crt.anchoredPosition = new Vector2(-28f, 0f);
-                crt.sizeDelta = new Vector2(880f, 88f);
+                crt.anchoredPosition = new Vector2(-36f, 4f);
+                crt.sizeDelta = new Vector2(880f, 76f);
 
                 if (currencies.TryGetComponent(out HorizontalLayoutGroup chl))
                 {
-                    chl.spacing = 14f;
+                    chl.spacing = 32f;
                     chl.childAlignment = TextAnchor.MiddleRight;
                     chl.childControlWidth = true;
                     chl.childControlHeight = true;
                     chl.childForceExpandWidth = false;
                     chl.childForceExpandHeight = false;
+                    EditorUtility.SetDirty(chl);
                 }
                 Transform coins = currencies.Find("CoinsPill");
                 Transform shards = currencies.Find("ShardsPill");
                 if (coins != null) coins.SetSiblingIndex(0);
                 if (shards != null) shards.SetSiblingIndex(1);
 
-                StyleCurrencyPill(coins, 156f, 76f);
-                StyleCurrencyPill(shards, 124f, 76f);
+                StyleCurrencyReadout(coins);
+                StyleCurrencyReadout(shards);
                 LayoutRebuilder.ForceRebuildLayoutImmediate(crt);
+                EditorUtility.SetDirty(crt);
             }
+
+            EditorSceneManager.MarkSceneDirty(scene);
         }
 
-        private static void StyleCurrencyPill(Transform pill, float minWidth, float height)
+        private static void StyleCurrencyReadout(Transform pill)
         {
             if (pill == null) return;
-            Rt(pill).sizeDelta = new Vector2(minWidth, height);
+            Rt(pill).sizeDelta = new Vector2(0f, 64f);
             var csf = pill.GetComponent<ContentSizeFitter>();
             if (csf != null) Object.DestroyImmediate(csf);
-            LE(pill.gameObject, minH: height, prefH: height, flexH: 0f, minW: minWidth, prefW: -1f, flexW: 0f);
-            GetOrAdd<ThemedGraphic>(pill.gameObject).Configure(UiColor.SurfaceSunken, 0.98f, UiSprite.Pill);
+            var pillLe = LE(pill.gameObject, minH: 64f, prefH: 64f, flexH: 0f, minW: -1f, prefW: -1f, flexW: 0f);
+            EditorUtility.SetDirty(pillLe);
+
+            var tg = GetOrAdd<ThemedGraphic>(pill.gameObject);
+            tg.Configure(UiColor.SurfaceSunken, 0f, UiSprite.Pill);
+            EditorUtility.SetDirty(tg);
+            if (pill.TryGetComponent(out Image pillImg))
+            {
+                pillImg.raycastTarget = false;
+                EditorUtility.SetDirty(pillImg);
+            }
             if (pill.TryGetComponent(out HorizontalLayoutGroup hl))
             {
-                hl.padding = new RectOffset(14, 24, 6, 14);
-                hl.spacing = 12f;
+                hl.padding = new RectOffset(4, 4, 0, 0);
+                hl.spacing = 10f;
                 hl.childAlignment = TextAnchor.MiddleCenter;
                 hl.childControlWidth = true;
                 hl.childControlHeight = true;
                 hl.childForceExpandWidth = false;
                 hl.childForceExpandHeight = false;
+                EditorUtility.SetDirty(hl);
             }
             Transform icon = pill.Find("Icon");
-            if (icon != null) LE(icon.gameObject, minH: 44f, prefH: 44f, minW: 44f, prefW: 44f);
+            if (icon != null)
+            {
+                var iconLe = LE(icon.gameObject, minH: 48f, prefH: 48f, minW: 48f, prefW: 48f);
+                EditorUtility.SetDirty(iconLe);
+            }
             Transform amount = pill.Find("Amount");
             if (amount != null)
             {
-                LE(amount.gameObject, minW: -1f, prefW: -1f, flexW: -1f);
+                var amtLe = LE(amount.gameObject, minW: -1f, prefW: -1f, flexW: -1f);
+                EditorUtility.SetDirty(amtLe);
                 var tmp = amount.GetComponent<TMP_Text>();
                 if (tmp != null)
                 {
                     tmp.alignment = TextAlignmentOptions.MidlineLeft;
                     tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                    EditorUtility.SetDirty(tmp);
                 }
-                GetOrAdd<ThemedText>(amount.gameObject).Configure(UiTextStyle.Number, 0.78f);
+                var tt = GetOrAdd<ThemedText>(amount.gameObject);
+                tt.Configure(UiTextStyle.Number, 0.84f);
+                EditorUtility.SetDirty(tt);
             }
             if (pill.TryGetComponent(out CurrencyLabel cl))
             {
@@ -705,22 +728,6 @@ namespace ProjectB.EditorScripts.UiKit
             StyleSquircleNavButton(panel.Find("NextHeroButton"));
             SetPortrait(panel.Find("PrevHeroButton"), P(new Vector2(0f, 0.56f), new Vector2(0f, 0.56f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(100f, 100f)));
             SetPortrait(panel.Find("NextHeroButton"), P(new Vector2(1f, 0.56f), new Vector2(1f, 0.56f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(100f, 100f)));
-            Transform lockOv = panel.Find("LockOverlay");
-            if (lockOv != null)
-            {
-                GetOrAdd<ThemedGraphic>(lockOv.gameObject).Configure(UiColor.Surface, 0.94f, UiSprite.Card);
-                Transform lockIcon = lockOv.Find("LockIcon");
-                if (lockIcon != null)
-                {
-                    Place(Rt(lockIcon), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(64f, 64f));
-                }
-                Transform lockText = lockOv.Find("Requirement");
-                if (lockText != null)
-                {
-                    Band(Rt(lockText), false, 18f, 54f, 20f, 20f);
-                }
-            }
-            SetPortrait(lockOv, P(new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(460f, 162f)));
             Transform pagination = panel.Find("Pagination");
             if (pagination != null)
             {
@@ -802,6 +809,81 @@ namespace ProjectB.EditorScripts.UiKit
                 tab.ApplyTheme(Theme);
                 EditorUtility.SetDirty(tab);
             }
+        }
+
+        /// <summary>
+        /// Moves <c>LockOverlay</c> off the hero silhouette into the bottom CTA slot as a frameless,
+        /// non-clickable unlock progress bar (keeps the hero darkened on the podium).
+        /// </summary>
+        public static void RestyleLockBar(HeroSelectionUI hero)
+        {
+            if (hero == null) return;
+            Transform panel = hero.transform;
+            Transform lockOv = panel.Find("LockOverlay");
+            if (lockOv == null)
+            {
+                lockOv = Go("LockOverlay", panel, typeof(Image)).transform;
+            }
+
+            Presets(Rt(lockOv),
+                P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(-64f, 158f)),
+                P(new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-12f, 28f), new Vector2(-72f, 148f)));
+
+            foreach (Button b in lockOv.GetComponents<Button>()) Object.DestroyImmediate(b);
+            GetOrAdd<ThemedGraphic>(lockOv.gameObject).Configure(UiColor.SurfaceSunken, 0f, UiSprite.None);
+            if (lockOv.TryGetComponent(out Image lockImg))
+            {
+                lockImg.sprite = Theme.solidSprite;
+                lockImg.color = new Color(0f, 0f, 0f, 0f);
+                lockImg.material = null;
+                lockImg.raycastTarget = false;
+                EditorUtility.SetDirty(lockImg);
+            }
+
+            ClearChildren(lockOv);
+            VL(lockOv.gameObject, 14f, Pad(8, 8, 12, 12), TextAnchor.MiddleCenter, true, true, true, false);
+
+            var headerRow = Go("HeaderRow", lockOv);
+            HL(headerRow, 12f, Pad(4, 4, 0, 0), TextAnchor.MiddleLeft, true, true, false, false);
+            LE(headerRow, minH: 48f, prefH: 48f);
+
+            var lockIcon = Icon(headerRow.transform, "LockIcon", Theme.iconLock, 40f, Theme.warning);
+            LE(lockIcon.gameObject, minW: 40f, prefW: 40f, minH: 40f, prefH: 40f);
+
+            var req = Txt(headerRow.transform, "Requirement", "Reach Wave 20", UiTextStyle.Caption, UiColor.TextPrimary, TextAlignmentOptions.MidlineLeft, true, 1.25f, autoSize: true);
+            req.fontSizeMin = 18f;
+            req.fontSizeMax = 30f;
+            req.textWrappingMode = TextWrappingModes.NoWrap;
+            req.overflowMode = TextOverflowModes.Ellipsis;
+            req.raycastTarget = false;
+            LE(req.gameObject, minW: 0f, flexW: 1f);
+
+            var prog = Txt(headerRow.transform, "ProgressText", "0 / 20", UiTextStyle.Number, UiColor.Warning, TextAlignmentOptions.MidlineRight, true, 0.78f);
+            prog.textWrappingMode = TextWrappingModes.NoWrap;
+            prog.overflowMode = TextOverflowModes.Overflow;
+            prog.raycastTarget = false;
+            LE(prog.gameObject, flexW: 0f);
+
+            var bar = Img(lockOv, "Bar", UiSprite.BarFrame, UiColor.SurfaceSunken, 1f, false, true);
+            LE(bar.gameObject, minH: 34f, prefH: 34f);
+
+            var fill = Img(bar.transform, "Fill", UiSprite.BarFill, UiColor.Warning, 1f, false, true);
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
+            fill.fillOrigin = (int)Image.OriginHorizontal.Left;
+            fill.fillAmount = 0f;
+            Stretch(Rt(fill), 5f, 5f, 5f, 5f);
+
+            Set(hero, "lockOverlay", lockOv.gameObject);
+            Set(hero, "lockRequirementText", req);
+            Set(hero, "lockProgressText", prog);
+            Set(hero, "lockProgressFill", fill);
+            Set(hero, "lockProgressBar", bar.gameObject);
+
+            lockOv.gameObject.SetActive(false);
+            EditorUtility.SetDirty(lockOv.gameObject);
+            EditorUtility.SetDirty(hero);
+            EditorSceneManager.MarkSceneDirty(hero.gameObject.scene);
         }
 
         private static void SetPortrait(Transform t, RectPreset portrait)

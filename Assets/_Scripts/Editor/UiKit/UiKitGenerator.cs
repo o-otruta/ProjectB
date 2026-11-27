@@ -101,6 +101,53 @@ namespace ProjectB.EditorScripts.UiKit
             Debug.Log($"[UiKitGenerator] Regenerated {Frames.Length} frames and atlas (icons/audio untouched).");
         }
 
+        [MenuItem("ProjectB/UI/Generate UI Kit (Icons Only)")]
+        public static void GenerateIconsOnly()
+        {
+            EnsureFolder(KIT_DIR);
+            EnsureFolder(ICONS_DIR);
+
+            var iconPixels = new Dictionary<string, Color32[]>();
+            var iconSizes = new Dictionary<string, int>();
+            var writtenFiles = new List<string>();
+            foreach (UiKitIcons.IconDef def in UiKitIcons.All())
+            {
+                string file = $"{ICONS_DIR}/icon_{def.name}.png";
+                if (BlenderAuthoredIcons.Contains(def.name) && File.Exists(file))
+                {
+                    continue;
+                }
+
+                var canvas = new PixelCanvas(def.grid);
+                def.draw(canvas);
+                canvas.Bevel(def.mono ? 0f : 0.28f, def.mono ? 0.18f : 0.3f);
+                canvas.Outline(PixelCanvas.OutlineColor);
+                Color32[] pixels = canvas.ToPixels(ICON_SCALE, out int size);
+                iconPixels[def.name] = pixels;
+                iconSizes[def.name] = size;
+
+                if (WritePngIfChanged(file, size, size, pixels))
+                {
+                    writtenFiles.Add(file);
+                }
+            }
+
+            if (writtenFiles.Count > 0)
+            {
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                foreach (string file in writtenFiles)
+                {
+                    ConfigureSprite(file, Vector4.zero, false);
+                }
+            }
+
+            bool recreateAsset = AssetDatabase.LoadAssetAtPath<TMP_SpriteAsset>(SPRITE_ASSET_PATH) == null;
+            WriteInlineSpriteSheet(iconPixels, iconSizes, recreateAsset);
+            BuildSpriteAtlas();
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UiKitGenerator] Regenerated icons ({writtenFiles.Count} PNG file(s) updated) and inline sprite sheet.");
+        }
+
         [MenuItem("ProjectB/UI/Generate UI Kit (Sprites, Icons, Atlas)")]
         public static void GenerateAll()
         {
@@ -618,6 +665,36 @@ namespace ProjectB.EditorScripts.UiKit
 
         // ------------------------------------------------------------------ import
 
+        private static bool WritePngIfChanged(string assetPath, int w, int h, Color32[] pixels)
+        {
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            byte[] png = tex.EncodeToPNG();
+            UnityEngine.Object.DestroyImmediate(tex);
+
+            if (File.Exists(assetPath))
+            {
+                byte[] existing = File.ReadAllBytes(assetPath);
+                if (existing.Length == png.Length)
+                {
+                    bool identical = true;
+                    for (int i = 0; i < png.Length; i++)
+                    {
+                        if (existing[i] != png[i])
+                        {
+                            identical = false;
+                            break;
+                        }
+                    }
+                    if (identical) return false;
+                }
+            }
+
+            File.WriteAllBytes(assetPath, png);
+            return true;
+        }
+
         private static void WritePng(string assetPath, int w, int h, Color32[] pixels)
         {
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
@@ -698,6 +775,11 @@ namespace ProjectB.EditorScripts.UiKit
         /// <summary>Packs the inline icons into one sheet and builds a TMP Sprite Asset (names = icon names).</summary>
         private static void BuildInlineSpriteAsset(Dictionary<string, Color32[]> iconPixels, Dictionary<string, int> iconSizes)
         {
+            WriteInlineSpriteSheet(iconPixels, iconSizes, recreateAsset: true);
+        }
+
+        private static void WriteInlineSpriteSheet(Dictionary<string, Color32[]> iconPixels, Dictionary<string, int> iconSizes, bool recreateAsset)
+        {
             const int cell = 128;
             int count = InlineSpriteIcons.Length;
             int columns = 4;
@@ -742,6 +824,12 @@ namespace ProjectB.EditorScripts.UiKit
             }).ToArray();
 #pragma warning restore 618
             importer.SaveAndReimport();
+
+            if (!recreateAsset)
+            {
+                AssetDatabase.SaveAssets();
+                return;
+            }
 
             var existing = AssetDatabase.LoadAssetAtPath<TMP_SpriteAsset>(SPRITE_ASSET_PATH);
             if (existing != null) AssetDatabase.DeleteAsset(SPRITE_ASSET_PATH);

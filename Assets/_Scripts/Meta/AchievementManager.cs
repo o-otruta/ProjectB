@@ -143,6 +143,29 @@ namespace ProjectB.Meta
             return _completedIds.Contains(id);
         }
 
+        public int GetProgress(AchievementData achievement)
+        {
+            if (achievement == null) return 0;
+            int target = Mathf.Max(0, achievement.targetValue);
+            if (IsAchievementCompleted(achievement.id)) return target;
+
+            SaveData data = _saveManager?.Data;
+            int progress = 0;
+            if (data?.achievementProgress != null)
+            {
+                data.achievementProgress.TryGetValue(achievement.id, out progress);
+            }
+
+            if (data != null
+                && achievement.conditionType == AchievementConditionType.ReachWave
+                && (achievement.runConstraint == null || !achievement.runConstraint.HasAny))
+            {
+                progress = Mathf.Max(progress, data.bestWave);
+            }
+
+            return Mathf.Clamp(progress, 0, target);
+        }
+
         public void AddProgress(string id, int amount)
         {
             if (string.IsNullOrEmpty(id) || amount <= 0) return;

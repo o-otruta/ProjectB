@@ -39,6 +39,9 @@ namespace ProjectB.UI
         [SerializeField] private Image paginationDotTemplate;
         [SerializeField] private GameObject lockOverlay;
         [SerializeField] private TMP_Text lockRequirementText;
+        [SerializeField] private TMP_Text lockProgressText;
+        [SerializeField] private Image lockProgressFill;
+        [SerializeField] private GameObject lockProgressBar;
         [SerializeField] private TMP_Text hpValueText;
         [SerializeField] private TMP_Text speedValueText;
         [SerializeField] private Image passiveIcon;
@@ -292,7 +295,8 @@ namespace ProjectB.UI
             if (hero == null) return;
 
             bool isUnlocked = selectedHeroService.IsHeroUnlocked(hero);
-            string requirement = isUnlocked ? string.Empty : FindHeroUnlockRequirement(hero.id);
+            AchievementData unlockAch = isUnlocked ? null : FindHeroUnlockAchievement(hero.id);
+            string requirement = unlockAch != null ? FormatUnlockRequirement(unlockAch) : string.Empty;
 
             string localizedHeroName = Loc.Name(hero);
             string localizedRole = Loc.Role(hero);
@@ -333,6 +337,29 @@ namespace ProjectB.UI
             if (lockRequirementText != null)
             {
                 lockRequirementText.text = string.IsNullOrEmpty(requirement) ? Loc.Get("ui.common.locked", "Locked") : requirement;
+            }
+            if (!isUnlocked)
+            {
+                bool hasProgress = unlockAch != null && unlockAch.targetValue > 0;
+                if (hasProgress)
+                {
+                    int target = unlockAch.targetValue;
+                    int current = achievementManager != null ? achievementManager.GetProgress(unlockAch) : 0;
+                    int clamped = Mathf.Clamp(current, 0, target);
+                    if (lockProgressText != null)
+                    {
+                        lockProgressText.gameObject.SetActive(true);
+                        lockProgressText.text = $"{clamped} <color=#{ColorUtility.ToHtmlStringRGB(theme.textSecondary)}>/ {target}</color>";
+                    }
+                    if (lockProgressBar != null) lockProgressBar.SetActive(true);
+                    if (lockProgressFill != null) lockProgressFill.fillAmount = (float)clamped / target;
+                }
+                else
+                {
+                    if (lockProgressText != null) lockProgressText.gameObject.SetActive(false);
+                    if (lockProgressBar != null) lockProgressBar.SetActive(false);
+                    if (lockProgressFill != null) lockProgressFill.fillAmount = 0f;
+                }
             }
 
             SplitPassiveDescription(localizedPassiveDesc, out string passiveLine, out string weaponLine);
@@ -390,6 +417,10 @@ namespace ProjectB.UI
 
             if (startRunButton != null)
             {
+                if (lockProgressFill != null)
+                {
+                    startRunButton.gameObject.SetActive(isUnlocked);
+                }
                 startRunButton.interactable = isUnlocked;
                 if (startRunButton.TryGetComponent(out ThemedButton startThemed))
                 {
@@ -612,7 +643,8 @@ namespace ProjectB.UI
 
             if (spawnedPreviewModel != null)
             {
-                Destroy(spawnedPreviewModel);
+                if (Application.isPlaying) Destroy(spawnedPreviewModel);
+                else DestroyImmediate(spawnedPreviewModel);
                 spawnedPreviewModel = null;
             }
 
@@ -637,9 +669,9 @@ namespace ProjectB.UI
             }
         }
 
-        private string FindHeroUnlockRequirement(string heroId)
+        private AchievementData FindHeroUnlockAchievement(string heroId)
         {
-            if (achievementManager == null || string.IsNullOrEmpty(heroId)) return string.Empty;
+            if (achievementManager == null || string.IsNullOrEmpty(heroId)) return null;
 
             var allAchievements = achievementManager.GetAllAchievements();
             for (int i = 0; i < allAchievements.Count; i++)
@@ -648,12 +680,18 @@ namespace ProjectB.UI
                 if (ach == null) continue;
                 if (ach.rewardType == AchievementRewardType.UnlockHero && ach.rewardId == heroId)
                 {
-                    string desc = Loc.Desc(ach);
-                    return !string.IsNullOrEmpty(desc) ? desc : Loc.Title(ach);
+                    return ach;
                 }
             }
 
-            return string.Empty;
+            return null;
+        }
+
+        private static string FormatUnlockRequirement(AchievementData ach)
+        {
+            if (ach == null) return string.Empty;
+            string desc = Loc.Desc(ach);
+            return !string.IsNullOrEmpty(desc) ? desc : Loc.Title(ach);
         }
     }
 }

@@ -33,6 +33,10 @@ namespace ProjectB.EditorScripts.UiKit
         private static readonly Color32 ND = new Color32(26, 128, 72, 255);
         private static readonly Color32 T = new Color32(150, 92, 48, 255);
         private static readonly Color32 TD = new Color32(96, 56, 26, 255);
+        private static readonly Color32 BootLight = new Color32(255, 192, 112, 255);
+        private static readonly Color32 Boot = new Color32(224, 134, 58, 255);
+        private static readonly Color32 BootDark = new Color32(158, 84, 32, 255);
+        private static readonly Color32 BootSole = new Color32(116, 70, 48, 255);
         private static readonly Color32 S = new Color32(210, 218, 234, 255);
         private static readonly Color32 SD = new Color32(120, 132, 158, 255);
         private static readonly Color32 O = new Color32(255, 140, 46, 255);
@@ -73,7 +77,36 @@ namespace ProjectB.EditorScripts.UiKit
             });
             yield return Def("speed", false, p =>
             {
-                p.Poly(Y, V2(9.8f, 1), V2(3.2f, 9.2f), V2(7.4f, 9.2f), V2(5.8f, 15), V2(12.8f, 6.6f), V2(8.6f, 6.6f), V2(10.8f, 1));
+                // Folded golden/cream cuff at top of boot shaft.
+                p.Rect(2, 2, 8, 2, YL);
+                p.Rect(2, 3, 8, 3, Y);
+                p.Set(8, 2, Y);
+                p.Set(8, 3, YD);
+
+                // Upright boot shaft.
+                p.Rect(3, 4, 7, 7, Boot);
+                p.Rect(3, 4, 7, 4, BootDark);
+                p.Rect(3, 5, 3, 7, BootLight);
+                p.Rect(7, 5, 7, 7, BootDark);
+
+                // Instep and rounded forward toe box.
+                p.Rect(3, 8, 9, 8, Boot);
+                p.Rect(3, 9, 11, 9, Boot);
+                p.Rect(3, 10, 12, 10, Boot);
+                p.Rect(3, 11, 13, 11, Boot);
+                p.Set(3, 8, BootLight);
+                p.Set(8, 8, BootLight);
+                p.Set(9, 9, BootLight);
+                p.Set(10, 9, BootLight);
+                p.Set(11, 10, BootLight);
+                p.Set(3, 11, BootDark);
+                p.Set(4, 11, BootDark);
+                p.Set(13, 11, BootDark);
+
+                // Sole with distinct heel and arch cutout.
+                p.Rect(3, 12, 13, 12, BootSole);
+                p.Rect(3, 13, 6, 13, BootSole);
+                p.Rect(9, 13, 12, 13, BootSole);
             });
             yield return Def("sword", false, p =>
             {

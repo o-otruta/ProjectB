@@ -6,8 +6,10 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Data.Platform;
+using ProjectB.Meta;
 using ProjectB.UI;
 
 namespace ProjectB.Tests.EditMode
@@ -191,11 +193,170 @@ namespace ProjectB.Tests.EditMode
                     Assert.IsNotNull(GetPrivate(goal, field), $"PlayGoalCardUI.{field}");
                 }
                 Assert.AreEqual(Image.Type.Filled, ((Image)GetPrivate(goal, "progressFill")).type);
+
+                // Top-bar currency readouts: frameless & non-clickable (no Button, no raycast, transparent background, no ToySurface material).
+                Transform topBar = hero.transform.parent.Find("TopBar");
+                Assert.IsNotNull(topBar, "SafeAreaRoot/TopBar");
+                foreach (string pillName in new[] { "CoinsPill", "ShardsPill" })
+                {
+                    Transform pill = topBar.Find($"Currencies/{pillName}");
+                    Assert.IsNotNull(pill, $"TopBar/Currencies/{pillName}");
+                    Assert.IsNull(pill.GetComponent<Button>(), $"{pillName} must not have a Button");
+                    Assert.IsNotNull(pill.GetComponent<CurrencyLabel>(), $"{pillName} keeps CurrencyLabel");
+                    Assert.IsNotNull(pill.Find("Icon"), $"{pillName}/Icon");
+                    Assert.IsNotNull(pill.Find("Amount"), $"{pillName}/Amount");
+
+                    var pillImg = pill.GetComponent<Image>();
+                    Assert.IsNotNull(pillImg, $"{pillName} Image");
+                    Assert.IsFalse(pillImg.raycastTarget, $"{pillName} must not block/capture raycasts");
+                    Assert.LessOrEqual(pillImg.color.a, 0.01f, $"{pillName} must have no button-like frame");
+                    Assert.AreNotSame(UiTheme.Current.surfaceMaterial, pillImg.material, $"{pillName} must not use ToySurface material");
+                }
+
+                // Speed stat chip uses theme.iconSpeed (boot icon) and inline <sprite name=speed> exists.
+                Transform speedIconT = hero.transform.Find("NamePlate/ChipRow/SpeedChip/Icon");
+                Assert.IsNotNull(speedIconT, "NamePlate/ChipRow/SpeedChip/Icon");
+                var speedImg = speedIconT.GetComponent<Image>();
+                Assert.IsNotNull(speedImg, "SpeedChip/Icon Image");
+                Assert.IsNotNull(UiTheme.Current.iconSpeed, "UiTheme.iconSpeed must be assigned");
+                Assert.AreSame(UiTheme.Current.iconSpeed, speedImg.sprite, "SpeedChip/Icon must use UiTheme.iconSpeed");
+                Assert.IsNotNull(UiTheme.Current.iconSpriteAsset, "UiTheme.iconSpriteAsset");
+                Assert.GreaterOrEqual(UiTheme.Current.iconSpriteAsset.GetSpriteIndexFromName("speed"), 0, "<sprite name=speed> must exist");
+
+                // LockOverlay sits in the bottom CTA slot (not over the hero silhouette) with no button/card chrome.
+                var lockOverlay = (GameObject)GetPrivate(hero, "lockOverlay");
+                Assert.IsNotNull(lockOverlay, "HeroSelectionUI.lockOverlay");
+                Assert.IsNull(lockOverlay.GetComponent<Button>(), "LockOverlay must not have a Button");
+                var lockImg = lockOverlay.GetComponent<Image>();
+                Assert.IsNotNull(lockImg, "LockOverlay Image");
+                Assert.IsFalse(lockImg.raycastTarget, "LockOverlay must not capture raycasts");
+                Assert.LessOrEqual(lockImg.color.a, 0.01f, "LockOverlay must be frameless (no button/card background)");
+                Assert.AreNotSame(UiTheme.Current.surfaceMaterial, lockImg.material, "LockOverlay must not use ToySurface material");
+
+                var startRect = hero.StartRunButton.GetComponent<ResponsiveRect>();
+                var lockRect = lockOverlay.GetComponent<ResponsiveRect>();
+                Assert.IsNotNull(startRect);
+                Assert.IsNotNull(lockRect);
+                foreach (LayoutMode mode in new[] { LayoutMode.Portrait, LayoutMode.Landscape })
+                {
+                    RectPreset startPreset = startRect.GetPreset(mode);
+                    RectPreset lockPreset = lockRect.GetPreset(mode);
+                    Assert.IsTrue(lockPreset.captured, $"LockOverlay {mode} preset");
+                    Assert.AreEqual(0f, lockPreset.anchorMax.y, 0.001f, $"LockOverlay sits at bottom in {mode}");
+                    Assert.AreEqual(startPreset.anchorMin, lockPreset.anchorMin, $"LockOverlay matches StartButton anchorMin in {mode}");
+                    Assert.AreEqual(startPreset.anchorMax, lockPreset.anchorMax, $"LockOverlay matches StartButton anchorMax in {mode}");
+                    Assert.AreEqual(startPreset.anchoredPosition, lockPreset.anchoredPosition, $"LockOverlay matches StartButton pos in {mode}");
+                    Assert.AreEqual(startPreset.sizeDelta, lockPreset.sizeDelta, $"LockOverlay matches StartButton size in {mode}");
+                }
+
+                Assert.IsNotNull(GetPrivate(hero, "lockRequirementText"), "HeroSelectionUI.lockRequirementText");
+                Assert.IsNotNull(GetPrivate(hero, "lockProgressText"), "HeroSelectionUI.lockProgressText");
+                var lockFill = (Image)GetPrivate(hero, "lockProgressFill");
+                Assert.IsNotNull(lockFill, "HeroSelectionUI.lockProgressFill");
+                Assert.AreEqual(Image.Type.Filled, lockFill.type, "lockProgressFill must be Filled");
+                Assert.IsNotNull(GetPrivate(hero, "lockProgressBar"), "HeroSelectionUI.lockProgressBar");
             }
             finally
             {
                 if (openedHere) EditorSceneManager.CloseScene(scene, true);
             }
+        }
+
+        [Test]
+        public void HeroSelectionUI_LockedHero_ShowsBottomUnlockProgress_HidesStart_AndDarkensSilhouette()
+        {
+            HeroCatalog catalog = Resources.Load<HeroCatalog>("HeroCatalog");
+            Assert.IsNotNull(catalog, "Resources/HeroCatalog.asset must exist");
+
+            using var save = new SaveManager(new InMemorySaveStorage());
+            save.Data.bestWave = 12;
+            var ach = new AchievementManager(save);
+            ach.AddProgress("clear_3_shrines", 1);
+            var heroService = new SelectedHeroService(save, catalog);
+
+            var root = new GameObject("Root", typeof(RectTransform), typeof(Canvas));
+            created.Add(root);
+            var panel = new GameObject("PlayScreenPanel", typeof(RectTransform), typeof(HeroSelectionUI));
+            panel.transform.SetParent(root.transform, false);
+            var ui = panel.GetComponent<HeroSelectionUI>();
+
+            var previewRoot = new GameObject("HeroPreview");
+            created.Add(previewRoot);
+            var previewCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            previewCube.transform.SetParent(previewRoot.transform, false);
+
+            var startGo = new GameObject("StartButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            startGo.transform.SetParent(panel.transform, false);
+            var lockGo = new GameObject("LockOverlay", typeof(RectTransform), typeof(Image));
+            lockGo.transform.SetParent(panel.transform, false);
+            var reqText = new GameObject("Requirement", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            reqText.transform.SetParent(lockGo.transform, false);
+            var progText = new GameObject("ProgressText", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            progText.transform.SetParent(lockGo.transform, false);
+            var barGo = new GameObject("Bar", typeof(RectTransform), typeof(Image));
+            barGo.transform.SetParent(lockGo.transform, false);
+            var fillImg = new GameObject("Fill", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            fillImg.transform.SetParent(barGo.transform, false);
+            fillImg.type = Image.Type.Filled;
+
+            void SetField(string name, object val)
+            {
+                FieldInfo f = typeof(HeroSelectionUI).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.IsNotNull(f, name);
+                f.SetValue(ui, val);
+            }
+
+            SetField("heroPreviewVisualRoot", previewRoot.transform);
+            SetField("startRunButton", startGo.GetComponent<Button>());
+            SetField("lockOverlay", lockGo);
+            SetField("lockRequirementText", reqText);
+            SetField("lockProgressText", progText);
+            SetField("lockProgressFill", fillImg);
+            SetField("lockProgressBar", barGo);
+
+            ui.Construct(heroService, ach, null);
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(HeroSelectionUI).GetMethod("Awake", flags).Invoke(ui, null);
+            typeof(HeroSelectionUI).GetMethod("OnEnable", flags).Invoke(ui, null);
+
+            // Knight (unlocked default)
+            Assert.IsTrue(startGo.activeSelf, "StartButton shown for unlocked hero");
+            Assert.IsFalse(lockGo.activeSelf, "LockOverlay hidden for unlocked hero");
+            Renderer ActivePreviewRenderer() => previewRoot.GetComponentInChildren<Renderer>(false);
+            var block = new MaterialPropertyBlock();
+            Assert.IsNotNull(ActivePreviewRenderer(), "Knight preview renderer");
+            Assert.IsFalse(ActivePreviewRenderer().HasPropertyBlock(), "Unlocked hero is not silhouetted");
+
+            // Mage (locked: reach_wave_20, bestWave = 12)
+            ui.SelectNext();
+            Assert.IsFalse(startGo.activeSelf, "StartButton hidden for locked hero");
+            Assert.IsTrue(lockGo.activeSelf, "LockOverlay shown for locked hero");
+            StringAssert.Contains("12", progText.text);
+            StringAssert.Contains("/ 20", progText.text);
+            Assert.AreEqual(12f / 20f, fillImg.fillAmount, 0.001f);
+            Assert.IsNotNull(ActivePreviewRenderer(), "Mage preview renderer");
+            ActivePreviewRenderer().GetPropertyBlock(block);
+            Color actualBase = block.GetColor("_BaseColor");
+            Color expectedBase = UiTheme.Current.surfaceSunken;
+            Assert.AreEqual(expectedBase.r, actualBase.r, 0.005f, "Locked hero remains darkened (R)");
+            Assert.AreEqual(expectedBase.g, actualBase.g, 0.005f, "Locked hero remains darkened (G)");
+            Assert.AreEqual(expectedBase.b, actualBase.b, 0.005f, "Locked hero remains darkened (B)");
+            Assert.AreEqual(expectedBase.a, actualBase.a, 0.005f, "Locked hero remains darkened (A)");
+
+            // Ranger (locked: clear_3_shrines, progress = 1 / 3)
+            ui.SelectNext();
+            Assert.IsFalse(startGo.activeSelf);
+            Assert.IsTrue(lockGo.activeSelf);
+            StringAssert.Contains("1", progText.text);
+            StringAssert.Contains("/ 3", progText.text);
+            Assert.AreEqual(1f / 3f, fillImg.fillAmount, 0.001f);
+
+            // Back to Knight -> restored
+            ui.SelectPrevious();
+            ui.SelectPrevious();
+            Assert.IsTrue(startGo.activeSelf);
+            Assert.IsFalse(lockGo.activeSelf);
+            Assert.IsFalse(ActivePreviewRenderer().HasPropertyBlock());
         }
     }
 }
