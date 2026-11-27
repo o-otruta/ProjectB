@@ -1,9 +1,9 @@
 """
 ProjectB — 3D Voxel Main Menu Tab Icon Generator (Blender 5.3 + BLENDER_EEVEE)
-Builds 5 cohesive 3D voxel sculptures (Upgrades, Abilities, Play, Achievements, Bonus),
-renders each solo at 512x512 RGBA under unified 3-point studio lighting, post-processes
-with a #16132A contour + soft drop shadow into crisp 256x256 sprites, saves
-ArtSources/Blender/MenuTabIcons.blend, and arranges a 5-icon showcase in the viewport.
+Builds 6 cohesive 3D voxel sculptures (Upgrades, Abilities, Play, Achievements, Bonus,
+Constellations), renders each solo at 512x512 RGBA under unified 3-point studio lighting,
+post-processes with a #16132A contour + soft drop shadow into crisp 256x256 sprites, saves
+ArtSources/Blender/MenuTabIcons.blend, and arranges the icon showcase in the viewport.
 """
 
 import math
@@ -291,15 +291,24 @@ def build_upgrades_voxels() -> dict:
         for x in range(-hw, hw + 1):
             set_vox(v, x, 3, z, MAT_MATTE, EM_DK)
 
-    # Floating 3D golden 4-point plus-star sparkle at upper-right (cleanly separated from arrow)
-    sx, sy, sz = 8, -2, 6
-    set_vox(v, sx, sy, sz, MAT_GLOW, GLOW_W)
-    for dx, dz in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-        set_vox(v, sx + dx, sy, sz + dz, MAT_GLOW, GLOW_Y)
-    # Smaller 2x2 diamond accent at lower-right
-    set_vox(v, 7, -2, -4, MAT_GLOW, GLOW_W)
-    set_vox(v, 8, -2, -4, MAT_GLOW, GLOW_Y)
-    set_vox(v, 7, -2, -5, MAT_GLOW, GLOW_Y)
+    # Chunky 3D golden plus sign at upper-right (6x6 with 2-voxel-thick bars, cleanly separated from arrow)
+    for z in range(5, 11):
+        for x in range(5, 11):
+            in_vert = x in (7, 8)
+            in_horiz = z in (7, 8)
+            if not (in_vert or in_horiz):
+                continue
+            # Front lit glowing face (y = -2)
+            if x == 7 and z == 8:
+                front_col = GLOW_W
+            elif (in_vert and z == 10 and x == 7) or (in_horiz and x == 5 and z == 8):
+                front_col = GLOW_W
+            else:
+                front_col = GLOW_Y
+            set_vox(v, x, -2, z, MAT_GLOW, front_col)
+            # 3D metallic gold depth backing (y = -1)
+            back_col = GOLD_DK if (x == 10 or z == 5 or (x == 8 and z <= 6)) else GOLD
+            set_vox(v, x, -1, z, MAT_METAL, back_col)
 
     return v
 
@@ -710,102 +719,94 @@ def build_bonus_voxels() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 6. Tab_Constellations — 3D Constellation Star Map (Gold Stars + Cyan Core Shard)
+# 6. Tab_Constellations — 3D Faceted Boss Shard + Two Gleaming Golden Stars
 # ---------------------------------------------------------------------------
 def build_constellations_voxels() -> dict:
     v: dict = {}
-    IND = "#363E70"
-    IND_HI = "#5765A3"
-    IND_DK = "#21264A"
+    SHARD_SPEC = "#E6FFFD"
+    SHARD_HI = "#A6FFF6"
+    SHARD_TOP_R = "#32EEDC"
+    SHARD_BOT_L = "#1AC2C8"
+    SHARD_BOT_R = "#0E7E96"
+    SHARD_DEEP = "#085A70"
+    STAR_W = "#FFFBE0"
+    STAR_Y = "#FFE047"
     GOLD = "#FFC019"
-    GOLD_HI = "#FFE66E"
-    GOLD_DK = "#BA6C0B"
-    CYAN = "#38E4FF"
-    CYAN_HI = "#B8F8FF"
-    CYAN_DK = "#1898B8"
-    GLOW_Y = "#FFF4A3"
+    GOLD_SH = "#D98210"
 
-    def draw_beam(x0: int, z0: int, x1: int, z1: int, y_min: int, y_max: int, mat: int, col_hi: str, col_mid: str, col_dk: str):
-        steps = max(abs(x1 - x0), abs(z1 - z0)) * 2
-        if steps == 0:
-            return
-        for s in range(steps + 1):
-            t = s / float(steps)
-            cx = int(round(x0 + (x1 - x0) * t))
-            cz = int(round(z0 + (z1 - z0) * t))
-            for dx, dz in ((0, 0), (1, 0), (0, 1)):
-                for y in range(y_min, y_max + 1):
-                    col = col_hi if y == y_min else (col_dk if y == y_max else col_mid)
-                    set_vox(v, cx + dx, y, cz + dz, mat, col)
-
-    # Outer indigo astrolabe ring (r ~ 6.6) backing the constellation so the silhouette is chunky
-    for z in range(-8, 9):
-        for x in range(-8, 9):
-            dist = math.hypot(x, z - 0.5)
-            if 5.5 <= dist <= 7.5:
-                for y in (0, 1):
-                    if y == 0 and x <= 0 and z >= 0:
-                        col = IND_HI
-                    elif y == 1 or x >= 4 or z <= -4:
-                        col = IND_DK
+    # Hero 3D Octahedral Turquoise-Cyan Boss Shard centered at (0, 0, 0)
+    shard_profile = {
+        8: (0, 0),
+        7: (1, 1),
+        6: (2, 2),
+        5: (3, 2),
+        4: (4, 3),
+        3: (5, 4),
+        2: (6, 4),
+        1: (6, 4),
+        0: (5, 4),
+        -1: (5, 3),
+        -2: (4, 3),
+        -3: (4, 3),
+        -4: (3, 2),
+        -5: (3, 2),
+        -6: (2, 1),
+        -7: (1, 1),
+        -8: (0, 0),
+    }
+    for z, (rx, ry) in shard_profile.items():
+        if rx == 0:
+            set_vox(v, 0, 0, z, MAT_METAL, SHARD_HI if z > 0 else SHARD_BOT_R)
+            continue
+        for x in range(-rx, rx + 1):
+            for y in range(-ry, ry + 1):
+                if (abs(x) / float(rx)) + (abs(y) / float(ry)) > 1.05:
+                    continue
+                if x == 0 and y == -ry and 2 <= z <= 6:
+                    set_vox(v, x, y, z, MAT_GLOW, SHARD_SPEC)
+                elif y > 0:
+                    col = SHARD_DEEP if (z < 2 or x > 0 or y >= 2) else SHARD_BOT_R
+                    set_vox(v, x, y, z, MAT_METAL, col)
+                elif z >= 2:
+                    col = SHARD_HI if x <= 0 else SHARD_TOP_R
+                    set_vox(v, x, y, z, MAT_METAL, col)
+                else:
+                    if x <= 0:
+                        col = SHARD_BOT_L
                     else:
-                        col = IND
-                    set_vox(v, x, y, z, MAT_MATTE, col)
-
-    # Constellation star positions (x, z)
-    nodes = [
-        (0, 7),    # Top star
-        (-6, -5),  # Bottom-left star
-        (6, -5),   # Bottom-right star
-    ]
-
-    # Golden beams from central core to each star + subtle cross-links
-    for nx, nz in nodes:
-        draw_beam(0, 0, nx, nz, -1, 1, MAT_METAL, GOLD_HI, GOLD, GOLD_DK)
-
-    # Central Gold Ring Frame around the Cyan Boss Shard Core
-    for z in range(-3, 4):
-        for x in range(-3, 4):
-            if abs(x) + abs(z) <= 4 and abs(x) + abs(z) >= 2:
-                for y in (-1, 0, 1):
-                    col = GOLD_HI if (y == -1 and x <= 0) else (GOLD_DK if y == 1 else GOLD)
+                        col = SHARD_DEEP if z <= -5 else SHARD_BOT_R
                     set_vox(v, x, y, z, MAT_METAL, col)
 
-    # Central Glowing Cyan Boss Shard (y in [-2..1], tall diamond)
-    shard_pts = [
-        (0, 3), (-1, 2), (0, 2), (1, 2),
-        (-2, 1), (-1, 1), (0, 1), (1, 1), (2, 1),
-        (-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0),
-        (-2, -1), (-1, -1), (0, -1), (1, -1), (2, -1),
-        (-1, -2), (0, -2), (1, -2), (0, -3),
-    ]
-    for sx, sz in shard_pts:
-        for y in (-2, 0, -1):
-            if abs(sx) == 2 and y == -2:
-                continue
-            col = CYAN_HI if (sx <= 0 and sz >= 0 and y <= -1) else (CYAN_DK if (sx > 0 and sz < 0) else CYAN)
-            set_vox(v, sx, y, sz, MAT_GLOW, col)
-    set_vox(v, 0, -3, 0, MAT_GLOW, CYAN_HI)
-    set_vox(v, 0, -3, 1, MAT_GLOW, CYAN_HI)
+    # Starry Element 1 — Crisp 5x5 Golden 4-Point Celestial Star (Upper-Right Corner)
+    sx1, sy1, sz1 = 7, -1, 6
+    for dx, dz in (
+        (0, 0),
+        (-1, 0), (1, 0), (0, -1), (0, 1),
+        (-2, 0), (2, 0), (0, -2), (0, 2),
+    ):
+        ad = abs(dx) + abs(dz)
+        if ad == 0:
+            set_vox(v, sx1, sy1 - 1, sz1, MAT_GLOW, STAR_W)
+            set_vox(v, sx1, sy1, sz1, MAT_GLOW, STAR_Y)
+            set_vox(v, sx1, sy1 + 1, sz1, MAT_METAL, GOLD)
+        elif ad == 1:
+            set_vox(v, sx1 + dx, sy1, sz1 + dz, MAT_GLOW, STAR_Y)
+            set_vox(v, sx1 + dx, sy1 + 1, sz1 + dz, MAT_METAL, GOLD)
+        else:
+            front_col = STAR_Y if (dx <= 0 and dz >= 0) else GOLD
+            set_vox(v, sx1 + dx, sy1, sz1 + dz, MAT_GLOW, front_col)
+            set_vox(v, sx1 + dx, sy1 + 1, sz1 + dz, MAT_METAL, GOLD_SH)
 
-    # 3 Chunky Gold Star Nodes at the constellation tips
-    star_offsets = [
-        (0, 2),
-        (-1, 1), (0, 1), (1, 1),
-        (-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0),
-        (-1, -1), (0, -1), (1, -1),
-        (0, -2),
-    ]
-    for nx, nz in nodes:
-        for dx, dz in star_offsets:
-            for y in (-2, -1, 0, 1):
-                if abs(dx) + abs(dz) == 2 and y in (-2, 1):
-                    continue
-                if dx == 0 and dz == 0 and y == -2:
-                    set_vox(v, nx + dx, y, nz + dz, MAT_GLOW, GLOW_Y)
-                else:
-                    col = GOLD_HI if (dx <= 0 and dz >= 0 and y <= -1) else (GOLD_DK if y >= 1 else GOLD)
-                    set_vox(v, nx + dx, y, nz + dz, MAT_METAL, col)
+    # Starry Element 2 — Crisp 3x3 Symmetric Golden Twinkle Star (Lower-Left Corner)
+    sx2, sy2, sz2 = -6, -1, -5
+    for dx, dz in ((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)):
+        if dx == 0 and dz == 0:
+            set_vox(v, sx2, sy2 - 1, sz2, MAT_GLOW, STAR_W)
+            set_vox(v, sx2, sy2, sz2, MAT_GLOW, STAR_Y)
+            set_vox(v, sx2, sy2 + 1, sz2, MAT_METAL, GOLD)
+        else:
+            set_vox(v, sx2 + dx, sy2, sz2 + dz, MAT_GLOW, STAR_Y)
+            set_vox(v, sx2 + dx, sy2 + 1, sz2 + dz, MAT_METAL, GOLD_SH)
 
     return v
 
@@ -1052,7 +1053,7 @@ def frame_viewport_on_showcase(scene: bpy.types.Scene):
                 region_3d.view_rotation = Euler((math.radians(68.0), 0.0, math.radians(-12.0)), "XYZ").to_quaternion()
 
 
-def main():
+def main(only_names: set[str] | None = None):
     clear_scene()
     scene = bpy.context.scene
     materials = create_voxel_materials()
@@ -1064,7 +1065,7 @@ def main():
         ("Tab_Play", "icon_tab_play.png", build_play_voxels, 0.0, -16.0, 18.0, 0.82),
         ("Tab_Achievements", "icon_tab_achievements.png", build_achievements_voxels, 2.2, -21.0, 25.0, 0.81),
         ("Tab_Bonus", "icon_tab_bonus.png", build_bonus_voxels, 4.4, -24.0, 25.0, 0.81),
-        ("Tab_Constellations", "icon_tab_constellations.png", build_constellations_voxels, 6.6, -18.0, 22.0, 0.82),
+        ("Tab_Constellations", "icon_tab_constellations.png", build_constellations_voxels, 6.6, -20.0, 18.0, 0.84),
     ]
 
     collections: list[bpy.types.Collection] = []
@@ -1082,6 +1083,9 @@ def main():
     rendered_files = []
 
     for idx, (col_name, out_name, _, _, az, el, fill_ratio) in enumerate(icon_specs):
+        if only_names is not None and col_name not in only_names:
+            continue
+
         for j, col in enumerate(collections):
             col.hide_render = (j != idx)
 
@@ -1113,4 +1117,4 @@ def main():
     }
 
 
-result = main()
+result = main(globals().get("ONLY_ICONS"))
