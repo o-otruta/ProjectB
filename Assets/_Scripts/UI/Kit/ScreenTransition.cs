@@ -29,6 +29,11 @@ namespace ProjectB.UI
 
         private void OnDisable()
         {
+            StopAndReset();
+        }
+
+        public void StopAndReset()
+        {
             UiTween.Kill(Group, complete: true);
             if (slideTarget != null) UiTween.Kill(slideTarget, complete: true);
             UiTween.Kill(transform, complete: true);

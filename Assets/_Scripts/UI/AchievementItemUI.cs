@@ -1,10 +1,10 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ProjectB.Abilities;
 using ProjectB.Core;
 using ProjectB.Data;
-using System;
 
 namespace ProjectB.UI
 {
@@ -37,6 +37,10 @@ namespace ProjectB.UI
 
         public event Action<AchievementData> OnItemClicked;
         private AchievementData currentData;
+        private bool hasBoundState;
+        private int lastProgress;
+        private bool lastCompleted;
+        private SystemLanguage lastLanguage;
 
         public AchievementData Data => currentData;
         public Button ItemButton => itemButton;
@@ -67,21 +71,44 @@ namespace ProjectB.UI
 
         public void Setup(AchievementData data, int currentProgress, bool isCompleted, AbilityCatalog abilityCatalog = null)
         {
+            if (data == null) return;
+
+            SystemLanguage currentLanguage = LocalizationService.Current.CurrentLanguage;
+            if (hasBoundState
+                && ReferenceEquals(currentData, data)
+                && lastProgress == currentProgress
+                && lastCompleted == isCompleted
+                && lastLanguage == currentLanguage)
+            {
+                return;
+            }
+
+            bool dataOrLanguageChanged = !hasBoundState || !ReferenceEquals(currentData, data) || lastLanguage != currentLanguage;
             currentData = data;
+            lastProgress = currentProgress;
+            lastCompleted = isCompleted;
+            lastLanguage = currentLanguage;
+            hasBoundState = true;
+
             UiTheme theme = UiTheme.Current;
             bool themed = rewardText != null;
 
-            if (iconImage != null) iconImage.sprite = data.icon;
-            if (titleText != null) titleText.text = Loc.Title(data);
-            if (descriptionText != null) descriptionText.text = Loc.Desc(data);
-
-            if (rewardText != null) rewardText.text = RewardDisplayFormatter.FormatRewardShort(data, abilityCatalog);
-            if (rewardIcon != null)
+            if (dataOrLanguageChanged)
             {
-                Sprite s = RewardDisplayFormatter.ResolveRewardIcon(data, abilityCatalog);
-                rewardIcon.sprite = s;
-                rewardIcon.enabled = s != null;
+                if (iconImage != null && iconImage.sprite != data.icon) iconImage.sprite = data.icon;
+                if (titleText != null) SetTextIfChanged(titleText, Loc.Title(data));
+                if (descriptionText != null) SetTextIfChanged(descriptionText, Loc.Desc(data));
+
+                if (rewardText != null) SetTextIfChanged(rewardText, RewardDisplayFormatter.FormatRewardShort(data, abilityCatalog));
+                if (rewardIcon != null)
+                {
+                    Sprite s = RewardDisplayFormatter.ResolveRewardIcon(data, abilityCatalog);
+                    if (rewardIcon.sprite != s) rewardIcon.sprite = s;
+                    bool showRewardIcon = s != null;
+                    if (rewardIcon.enabled != showRewardIcon) rewardIcon.enabled = showRewardIcon;
+                }
             }
+
             if (rewardChipBg != null) rewardChipBg.color = UiTheme.WithAlpha(isCompleted ? theme.success : theme.gold, 0.18f);
             if (rewardText != null) rewardText.color = isCompleted ? theme.success : theme.gold;
             if (canvasGroup != null) canvasGroup.alpha = isCompleted ? 0.6f : 1f;
@@ -89,36 +116,42 @@ namespace ProjectB.UI
 
             if (isCompleted)
             {
-                if (progressText != null) progressText.text = themed
-                    ? Loc.Get("ui.achievements.completed", "Completed")
-                    : Loc.Get("ui.achievements.completed_exclaim", "Completed!");
-                if (progressBarFill != null) progressBarFill.gameObject.SetActive(themed);
-                if (progressBarFill != null && themed)
+                if (progressText != null)
                 {
-                    progressBarFill.fillAmount = 1f;
-                    progressBarFill.color = theme.success;
+                    SetTextIfChanged(progressText, themed
+                        ? Loc.Get("ui.achievements.completed", "Completed")
+                        : Loc.Get("ui.achievements.completed_exclaim", "Completed!"));
                 }
-                if (progressBarBackground != null) progressBarBackground.SetActive(themed);
-                if (completedMark != null) completedMark.SetActive(true);
+                if (progressBarFill != null)
+                {
+                    if (progressBarFill.gameObject.activeSelf != themed) progressBarFill.gameObject.SetActive(themed);
+                    if (themed)
+                    {
+                        progressBarFill.fillAmount = 1f;
+                        progressBarFill.color = theme.success;
+                    }
+                }
+                if (progressBarBackground != null && progressBarBackground.activeSelf != themed) progressBarBackground.SetActive(themed);
+                if (completedMark != null && !completedMark.activeSelf) completedMark.SetActive(true);
 
                 if (iconImage != null) iconImage.color = themed ? Color.white : completedColor;
-                if (itemButton != null) itemButton.interactable = true;
+                if (itemButton != null && !itemButton.interactable) itemButton.interactable = true;
             }
             else
             {
-                if (progressText != null) progressText.text = $"{Mathf.Min(currentProgress, data.targetValue)} / {data.targetValue}";
+                if (progressText != null) SetTextIfChanged(progressText, $"{Mathf.Min(currentProgress, data.targetValue)} / {data.targetValue}");
 
-                if (progressBarBackground != null) progressBarBackground.SetActive(true);
+                if (progressBarBackground != null && !progressBarBackground.activeSelf) progressBarBackground.SetActive(true);
                 if (progressBarFill != null)
                 {
-                    progressBarFill.gameObject.SetActive(true);
+                    if (!progressBarFill.gameObject.activeSelf) progressBarFill.gameObject.SetActive(true);
                     progressBarFill.fillAmount = data.targetValue > 0
                         ? Mathf.Clamp01((float)currentProgress / data.targetValue)
                         : 0f;
                     if (themed) progressBarFill.color = theme.accent;
                 }
 
-                if (completedMark != null) completedMark.SetActive(false);
+                if (completedMark != null && completedMark.activeSelf) completedMark.SetActive(false);
 
                 if (iconImage != null)
                 {
@@ -126,7 +159,15 @@ namespace ProjectB.UI
                         ? (currentProgress > 0 ? Color.white : UiTheme.WithAlpha(Color.white, 0.55f))
                         : (currentProgress > 0 ? inProgressColor : lockedColor);
                 }
-                if (itemButton != null) itemButton.interactable = false;
+                if (itemButton != null && itemButton.interactable) itemButton.interactable = false;
+            }
+        }
+
+        private static void SetTextIfChanged(TMP_Text textComponent, string value)
+        {
+            if (!string.Equals(textComponent.text, value, StringComparison.Ordinal))
+            {
+                textComponent.text = value;
             }
         }
     }

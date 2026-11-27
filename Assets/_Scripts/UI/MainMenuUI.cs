@@ -312,8 +312,8 @@ namespace ProjectB.UI
 
         private void CloseAllPanels()
         {
-            if (achievementScreenUI != null) achievementScreenUI.gameObject.SetActive(false);
-            if (abilitiesScreenUI != null) abilitiesScreenUI.gameObject.SetActive(false);
+            if (achievementScreenUI != null) achievementScreenUI.Hide();
+            if (abilitiesScreenUI != null) abilitiesScreenUI.Hide();
             if (metaUpgradeUI != null) metaUpgradeUI.Hide();
             if (dailyBonusScreenUI != null) dailyBonusScreenUI.gameObject.SetActive(false);
             if (playScreenPanel != null) playScreenPanel.SetActive(false);
@@ -409,7 +409,7 @@ namespace ProjectB.UI
             SelectTab(TAB_ABILITIES);
             if (abilitiesScreenUI != null)
             {
-                abilitiesScreenUI.gameObject.SetActive(true);
+                abilitiesScreenUI.Show();
             }
             else
             {
@@ -428,7 +428,7 @@ namespace ProjectB.UI
             UpdateBadges();
             if (achievementScreenUI != null)
             {
-                achievementScreenUI.gameObject.SetActive(true);
+                achievementScreenUI.Show();
             }
             FocusCurrentTab();
         }

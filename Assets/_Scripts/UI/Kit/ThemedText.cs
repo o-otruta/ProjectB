@@ -52,31 +52,38 @@ namespace ProjectB.UI
             if (font != null && text.font != font) text.font = font;
 
             Material preset = theme.GetMaterial(style);
+            Material targetMat = text.fontSharedMaterial;
             if (flatHeavy)
             {
-                text.fontSharedMaterial = (theme.heavyFlatMaterial != null && theme.bodyBoldFont != null)
+                targetMat = (theme.heavyFlatMaterial != null && theme.bodyBoldFont != null)
                     ? theme.heavyFlatMaterial
                     : (font != null ? font.material : text.fontSharedMaterial);
             }
             else if (preset != null && font != null && preset.mainTexture == font.atlasTexture)
             {
-                text.fontSharedMaterial = preset;
+                targetMat = preset;
             }
             else if (font != null)
             {
-                text.fontSharedMaterial = font.material;
+                targetMat = font.material;
+            }
+
+            if (text.fontSharedMaterial != targetMat)
+            {
+                text.fontSharedMaterial = targetMat;
             }
 
             if (!applySize) return;
             float size = theme.GetFontSize(style) * sizeScale;
             if (text.enableAutoSizing)
             {
-                text.fontSizeMax = size;
-                text.fontSizeMin = Mathf.Min(text.fontSizeMin, size * 0.6f);
+                if (!Mathf.Approximately(text.fontSizeMax, size)) text.fontSizeMax = size;
+                float minSize = Mathf.Min(text.fontSizeMin, size * 0.6f);
+                if (!Mathf.Approximately(text.fontSizeMin, minSize)) text.fontSizeMin = minSize;
             }
             else
             {
-                text.fontSize = size;
+                if (!Mathf.Approximately(text.fontSize, size)) text.fontSize = size;
             }
         }
     }

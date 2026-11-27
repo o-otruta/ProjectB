@@ -184,6 +184,7 @@ namespace ProjectB.EditorScripts
             var chipName = Txt(chip.transform, "Name", "Synergy", UiTextStyle.Caption, UiColor.Shard, TextAlignmentOptions.MidlineLeft, false);
             chipName.textWrappingMode = TextWrappingModes.NoWrap;
             chipName.overflowMode = TextOverflowModes.Overflow;
+            chip.gameObject.SetActive(false);
 
             Set(ui, "cardBackground", bg);
             Set(ui, "rarityStripe", stripe);
