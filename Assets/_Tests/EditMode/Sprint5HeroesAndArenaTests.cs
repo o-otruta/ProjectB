@@ -84,7 +84,8 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsTrue(File.Exists(blendPath), $"Missing Blender source file: {blendPath}");
             }
 
-            // 2. Verify all 14 voxel materials (VoxelLit for heroes, URP Lit for props/projectiles + GPU Instancing + textures)
+            // 2. Verify all 14 voxel materials (VoxelLit for heroes and the explosive barrel — it needs _HitFlash/_RimColor
+            //    for its fuse flash and idle glow; URP Lit for other props/projectiles + GPU Instancing + textures)
             Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
             Shader voxelLit = Shader.Find("ProjectB/VoxelLit");
             Assert.IsNotNull(urpLit);
@@ -100,7 +101,7 @@ namespace ProjectB.Tests.EditMode
                 Material glowMat = AssetDatabase.LoadAssetAtPath<Material>($"Assets/_Materials/Voxels/{prefix}_Glow_Mat.mat");
                 Assert.IsNotNull(baseMat, $"Missing {prefix}_Mat.mat");
                 Assert.IsNotNull(glowMat, $"Missing {prefix}_Glow_Mat.mat");
-                Shader expectedShader = (prefix == "Ranger" || prefix == "NecromancerHero") ? voxelLit : urpLit;
+                Shader expectedShader = (prefix == "Ranger" || prefix == "NecromancerHero" || prefix == "ExplosiveBarrel") ? voxelLit : urpLit;
                 Assert.AreEqual(expectedShader, baseMat.shader);
                 Assert.AreEqual(expectedShader, glowMat.shader);
                 Assert.IsTrue(baseMat.enableInstancing);
