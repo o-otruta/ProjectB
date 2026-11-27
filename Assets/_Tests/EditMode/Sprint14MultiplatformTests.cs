@@ -1746,10 +1746,12 @@ namespace ProjectB.Tests.EditMode
             }
         }
 
+        private const string WebBuildProfilePath = "Assets/Settings/Build Profiles/Web.asset";
+
         [Test]
-        public void WebBuildConfiguration_HasBuildProfile_QualityWeb_Brotli_StrippingMedium_LinkXml_AndTemplate()
+        public void WebBuildConfiguration_HasBuildProfile_QualityWeb_LinkXml_AndTemplate()
         {
-            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>("Assets/Settings/Build Profiles/Web.asset");
+            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebBuildProfilePath);
             Assert.IsNotNull(profile, "Web BuildProfile missing");
 
             var webRp = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/Web_RPAsset.asset");
@@ -1760,19 +1762,31 @@ namespace ProjectB.Tests.EditMode
             int webQualityIdx = Array.IndexOf(QualitySettings.names, "Web");
             Assert.GreaterOrEqual(webQualityIdx, 0, "Quality level 'Web' missing");
 
-            Assert.IsFalse(PlayerSettings.runInBackground, "runInBackground must be false for WebGL");
-            Assert.AreEqual(WebGLCompressionFormat.Brotli, PlayerSettings.WebGL.compressionFormat);
-            // Unity 6 Medium (--rule-set=Aggressive) strips VContainer.InjectAttribute : PreserveAttribute even with link.xml; Low (--rule-set=Conservative) preserves it.
-            Assert.AreEqual(ManagedStrippingLevel.Low, PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL));
-            Assert.AreEqual(Il2CppCodeGeneration.OptimizeSize, PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.WebGL));
-            Assert.AreEqual("PROJECT:ProjectB_Web", PlayerSettings.WebGL.template);
-
             Assert.IsTrue(File.Exists("Assets/link.xml"), "Assets/link.xml missing");
             string linkXml = File.ReadAllText("Assets/link.xml");
             StringAssert.Contains("VContainer", linkXml);
             StringAssert.Contains("MeshCollider", linkXml);
             Assert.IsTrue(File.Exists("Assets/WebGLTemplates/ProjectB_Web/index.html"), "WebGL template index.html missing");
             Assert.IsTrue(File.Exists("Assets/Plugins/WebGL/ProjectBWebBridge.jslib"), "ProjectBWebBridge.jslib missing");
+        }
+
+        [Test]
+        public void WebBuildConfiguration_PlayerSettings_Brotli_StrippingLow_NoRunInBackground()
+        {
+            // The Web profile overrides Player Settings; global PlayerSettings only reflect them while it is active.
+            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(WebBuildProfilePath);
+            Assert.IsNotNull(profile, "Web BuildProfile missing");
+            if (BuildProfile.GetActiveBuildProfile() != profile)
+            {
+                Assert.Ignore("Web Build Profile is not active; switch to it to check WebGL Player Settings.");
+            }
+
+            Assert.IsFalse(PlayerSettings.runInBackground, "runInBackground must be false for WebGL");
+            Assert.AreEqual(WebGLCompressionFormat.Brotli, PlayerSettings.WebGL.compressionFormat);
+            // Unity 6 Medium (--rule-set=Aggressive) strips VContainer.InjectAttribute : PreserveAttribute even with link.xml; Low (--rule-set=Conservative) preserves it.
+            Assert.AreEqual(ManagedStrippingLevel.Low, PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.WebGL));
+            Assert.AreEqual(Il2CppCodeGeneration.OptimizeSize, PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.WebGL));
+            Assert.AreEqual("PROJECT:ProjectB_Web", PlayerSettings.WebGL.template);
         }
     }
 }
