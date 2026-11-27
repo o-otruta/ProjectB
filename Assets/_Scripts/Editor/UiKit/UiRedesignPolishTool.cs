@@ -11,8 +11,8 @@ namespace ProjectB.EditorScripts.UiKit
 {
     /// <summary>
     /// Idempotent UI Kit v4 polish for secondary screens and shared prefabs that sit outside the 3 core
-    /// redesign tools: <c>AbilityCollectionItem.prefab</c> rarity stripe, centered <c>SettingsPopup</c> header,
-    /// snug <c>GameOver</c> reward pills, and Primary gold <c>Restart</c> CTA.
+    /// redesign tools: <c>AbilityCollectionItem.prefab</c> rarity stripe, frameless <c>AbilitiesPanel/HeaderChips</c>
+    /// readouts, centered <c>SettingsPopup</c> header, snug <c>GameOver</c> reward pills, and Primary gold <c>Restart</c> CTA.
     /// </summary>
     public static class UiRedesignPolishTool
     {
@@ -38,8 +38,106 @@ namespace ProjectB.EditorScripts.UiKit
 
         public static void ApplyMainMenu(Scene scene)
         {
+            RestyleAbilitiesHeaderReadouts(scene);
             CenterSettingsTitle(scene);
             CenterButtonLabels(scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        public static void RestyleAbilitiesHeaderReadouts(Scene scene)
+        {
+            Transform headerChips = FindChildRecursive(scene, "AbilitiesPanel/HeaderChips");
+            if (headerChips == null) return;
+
+            if (headerChips.TryGetComponent(out HorizontalLayoutGroup rowHl))
+            {
+                rowHl.spacing = 36f;
+                rowHl.padding = new RectOffset(0, 0, 0, 0);
+                rowHl.childAlignment = TextAnchor.MiddleCenter;
+                rowHl.childControlWidth = true;
+                rowHl.childControlHeight = true;
+                rowHl.childForceExpandWidth = false;
+                rowHl.childForceExpandHeight = true;
+                EditorUtility.SetDirty(rowHl);
+            }
+
+            foreach (string chipName in new[] { "CollectedChip", "SynergiesChip", "SlotsChip" })
+            {
+                Transform chip = headerChips.Find(chipName);
+                if (chip == null) continue;
+
+                foreach (ThemedButton tb in chip.GetComponents<ThemedButton>())
+                {
+                    Object.DestroyImmediate(tb);
+                }
+                foreach (Button btn in chip.GetComponents<Button>())
+                {
+                    Object.DestroyImmediate(btn);
+                }
+
+                var tg = GetOrAdd<ThemedGraphic>(chip.gameObject);
+                tg.Configure(UiColor.SurfaceSunken, 0f, UiSprite.Pill);
+                EditorUtility.SetDirty(tg);
+
+                if (chip.TryGetComponent(out Image img))
+                {
+                    img.raycastTarget = false;
+                    if (img.material == Theme.surfaceMaterial) img.material = null;
+                    EditorUtility.SetDirty(img);
+                }
+
+                if (chip.TryGetComponent(out HorizontalLayoutGroup hl))
+                {
+                    hl.padding = new RectOffset(4, 4, 0, 0);
+                    hl.spacing = 8f;
+                    hl.childAlignment = TextAnchor.MiddleCenter;
+                    hl.childControlWidth = true;
+                    hl.childControlHeight = true;
+                    hl.childForceExpandWidth = false;
+                    hl.childForceExpandHeight = false;
+                    EditorUtility.SetDirty(hl);
+                }
+
+                Transform icon = chip.Find("Icon");
+                if (icon != null)
+                {
+                    var iconLe = LE(icon.gameObject, minH: 36f, prefH: 36f, minW: 36f, prefW: 36f);
+                    EditorUtility.SetDirty(iconLe);
+
+                    var iconTg = GetOrAdd<ThemedGraphic>(icon.gameObject);
+                    if (chipName == "SlotsChip")
+                    {
+                        iconTg.Configure(UiColor.TextSecondary, 1f, UiSprite.None);
+                    }
+                    else
+                    {
+                        iconTg.Configure(UiColor.White, 0.85f, UiSprite.None);
+                    }
+                    EditorUtility.SetDirty(iconTg);
+                    if (icon.TryGetComponent(out Image iconImg)) EditorUtility.SetDirty(iconImg);
+                }
+
+                Transform text = chip.Find("Text");
+                if (text != null)
+                {
+                    var textTg = GetOrAdd<ThemedGraphic>(text.gameObject);
+                    textTg.Configure(UiColor.TextSecondary, 1f, UiSprite.None);
+                    EditorUtility.SetDirty(textTg);
+
+                    if (text.TryGetComponent(out TMP_Text tmp))
+                    {
+                        tmp.raycastTarget = false;
+                        tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                        tmp.overflowMode = TextOverflowModes.Overflow;
+                        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+                        EditorUtility.SetDirty(tmp);
+                    }
+                }
+
+                EditorUtility.SetDirty(chip.gameObject);
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(Rt(headerChips));
             EditorSceneManager.MarkSceneDirty(scene);
         }
 

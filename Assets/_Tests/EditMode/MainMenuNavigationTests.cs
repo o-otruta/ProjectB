@@ -370,5 +370,75 @@ namespace ProjectB.Tests.EditMode
                 if (openedHere) EditorSceneManager.CloseScene(scene, true);
             }
         }
+
+        [Test]
+        public void MainMenuScene_AbilitiesHeaderChips_AreFramelessNonClickableReadouts()
+        {
+            Scene loaded = SceneManager.GetSceneByPath(MainMenuPath);
+            bool openedHere = !loaded.isLoaded;
+            Scene scene = openedHere ? EditorSceneManager.OpenScene(MainMenuPath, OpenSceneMode.Additive) : loaded;
+            try
+            {
+                Transform safe = null;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    if (root.name == "Canvas")
+                    {
+                        safe = root.transform.Find("SafeAreaRoot");
+                        break;
+                    }
+                }
+                Assert.IsNotNull(safe, "Canvas/SafeAreaRoot");
+
+                Transform abilitiesPanel = safe.Find("AbilitiesPanel");
+                Assert.IsNotNull(abilitiesPanel, "AbilitiesPanel");
+                var abilitiesUi = abilitiesPanel.GetComponent<AbilitiesScreenUI>();
+                Assert.IsNotNull(abilitiesUi, "AbilitiesScreenUI");
+
+                Transform headerChips = abilitiesPanel.Find("HeaderChips");
+                Assert.IsNotNull(headerChips, "AbilitiesPanel/HeaderChips");
+
+                var expectedFields = new (string chipName, string fieldName)[]
+                {
+                    ("CollectedChip", "collectedChipText"),
+                    ("SynergiesChip", "synergiesChipText"),
+                    ("SlotsChip", "slotsChipText")
+                };
+
+                foreach (var (chipName, fieldName) in expectedFields)
+                {
+                    Transform chip = headerChips.Find(chipName);
+                    Assert.IsNotNull(chip, $"HeaderChips/{chipName}");
+                    Assert.IsNull(chip.GetComponent<Button>(), $"{chipName} must not have a Button");
+                    Assert.IsNull(chip.GetComponent<ThemedButton>(), $"{chipName} must not have a ThemedButton");
+                    Assert.IsNotNull(chip.Find("Icon"), $"{chipName}/Icon");
+                    Transform textT = chip.Find("Text");
+                    Assert.IsNotNull(textT, $"{chipName}/Text");
+                    var textTmp = textT.GetComponent<TMP_Text>();
+                    Assert.AreSame(textTmp, GetPrivate(abilitiesUi, fieldName),
+                        $"AbilitiesScreenUI.{fieldName} must remain wired to {chipName}/Text");
+                    var textTg = textT.GetComponent<ThemedGraphic>();
+                    Assert.IsNotNull(textTg, $"{chipName}/Text ThemedGraphic");
+                    Assert.AreEqual(UiColor.TextSecondary, textTg.Color, $"{chipName}/Text must use UiColor.TextSecondary");
+                    Assert.AreEqual(UiTheme.Current.textSecondary, textTmp.color, $"{chipName}/Text color must match TextSecondary");
+
+                    var chipImg = chip.GetComponent<Image>();
+                    Assert.IsNotNull(chipImg, $"{chipName} Image");
+                    Assert.IsFalse(chipImg.raycastTarget, $"{chipName} must not capture raycasts");
+                    Assert.LessOrEqual(chipImg.color.a, 0.01f, $"{chipName} must have no button-like frame");
+                    Assert.AreNotSame(UiTheme.Current.surfaceMaterial, chipImg.material, $"{chipName} must not use ToySurface material");
+
+                    var tg = chip.GetComponent<ThemedGraphic>();
+                    Assert.IsNotNull(tg, $"{chipName} ThemedGraphic");
+                    tg.ApplyTheme(UiTheme.Current);
+                    Assert.LessOrEqual(chipImg.color.a, 0.01f, $"{chipName} stays frameless after ThemedGraphic.ApplyTheme");
+                    Assert.AreNotSame(UiTheme.Current.surfaceMaterial, chipImg.material, $"{chipName} keeps ToySurface cleared after ApplyTheme");
+                }
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+        }
     }
 }
