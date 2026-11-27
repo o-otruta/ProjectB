@@ -637,7 +637,7 @@
 - [ ] **17.2. Реклама и согласие (R2):**
   - Импорт Google Mobile Ads Unity Plugin, `GOOGLE_MOBILE_ADS`, боевые Ad Unit IDs в `AdConfig`; тестовые ID — в Development-сборках.
   - **UMP (User Messaging Platform):** запрос согласия до инициализации рекламы; кнопка «Настройки конфиденциальности» в `SettingsPopupUI`, когда UMP требует privacy options.
-  - Проверить все rewarded-точки: 3-я карточка, реролл, x2 монеты, воскрешение, дейли x2. Кнопки неактивны без загруженной рекламы. Лимиты `AdConfig`.
+  - Проверить все rewarded-точки: реролл, x2 монеты, воскрешение, дейли x2. Кнопки неактивны без загруженной рекламы. Лимиты `AdConfig`.
 - [ ] **17.3. Покупки (Unity IAP → Google Play Billing):**
   - `Remove Ads` ($2.99) выставляет `SaveData.adsRemoved` и отключает interstitial (rewarded остаются как опция игрока).
   - `Starter Pack` ($0.99): монеты + стартовая способность.

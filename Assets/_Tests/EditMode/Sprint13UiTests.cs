@@ -497,9 +497,9 @@ namespace ProjectB.Tests.EditMode
             {
                 CardSelectionUI selection = FindInScene<CardSelectionUI>(scene)[0];
                 var cards = (CardUI[])GetPrivate(selection, "cardSlots");
-                Assert.AreEqual(3, cards.Length, "3 cards incl. the rewarded one");
+                Assert.AreEqual(3, cards.Length, "3 free cards");
                 Transform container = cards[0].transform.parent;
-                Assert.AreSame(container, cards[2].transform.parent, "the ad card lives in the same stack");
+                Assert.AreSame(container, cards[2].transform.parent, "all 3 cards live in the same stack");
 
                 var stack = container.GetComponent<AdaptiveLayoutGroup>();
                 Assert.IsNotNull(stack, "cards container uses AdaptiveLayoutGroup");
@@ -532,7 +532,9 @@ namespace ProjectB.Tests.EditMode
 
                 Assert.IsNotNull(GetPrivate(selection, "titleText"), "LEVEL UP! title");
                 Assert.IsNotNull(GetPrivate(cards[0], "frameImage"), "rarity lives in the frame");
-                Assert.IsNotNull(GetPrivate(cards[2], "lockOverlay"), "rewarded card shows a lock");
+                Assert.AreEqual(3, selection.FreeSlotsCount, "all 3 LevelUp cards are free");
+                Assert.IsNull(GetPrivate(cards[2], "lockOverlay"), "3rd card is free and has no lock overlay");
+                Assert.IsNull(GetPrivate(cards[2], "adBadgeObject"), "3rd card is free and has no ad badge");
             });
         }
 

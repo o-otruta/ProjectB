@@ -17,7 +17,7 @@ namespace ProjectB.LevelUp
     {
         [SerializeField] private GameObject selectionPanel;
         [SerializeField] private CardUI[] cardSlots;
-        [SerializeField] private int freeCardsCount = 2;
+        [SerializeField] private int freeCardsCount = 3;
 
         [Header("Reroll")]
         [SerializeField] private Button rerollButton;

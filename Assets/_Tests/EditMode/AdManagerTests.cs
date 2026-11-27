@@ -175,7 +175,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void LevelUpThirdCard_RequiresRewardedAd_AndStaysOpenIfAdFails()
+        public void AdGatedCardSlot_WhenConfigured_RequiresRewardedAd_AndStaysOpenIfAdFails()
         {
             config.maxRewardedPerSession = 2;
             var manager = new AdManager(saveManager, config, provider);
@@ -256,6 +256,65 @@ namespace ProjectB.Tests.EditMode
 
                 card2.OnPointerClick(new PointerEventData(null));
                 Assert.AreEqual(card2Data, pickedCard);
+                Assert.IsFalse(selectionUI.IsActive);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(card1Data);
+                Object.DestroyImmediate(card2Data);
+                Object.DestroyImmediate(card3Data);
+            }
+        }
+
+        [Test]
+        public void LevelUpThirdCard_IsFreeByDefault_SelectsWithoutRewardedAd()
+        {
+            config.maxRewardedPerSession = 2;
+            provider.IsRewardedReady = false;
+            var manager = new AdManager(saveManager, config, provider);
+
+            var root = new GameObject("CardSelectionDefaultTestRoot");
+            var panel = new GameObject("SelectionPanel");
+            panel.transform.SetParent(root.transform, false);
+            panel.SetActive(false);
+
+            var card1Data = ScriptableObject.CreateInstance<AdTestCardData>();
+            card1Data.cardName = "Card 1";
+            card1Data.description = "Free 1";
+            var card2Data = ScriptableObject.CreateInstance<AdTestCardData>();
+            card2Data.cardName = "Card 2";
+            card2Data.description = "Free 2";
+            var card3Data = ScriptableObject.CreateInstance<AdTestCardData>();
+            card3Data.cardName = "Card 3";
+            card3Data.description = "Free 3";
+
+            try
+            {
+                var card1 = CreateTestCardSlot(panel.transform, "Card_1", out _, out _);
+                var card2 = CreateTestCardSlot(panel.transform, "Card_2", out _, out _);
+                var card3 = CreateTestCardSlot(panel.transform, "Card_3", out GameObject badgeObj, out Button card3Button);
+
+                var selectionUI = root.AddComponent<CardSelectionUI>();
+                SetPrivateField(selectionUI, "selectionPanel", panel);
+                SetPrivateField(selectionUI, "cardSlots", new[] { card1, card2, card3 });
+                selectionUI.Construct(manager);
+
+                Assert.AreEqual(3, selectionUI.FreeSlotsCount);
+
+                var cards = new List<CardData> { card1Data, card2Data, card3Data };
+                CardData pickedCard = null;
+                selectionUI.ShowCards(cards, card => pickedCard = card);
+
+                Assert.IsTrue(selectionUI.IsActive);
+                Assert.IsFalse(badgeObj.activeSelf);
+                Assert.AreEqual(string.Empty, card3.AdBadgeLabel);
+                Assert.IsTrue(card3.IsInteractable);
+                Assert.IsTrue(card3Button.interactable);
+
+                card3.OnPointerClick(new PointerEventData(null));
+                Assert.AreEqual(0, provider.RewardedShowCalls);
+                Assert.AreEqual(card3Data, pickedCard);
                 Assert.IsFalse(selectionUI.IsActive);
             }
             finally

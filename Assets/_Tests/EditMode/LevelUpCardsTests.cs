@@ -156,6 +156,7 @@ namespace ProjectB.Tests.EditMode
                     if (selection != null) break;
                 }
                 Assert.IsNotNull(selection);
+                Assert.AreEqual(3, selection.FreeSlotsCount, "all 3 LevelUp cards must be free");
 
                 var cards = (CardUI[])GetPrivate(selection, "cardSlots");
                 Assert.AreEqual(3, cards.Length);

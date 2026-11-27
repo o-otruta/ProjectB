@@ -8,7 +8,7 @@ namespace ProjectB.Data
         GameOverRevive = 1,
         DailyBonusDouble = 2,
         BetweenRunsInterstitial = 3,
-        LevelUpThirdCard = 4,
+        LevelUpThirdCard = 4, // Legacy: all 3 LevelUp cards are now free by default
         LevelUpReroll = 5
     }
 

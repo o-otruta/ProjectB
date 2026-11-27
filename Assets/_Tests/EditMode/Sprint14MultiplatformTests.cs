@@ -646,7 +646,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void CardSelectionUI_InputDelay_BlocksEarlySelectionAndReArmsOnReroll_AndKeepsThirdCardAdGate()
+        public void CardSelectionUI_InputDelay_BlocksEarlySelectionAndReArmsOnReroll_AndSelectsFreeThirdCard()
         {
             bool createdEs = EventSystem.current == null;
             GameObject esGo = null;
@@ -755,20 +755,15 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsFalse(selection.TrySelectSlotByIndex(0));
                 Assert.IsNull(chosen, "Selection immediately after reroll must be ignored");
 
-                // After post-reroll 0.4s expires: unlocked again, and 3rd card still requires rewarded ad.
+                // After post-reroll 0.4s expires: unlocked again, and 3rd card is free (no rewarded ad).
                 fakeTime = 10.90f;
                 selection.TickInputLock();
                 Assert.IsFalse(selection.IsInputLocked);
                 Assert.AreSame(slots[0].gameObject, EventSystem.current.currentSelectedGameObject);
 
                 Assert.IsTrue(selection.TrySelectSlotByIndex(2));
-                Assert.AreEqual(1, mockAds.RewardedShowCalls, "Selecting 3rd card must request rewarded ad");
-                Assert.IsNull(chosen, "3rd card must not be granted if rewarded ad fails");
-
-                mockAds.SimulateRewardGranted = true;
-                slots[2].OnSubmit(null);
-                Assert.AreEqual(2, mockAds.RewardedShowCalls);
-                Assert.AreSame(cardC, chosen, "3rd card should be selected after rewarded ad is granted");
+                Assert.AreEqual(0, mockAds.RewardedShowCalls, "3rd card is free and must not request a rewarded ad");
+                Assert.AreSame(cardC, chosen, "3rd card should be selected immediately without ads");
             }
             finally
             {
@@ -1581,7 +1576,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void NullAdProvider_HidesAllFiveRewardedUiControls_WhileKeepingFreeReroll()
+        public void NullAdProvider_HidesAllFourRewardedUiControls_WhileKeepingFreeCardsAndFreeReroll()
         {
             string prevSave = PlayerPrefs.GetString(SaveManager.SAVE_KEY, null);
             try
@@ -1595,7 +1590,7 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsFalse(adManager.CanShowRewarded());
                 Assert.IsFalse(adManager.ShouldShowInterstitial());
 
-                // 1. CardSelectionUI: 3rd ad card hidden; ad reroll hidden when free rerolls == 0; free reroll shown when > 0
+                // 1. CardSelectionUI: all 3 free cards stay visible; ad reroll hidden when free rerolls == 0; free reroll shown when > 0
                 var csGo = Track(new GameObject("CardSelection", typeof(RectTransform), typeof(CardSelectionUI)));
                 var csPanel = new GameObject("Panel", typeof(RectTransform));
                 csPanel.transform.SetParent(csGo.transform, false);
@@ -1623,7 +1618,7 @@ namespace ProjectB.Tests.EditMode
                 cs.ShowCards(offer, _ => { }, (_, __) => offer, freeRerolls: 1);
                 Assert.IsTrue(slots[0].gameObject.activeSelf);
                 Assert.IsTrue(slots[1].gameObject.activeSelf);
-                Assert.IsFalse(slots[2].gameObject.activeSelf, "3rd ad card must be hidden when no ad SDK");
+                Assert.IsTrue(slots[2].gameObject.activeSelf, "3rd card is free and must stay visible when no ad SDK");
                 Assert.IsTrue(rerollGo.activeSelf, "Free reroll stays visible");
 
                 cs.ShowCards(offer, _ => { }, (_, __) => offer, freeRerolls: 0);

@@ -748,7 +748,7 @@ namespace ProjectB.Core.BalanceBot
             }
 
             cardContext.OfferedCards = cardSelectionUI != null ? cardSelectionUI.CurrentOfferedCards : null;
-            cardContext.FreeSlotsCount = cardSelectionUI != null ? cardSelectionUI.FreeSlotsCount : 2;
+            cardContext.FreeSlotsCount = cardSelectionUI != null ? cardSelectionUI.FreeSlotsCount : 3;
             cardContext.CanFreeReroll = cardSelectionUI != null && cardSelectionUI.CanFreeReroll;
             cardContext.CanAddActive = heroAbilities == null || heroAbilities.CanAddActive();
             cardContext.CanAddPassive = heroAbilities == null || heroAbilities.CanAddPassive();

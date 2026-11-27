@@ -327,7 +327,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void CardSelectionUI_SelectCardForAutomation_RejectsAdSlotAndBypassesLock()
+        public void CardSelectionUI_SelectCardForAutomation_AllowsAllThreeFreeSlotsAndRejectsOutOfRange()
         {
             var panel = Track(new GameObject("Panel"));
             var uiGo = Track(new GameObject("CardUIHost", typeof(CardSelectionUI)));
@@ -335,25 +335,26 @@ namespace ProjectB.Tests.EditMode
             typeof(CardSelectionUI).GetField("selectionPanel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
                 ?.SetValue(ui, panel);
             ui.SetUnscaledTimeProviderForTest(() => 10f);
+            Assert.AreEqual(3, ui.FreeSlotsCount);
 
             var c0 = CreateStatCard("C0", StatType.MaxHP, 10f);
             var c1 = CreateStatCard("C1", StatType.Armor, 5f);
-            var c2Ad = CreateStatCard("C2Ad", StatType.GlobalDamage, 50f);
+            var c2 = CreateStatCard("C2", StatType.GlobalDamage, 50f);
 
             CardData picked = null;
             int rerollCount = 0;
             ui.ShowCards(
-                new List<CardData> { c0, c1, c2Ad },
+                new List<CardData> { c0, c1, c2 },
                 c => picked = c,
                 (prev, isFree) =>
                 {
                     rerollCount++;
-                    return new List<CardData> { c1, c0, c2Ad };
+                    return new List<CardData> { c1, c0, c2 };
                 },
                 freeRerolls: 1);
 
-            // Ad slot (index 2) must be rejected
-            Assert.IsFalse(ui.SelectCardForAutomation(2));
+            // Out-of-range slot (index 3) must be rejected
+            Assert.IsFalse(ui.SelectCardForAutomation(3));
             Assert.IsNull(picked);
 
             // Free reroll works even while input lock is active
@@ -362,9 +363,9 @@ namespace ProjectB.Tests.EditMode
             Assert.IsFalse(ui.CanFreeReroll);
             Assert.IsFalse(ui.TryFreeRerollForAutomation());
 
-            // Free slot (index 1) succeeds immediately
-            Assert.IsTrue(ui.SelectCardForAutomation(1));
-            Assert.AreSame(c0, picked);
+            // 3rd free slot (index 2) succeeds immediately
+            Assert.IsTrue(ui.SelectCardForAutomation(2));
+            Assert.AreSame(c2, picked);
             Assert.IsFalse(ui.IsActive);
         }
 

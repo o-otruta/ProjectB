@@ -12,7 +12,7 @@ namespace ProjectB.LevelUp
     /// <summary>
     /// One LevelUp card. Sprint 13: rarity lives in the frame, the icon frame and a soft glow (not in the whole card),
     /// a category tag (<c>NEW ACTIVE</c> / <c>UPGRADE</c> / <c>WEAPON</c>…), a level / delta badge, a moving shine on
-    /// Legendary cards and a lock + <c>▶ AD</c> badge on the rewarded third card.
+    /// Legendary cards and an optional lock + <c>▶ AD</c> badge when a slot is ad-gated.
     /// </summary>
     public class CardUI : MonoBehaviour, IPointerClickHandler, ISubmitHandler
     {
