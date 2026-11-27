@@ -46,8 +46,8 @@ namespace ProjectB.EditorScripts.UiKit
         public static void ApplyGameplay(Scene scene)
         {
             CenterSettingsTitle(scene);
-            PolishGameOver(scene);
             CenterButtonLabels(scene);
+            PolishGameOver(scene);
             EditorSceneManager.MarkSceneDirty(scene);
         }
 
@@ -144,6 +144,71 @@ namespace ProjectB.EditorScripts.UiKit
             Transform gameOverRoot = FindTransformByName(scene, "GameOverPanel");
             if (gameOverRoot == null) return;
 
+            Transform layout = gameOverRoot.Find("Content/Layout");
+            if (layout != null && layout.TryGetComponent(out VerticalLayoutGroup layoutVl))
+            {
+                layoutVl.spacing = 16f;
+                EditorUtility.SetDirty(layoutVl);
+            }
+
+            Transform bestRow = FindDescendantByName(gameOverRoot, "BestRow");
+            if (bestRow != null)
+            {
+                LE(bestRow.gameObject, minH: -1f, prefH: 64f);
+                EditorUtility.SetDirty(bestRow.gameObject);
+            }
+
+            Transform bestBadge = FindDescendantByName(gameOverRoot, "NewBestBadge");
+            if (bestBadge != null)
+            {
+                Rt(bestBadge).sizeDelta = new Vector2(368f, 64f);
+                HL(bestBadge.gameObject, 8f, Pad(22, 24, 6, 20), TextAnchor.MiddleCenter, true, true, false, false);
+                Transform star = bestBadge.Find("Star");
+                if (star != null) LE(star.gameObject, prefW: 34f, prefH: 34f);
+                Transform bestText = bestBadge.Find("Text");
+                if (bestText != null && bestText.TryGetComponent(out TMP_Text bestTmp))
+                {
+                    bestTmp.alignment = TextAlignmentOptions.Center;
+                    bestTmp.enableAutoSizing = true;
+                    bestTmp.fontSizeMin = 16f;
+                    bestTmp.fontSizeMax = 28f;
+                    bestTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                    EditorUtility.SetDirty(bestTmp);
+                }
+                EditorUtility.SetDirty(bestBadge.gameObject);
+            }
+
+            Transform statChips = FindDescendantByName(gameOverRoot, "StatChips");
+            if (statChips != null)
+            {
+                LE(statChips.gameObject, minH: 166f, prefH: 166f, flexH: 0f);
+                EditorUtility.SetDirty(statChips.gameObject);
+            }
+
+            foreach (string chipName in new[] { "KillsChip", "TimeChip", "ComboChip" })
+            {
+                Transform chip = FindDescendantByName(gameOverRoot, chipName);
+                if (chip == null) continue;
+
+                LE(chip.gameObject, minH: 166f, prefH: 166f, prefW: 260f, flexW: 1f);
+                VL(chip.gameObject, 2f, Pad(14, 14, 14, 36), TextAnchor.MiddleCenter, true, true, false, false);
+
+                Transform icon = chip.Find("Icon");
+                if (icon != null) LE(icon.gameObject, prefW: 42f, prefH: 42f);
+
+                Transform caption = chip.Find("Caption");
+                if (caption != null && caption.TryGetComponent(out TMP_Text capTmp))
+                {
+                    capTmp.alignment = TextAlignmentOptions.Center;
+                    capTmp.enableAutoSizing = true;
+                    capTmp.fontSizeMin = 13f;
+                    capTmp.fontSizeMax = 20f;
+                    capTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                    EditorUtility.SetDirty(capTmp);
+                }
+                EditorUtility.SetDirty(chip.gameObject);
+            }
+
             Transform rewards = FindDescendantByName(gameOverRoot, "Rewards");
             if (rewards != null && rewards.TryGetComponent(out HorizontalLayoutGroup rhl))
             {
@@ -167,7 +232,10 @@ namespace ProjectB.EditorScripts.UiKit
                 csf.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
                 LE(pill.gameObject, minW: 200f, prefW: -1f, flexW: -1f, prefH: 92f);
 
-                HL(pill.gameObject, 12f, Pad(18, 28, 6, 8), TextAnchor.MiddleCenter, true, true, false, false);
+                HL(pill.gameObject, 12f, Pad(20, 28, 8, 22), TextAnchor.MiddleCenter, true, true, false, false);
+
+                Transform icon = pill.Find("Icon");
+                if (icon != null) LE(icon.gameObject, prefW: 54f, prefH: 54f);
 
                 Transform amount = pill.Find("Amount");
                 if (amount != null)
@@ -180,7 +248,77 @@ namespace ProjectB.EditorScripts.UiKit
                         EditorUtility.SetDirty(tmp);
                     }
                 }
+
+                if (pill.TryGetComponent(out CurrencyLabel cl))
+                {
+                    SetFloat(cl, "countUpDuration", pillName == "CoinsReward" ? 1.0f : 0.85f);
+                    SetBool(cl, "pulseWhileCounting", true);
+                    SetFloat(cl, "pulseAmplitude", 0.24f);
+                    SetFloat(cl, "pulseCycles", 4f);
+                    EditorUtility.SetDirty(cl);
+                }
                 EditorUtility.SetDirty(pill.gameObject);
+            }
+
+            Transform dmgSection = FindDescendantByName(gameOverRoot, "DamageBreakdownSection");
+            if (dmgSection != null)
+            {
+                Transform scroll = dmgSection.Find("ScrollView");
+                if (scroll != null)
+                {
+                    Stretch(Rt(scroll), 0f, 34f, 0f, 56f);
+                    EditorUtility.SetDirty(scroll);
+                }
+                Transform container = FindDescendantByName(dmgSection, "Container");
+                if (container != null && container.TryGetComponent(out VerticalLayoutGroup dvl))
+                {
+                    dvl.padding = Pad(16, 16, 4, 6);
+                    EditorUtility.SetDirty(dvl);
+                }
+            }
+
+            Transform achSection = FindDescendantByName(gameOverRoot, "RunAchievementsSection");
+            if (achSection != null)
+            {
+                LE(achSection.gameObject, minH: 176f, prefH: 176f);
+                Transform scroll = achSection.Find("ScrollView");
+                if (scroll != null)
+                {
+                    Stretch(Rt(scroll), 0f, 34f, 0f, 56f);
+                    EditorUtility.SetDirty(scroll);
+                }
+                Transform content = FindDescendantByName(achSection, "Content");
+                if (content != null && content.TryGetComponent(out VerticalLayoutGroup avl))
+                {
+                    avl.padding = Pad(16, 16, 4, 6);
+                    EditorUtility.SetDirty(avl);
+                }
+                EditorUtility.SetDirty(achSection.gameObject);
+            }
+
+            if (gameOverRoot.TryGetComponent(out GameOverUI goUi))
+            {
+                SetFloat(goUi, "breakdownHeaderHeight", 86f);
+                SetFloat(goUi, "countUpDuration", 0.90f);
+                SetFloat(goUi, "countStaggerDelay", 0.07f);
+                SetFloat(goUi, "countPulseAmplitude", 0.24f);
+                SetFloat(goUi, "countPulseCycles", 4f);
+                SetFloat(goUi, "countFinishPunch", 0.18f);
+                EditorUtility.SetDirty(goUi);
+            }
+
+            foreach (string btnName in new[] { "ReviveButton", "DoubleCoinsButton", "MenuButton" })
+            {
+                Transform btn = FindDescendantByName(gameOverRoot, btnName);
+                if (btn == null) continue;
+                Transform txt = btn.Find("Text");
+                if (txt != null)
+                {
+                    RectTransform rt = Rt(txt);
+                    rt.offsetMin = new Vector2(20f, 38f);
+                    rt.offsetMax = new Vector2(-20f, -8f);
+                    EditorUtility.SetDirty(rt);
+                }
             }
 
             Transform restart = FindDescendantByName(gameOverRoot, "RestartButton");
@@ -191,6 +329,28 @@ namespace ProjectB.EditorScripts.UiKit
                     Object.DestroyImmediate(labelGraphic);
                 }
                 tb.SetStyle(ButtonStyle.Primary);
+
+                Transform content = restart.Find("Content");
+                if (content != null)
+                {
+                    RectTransform crt = Rt(content);
+                    crt.offsetMin = new Vector2(20f, 38f);
+                    crt.offsetMax = new Vector2(-20f, -8f);
+                    EditorUtility.SetDirty(crt);
+
+                    Transform icon = content.Find("Icon");
+                    if (icon != null) LE(icon.gameObject, prefW: 42f, prefH: 42f);
+
+                    Transform rText = content.Find("Text");
+                    if (rText != null && rText.TryGetComponent(out TMP_Text rTmp))
+                    {
+                        rTmp.enableAutoSizing = true;
+                        rTmp.fontSizeMin = 18f;
+                        rTmp.fontSizeMax = 34f;
+                        rTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                        EditorUtility.SetDirty(rTmp);
+                    }
+                }
                 EditorUtility.SetDirty(tb);
             }
         }

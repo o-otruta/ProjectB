@@ -608,6 +608,62 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(430f, GameOverUI.CalculateBreakdownHeight(12, 72f, 430f), "after the maximum the list scrolls");
         }
 
+        [Test]
+        public void GameOverPanel_ClearsToySurfaceBottomLedges_AndEnablesRewardPulse()
+        {
+            WithScene(GameplayPath, scene =>
+            {
+                GameOverUI gameOver = FindInScene<GameOverUI>(scene)[0];
+                Transform panel = gameOver.transform;
+
+                foreach (string chipName in new[] { "KillsChip", "TimeChip", "ComboChip" })
+                {
+                    Transform chip = panel.Find($"Content/Layout/Columns/LeftColumn/StatChips/{chipName}");
+                    Assert.IsNotNull(chip, chipName);
+                    var vlg = chip.GetComponent<VerticalLayoutGroup>();
+                    var le = chip.GetComponent<LayoutElement>();
+                    Assert.GreaterOrEqual(vlg.padding.bottom, 34, $"{chipName} padding must clear kit_card 33px bottom ledge");
+                    Assert.GreaterOrEqual(le.preferredHeight, 166f, $"{chipName} needs height for padded content");
+                }
+
+                Transform newBest = panel.Find("Content/Layout/BestRow/NewBestBadge");
+                Assert.IsNotNull(newBest);
+                Assert.GreaterOrEqual(newBest.GetComponent<HorizontalLayoutGroup>().padding.bottom, 20, "NewBestBadge clears kit_pill bottom ledge");
+
+                foreach (string pillName in new[] { "CoinsReward", "ShardsReward" })
+                {
+                    Transform pill = panel.Find($"Content/Layout/Columns/LeftColumn/Rewards/{pillName}");
+                    Assert.IsNotNull(pill, pillName);
+                    Assert.GreaterOrEqual(pill.GetComponent<HorizontalLayoutGroup>().padding.bottom, 20, $"{pillName} clears kit_pill bottom ledge");
+                    Assert.LessOrEqual(pill.Find("Icon").GetComponent<LayoutElement>().preferredHeight, 56f, $"{pillName} icon fits inside pill face");
+                    var cl = pill.GetComponent<CurrencyLabel>();
+                    Assert.IsNotNull(cl);
+                    Assert.IsTrue((bool)GetPrivate(cl, "pulseWhileCounting"), $"{pillName} pulses while counting up");
+                }
+
+                Transform dmgScroll = panel.Find("Content/Layout/Columns/RightColumn/DamageBreakdownSection/ScrollView");
+                Transform achScroll = panel.Find("Content/Layout/Columns/LeftColumn/RunAchievementsSection/ScrollView");
+                Assert.IsNotNull(dmgScroll);
+                Assert.IsNotNull(achScroll);
+                Assert.GreaterOrEqual(((RectTransform)dmgScroll).offsetMin.y, 33f, "DamageBreakdown ScrollView clears kit_card bottom ledge");
+                Assert.GreaterOrEqual(((RectTransform)achScroll).offsetMin.y, 33f, "RunAchievements ScrollView clears kit_card bottom ledge");
+
+                foreach (string relPath in new[]
+                {
+                    "Content/Layout/AdButtons/ReviveButton/Text",
+                    "Content/Layout/AdButtons/DoubleCoinsButton/Text",
+                    "Content/Layout/NavButtons/MenuButton/Text",
+                    "Content/Layout/NavButtons/RestartButton/Content"
+                })
+                {
+                    var rt = panel.Find(relPath) as RectTransform;
+                    Assert.IsNotNull(rt, relPath);
+                    Assert.GreaterOrEqual(rt.offsetMin.y, 36f, $"{relPath} clears kit_button 38px bottom ledge");
+                    Assert.LessOrEqual(rt.offsetMax.y, -6f, $"{relPath} clears kit_button top border");
+                }
+            });
+        }
+
         // ───────────────────────── 13.6 Zero-GC ─────────────────────────
 
         [Test]
@@ -756,6 +812,100 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(1f, UiTween.Evaluate(UiEase.OutBack, 1f), 1e-4f);
             Assert.AreEqual(0f, UiTween.Evaluate(UiEase.OutCubic, 0f), 1e-4f);
             Assert.Greater(UiTween.Evaluate(UiEase.OutBack, 0.7f), 1f, "OutBack overshoots");
+        }
+
+        [Test]
+        public void UiTween_CountPulseScale_StartsAndEndsAtOne_AndPulsesUpward()
+        {
+            Assert.AreEqual(1f, UiTween.EvaluateCountPulseScale(0f, 0.16f, 3f), 1e-4f);
+            Assert.AreEqual(1f, UiTween.EvaluateCountPulseScale(1f, 0.16f, 3f), 1e-4f);
+            Assert.AreEqual(1.16f, UiTween.EvaluateCountPulseScale(0.5f, 0.16f, 3f), 1e-3f);
+            Assert.AreEqual(1f, UiTween.EvaluateCountPulseScale(0.5f, 0f, 3f), 1e-4f);
+
+            for (int i = 0; i <= 20; i++)
+            {
+                float s = UiTween.EvaluateCountPulseScale(i / 20f, 0.15f, 3f);
+                Assert.GreaterOrEqual(s, 1f - 1e-5f, $"pulse never shrinks below 1 at step {i}");
+            }
+        }
+
+        [Test]
+        public void GameOverUI_CountUp_CountsFromZero_PulsesAndLandsAtTarget_ZeroGc()
+        {
+            var root = Track(new GameObject("GameOverRoot", typeof(RectTransform), typeof(GameOverUI)));
+            var ui = root.GetComponent<GameOverUI>();
+            var title = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            var wave = new GameObject("Wave", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            var kills = new GameObject("Kills", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            var time = new GameObject("Time", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            var combo = new GameObject("Combo", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            foreach (var t in new[] { title, wave, kills, time, combo }) t.transform.SetParent(root.transform, false);
+
+            SetPrivate(ui, "panel", root);
+            SetPrivate(ui, "titleText", title);
+            SetPrivate(ui, "waveText", wave);
+            SetPrivate(ui, "killsValueText", kills);
+            SetPrivate(ui, "timeValueText", time);
+            SetPrivate(ui, "comboValueText", combo);
+
+            var stats = new RunStatistics();
+            for (int i = 0; i < 1234; i++) stats.AddKill();
+            stats.UpdatePlayTime(125f);
+            stats.UpdateBestCombo(18);
+            SetPrivate(ui, "runStatistics", stats);
+
+            // EditMode Show() snaps immediately to final values.
+            ui.Show(12, 500);
+            Assert.IsFalse(ui.IsCounting, "EditMode Show snaps without leaving active counters");
+            Assert.AreEqual("1\u00A0234", kills.text);
+            Assert.AreEqual("02:05", time.text);
+            Assert.AreEqual("x18", combo.text);
+            Assert.AreEqual(Vector3.one, kills.transform.localScale);
+
+            // Deterministic animated count-up stepping + Zero-GC check.
+            MethodInfo startMethod = typeof(GameOverUI).GetMethod("StartCounter", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo tickMethod = typeof(GameOverUI).GetMethod("TickCounters", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(startMethod);
+            Assert.IsNotNull(tickMethod);
+            Type formatType = typeof(GameOverUI).GetNestedType("StatFormat", BindingFlags.NonPublic);
+            var tick = (Action<float>)Delegate.CreateDelegate(typeof(Action<float>), ui, tickMethod);
+
+            // Warm-up TMP char buffers once.
+            startMethod.Invoke(ui, new object[] { 0, wave, Enum.ToObject(formatType, 3), 12, 0f, 0.5f, 0.12f, "WAVE ", "", true });
+            startMethod.Invoke(ui, new object[] { 1, kills, Enum.ToObject(formatType, 0), 1234, 0f, 0.5f, 0.15f, null, null, true });
+            startMethod.Invoke(ui, new object[] { 2, time, Enum.ToObject(formatType, 1), 125, 0f, 0.5f, 0.15f, null, null, true });
+            startMethod.Invoke(ui, new object[] { 3, combo, Enum.ToObject(formatType, 2), 18, 0f, 0.5f, 0.15f, null, null, true });
+            Assert.IsTrue(ui.IsCounting);
+            Assert.AreEqual("WAVE 0", wave.text);
+            Assert.AreEqual("0", kills.text);
+            Assert.AreEqual("00:00", time.text);
+            Assert.AreEqual("x0", combo.text);
+
+            tick(0.01f);
+            // Re-start cleanly after TMP warm-up.
+            startMethod.Invoke(ui, new object[] { 0, wave, Enum.ToObject(formatType, 3), 12, 0f, 0.5f, 0.12f, "WAVE ", "", true });
+            startMethod.Invoke(ui, new object[] { 1, kills, Enum.ToObject(formatType, 0), 1234, 0f, 0.5f, 0.15f, null, null, true });
+            startMethod.Invoke(ui, new object[] { 2, time, Enum.ToObject(formatType, 1), 125, 0f, 0.5f, 0.15f, null, null, true });
+            startMethod.Invoke(ui, new object[] { 3, combo, Enum.ToObject(formatType, 2), 18, 0f, 0.5f, 0.15f, null, null, true });
+
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 12; i++) tick(0.02f); // t = 0.24 / 0.50 = 0.48
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            Assert.AreEqual(0, allocated, "GameOverUI counter tick must be Zero-GC");
+            Assert.IsTrue(ui.IsCounting);
+            Assert.AreNotEqual("0", kills.text);
+            Assert.AreNotEqual("1\u00A0234", kills.text);
+            Assert.Greater(kills.transform.localScale.x, 1.0f, "number pulses upward while counting");
+
+            for (int i = 0; i < 20; i++) tick(0.02f);
+            Assert.IsFalse(ui.IsCounting);
+            Assert.AreEqual("WAVE 12", wave.text);
+            Assert.AreEqual("1\u00A0234", kills.text);
+            Assert.AreEqual("02:05", time.text);
+            Assert.AreEqual("x18", combo.text);
+            Assert.AreEqual(Vector3.one, kills.transform.localScale);
+            Assert.AreEqual(Vector3.one, wave.transform.localScale);
         }
     }
 }

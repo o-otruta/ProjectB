@@ -15,8 +15,32 @@ namespace ProjectB.UI
 {
     public class GameOverUI : MonoBehaviour
     {
-        private const float BREAKDOWN_ROW_HEIGHT = 64f;
+        private const float BREAKDOWN_ROW_HEIGHT = 80f;
         private const float BREAKDOWN_ROW_SPACING = 6f;
+
+        internal enum StatFormat : byte
+        {
+            Grouped = 0,
+            Clock = 1,
+            Combo = 2,
+            Template = 3
+        }
+
+        private struct StatCounter
+        {
+            public bool active;
+            public TMP_Text text;
+            public StatFormat format;
+            public int targetValue;
+            public int lastWritten;
+            public float elapsed;
+            public float duration;
+            public float delay;
+            public float pulseAmplitude;
+            public float pulseCycles;
+            public string prefix;
+            public string suffix;
+        }
 
         [Header("Core Panel")]
         [SerializeField] private GameObject panel;
@@ -57,9 +81,16 @@ namespace ProjectB.UI
         [SerializeField] private GameObject shardsChip;
         [Tooltip("LayoutElement of the breakdown section: height follows the row count up to the max, then scrolls.")]
         [SerializeField] private LayoutElement breakdownLayout;
-        [SerializeField] private float breakdownHeaderHeight = 64f;
+        [SerializeField] private float breakdownHeaderHeight = 86f;
         [SerializeField] private float breakdownMaxHeight = 420f;
         [SerializeField] private CanvasGroup panelGroup;
+
+        [Header("Count-Up Animation")]
+        [SerializeField, Min(0f)] private float countUpDuration = 0.90f;
+        [SerializeField, Min(0f)] private float countStaggerDelay = 0.07f;
+        [SerializeField, Range(0f, 0.45f)] private float countPulseAmplitude = 0.24f;
+        [SerializeField, Min(0.5f)] private float countPulseCycles = 4f;
+        [SerializeField, Range(0f, 0.35f)] private float countFinishPunch = 0.18f;
 
         private GameManager gameManager;
         private AchievementManager achievementManager;
@@ -70,10 +101,14 @@ namespace ProjectB.UI
         private InputModeService inputModeService;
         private Action<InputMode> cachedInputModeHandler;
         private int bestWaveBeforeRun = -1;
-        private readonly char[] numberBuffer = new char[24];
+        private readonly char[] numberBuffer = new char[64];
+        private readonly StatCounter[] statCounters = new StatCounter[4];
+        private int activeCounterCount;
         private readonly List<GameObject> spawnedAchievementRows = new List<GameObject>();
         private readonly List<GameObject> spawnedBreakdownRows = new List<GameObject>();
         private readonly List<DamageSourceEntry> breakdownBuffer = new List<DamageSourceEntry>(16);
+
+        public bool IsCounting => activeCounterCount > 0;
 
         [Inject]
         public void Construct(
@@ -114,6 +149,11 @@ namespace ProjectB.UI
             }
         }
 
+        private void OnDisable()
+        {
+            StopCounters(snapToTarget: true);
+        }
+
         private void OnDestroy()
         {
             UnsubscribeInputMode();
@@ -123,6 +163,12 @@ namespace ProjectB.UI
                 gameManager.OnHeroRevived -= Hide;
                 gameManager.OnCoinsDoubled -= HandleCoinsDoubled;
             }
+        }
+
+        private void Update()
+        {
+            if (activeCounterCount <= 0) return;
+            TickCounters(Time.unscaledDeltaTime);
         }
 
         private void SubscribeInputMode()
@@ -166,6 +212,8 @@ namespace ProjectB.UI
 
         public void Show(int currentWave, int coinsEarned)
         {
+            StopCounters(snapToTarget: false);
+
             if (panel != null)
             {
                 panel.SetActive(true);
@@ -182,29 +230,50 @@ namespace ProjectB.UI
 
             if (waveText != null)
             {
-                waveText.text = titleText != null
-                    ? Loc.Format("ui.gameover.wave_upper", currentWave)
-                    : Loc.Format("ui.gameover.wave_reached", currentWave);
+                string waveKey = titleText != null ? "ui.gameover.wave_upper" : "ui.gameover.wave_reached";
+                string waveFallback = titleText != null ? "WAVE {0}" : "Wave Reached: {0}";
+                string waveTemplate = Loc.Get(waveKey, waveFallback);
+                if (SplitFormatTemplate(waveTemplate, out string wavePrefix, out string waveSuffix))
+                {
+                    StartCounter(0, waveText, StatFormat.Template, currentWave, 0.05f, countUpDuration * 0.88f, countPulseAmplitude * 0.85f, wavePrefix, waveSuffix);
+                }
+                else
+                {
+                    ClearCounter(0);
+                    waveText.text = Loc.Format(waveKey, currentWave);
+                }
+            }
+            else
+            {
+                ClearCounter(0);
             }
 
             bool isNewBest = bestWaveBeforeRun >= 0 && currentWave > bestWaveBeforeRun;
             if (newBestBadge != null)
             {
                 newBestBadge.SetActive(isNewBest);
-                if (isNewBest) UiTween.Scale(newBestBadge.transform, Vector3.zero, Vector3.one, theme.durationSlow, 0.25f, UiEase.OutBack);
+                if (isNewBest)
+                {
+                    float waveDur = currentWave <= 2 ? Mathf.Min(countUpDuration * 0.88f, 0.40f) : countUpDuration * 0.88f;
+                    float badgeDelay = (currentWave > 0 && countUpDuration > 0f) ? Mathf.Max(0.25f, 0.05f + waveDur - 0.04f) : 0.25f;
+                    UiTween.Scale(newBestBadge.transform, Vector3.zero, Vector3.one, theme.durationSlow, badgeDelay, UiEase.OutBack);
+                }
             }
 
             int shardsEarned = runStatistics != null ? runStatistics.BossShardsEarned : 0;
             if (coinsLabel != null)
             {
                 coinsLabel.SetValue(0, animate: false);
-                coinsLabel.SetValue(coinsEarned, animate: true);
+                coinsLabel.SetValue(coinsEarned, animate: true, delay: 0.05f + countStaggerDelay * 4f);
             }
             if (shardsChip != null) shardsChip.SetActive(shardsEarned > 0);
             if (shardsLabel != null)
             {
                 shardsLabel.SetValue(0, animate: false);
-                shardsLabel.SetValue(shardsEarned, animate: true);
+                if (shardsEarned > 0)
+                {
+                    shardsLabel.SetValue(shardsEarned, animate: true, delay: 0.05f + countStaggerDelay * 4.5f);
+                }
             }
 
             int killCount = runStatistics != null ? runStatistics.EnemiesKilled : 0;
@@ -212,18 +281,24 @@ namespace ProjectB.UI
             int comboBest = Mathf.Max(
                 runStatistics != null ? runStatistics.BestCombo : 0,
                 comboTracker != null ? comboTracker.BestCombo : 0);
-            SetGrouped(killsValueText, killCount);
-            if (timeValueText != null)
-            {
-                int len = UiFormat.WriteClock(numberBuffer, 0, Mathf.FloorToInt(playSeconds));
-                timeValueText.SetCharArray(numberBuffer, 0, len);
-            }
+            StartCounter(1, killsValueText, StatFormat.Grouped, killCount, 0.05f + countStaggerDelay, countUpDuration, countPulseAmplitude);
+            StartCounter(2, timeValueText, StatFormat.Clock, Mathf.FloorToInt(playSeconds), 0.05f + countStaggerDelay * 2f, countUpDuration, countPulseAmplitude);
             if (comboChip != null) comboChip.SetActive(comboBest >= 2);
-            if (comboValueText != null)
+            if (comboBest >= 2)
             {
-                numberBuffer[0] = 'x';
-                int len = UiFormat.WriteInt(numberBuffer, 1, comboBest);
-                comboValueText.SetCharArray(numberBuffer, 0, len);
+                StartCounter(3, comboValueText, StatFormat.Combo, comboBest, 0.05f + countStaggerDelay * 3f, countUpDuration * 0.9f, countPulseAmplitude);
+            }
+            else
+            {
+                ClearCounter(3);
+                if (comboValueText != null)
+                {
+                    UiTween.Kill(comboValueText.transform, complete: false);
+                    comboValueText.transform.localScale = Vector3.one;
+                    numberBuffer[0] = 'x';
+                    int len = UiFormat.WriteInt(numberBuffer, 1, comboBest);
+                    comboValueText.SetCharArray(numberBuffer, 0, len);
+                }
             }
 
             if (coinsText != null)
@@ -257,11 +332,187 @@ namespace ProjectB.UI
             FocusPrimaryAction();
         }
 
-        private void SetGrouped(TMP_Text text, int value)
+        /// <summary>Snaps any active stat &amp; reward count-up animations to their final values.</summary>
+        public void CompleteCountAnimations()
         {
+            StopCounters(snapToTarget: true);
+            if (coinsLabel != null) coinsLabel.CompleteAnimation();
+            if (shardsLabel != null) shardsLabel.CompleteAnimation();
+        }
+
+        internal void StartCounter(
+            int slot,
+            TMP_Text text,
+            StatFormat format,
+            int targetValue,
+            float delay,
+            float baseDuration,
+            float pulseAmp,
+            string prefix = null,
+            string suffix = null,
+            bool allowInEditMode = false)
+        {
+            ClearCounter(slot);
             if (text == null) return;
-            int len = UiFormat.WriteGrouped(numberBuffer, 0, value);
-            text.SetCharArray(numberBuffer, 0, len);
+
+            UiTween.Kill(text.transform, complete: false);
+            text.transform.localScale = Vector3.one;
+
+            var entry = new StatCounter
+            {
+                active = false,
+                text = text,
+                format = format,
+                targetValue = Mathf.Max(0, targetValue),
+                lastWritten = int.MinValue,
+                prefix = prefix,
+                suffix = suffix
+            };
+
+            if (entry.targetValue <= 0 || baseDuration <= 0f || (!allowInEditMode && (!Application.isPlaying || !isActiveAndEnabled)))
+            {
+                WriteCounterValue(ref entry, entry.targetValue);
+                return;
+            }
+
+            entry.active = true;
+            entry.delay = Mathf.Max(0f, delay);
+            entry.elapsed = 0f;
+            entry.duration = entry.targetValue <= 2 ? Mathf.Min(baseDuration, 0.40f) : baseDuration;
+            entry.pulseAmplitude = pulseAmp;
+            entry.pulseCycles = entry.targetValue <= 1 ? 1f : (entry.targetValue == 2 ? 2f : countPulseCycles);
+            WriteCounterValue(ref entry, 0);
+            statCounters[slot] = entry;
+            activeCounterCount++;
+        }
+
+        internal void TickCounters(float dt)
+        {
+            for (int i = 0; i < statCounters.Length; i++)
+            {
+                if (!statCounters[i].active) continue;
+                StepCounter(ref statCounters[i], dt);
+            }
+        }
+
+        private void StepCounter(ref StatCounter c, float dt)
+        {
+            if (c.text == null)
+            {
+                c.active = false;
+                activeCounterCount = Mathf.Max(0, activeCounterCount - 1);
+                return;
+            }
+
+            float stepDt = dt;
+            if (c.delay > 0f)
+            {
+                c.delay -= stepDt;
+                if (c.delay > 0f) return;
+                stepDt = -c.delay;
+                c.delay = 0f;
+            }
+
+            c.elapsed += stepDt;
+            float t = c.duration > 0f ? Mathf.Clamp01(c.elapsed / c.duration) : 1f;
+            int val = t >= 1f
+                ? c.targetValue
+                : Mathf.RoundToInt(Mathf.Lerp(0f, c.targetValue, UiTween.Evaluate(UiEase.OutCubic, t)));
+
+            if (val != c.lastWritten)
+            {
+                WriteCounterValue(ref c, val);
+            }
+
+            if (t < 1f)
+            {
+                c.text.transform.localScale = Vector3.one * UiTween.EvaluateCountPulseScale(t, c.pulseAmplitude, c.pulseCycles);
+            }
+            else
+            {
+                c.text.transform.localScale = Vector3.one;
+                c.active = false;
+                activeCounterCount = Mathf.Max(0, activeCounterCount - 1);
+                if (countFinishPunch > 0f)
+                {
+                    UiTween.Punch(c.text.transform, countFinishPunch, 0.22f);
+                }
+            }
+        }
+
+        private void ClearCounter(int slot)
+        {
+            if (slot < 0 || slot >= statCounters.Length) return;
+            if (statCounters[slot].active)
+            {
+                activeCounterCount = Mathf.Max(0, activeCounterCount - 1);
+            }
+            statCounters[slot] = default;
+        }
+
+        private void StopCounters(bool snapToTarget)
+        {
+            for (int i = 0; i < statCounters.Length; i++)
+            {
+                if (statCounters[i].text != null)
+                {
+                    UiTween.Kill(statCounters[i].text.transform, complete: false);
+                    statCounters[i].text.transform.localScale = Vector3.one;
+                    if (snapToTarget && statCounters[i].active)
+                    {
+                        WriteCounterValue(ref statCounters[i], statCounters[i].targetValue);
+                    }
+                }
+                statCounters[i] = default;
+            }
+            activeCounterCount = 0;
+        }
+
+        private void WriteCounterValue(ref StatCounter c, int value)
+        {
+            if (c.text == null || value == c.lastWritten) return;
+            c.lastWritten = value;
+            int len;
+            switch (c.format)
+            {
+                case StatFormat.Clock:
+                    len = UiFormat.WriteClock(numberBuffer, 0, value);
+                    break;
+                case StatFormat.Combo:
+                    numberBuffer[0] = 'x';
+                    len = UiFormat.WriteInt(numberBuffer, 1, value);
+                    break;
+                case StatFormat.Template:
+                    len = UiFormat.WriteString(numberBuffer, 0, c.prefix);
+                    len = UiFormat.WriteInt(numberBuffer, len, value);
+                    len = UiFormat.WriteString(numberBuffer, len, c.suffix);
+                    break;
+                default:
+                    len = UiFormat.WriteGrouped(numberBuffer, 0, value);
+                    break;
+            }
+            c.text.SetCharArray(numberBuffer, 0, len);
+        }
+
+        private static bool SplitFormatTemplate(string template, out string prefix, out string suffix)
+        {
+            if (string.IsNullOrEmpty(template))
+            {
+                prefix = string.Empty;
+                suffix = string.Empty;
+                return false;
+            }
+            int idx = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                prefix = template;
+                suffix = string.Empty;
+                return false;
+            }
+            prefix = idx > 0 ? template.Substring(0, idx) : string.Empty;
+            int after = idx + 3;
+            suffix = after < template.Length ? template.Substring(after) : string.Empty;
+            return true;
         }
 
         /// <summary>Breakdown section height for <paramref name="rows"/> rows, clamped to the scroll maximum.</summary>
@@ -433,8 +684,8 @@ namespace ProjectB.UI
             iconBoxRt.anchorMin = new Vector2(0f, 0.5f);
             iconBoxRt.anchorMax = new Vector2(0f, 0.5f);
             iconBoxRt.pivot = new Vector2(0f, 0.5f);
-            iconBoxRt.anchoredPosition = new Vector2(10f, 2f);
-            iconBoxRt.sizeDelta = new Vector2(46f, 46f);
+            iconBoxRt.anchoredPosition = new Vector2(14f, 10f);
+            iconBoxRt.sizeDelta = new Vector2(40f, 40f);
             var iconBoxImg = iconBoxGo.GetComponent<Image>();
             Sprite boxSprite = theme.squircleSprite != null ? theme.squircleSprite : theme.cardSprite;
             iconBoxImg.sprite = boxSprite;
@@ -475,20 +726,20 @@ namespace ProjectB.UI
                 initTmp.raycastTarget = false;
             }
 
-            // Right content area (x >= 58px)
+            // Right content area (clears kit_row 27.5px bottom ledge & 7.5px top border)
             var contentGo = new GameObject("Content", typeof(RectTransform));
             contentGo.transform.SetParent(row.transform, false);
             var contentRt = (RectTransform)contentGo.transform;
             contentRt.anchorMin = Vector2.zero;
             contentRt.anchorMax = Vector2.one;
-            contentRt.offsetMin = new Vector2(68f, 8f);
-            contentRt.offsetMax = new Vector2(-12f, -4f);
+            contentRt.offsetMin = new Vector2(66f, 29f);
+            contentRt.offsetMax = new Vector2(-16f, -9f);
 
             // Top Left: Name
             var nameGo = new GameObject("Name", typeof(RectTransform), typeof(TextMeshProUGUI));
             nameGo.transform.SetParent(contentGo.transform, false);
             var nameRt = (RectTransform)nameGo.transform;
-            nameRt.anchorMin = new Vector2(0f, 0.44f);
+            nameRt.anchorMin = new Vector2(0f, 0.40f);
             nameRt.anchorMax = new Vector2(0.56f, 1f);
             nameRt.offsetMin = Vector2.zero;
             nameRt.offsetMax = Vector2.zero;
@@ -508,7 +759,7 @@ namespace ProjectB.UI
             var statsGo = new GameObject("Stats", typeof(RectTransform), typeof(TextMeshProUGUI));
             statsGo.transform.SetParent(contentGo.transform, false);
             var statsRt = (RectTransform)statsGo.transform;
-            statsRt.anchorMin = new Vector2(0.56f, 0.44f);
+            statsRt.anchorMin = new Vector2(0.56f, 0.40f);
             statsRt.anchorMax = new Vector2(1f, 1f);
             statsRt.offsetMin = Vector2.zero;
             statsRt.offsetMax = Vector2.zero;
@@ -532,8 +783,8 @@ namespace ProjectB.UI
             var barBgGo = new GameObject("BarBg", typeof(RectTransform), typeof(Image));
             barBgGo.transform.SetParent(contentGo.transform, false);
             var barBgRt = (RectTransform)barBgGo.transform;
-            barBgRt.anchorMin = new Vector2(0f, 0.08f);
-            barBgRt.anchorMax = new Vector2(1f, 0.34f);
+            barBgRt.anchorMin = new Vector2(0f, 0.04f);
+            barBgRt.anchorMax = new Vector2(1f, 0.32f);
             barBgRt.offsetMin = Vector2.zero;
             barBgRt.offsetMax = Vector2.zero;
             var barBgImg = barBgGo.GetComponent<Image>();
@@ -635,8 +886,8 @@ namespace ProjectB.UI
         {
             var row = new GameObject($"Unlocked_{ach.id}", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             var le = row.GetComponent<LayoutElement>();
-            le.minHeight = 56f;
-            le.preferredHeight = 56f;
+            le.minHeight = 72f;
+            le.preferredHeight = 72f;
 
             UiTheme theme = UiTheme.Current;
             var bg = row.GetComponent<Image>();
@@ -650,8 +901,8 @@ namespace ProjectB.UI
             var rt = txtGo.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
-            rt.offsetMin = new Vector2(16f, 4f);
-            rt.offsetMax = new Vector2(-16f, -4f);
+            rt.offsetMin = new Vector2(18f, 28f);
+            rt.offsetMax = new Vector2(-18f, -8f);
 
             var tmp = txtGo.GetComponent<TextMeshProUGUI>();
             string rewardStr = FormatReward(ach, abilityCatalog, heroCatalog);
@@ -681,6 +932,7 @@ namespace ProjectB.UI
 
         public void Hide()
         {
+            CompleteCountAnimations();
             if (panel != null)
             {
                 panel.SetActive(false);

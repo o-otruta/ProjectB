@@ -353,7 +353,7 @@ namespace ProjectB.EditorScripts
             Stretch(Rt(content));
             var list = Go("Layout", content.transform);
             Stretch(Rt(list), 48f, 40f, 48f, 70f);
-            VL(list, 18f, Pad(0), TextAnchor.MiddleCenter, true, true, true, false);
+            VL(list, 16f, Pad(0), TextAnchor.MiddleCenter, true, true, true, false);
 
             var title = Txt(list.transform, "Title", "DEFEATED", UiTextStyle.Display, UiColor.Danger, TextAlignmentOptions.Center, false);
             LE(title.gameObject, prefH: 116f);
@@ -362,22 +362,40 @@ namespace ProjectB.EditorScripts
 
             var bestRow = Go("BestRow", list.transform);
             HL(bestRow, 0f, Pad(0), TextAnchor.MiddleCenter, false, false, false, false);
-            LE(bestRow, prefH: 60f);
+            LE(bestRow, prefH: 64f);
             var best = Img(bestRow.transform, "NewBestBadge", UiSprite.Pill, UiColor.Gold);
-            Rt(best).sizeDelta = new Vector2(300f, 60f);
-            HL(best.gameObject, 8f, Pad(16, 22, 4, 4), TextAnchor.MiddleCenter, true, true, false, false);
-            var bestIcon = Icon(best.transform, "Star", Theme.iconStar, 40f);
-            LE(bestIcon.gameObject, prefW: 40f, prefH: 40f);
+            Rt(best).sizeDelta = new Vector2(368f, 64f);
+            HL(best.gameObject, 8f, Pad(22, 24, 6, 20), TextAnchor.MiddleCenter, true, true, false, false);
+            var bestIcon = Icon(best.transform, "Star", Theme.iconStar, 34f);
+            LE(bestIcon.gameObject, prefW: 34f, prefH: 34f);
             var bestText = Txt(best.transform, "Text", "NEW BEST!", UiTextStyle.Caption, UiColor.Background, TextAlignmentOptions.Center, true, 1.2f);
             bestText.textWrappingMode = TextWrappingModes.NoWrap;
+            bestText.enableAutoSizing = true;
+            bestText.fontSizeMin = 16f;
+            bestText.fontSizeMax = 28f;
             best.gameObject.SetActive(false);
 
             var stats = Go("StatChips", list.transform);
             HL(stats, 16f, Pad(0), TextAnchor.MiddleCenter, true, true, true, false);
-            LE(stats, minH: 150f, prefH: 150f, flexH: 0f);
-            var kills = StatChip(stats.transform, "KillsChip", Theme.iconSkull, "KILLS", 260f, 150f, out _);
-            var time = StatChip(stats.transform, "TimeChip", Theme.iconClock, "TIME", 260f, 150f, out _);
-            var combo = StatChip(stats.transform, "ComboChip", Theme.iconFlame, "BEST COMBO", 260f, 150f, out GameObject comboChip);
+            LE(stats, minH: 166f, prefH: 166f, flexH: 0f);
+            var kills = StatChip(stats.transform, "KillsChip", Theme.iconSkull, "KILLS", 260f, 166f, out GameObject killsChip);
+            var time = StatChip(stats.transform, "TimeChip", Theme.iconClock, "TIME", 260f, 166f, out GameObject timeChip);
+            var combo = StatChip(stats.transform, "ComboChip", Theme.iconFlame, "BEST COMBO", 260f, 166f, out GameObject comboChip);
+            foreach (GameObject chipGo in new[] { killsChip, timeChip, comboChip })
+            {
+                VL(chipGo, 2f, Pad(14, 14, 14, 36), TextAnchor.MiddleCenter, true, true, false, false);
+                Transform chipIcon = chipGo.transform.Find("Icon");
+                if (chipIcon != null) LE(chipIcon.gameObject, prefW: 42f, prefH: 42f);
+                Transform chipCap = chipGo.transform.Find("Caption");
+                if (chipCap != null && chipCap.TryGetComponent(out TMP_Text capTmp))
+                {
+                    capTmp.alignment = TextAlignmentOptions.Center;
+                    capTmp.enableAutoSizing = true;
+                    capTmp.fontSizeMin = 13f;
+                    capTmp.fontSizeMax = 20f;
+                    capTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                }
+            }
 
             var rewards = Go("Rewards", list.transform);
             HL(rewards, 18f, Pad(0), TextAnchor.MiddleCenter, false, false, false, false);
@@ -389,24 +407,29 @@ namespace ProjectB.EditorScripts
                 var csf = GetOrAdd<ContentSizeFitter>(pill.gameObject);
                 csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
                 csf.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
-                HL(pill.gameObject, 12f, Pad(18, 28, 6, 8), TextAnchor.MiddleCenter, true, true, false, false);
+                HL(pill.gameObject, 12f, Pad(20, 28, 8, 22), TextAnchor.MiddleCenter, true, true, false, false);
                 LE(pill.gameObject, minW: 200f, prefW: -1f, flexW: -1f, prefH: 92f);
+                Transform pillIcon = pill.transform.Find("Icon");
+                if (pillIcon != null) LE(pillIcon.gameObject, prefW: 54f, prefH: 54f);
                 LE(amt.gameObject, prefW: -1f, flexW: -1f);
                 amt.alignment = TextAlignmentOptions.MidlineLeft;
                 amt.textWrappingMode = TextWrappingModes.NoWrap;
+                SetBool(pill, "pulseWhileCounting", true);
+                SetFloatField(pill, "pulseAmplitude", 0.24f);
+                SetFloatField(pill, "pulseCycles", 4f);
             }
-            SetFloatField(coins, "countUpDuration", 1.1f);
-            SetFloatField(shards, "countUpDuration", 0.9f);
+            SetFloatField(coins, "countUpDuration", 1.0f);
+            SetFloatField(shards, "countUpDuration", 0.85f);
             SetStringField(coins, "prefix", "+");
             SetStringField(shards, "prefix", "+");
 
             // Run achievements
             var achSection = Img(list.transform, "RunAchievementsSection", UiSprite.Card, UiColor.Surface, 0.95f);
-            LE(achSection.gameObject, prefH: 190f, minH: 190f);
+            LE(achSection.gameObject, prefH: 176f, minH: 176f);
             var achHeader = Txt(achSection.transform, "Header", "ACHIEVEMENTS UNLOCKED", UiTextStyle.Caption, UiColor.Gold, TextAlignmentOptions.MidlineLeft);
             Band(Rt(achHeader), true, 14f, 40f, 24f, 24f);
-            Transform achContent = ScrollList(achSection.transform, "ScrollView", 8f, Pad(16, 16, 4, 12), out ScrollRect achScroll);
-            Stretch(Rt(achScroll), 0f, 10f, 0f, 58f);
+            Transform achContent = ScrollList(achSection.transform, "ScrollView", 8f, Pad(16, 16, 4, 6), out ScrollRect achScroll);
+            Stretch(Rt(achScroll), 0f, 34f, 0f, 56f);
             achSection.gameObject.SetActive(false);
 
             // Damage breakdown (auto height)
@@ -414,8 +437,8 @@ namespace ProjectB.EditorScripts
             var dmgLayout = LE(dmgSection.gameObject, prefH: 200f, minH: 200f);
             var dmgHeader = Txt(dmgSection.transform, "Header", "DAMAGE BREAKDOWN", UiTextStyle.Caption, UiColor.TextSecondary, TextAlignmentOptions.MidlineLeft);
             Band(Rt(dmgHeader), true, 14f, 40f, 24f, 24f);
-            Transform dmgContent = ScrollList(dmgSection.transform, "ScrollView", 6f, Pad(16, 16, 4, 12), out ScrollRect dmgScroll);
-            Stretch(Rt(dmgScroll), 0f, 10f, 0f, 58f);
+            Transform dmgContent = ScrollList(dmgSection.transform, "ScrollView", 6f, Pad(16, 16, 4, 6), out ScrollRect dmgScroll);
+            Stretch(Rt(dmgScroll), 0f, 34f, 0f, 56f);
             dmgContent.name = "Container";
 
             var adRow = Go("AdButtons", list.transform);
@@ -425,12 +448,24 @@ namespace ProjectB.EditorScripts
             var x2 = Btn(adRow.transform, "DoubleCoinsButton", "<sprite name=\"ad\"> x2 COINS", ButtonStyle.Ad, null, 0f, UiTextStyle.Button, 0.85f);
             revive.Label.text = "<sprite name=\"ad\"> REVIVE";
             x2.Label.text = "<sprite name=\"ad\"> x2 Coins";
+            Stretch(Rt(revive.Label), 20f, 38f, 20f, 8f);
+            Stretch(Rt(x2.Label), 20f, 38f, 20f, 8f);
 
             var navRow = Go("NavButtons", list.transform);
             HL(navRow, 18f, Pad(0), TextAnchor.MiddleCenter, true, true, true, true);
             LE(navRow, minH: 116f, prefH: 116f, flexH: 0f);
-            var restart = Btn(navRow.transform, "RestartButton", "RESTART", ButtonStyle.Primary, Theme.iconReroll, 46f, UiTextStyle.Button, 0.85f);
+            var restart = Btn(navRow.transform, "RestartButton", "RESTART", ButtonStyle.Primary, Theme.iconReroll, 42f, UiTextStyle.Button, 0.85f);
             var menuBtn = Btn(navRow.transform, "MenuButton", "MENU", ButtonStyle.Secondary, null, 0f, UiTextStyle.Button, 0.85f);
+            Transform restartContent = restart.transform.Find("Content");
+            if (restartContent != null) Stretch(Rt(restartContent), 20f, 38f, 20f, 8f);
+            if (restart.Label != null)
+            {
+                restart.Label.enableAutoSizing = true;
+                restart.Label.fontSizeMin = 18f;
+                restart.Label.fontSizeMax = 34f;
+                restart.Label.textWrappingMode = TextWrappingModes.NoWrap;
+            }
+            Stretch(Rt(menuBtn.Label), 20f, 38f, 20f, 8f);
 
             OnClick(revive.Button, ui.OnReviveClicked);
             OnClick(x2.Button, ui.OnDoubleCoinsClicked);
@@ -458,8 +493,13 @@ namespace ProjectB.EditorScripts
             Set(ui, "shardsLabel", shards);
             Set(ui, "shardsChip", shards.gameObject);
             Set(ui, "breakdownLayout", dmgLayout);
-            SetFloat(ui, "breakdownHeaderHeight", 72f);
+            SetFloat(ui, "breakdownHeaderHeight", 86f);
             SetFloat(ui, "breakdownMaxHeight", 430f);
+            SetFloat(ui, "countUpDuration", 0.90f);
+            SetFloat(ui, "countStaggerDelay", 0.07f);
+            SetFloat(ui, "countPulseAmplitude", 0.24f);
+            SetFloat(ui, "countPulseCycles", 4f);
+            SetFloat(ui, "countFinishPunch", 0.18f);
             Set(ui, "panelGroup", group);
         }
 

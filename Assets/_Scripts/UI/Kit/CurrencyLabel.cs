@@ -24,12 +24,19 @@ namespace ProjectB.UI
         [SerializeField] private bool useWhiteText;
         [SerializeField, Min(0f)] private float countUpDuration = 0.6f;
         [SerializeField] private bool punchOnChange = true;
+        [SerializeField] private bool pulseWhileCounting;
+        [SerializeField, Range(0f, 0.45f)] private float pulseAmplitude = 0.24f;
+        [SerializeField, Min(0.5f)] private float pulseCycles = 4f;
 
         private readonly char[] buffer = new char[24];
+        private Vector3 amountRestScale = Vector3.one;
         private int targetValue;
         private float displayedValue;
         private float startValue;
         private float elapsed;
+        private float startDelay;
+        private float activeDuration;
+        private float activePulseCycles = 3f;
         private bool animating;
         private bool hasValue;
         private int lastWrittenValue = int.MinValue;
@@ -44,6 +51,10 @@ namespace ProjectB.UI
         private void Awake()
         {
             ApplyTheme(UiTheme.Current);
+            if (amountText != null && amountText.transform.localScale != Vector3.zero)
+            {
+                amountRestScale = amountText.transform.localScale;
+            }
         }
 
         public void ApplyTheme(UiTheme theme)
@@ -66,6 +77,12 @@ namespace ProjectB.UI
         /// <summary>Sets the amount. <paramref name="animate"/> counts up/down from the currently displayed value.</summary>
         public void SetValue(int value, bool animate = true)
         {
+            SetValue(value, animate, 0f);
+        }
+
+        /// <summary>Sets the amount with an optional unscaled start <paramref name="delay"/>.</summary>
+        public void SetValue(int value, bool animate, float delay)
+        {
             if (hasValue && value == targetValue && !animating) return;
 
             bool changed = hasValue && value != targetValue;
@@ -75,34 +92,89 @@ namespace ProjectB.UI
             {
                 hasValue = true;
                 animating = false;
+                startDelay = 0f;
                 displayedValue = value;
                 Write(value);
+                ResetAmountScale();
                 return;
             }
 
+            int delta = Mathf.Abs(value - Mathf.RoundToInt(displayedValue));
+            activeDuration = delta <= 2 ? Mathf.Min(countUpDuration, 0.40f) : countUpDuration;
+            activePulseCycles = delta <= 1 ? 1f : (delta == 2 ? 2f : pulseCycles);
             startValue = displayedValue;
             elapsed = 0f;
+            startDelay = Mathf.Max(0f, delay);
             animating = true;
-            if (changed && punchOnChange) UiTween.Punch(transform, 0.1f, 0.25f);
+
+            if (pulseWhileCounting)
+            {
+                if (amountText != null)
+                {
+                    UiTween.Kill(amountText.transform, complete: false);
+                    amountText.transform.localScale = amountRestScale;
+                }
+            }
+            else if (changed && punchOnChange)
+            {
+                UiTween.Punch(transform, 0.1f, 0.25f);
+            }
+        }
+
+        public void CompleteAnimation()
+        {
+            if (!animating) return;
+            animating = false;
+            startDelay = 0f;
+            displayedValue = targetValue;
+            Write(targetValue);
+            ResetAmountScale();
+        }
+
+        private void ResetAmountScale()
+        {
+            if (amountText != null)
+            {
+                UiTween.Kill(amountText.transform, complete: false);
+                amountText.transform.localScale = amountRestScale;
+            }
         }
 
         private void OnDisable()
         {
-            if (animating)
-            {
-                animating = false;
-                displayedValue = targetValue;
-                Write(targetValue);
-            }
+            CompleteAnimation();
         }
 
         private void Update()
         {
             if (!animating) return;
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / countUpDuration);
+            float dt = Time.unscaledDeltaTime;
+            if (startDelay > 0f)
+            {
+                startDelay -= dt;
+                if (startDelay > 0f) return;
+                dt = -startDelay;
+                startDelay = 0f;
+            }
+
+            elapsed += dt;
+            float t = activeDuration > 0f ? Mathf.Clamp01(elapsed / activeDuration) : 1f;
             displayedValue = Mathf.Lerp(startValue, targetValue, UiTween.Evaluate(UiEase.OutCubic, t));
             Write(Mathf.RoundToInt(displayedValue));
+
+            if (pulseWhileCounting && amountText != null && targetValue > startValue)
+            {
+                if (t < 1f)
+                {
+                    amountText.transform.localScale = amountRestScale * UiTween.EvaluateCountPulseScale(t, pulseAmplitude, activePulseCycles);
+                }
+                else
+                {
+                    amountText.transform.localScale = amountRestScale;
+                    if (punchOnChange) UiTween.Punch(amountText.transform, 0.18f, 0.22f);
+                }
+            }
+
             if (t >= 1f) animating = false;
         }
 

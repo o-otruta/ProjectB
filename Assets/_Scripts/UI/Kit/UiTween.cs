@@ -222,6 +222,18 @@ namespace ProjectB.UI
             }
         }
 
+        /// <summary>
+        /// Rhythmic upward scale multiplier for a counting-up number at normalized progress <paramref name="t"/> in [0, 1].
+        /// Starts at 1, pulses smoothly up to 1 + <paramref name="amplitude"/> for <paramref name="cycles"/> beats, and lands cleanly at 1.
+        /// </summary>
+        public static float EvaluateCountPulseScale(float t, float amplitude = 0.24f, float cycles = 4f)
+        {
+            if (t <= 0f || t >= 1f || amplitude <= 0f) return 1f;
+            float env = Mathf.Sin(t * Mathf.PI);
+            float beat = 0.5f - 0.5f * Mathf.Cos(t * Mathf.PI * 2f * cycles);
+            return 1f + amplitude * (0.10f * env + 0.90f * beat);
+        }
+
         private static bool TryGetRunner(out UiTweenRunner r)
         {
             r = null;
