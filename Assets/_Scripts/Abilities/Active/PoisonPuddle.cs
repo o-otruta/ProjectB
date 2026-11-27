@@ -11,8 +11,10 @@ namespace ProjectB.Abilities
 {
     public class PoisonPuddle : MonoBehaviour
     {
+        private const float VisualLayerSpacing = 0.003f;
         private static readonly Collider[] hitBuffer = new Collider[128];
         private static readonly List<PoisonPuddle> activePuddles = new List<PoisonPuddle>(32);
+        private static readonly HashSet<int> occupiedVisualLayers = new HashSet<int>(32);
         private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
         private static readonly int EmissionColorPropertyId = Shader.PropertyToID("_EmissionColor");
@@ -34,6 +36,7 @@ namespace ProjectB.Abilities
         private float nextTickTime;
         private bool isReturned;
         private Transform visualRoot;
+        private int visualLayer;
         private MeshRenderer[] tileRenderers;
         private MaterialPropertyBlock napalmPropBlock;
 
@@ -74,12 +77,15 @@ namespace ProjectB.Abilities
 
             if (!activePuddles.Contains(this))
             {
+                visualLayer = FindAvailableVisualLayer();
                 activePuddles.Add(this);
             }
 
             transform.position = new Vector3(position.x, 0.04f, position.z);
             if (visualRoot != null)
             {
+                // Keep coplanar puddle surfaces apart without moving the damage origin.
+                visualRoot.localPosition = Vector3.up * (visualLayer * VisualLayerSpacing);
                 visualRoot.localScale = new Vector3(this.radius, 1f, this.radius);
             }
 
@@ -103,6 +109,25 @@ namespace ProjectB.Abilities
         private void OnDestroy()
         {
             activePuddles.Remove(this);
+        }
+
+        private static int FindAvailableVisualLayer()
+        {
+            occupiedVisualLayers.Clear();
+            foreach (PoisonPuddle puddle in activePuddles)
+            {
+                if (puddle != null)
+                {
+                    occupiedVisualLayers.Add(puddle.visualLayer);
+                }
+            }
+
+            int layer = 0;
+            while (occupiedVisualLayers.Contains(layer))
+            {
+                layer++;
+            }
+            return layer;
         }
 
         private void EnsureVisual(Material puddleMaterial, GameObject puddleVisualPrefab = null)
