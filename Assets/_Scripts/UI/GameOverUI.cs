@@ -436,8 +436,9 @@ namespace ProjectB.UI
             iconBoxRt.anchoredPosition = new Vector2(10f, 2f);
             iconBoxRt.sizeDelta = new Vector2(46f, 46f);
             var iconBoxImg = iconBoxGo.GetComponent<Image>();
-            iconBoxImg.sprite = theme.cardSprite;
-            iconBoxImg.type = theme.cardSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            Sprite boxSprite = theme.squircleSprite != null ? theme.squircleSprite : theme.cardSprite;
+            iconBoxImg.sprite = boxSprite;
+            iconBoxImg.type = boxSprite != null ? Image.Type.Sliced : Image.Type.Simple;
             iconBoxImg.color = theme.surfaceSunken;
             iconBoxImg.raycastTarget = false;
 

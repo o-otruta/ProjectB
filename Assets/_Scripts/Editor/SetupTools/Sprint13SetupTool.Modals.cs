@@ -382,8 +382,19 @@ namespace ProjectB.EditorScripts
             var rewards = Go("Rewards", list.transform);
             HL(rewards, 18f, Pad(0), TextAnchor.MiddleCenter, false, false, false, false);
             LE(rewards, prefH: 96f);
-            var coins = Pill(rewards.transform, "CoinsReward", CurrencyType.Coins, 380f, 92f, out _);
-            var shards = Pill(rewards.transform, "ShardsReward", CurrencyType.Shards, 240f, 92f, out _);
+            var coins = Pill(rewards.transform, "CoinsReward", CurrencyType.Coins, 200f, 92f, out TextMeshProUGUI coinsAmount);
+            var shards = Pill(rewards.transform, "ShardsReward", CurrencyType.Shards, 200f, 92f, out TextMeshProUGUI shardsAmount);
+            foreach (var (pill, amt) in new[] { (coins, coinsAmount), (shards, shardsAmount) })
+            {
+                var csf = GetOrAdd<ContentSizeFitter>(pill.gameObject);
+                csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                csf.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                HL(pill.gameObject, 12f, Pad(18, 28, 6, 8), TextAnchor.MiddleCenter, true, true, false, false);
+                LE(pill.gameObject, minW: 200f, prefW: -1f, flexW: -1f, prefH: 92f);
+                LE(amt.gameObject, prefW: -1f, flexW: -1f);
+                amt.alignment = TextAlignmentOptions.MidlineLeft;
+                amt.textWrappingMode = TextWrappingModes.NoWrap;
+            }
             SetFloatField(coins, "countUpDuration", 1.1f);
             SetFloatField(shards, "countUpDuration", 0.9f);
             SetStringField(coins, "prefix", "+");
@@ -418,7 +429,7 @@ namespace ProjectB.EditorScripts
             var navRow = Go("NavButtons", list.transform);
             HL(navRow, 18f, Pad(0), TextAnchor.MiddleCenter, true, true, true, true);
             LE(navRow, minH: 116f, prefH: 116f, flexH: 0f);
-            var restart = Btn(navRow.transform, "RestartButton", "RESTART", ButtonStyle.Secondary, Theme.iconReroll, 46f, UiTextStyle.Button, 0.85f);
+            var restart = Btn(navRow.transform, "RestartButton", "RESTART", ButtonStyle.Primary, Theme.iconReroll, 46f, UiTextStyle.Button, 0.85f);
             var menuBtn = Btn(navRow.transform, "MenuButton", "MENU", ButtonStyle.Secondary, null, 0f, UiTextStyle.Button, 0.85f);
 
             OnClick(revive.Button, ui.OnReviveClicked);

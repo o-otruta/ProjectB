@@ -22,26 +22,26 @@ namespace ProjectB.EditorScripts.UiKit
         public const string GAMEPLAY_SCENE = "Assets/_Scenes/Gameplay.unity";
         public const string HUD_SLOT_PREFAB = "Assets/_Prefabs/UI/AbilityHudSlot.prefab";
         public const int PIP_COUNT = 10;
-        public const float PIP_WIDTH = 38f;
-        public const float PIP_HEIGHT = 14f;
+        public const float PIP_WIDTH = 52f;
+        public const float PIP_HEIGHT = 24f;
         public const float BUILD_SLOT_SIZE = 72f;
         /// <summary>Between the build strip (ends at -368) and the cards container (starts around -450).</summary>
         public const float FTUE_HINT_PORTRAIT_Y = -200f;   // over the subtitle (206..250 px from the top)
-        /// <summary>Portrait card body centre relative to the card centre: half of the 56 px rarity band lower.</summary>
-        public const float BODY_CENTER_Y = -28f;
+        /// <summary>Portrait card body centre relative to the card centre: slightly lower than the 72 px rarity band.</summary>
+        public const float BODY_CENTER_Y = -26f;
         /// <summary>Top of the body block (= top of the 174 px icon) relative to the card centre.</summary>
-        public const float BODY_TOP_Y = BODY_CENTER_Y + 87f;
-        /// <summary>Card title: H2 (44) × 1.38 ≈ 61 px.</summary>
-        public const float TITLE_SCALE = 1.38f;
-        public const float TITLE_HEIGHT = 74f;
+        public const float BODY_TOP_Y = BODY_CENTER_Y + 88f;
+        /// <summary>Card title: H2 (44) × (48/44) = 48 px.</summary>
+        public const float TITLE_SCALE = 48f / 44f;
+        public const float TITLE_HEIGHT = 60f;
         /// <summary>
         /// Rounder cards without touching the shared kit: a lower sprite PPU multiplier scales the 9-slice corners
         /// (kit_card r20 → ~33 px, header r18 → ~31 px, rarity ring r22 → ~32 px) and thickens the outline a bit.
         /// </summary>
-        public const float CARD_CORNER_PPU = 0.6f;
-        public const float HEADER_CORNER_PPU = 0.58f;
-        public const float FRAME_CORNER_PPU = 0.69f;
-        public const float NEW_TAG_TILT = 6f;
+        public const float CARD_CORNER_PPU = 1f;
+        public const float HEADER_CORNER_PPU = 1f;
+        public const float FRAME_CORNER_PPU = 1f;
+        public const float NEW_TAG_TILT = 3f;
 
         [MenuItem("ProjectB/UI/Redesign/Apply Level-Up Cards + Build Strip")]
         public static void ApplyMenu()
@@ -149,17 +149,17 @@ namespace ProjectB.EditorScripts.UiKit
             banner.gameObject.AddComponent<ConfettiDriftUI>().EditorSetup(pieces);
 
             GetOrAdd<ThemedGraphic>(title.gameObject).Configure(UiColor.White);
-            GetOrAdd<ThemedText>(title.gameObject).Configure(UiTextStyle.H1, 0.92f);
+            GetOrAdd<ThemedText>(title.gameObject).Configure(UiTextStyle.H1, 1.04f);
             if (title.TryGetComponent(out TMP_Text titleTmp))
             {
                 titleTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 titleTmp.enableAutoSizing = true;
                 titleTmp.fontSizeMin = 30f;
-                titleTmp.fontSizeMax = Theme.h1Size * 0.92f;
+                titleTmp.fontSizeMax = Theme.h1Size * 1.04f;
             }
             Presets(Rt(title),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(670f, 108f)),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(640f, 88f)));
+                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(670f, 102f)),
+                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(640f, 88f)));
             title.SetSiblingIndex(banner.GetSiblingIndex() + 1);
         }
 
@@ -196,9 +196,8 @@ namespace ProjectB.EditorScripts.UiKit
             Transform container = content.Find("CardsContainer");
             if (container == null) return;
             var r = GetOrAdd<ResponsiveRect>(container.gameObject);
-            // Right under the build strip (ends at 372 px from the top) with breathing room above the reroll button
-            // (1724 px): 392..1580 px at the 1920 px reference → 380 px per card; card bodies are centred vertically.
-            var portrait = P(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -26f), new Vector2(980f, 1188f));
+            // Compact punchy card heights (~332 px per card) matching the mockup.
+            var portrait = P(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -20f), new Vector2(980f, 1052f));
             r.SetPreset(LayoutMode.Portrait, portrait);
             portrait.ApplyTo(Rt(container));
             EditorUtility.SetDirty(r);
@@ -230,7 +229,7 @@ namespace ProjectB.EditorScripts.UiKit
             if (shineMask != null)
             {
                 shineMask.SetSiblingIndex(2);
-                Stretch(Rt(shineMask), 6f, 12f, 6f, 6f);
+                Stretch(Rt(shineMask), 14f, 18f, 14f, 68f);
                 Transform shine = shineMask.Find("Shine");
                 if (shine != null)
                 {
@@ -239,19 +238,21 @@ namespace ProjectB.EditorScripts.UiKit
                     {
                         shineImg.sprite = Theme.shineSprite;
                         shineImg.type = Image.Type.Simple;
-                        shineImg.color = Color.white;
+                        shineImg.color = new Color(1f, 0.96f, 0.84f, 0.36f);
                     }
                     Rt(shine).sizeDelta = new Vector2(220f, 0f);
                 }
             }
 
-            // Rarity ring sits cleanly inside the outer contour.
+            // Outer rarity ring sits behind Background so it wraps outside the dark outline without cutting the shadow.
             Transform frame = card.Find("Frame");
             if (frame != null)
             {
-                frame.SetSiblingIndex(3);
-                Stretch(Rt(frame), 4f, 11f, 4f, 4f);
-                frame.GetComponent<Image>().pixelsPerUnitMultiplier = FRAME_CORNER_PPU;
+                frame.SetSiblingIndex(1);
+                Stretch(Rt(frame), -2f, 9f, -2f, -4f);
+                var frameImg = frame.GetComponent<Image>();
+                frameImg.pixelsPerUnitMultiplier = FRAME_CORNER_PPU;
+                frameImg.material = null;
             }
 
             // Flush top rarity header band.
@@ -261,21 +262,22 @@ namespace ProjectB.EditorScripts.UiKit
             bandImage.sprite = Theme.cardHeaderSprite != null ? Theme.cardHeaderSprite : Theme.rowSprite;
             bandImage.type = Image.Type.Sliced;
             bandImage.pixelsPerUnitMultiplier = HEADER_CORNER_PPU;
-            var bandPreset = P(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), new Vector2(-6f, 54f));
+            bandImage.material = Theme.surfaceMaterial;
+            var bandPreset = P(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 72f));
             Presets(Rt(band), bandPreset, bandPreset);
 
             Transform bandTextT = band.Find("Text");
             var bandText = bandTextT != null ? bandTextT.GetComponent<TextMeshProUGUI>() : null;
             if (bandText != null)
             {
-                GetOrAdd<ThemedText>(bandText.gameObject).Configure(UiTextStyle.Caption, 1f);
                 bandText.alignment = TextAlignmentOptions.MidlineLeft;
                 bandText.textWrappingMode = TextWrappingModes.NoWrap;
                 bandText.overflowMode = TextOverflowModes.Ellipsis;
                 bandText.enableAutoSizing = true;
-                bandText.fontSizeMin = 14f;
-                bandText.fontSizeMax = Theme.captionSize;
-                Presets(Rt(bandText), Inset(22f, 220f, 0f, 2f), Inset(18f, 168f, 0f, 2f));
+                bandText.fontSizeMin = 13f;
+                bandText.fontSizeMax = Theme.captionSize * 1.25f;
+                GetOrAdd<ThemedText>(bandText.gameObject).Configure(UiTextStyle.Caption, 1.25f, true, true);
+                Presets(Rt(bandText), Inset(28f, 246f, 0f, 4f), Inset(18f, 192f, 0f, 4f));
             }
 
             // Level badge stays inside the band, right-aligned.
@@ -283,24 +285,30 @@ namespace ProjectB.EditorScripts.UiKit
             if (badge != null)
             {
                 badge.SetParent(band, false);
-                var badgePreset = P(new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-18f, 0f), new Vector2(180f, -4f));
-                Presets(Rt(badge), badgePreset, badgePreset);
+                var badgePortrait = P(new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(210f, -4f));
+                var badgeLandscape = P(new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-18f, 0f), new Vector2(162f, -4f));
+                Presets(Rt(badge), badgePortrait, badgeLandscape);
                 var badgeText = badge.GetComponentInChildren<TextMeshProUGUI>(true);
                 if (badgeText != null)
                 {
                     badgeText.alignment = TextAlignmentOptions.MidlineRight;
-                    Stretch(Rt(badgeText), 0f, 0f, 0f, 0f);
+                    badgeText.textWrappingMode = TextWrappingModes.NoWrap;
+                    badgeText.enableAutoSizing = true;
+                    badgeText.fontSizeMin = 15f;
+                    badgeText.fontSizeMax = Theme.captionSize * 1.25f;
+                    GetOrAdd<ThemedText>(badgeText.gameObject).Configure(UiTextStyle.Caption, 1.25f, true, true);
+                    Stretch(Rt(badgeText), 0f, 2f, 0f, 0f);
                 }
             }
 
             // Remove old band-nested pips if present, build new segment pips below the title.
             Transform oldBandPips = band.Find("Pips");
             if (oldBandPips != null) Object.DestroyImmediate(oldBandPips.gameObject);
-            Image[] pips = BuildPips(card);
+            Image[] pips = BuildPips(card, out Image pipGlow);
 
             GameObject newTag = BuildNewTag(card, out TextMeshProUGUI newTagText);
 
-            // Clean icon container (single squircle + inner dark/gold tint, no triple-box).
+            // Clean icon container (squircle border + recessed flat inner backing).
             Transform iconFrame = card.Find("IconFrame");
             Image innerImg = null;
             if (iconFrame != null)
@@ -308,11 +316,11 @@ namespace ProjectB.EditorScripts.UiKit
                 var frameImg = iconFrame.GetComponent<Image>();
                 if (frameImg != null)
                 {
-                    frameImg.sprite = Theme.outlineSprite;
+                    frameImg.sprite = Theme.squircleSprite != null ? Theme.squircleSprite : Theme.outlineSprite;
                     frameImg.type = Image.Type.Sliced;
+                    frameImg.material = Theme.surfaceMaterial;
                 }
-                // Portrait: the body (icon + text column) is centred in the area below the 56 px band, so taller
-                // cards on tall screens do not leave an empty bottom. BODY_CENTER_Y = -(band / 2) from the card centre.
+                // Portrait: the body (icon + text column) is centred in the area below the 64 px band.
                 Presets(Rt(iconFrame),
                     P(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, BODY_CENTER_Y), new Vector2(174f, 174f)),
                     P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(170f, 170f)));
@@ -323,15 +331,16 @@ namespace ProjectB.EditorScripts.UiKit
                     innerImg = inner.GetComponent<Image>();
                     if (innerImg != null)
                     {
-                        innerImg.sprite = Theme.squircleSprite != null ? Theme.squircleSprite : Theme.cardSprite;
+                        innerImg.sprite = Theme.rowSprite != null ? Theme.rowSprite : Theme.cardSprite;
                         innerImg.type = Image.Type.Sliced;
+                        innerImg.material = null;
                     }
-                    Stretch(Rt(inner), 5f, 5f, 5f, 5f);
+                    Stretch(Rt(inner), 10f, 16f, 10f, 10f);
                 }
                 Transform icon = iconFrame.Find("Icon");
                 if (icon != null)
                 {
-                    Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(126f, 126f));
+                    Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), new Vector2(120f, 120f));
                 }
             }
 
@@ -343,28 +352,30 @@ namespace ProjectB.EditorScripts.UiKit
                     P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(-95f, -84f), new Vector2(44f, 32f)));
             }
 
-            // Card name: big outlined display title like the mockup (≈54 px at 1080 px width), shrinks for long names.
+            // Card name: balanced bold rounded display title (48 px max at 1080 px width).
             Transform title = card.Find("Title");
             if (title != null)
             {
-                GetOrAdd<ThemedText>(title.gameObject).Configure(UiTextStyle.H2, TITLE_SCALE);
                 if (title.TryGetComponent(out TMP_Text titleTmp))
                 {
                     titleTmp.enableAutoSizing = true;
+                    titleTmp.fontSizeMin = 24f;
                     titleTmp.fontSizeMax = Theme.h2Size * TITLE_SCALE;
-                    titleTmp.fontSizeMin = 30f;
                     titleTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 }
+                GetOrAdd<ThemedText>(title.gameObject).Configure(UiTextStyle.H2, TITLE_SCALE);
                 Presets(Rt(title),
-                    P(new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 1f), new Vector2(220f, BODY_TOP_Y + 4f), new Vector2(-244f, TITLE_HEIGHT)),
-                    P(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -266f), new Vector2(-40f, TITLE_HEIGHT)));
+                    P(new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 1f), new Vector2(220f, BODY_TOP_Y + 4f), new Vector2(-242f, TITLE_HEIGHT)),
+                    P(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -268f), new Vector2(-44f, 58f)));
             }
 
             Transform desc = card.Find("Description");
             if (desc != null)
             {
+                GetOrAdd<ThemedText>(desc.gameObject).Configure(UiTextStyle.Body, 0.94f);
+                GetOrAdd<ThemedGraphic>(desc.gameObject).Configure(UiColor.TextPrimary, 0.88f);
                 Presets(Rt(desc),
-                    P(new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 1f), new Vector2(220f, BODY_TOP_Y - TITLE_HEIGHT - 36f), new Vector2(-244f, 106f)),
+                    P(new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 1f), new Vector2(220f, BODY_TOP_Y - 94f), new Vector2(-242f, 102f)),
                     Inset(28f, 28f, 368f, 92f));
             }
 
@@ -380,7 +391,8 @@ namespace ProjectB.EditorScripts.UiKit
                     lockImg.sprite = Theme.cardSprite;
                     lockImg.type = Image.Type.Sliced;
                     lockImg.pixelsPerUnitMultiplier = CARD_CORNER_PPU;
-                    lockImg.color = UiTheme.WithAlpha(Theme.surfaceSunken, 0.5f);
+                    lockImg.material = null;
+                    lockImg.color = UiTheme.WithAlpha(Theme.surfaceSunken, 0.52f);
                 }
                 Transform lockIcon = lockOverlay.Find("Lock");
                 if (lockIcon != null) lockIcon.gameObject.SetActive(false);
@@ -400,32 +412,46 @@ namespace ProjectB.EditorScripts.UiKit
                 Transform adText = ad.Find("Text");
                 if (adText != null)
                 {
-                    GetOrAdd<ThemedText>(adText.gameObject).Configure(UiTextStyle.Button, 0.72f);
+                    GetOrAdd<ThemedText>(adText.gameObject).Configure(UiTextStyle.Button, 0.86f);
                     GetOrAdd<ThemedGraphic>(adText.gameObject).Configure(UiColor.White);
-                    Stretch(Rt(adText), 10f, 10f, 10f, 2f);
+                    Stretch(Rt(adText), 14f, 24f, 14f, 4f);
                 }
                 Presets(Rt(ad),
-                    P(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-24f, 22f), new Vector2(216f, 64f)),
-                    P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(210f, 62f)));
+                    P(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-22f, 20f), new Vector2(256f, 78f)),
+                    P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(236f, 78f)));
+            }
+
+            // Explicit draw order so Frame wraps outside Background, and Tag, NewTag, AdPlaceholder stay crisp on top.
+            string[] order =
+            {
+                "Glow", "Frame", "Background", "ShineMask", "IconFrame", "Title", "Pips",
+                "Description", "LockOverlay", "Tag", "KeyHintHost", "NewTag", "AdPlaceholder"
+            };
+            int siblingIdx = 0;
+            foreach (string childName in order)
+            {
+                Transform child = card.Find(childName);
+                if (child != null) child.SetSiblingIndex(siblingIdx++);
             }
 
             SetBool(ui, "rarityBand", true);
             SetArray(ui, "levelPips", pips);
+            Set(ui, "activePipGlow", pipGlow);
             Set(ui, "newTag", newTag);
             Set(ui, "newTagText", newTagText);
             Set(ui, "iconInnerImage", innerImg);
             EditorUtility.SetDirty(ui);
         }
 
-        /// <summary>Row of rectangular golden segment pips placed on the card directly under the title.</summary>
-        private static Image[] BuildPips(Transform card)
+        /// <summary>Row of chunky bordered rectangular segment pips placed on the card directly under the title.</summary>
+        private static Image[] BuildPips(Transform card, out Image pipGlow)
         {
             Transform old = card.Find("Pips");
             if (old != null) Object.DestroyImmediate(old.gameObject);
 
             var row = Go("Pips", card);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 8f;
+            layout.spacing = 10f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = false;
             layout.childControlHeight = false;
@@ -433,14 +459,20 @@ namespace ProjectB.EditorScripts.UiKit
             layout.childForceExpandHeight = false;
             row.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             Presets(Rt(row),
-                P(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 1f), new Vector2(220f, BODY_TOP_Y - TITLE_HEIGHT - 8f), new Vector2(0f, PIP_HEIGHT)),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -348f), new Vector2(0f, PIP_HEIGHT)));
+                P(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 1f), new Vector2(220f, BODY_TOP_Y - 60f), new Vector2(0f, PIP_HEIGHT)),
+                P(new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(28f, -334f), new Vector2(0f, PIP_HEIGHT)));
+
+            pipGlow = Img(row.transform, "PipGlow", UiSprite.Glow, UiColor.Gold, 0.75f, false, false);
+            LE(pipGlow.gameObject, ignore: true);
+            Place(Rt(pipGlow), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(76f, 44f));
+            pipGlow.gameObject.SetActive(false);
 
             var pips = new Image[PIP_COUNT];
             for (int i = 0; i < PIP_COUNT; i++)
             {
-                var pip = Img(row.transform, $"Pip_{i + 1}", UiSprite.Pill, UiColor.White, 1f, false, false);
+                var pip = Img(row.transform, $"Pip_{i + 1}", UiSprite.Pip, UiColor.White, 1f, false, false);
                 pip.type = Image.Type.Sliced;
+                if (Theme.surfaceMaterial != null) pip.material = Theme.surfaceMaterial;
                 Rt(pip).sizeDelta = new Vector2(PIP_WIDTH, PIP_HEIGHT);
                 pips[i] = pip;
             }
@@ -452,19 +484,19 @@ namespace ProjectB.EditorScripts.UiKit
             Transform old = card.Find("NewTag");
             if (old != null) Object.DestroyImmediate(old.gameObject);
 
-            // Sticker like the mockup: tilted red pill sitting on the card's top-right edge (half above the band),
-            // outlined display font, a gentle "breathing" pulse to draw the eye to new abilities.
-            var tag = Img(card, "NewTag", UiSprite.Pill, UiColor.Danger, 1f, false, false);
-            var preset = P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-96f, 4f), new Vector2(158f, 50f));
-            Presets(Rt(tag), preset, preset);
+            // Sticker sitting neatly inside the right end of the rarity band.
+            var tag = Img(card, "NewTag", UiSprite.Pill, UiColor.Danger, 1f, false, true);
+            var tagPortrait = P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-104f, -36f), new Vector2(156f, 44f));
+            var tagLandscape = P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-88f, -36f), new Vector2(140f, 42f));
+            Presets(Rt(tag), tagPortrait, tagLandscape);
             Rt(tag).localRotation = Quaternion.Euler(0f, 0f, NEW_TAG_TILT);
             text = Txt(tag.transform, "Text", "NEW!", UiTextStyle.Button, UiColor.White, TextAlignmentOptions.Center, false, 0.66f);
-            Stretch(Rt(text), 10f, 8f, 10f, 2f);
+            Stretch(Rt(text), 10f, 10f, 10f, 2f);
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Overflow;
             text.enableAutoSizing = true;
             text.fontSizeMin = 16f;
-            text.fontSizeMax = Theme.buttonSize * 0.66f;
+            text.fontSizeMax = 26f;
             tag.gameObject.AddComponent<PulseUI>().EditorSetup(0.07f, 4.2f);
             tag.gameObject.SetActive(false);
             return tag.gameObject;
@@ -477,13 +509,13 @@ namespace ProjectB.EditorScripts.UiKit
             Transform old = content.Find("BuildBar");
             if (old != null) Object.DestroyImmediate(old.gameObject);
 
-            var bar = Img(content, "BuildBar", UiSprite.Card, UiColor.Surface, 0.96f, false, true);
+            var bar = Img(content, "BuildBar", UiSprite.Card, UiColor.Surface, 0.98f, false, true);
             Presets(Rt(bar),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -264f), new Vector2(0f, 108f)),
-                P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-210f, 34f), new Vector2(0f, 108f)));
+                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -264f), new Vector2(0f, 114f)),
+                P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-210f, 34f), new Vector2(0f, 114f)));
 
             var barLayout = bar.gameObject.AddComponent<HorizontalLayoutGroup>();
-            barLayout.padding = new RectOffset(24, 24, 14, 18);
+            barLayout.padding = new RectOffset(28, 28, 16, 24);
             barLayout.spacing = 16f;
             barLayout.childAlignment = TextAnchor.MiddleCenter;
             barLayout.childControlWidth = true;
@@ -541,8 +573,8 @@ namespace ProjectB.EditorScripts.UiKit
             if (reroll == null) return;
 
             var r = GetOrAdd<ResponsiveRect>(reroll.gameObject);
-            var portrait = P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 88f), new Vector2(760f, 108f));
-            var landscape = P(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 34f), new Vector2(560f, 108f));
+            var portrait = P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 76f), new Vector2(840f, 124f));
+            var landscape = P(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 34f), new Vector2(580f, 112f));
             r.SetPreset(LayoutMode.Portrait, portrait);
             r.SetPreset(LayoutMode.Landscape, landscape);
             portrait.ApplyTo(Rt(reroll));
@@ -554,22 +586,21 @@ namespace ProjectB.EditorScripts.UiKit
             if (oldText != null) Object.DestroyImmediate(oldText.gameObject);
 
             var row = Go("Row", reroll);
-            Stretch(Rt(row), 24f, 12f, 24f, 4f);
+            Stretch(Rt(row), 24f, 28f, 24f, 6f);
             var hl = HL(row, 16f, Pad(0), TextAnchor.MiddleCenter, true, true, false, false);
             hl.childAlignment = TextAnchor.MiddleCenter;
 
-            var icon = Icon(row.transform, "Icon", Theme.iconReroll, 42f, Theme.white);
-            LE(icon.gameObject, prefW: 42f, prefH: 42f);
+            var icon = Icon(row.transform, "Icon", Theme.iconReroll, 44f, Theme.white);
+            LE(icon.gameObject, prefW: 44f, prefH: 44f);
 
             var label = Txt(row.transform, "Text", "Reroll cards", UiTextStyle.Button, UiColor.White, TextAlignmentOptions.Center, false, 0.85f);
             label.textWrappingMode = TextWrappingModes.NoWrap;
 
-            var badge = Img(row.transform, "FreeBadge", UiSprite.Pill, UiColor.Success, 1f, false, true);
-            HL(badge.gameObject, 0f, Pad(20, 20, 4, 8), TextAnchor.MiddleCenter, true, true, false, false);
-            LE(badge.gameObject, prefH: 46f);
+            var badge = Img(row.transform, "FreeBadge", UiSprite.Pill, UiColor.XpFill, 1f, false, true);
+            HL(badge.gameObject, 0f, Pad(22, 22, 4, 10), TextAnchor.MiddleCenter, true, true, false, false);
+            LE(badge.gameObject, prefH: 50f);
             var badgeText = Txt(badge.transform, "Text", "FREE", UiTextStyle.Micro, UiColor.TextDark, TextAlignmentOptions.Center, true, 1.05f);
-            badgeText.font = Theme.bodyBoldFont != null ? Theme.bodyBoldFont : badgeText.font;
-            if (badgeText.font != null) badgeText.fontSharedMaterial = badgeText.font.material;
+            GetOrAdd<ThemedText>(badgeText.gameObject).Configure(UiTextStyle.Micro, 1.05f, true, true);
             badgeText.textWrappingMode = TextWrappingModes.NoWrap;
 
             Transform hint = reroll.Find("KeyHintHost");

@@ -44,6 +44,7 @@ namespace ProjectB.LevelUp
         [SerializeField] private GameObject newTag;
         [SerializeField] private TMP_Text newTagText;
         [SerializeField] private Image iconInnerImage;
+        [SerializeField] private Image activePipGlow;
 
         private static readonly string[] RarityKeys = { "ui.rarity.common", "ui.rarity.rare", "ui.rarity.epic", "ui.rarity.legendary" };
         private static readonly string[] RarityFallbacks = { "Common", "Rare", "Epic", "Legendary" };
@@ -166,9 +167,7 @@ namespace ProjectB.LevelUp
                 // Redesign v2: the band carries the rarity; Epic/Legendary get full rarity ring, Rare gets a subtle tint.
                 if (rarityBand)
                 {
-                    frameImage.color = data.rarity >= CardRarity.Epic
-                        ? rarityColor
-                        : (data.rarity == CardRarity.Rare ? UiTheme.WithAlpha(rarityColor, 0.45f) : Color.clear);
+                    frameImage.color = data.rarity >= CardRarity.Epic ? rarityColor : Color.clear;
                 }
                 else
                 {
@@ -263,8 +262,8 @@ namespace ProjectB.LevelUp
             if (levelPips == null) return;
             UiTheme theme = UiTheme.Current;
             bool show = rarityBand && cap > 0 && cap <= levelPips.Length;
-            float pipW = cap > 5 ? 24f : 38f;
-            float pipH = cap > 5 ? 12f : 14f;
+            float pipW = cap > 5 ? 32f : 52f;
+            float pipH = cap > 5 ? 18f : 24f;
             for (int i = 0; i < levelPips.Length; i++)
             {
                 Image pip = levelPips[i];
@@ -282,12 +281,25 @@ namespace ProjectB.LevelUp
                 else if (i < next)
                 {
                     pip.color = theme.white;
-                    pip.rectTransform.localScale = new Vector3(1.06f, 1.15f, 1f);
+                    pip.rectTransform.localScale = new Vector3(1.06f, 1.12f, 1f);
                 }
                 else
                 {
                     pip.color = UiTheme.WithAlpha(theme.surfaceSunken, 0.9f);
                     pip.rectTransform.localScale = Vector3.one;
+                }
+            }
+
+            if (activePipGlow != null)
+            {
+                int grantedIdx = next - 1;
+                bool showGlow = show && next > current && grantedIdx >= 0 && grantedIdx < cap;
+                activePipGlow.gameObject.SetActive(showGlow);
+                if (showGlow)
+                {
+                    const float spacing = 10f;
+                    float cx = grantedIdx * (pipW + spacing) + pipW * 0.5f;
+                    activePipGlow.rectTransform.anchoredPosition = new Vector2(cx, -pipH * 0.5f);
                 }
             }
         }

@@ -119,6 +119,10 @@ namespace ProjectB.UI
                         faceImage.type = style == ButtonStyle.Icon ? Image.Type.Simple : Image.Type.Sliced;
                     }
                 }
+                if (theme.surfaceMaterial != null && theme.UsesSurfaceMaterial(faceImage.sprite))
+                {
+                    faceImage.material = theme.surfaceMaterial;
+                }
             }
 
             Color labelColor = theme.GetColor(colors.label);
@@ -127,7 +131,11 @@ namespace ProjectB.UI
                 label.color = labelColor;
                 if (style == ButtonStyle.Primary && label.font != null)
                 {
-                    label.fontSharedMaterial = label.font.material;
+                    TMP_FontAsset boldFont = theme.bodyBoldFont != null ? theme.bodyBoldFont : label.font;
+                    label.font = boldFont;
+                    label.fontSharedMaterial = (theme.heavyFlatMaterial != null && theme.bodyBoldFont != null)
+                        ? theme.heavyFlatMaterial
+                        : boldFont.material;
                 }
                 else if (label.TryGetComponent(out ThemedText themedLabel))
                 {

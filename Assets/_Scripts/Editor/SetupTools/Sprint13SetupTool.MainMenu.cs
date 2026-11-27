@@ -800,7 +800,10 @@ namespace ProjectB.EditorScripts
             var window = Img(panel.transform, "Window", UiSprite.Panel, UiColor.Surface);
             Place(Rt(window), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(880f, 820f));
             var title = Txt(window.transform, "Title", "SETTINGS", UiTextStyle.H1, UiColor.TextPrimary);
-            Band(Rt(title), true, 36f, 80f, 40f, 120f);
+            Band(Rt(title), true, 36f, 80f, 120f, 120f);
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 36f;
+            title.fontSizeMax = Theme.h1Size;
             var close = Btn(window.transform, "CloseButton", null, ButtonStyle.Icon, Theme.iconClose, 48f);
             Place(Rt(close), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-28f, -28f), new Vector2(96f, 96f));
 

@@ -23,13 +23,15 @@ namespace ProjectB.EditorScripts.UiKit
         public const string TITLE_MATERIAL = FONT_DIR + "/RussoOne SDF - Title.mat";
         public const string NUMBER_MATERIAL = FONT_DIR + "/RussoOne SDF - Number.mat";
         public const string BODY_MATERIAL = FONT_DIR + "/Rubik-Medium SDF - Body.mat";
+        public const string CARD_TITLE_MATERIAL = FONT_DIR + "/Rubik-Bold SDF - CardTitle.mat";
+        public const string HEAVY_FLAT_MATERIAL = FONT_DIR + "/Rubik-Bold SDF - HeavyFlat.mat";
         public const string LIBERATION_PATH = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
 
-        private static readonly Color OutlineColor = new Color32(20, 16, 40, 255);
-        public const float TITLE_OUTLINE = 0.26f;
-        public const float TITLE_DILATE = 0.08f;
-        public const float NUMBER_OUTLINE = 0.28f;
-        public const float NUMBER_DILATE = 0.08f;
+        private static readonly Color OutlineColor = new Color32(12, 10, 28, 255);
+        public const float TITLE_OUTLINE = 0.30f;
+        public const float TITLE_DILATE = 0.14f;
+        public const float NUMBER_OUTLINE = 0.32f;
+        public const float NUMBER_DILATE = 0.14f;
         public const float UNDERLAY_OFFSET_Y = -1.0f;
 
         public static uint[] BuildCharacterSet()
@@ -59,9 +61,9 @@ namespace ProjectB.EditorScripts.UiKit
         public static void BuildAll()
         {
             TMP_FontAsset fallback = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(LIBERATION_PATH);
-            TMP_FontAsset display = BuildFont(DISPLAY_TTF, DISPLAY_ASSET, 72, 10, 2048, fallback);
+            TMP_FontAsset display = BuildFont(DISPLAY_TTF, DISPLAY_ASSET, 72, 12, 2048, fallback);
             TMP_FontAsset body = BuildFont(BODY_TTF, BODY_ASSET, 48, 7, 1024, fallback);
-            TMP_FontAsset bodyBold = BuildFont(BODY_BOLD_TTF, BODY_BOLD_ASSET, 48, 7, 1024, fallback);
+            TMP_FontAsset bodyBold = BuildFont(BODY_BOLD_TTF, BODY_BOLD_ASSET, 72, 12, 2048, fallback);
 
             if (display != null)
             {
@@ -72,6 +74,11 @@ namespace ProjectB.EditorScripts.UiKit
             if (body != null)
             {
                 BuildMaterial(body, BODY_MATERIAL, outline: 0f, underlay: false, dilate: 0f);
+            }
+            if (bodyBold != null)
+            {
+                BuildMaterial(bodyBold, CARD_TITLE_MATERIAL, outline: 0.22f, underlay: true, dilate: 0.22f);
+                BuildMaterial(bodyBold, HEAVY_FLAT_MATERIAL, outline: 0f, underlay: false, dilate: 0.20f);
             }
 
             if (bodyBold != null && body != null)
@@ -218,11 +225,11 @@ namespace ProjectB.EditorScripts.UiKit
             if (underlay)
             {
                 mat.EnableKeyword(ShaderUtilities.Keyword_Underlay);
-                mat.SetColor(ShaderUtilities.ID_UnderlayColor, new Color(0.04f, 0.02f, 0.1f, 1f));
+                mat.SetColor(ShaderUtilities.ID_UnderlayColor, new Color(0.03f, 0.02f, 0.09f, 1f));
                 mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, 0f);
                 mat.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, UNDERLAY_OFFSET_Y);
                 mat.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0f);
-                mat.SetFloat(ShaderUtilities.ID_UnderlayDilate, outline);
+                mat.SetFloat(ShaderUtilities.ID_UnderlayDilate, Mathf.Max(outline, dilate + outline * 0.6f));
             }
             else
             {

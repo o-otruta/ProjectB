@@ -61,8 +61,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
+  m_Material: {fileID: 2100000, guid: e9b1f5b31ab0e994a8dab66ac2ac4197, type: 2}
+  m_Color: {r: 1, g: 0.79607844, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -103,7 +103,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.94, g: 0.95, b: 1, a: 1}
     m_PressedColor: {r: 0.82, g: 0.82, b: 0.86, a: 1}
-    m_SelectedColor: {r: 1, g: 0.95392156, b: 0.80490196, a: 1}
+    m_SelectedColor: {r: 1, g: 0.9490196, b: 0.79901963, a: 1}
     m_DisabledColor: {r: 0.55, g: 0.55, b: 0.62, a: 0.85}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.06
@@ -706,8 +706,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.20392157, g: 0.2, b: 0.4392157, a: 1}
+  m_Material: {fileID: 2100000, guid: e9b1f5b31ab0e994a8dab66ac2ac4197, type: 2}
+  m_Color: {r: 0.22745098, g: 0.22352941, b: 0.47843137, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1067,8 +1067,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.15686275, g: 0.15294118, b: 0.34509805, a: 1}
+  m_Material: {fileID: 2100000, guid: e9b1f5b31ab0e994a8dab66ac2ac4197, type: 2}
+  m_Color: {r: 0.16862746, g: 0.16470589, b: 0.3764706, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1238,8 +1238,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Upgrade
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 622c72345b40b35498079399153ed250, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: 953e76034f8fdc94881ccf7f8c5d73bf, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 05dcb47d8bba881488623200e4abd2e5, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: b657207fb298435429350b7f37ed7c1f, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

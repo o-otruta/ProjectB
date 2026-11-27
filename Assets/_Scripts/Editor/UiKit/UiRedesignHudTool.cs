@@ -20,18 +20,18 @@ namespace ProjectB.EditorScripts.UiKit
         public const string GAMEPLAY_SCENE = "Assets/_Scenes/Gameplay.unity";
         public const string SLOT_PREFAB_PATH = "Assets/_Prefabs/UI/AbilityHudSlot.prefab";
         public const int TRACK_NODES = 5;
-        public const float NODE_SIZE = 44f;
-        public const float BOSS_NODE_SIZE = 48f;
+        public const float NODE_SIZE = 48f;
+        public const float BOSS_NODE_SIZE = 52f;
         public const float LEVEL_TAG_WIDTH = 118f;
 
         // Portrait top layout: row 1 = pause / timer / coins+kills, row 2 = XP bar, row 3 = wave track.
-        public const float XP_TOP_Y = -126f;               // below the 92 px pause button (ends at -108)
-        public const float TRACK_TOP_Y_PORTRAIT = -182f;   // relative to the screen top (WaveHud sits at -6)
+        public const float XP_TOP_Y = -132f;               // below the 96 px pause button
+        public const float TRACK_TOP_Y_PORTRAIT = -192f;   // relative to the screen top (WaveHud sits at -6)
         public const float TRACK_TOP_Y_LANDSCAPE = -94f;   // landscape: right under the timer (XP lives top-left)
         public const float TIMER_HEIGHT = 80f;
         public const float TIMER_SCALE = 1.75f;
-        public const float PILL_HEIGHT = 44f;
-        public const float TOP_STACK_OFFSET = -254f;
+        public const float PILL_HEIGHT = 50f;
+        public const float TOP_STACK_OFFSET = -266f;
         public const float TOP_STACK_OFFSET_LANDSCAPE = -166f;
 
         [MenuItem("ProjectB/UI/Redesign/Apply HUD (HP Under Hero, Wave Track)")]
@@ -126,13 +126,18 @@ namespace ProjectB.EditorScripts.UiKit
             Transform old = xp.Find("LevelTag");
             if (old != null) Object.DestroyImmediate(old.gameObject);
             var tag = Img(xp, "LevelTag", UiSprite.Squircle, UiColor.Gold, 1f, false, true);
-            Place(Rt(tag), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(8f, 0f), new Vector2(LEVEL_TAG_WIDTH + 8f, 50f));
+            Place(Rt(tag), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(8f, 0f), new Vector2(LEVEL_TAG_WIDTH + 12f, 56f));
             var text = Txt(tag.transform, "Text", "LV 1", UiTextStyle.Caption, UiColor.TextDark, TextAlignmentOptions.Center, true, 1.05f);
             Object.DestroyImmediate(text.GetComponent<ThemedText>());
-            Stretch(Rt(text), 8f, 4f, 8f, 0f);
+            Stretch(Rt(text), 8f, 14f, 8f, 2f);
             text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.font = Theme.displayFont != null ? Theme.displayFont : text.font;
-            if (text.font != null) text.fontSharedMaterial = text.font.material;
+            text.font = Theme.bodyBoldFont != null ? Theme.bodyBoldFont : (Theme.displayFont != null ? Theme.displayFont : text.font);
+            if (text.font != null)
+            {
+                text.fontSharedMaterial = (Theme.heavyFlatMaterial != null && Theme.bodyBoldFont != null)
+                    ? Theme.heavyFlatMaterial
+                    : text.font.material;
+            }
             text.fontSize = Theme.captionSize * 1.05f;
 
             // The tag now carries the level: the old in-bar label group goes away.
@@ -152,13 +157,13 @@ namespace ProjectB.EditorScripts.UiKit
             Transform old = waveHud.Find("WaveTrack");
             if (old != null) Object.DestroyImmediate(old.gameObject);
 
-            var track = Img(waveHud, "WaveTrack", UiSprite.Pill, UiColor.Surface, 0.96f, false, true);
+            var track = Img(waveHud, "WaveTrack", UiSprite.Pill, UiColor.SurfaceSunken, 0.98f, false, true);
             // WaveHud is anchored 6 px below the top in Portrait and 8 px in Landscape.
             Presets(Rt(track),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, TRACK_TOP_Y_PORTRAIT + 6f), new Vector2(0f, 60f)),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, TRACK_TOP_Y_LANDSCAPE + 8f), new Vector2(0f, 60f)));
+                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, TRACK_TOP_Y_PORTRAIT + 6f), new Vector2(0f, 66f)),
+                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, TRACK_TOP_Y_LANDSCAPE + 8f), new Vector2(0f, 66f)));
             var layout = track.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(22, 16, 4, 6);
+            layout.padding = new RectOffset(22, 18, 4, 14);
             layout.spacing = 6f;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = false;
@@ -191,7 +196,7 @@ namespace ProjectB.EditorScripts.UiKit
                 else
                 {
                     var label = Txt(node.transform, "Text", (i + 1).ToString(), UiTextStyle.Micro, UiColor.TextSecondary, TextAlignmentOptions.Center, false, 1.1f);
-                    Stretch(Rt(label), 0f, 4f, 0f, 0f);
+                    Stretch(Rt(label), 0f, 8f, 0f, 0f);
                     label.textWrappingMode = TextWrappingModes.NoWrap;
                     labels[i] = label;
 
@@ -213,6 +218,7 @@ namespace ProjectB.EditorScripts.UiKit
             Transform pause = hud.Find("PauseButton");
             if (pause != null)
             {
+                Rt(pause).sizeDelta = new Vector2(96f, 96f);
                 var pImg = pause.GetComponent<Image>();
                 if (pImg != null && Theme.squircleSprite != null)
                 {
@@ -221,7 +227,9 @@ namespace ProjectB.EditorScripts.UiKit
                 }
                 if (pause.TryGetComponent(out ThemedButton ptb))
                 {
-                    ptb.EditorSetup(ButtonStyle.Secondary, pImg, null, pause.Find("Icon")?.GetComponent<Image>(), ButtonSound.None, customSprite: true);
+                    Image pIcon = pause.Find("Icon")?.GetComponent<Image>();
+                    if (pIcon != null) Rt(pIcon).anchoredPosition = new Vector2(0f, 7f);
+                    ptb.EditorSetup(ButtonStyle.Secondary, pImg, null, pIcon, ButtonSound.None, customSprite: true);
                 }
                 Transform keyHint = pause.Find("KeyHintHost");
                 if (keyHint != null)
@@ -244,20 +252,20 @@ namespace ProjectB.EditorScripts.UiKit
             if (coins != null)
             {
                 Rt(coins).anchoredPosition = new Vector2(-24f, -12f);
-                Rt(coins).sizeDelta = new Vector2(204f, PILL_HEIGHT);
+                Rt(coins).sizeDelta = new Vector2(184f, PILL_HEIGHT);
             }
             if (kills != null)
             {
-                Rt(kills).anchoredPosition = new Vector2(-24f, -12f - PILL_HEIGHT - 6f);
-                Rt(kills).sizeDelta = new Vector2(204f, PILL_HEIGHT);
+                Rt(kills).anchoredPosition = new Vector2(-24f, -12f - PILL_HEIGHT - 8f);
+                Rt(kills).sizeDelta = new Vector2(184f, PILL_HEIGHT);
             }
             foreach (Transform pill in new[] { coins, kills })
             {
                 if (pill == null) continue;
-                GetOrAdd<ThemedGraphic>(pill.gameObject).Configure(UiColor.Surface, 0.98f, UiSprite.Pill);
+                GetOrAdd<ThemedGraphic>(pill.gameObject).Configure(UiColor.SurfaceSunken, 0.98f, UiSprite.Pill);
                 if (pill.TryGetComponent(out HorizontalLayoutGroup hl))
                 {
-                    hl.padding = new RectOffset(10, 18, 4, 5);
+                    hl.padding = new RectOffset(12, 18, 4, 10);
                     hl.spacing = 8f;
                 }
                 Transform icon = pill.Find("Icon");
@@ -277,8 +285,8 @@ namespace ProjectB.EditorScripts.UiKit
         {
             if (comboHud == null) return;
             Presets(Rt(comboHud),
-                P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, TOP_STACK_OFFSET), new Vector2(226f, 154f)),
-                P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, TOP_STACK_OFFSET_LANDSCAPE), new Vector2(226f, 154f)));
+                P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, TOP_STACK_OFFSET), new Vector2(226f, 160f)),
+                P(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, TOP_STACK_OFFSET_LANDSCAPE), new Vector2(226f, 160f)));
 
             Transform content = comboHud.Find("Content");
             if (content == null) return;
@@ -287,7 +295,8 @@ namespace ProjectB.EditorScripts.UiKit
                 bg.enabled = true;
                 bg.sprite = Theme.cardSprite;
                 bg.type = Image.Type.Sliced;
-                bg.color = UiTheme.WithAlpha(Theme.surface, 0.96f);
+                bg.material = Theme.surfaceMaterial;
+                bg.color = UiTheme.WithAlpha(Theme.surface, 0.98f);
             }
             Transform comboText = content.Find("ComboText");
             if (comboText != null)
@@ -313,7 +322,7 @@ namespace ProjectB.EditorScripts.UiKit
             Transform timerBg = content.Find("TimerBarBg");
             if (timerBg != null)
             {
-                Rt(timerBg).anchoredPosition = new Vector2(0f, 20f);
+                Rt(timerBg).anchoredPosition = new Vector2(0f, 24f);
                 Rt(timerBg).sizeDelta = new Vector2(-36f, 20f);
             }
         }
@@ -335,6 +344,11 @@ namespace ProjectB.EditorScripts.UiKit
             foreach (Transform row in new[] { actives, passives })
             {
                 if (row == null) continue;
+                var alg = GetOrAdd<AdaptiveLayoutGroup>(row.gameObject);
+                alg.SetSettings(LayoutMode.Portrait, new StackModeSettings { axis = LayoutAxis.Horizontal, spacing = 8f, childAlignment = TextAnchor.MiddleLeft });
+                alg.SetSettings(LayoutMode.Landscape, new StackModeSettings { axis = LayoutAxis.Vertical, spacing = 8f, childAlignment = TextAnchor.UpperCenter });
+                EditorUtility.SetDirty(alg);
+
                 var r = row.GetComponent<ResponsiveRect>();
                 if (r != null)
                 {
@@ -345,15 +359,14 @@ namespace ProjectB.EditorScripts.UiKit
                         r.SetPreset(LayoutMode.Portrait, p);
                         p.ApplyTo(Rt(row));
                     }
-                    if (row == passives)
+                    var l = r.GetPreset(LayoutMode.Landscape);
+                    if (l.captured)
                     {
-                        var l = r.GetPreset(LayoutMode.Landscape);
-                        if (l.captured)
-                        {
-                            l.anchoredPosition = new Vector2(102f, l.anchoredPosition.y);
-                            r.SetPreset(LayoutMode.Landscape, l);
-                        }
+                        l.anchoredPosition = row == actives ? Vector2.zero : new Vector2(98f, 0f);
+                        l.sizeDelta = new Vector2(88f, 560f);
+                        r.SetPreset(LayoutMode.Landscape, l);
                     }
+                    EditorUtility.SetDirty(r);
                 }
                 else
                 {
@@ -373,9 +386,10 @@ namespace ProjectB.EditorScripts.UiKit
                 var l = hudR.GetPreset(LayoutMode.Landscape);
                 if (l.captured)
                 {
-                    l.sizeDelta = new Vector2(204f, l.sizeDelta.y);
+                    l.sizeDelta = new Vector2(190f, l.sizeDelta.y);
                     hudR.SetPreset(LayoutMode.Landscape, l);
                 }
+                EditorUtility.SetDirty(hudR);
             }
         }
 
@@ -385,6 +399,22 @@ namespace ProjectB.EditorScripts.UiKit
             Presets(Rt(ult),
                 P(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-40f, 148f), new Vector2(192f, 192f)),
                 P(new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 72f), new Vector2(168f, 168f)));
+
+            // Transparent root hit surface; RingTrack -> Ring -> Face gives crisp black borders on both sides of the arc.
+            var rootImg = ult.GetComponent<Image>();
+            if (rootImg != null)
+            {
+                rootImg.sprite = Theme.circleSprite;
+                rootImg.type = Image.Type.Simple;
+                rootImg.material = null;
+                rootImg.color = Color.clear;
+                rootImg.raycastTarget = true;
+            }
+
+            Transform oldTrack = ult.Find("RingTrack");
+            if (oldTrack != null) Object.DestroyImmediate(oldTrack.gameObject);
+            var ringTrack = Img(ult, "RingTrack", UiSprite.Circle, UiColor.SurfaceSunken, 1f, false, true);
+            Stretch(Rt(ringTrack), -12f, -12f, -12f, -12f);
 
             Transform ringT = ult.Find("Ring");
             Image ring = ringT != null ? ringT.GetComponent<Image>() : null;
@@ -399,6 +429,18 @@ namespace ProjectB.EditorScripts.UiKit
                 Stretch(Rt(ring), -4f, -4f, -4f, -4f);
             }
 
+            Transform oldFace = ult.Find("Face");
+            if (oldFace != null) Object.DestroyImmediate(oldFace.gameObject);
+            var faceImg = Img(ult, "Face", UiSprite.Circle, UiColor.SurfaceRaised, 1f, false, false);
+            Stretch(Rt(faceImg), 14f, 14f, 14f, 14f);
+
+            Transform readyGlow = ult.Find("ReadyGlow");
+            int idx = 0;
+            if (readyGlow != null) readyGlow.SetSiblingIndex(idx++);
+            ringTrack.transform.SetSiblingIndex(idx++);
+            if (ringT != null) ringT.SetSiblingIndex(idx++);
+            faceImg.transform.SetSiblingIndex(idx++);
+
             // Clip square pixel ultimate icon cleanly inside a circular mask.
             Transform icon = ult.Find("Icon") ?? ult.Find("IconMask/Icon");
             if (icon != null)
@@ -408,14 +450,19 @@ namespace ProjectB.EditorScripts.UiKit
                 {
                     var maskImg = Img(ult, "IconMask", UiSprite.Circle, UiColor.White, 1f, false, false);
                     maskImg.type = Image.Type.Simple;
+                    maskImg.material = null;
                     var mask = maskImg.gameObject.AddComponent<Mask>();
                     mask.showMaskGraphic = false;
                     maskT = maskImg.transform;
                 }
-                maskT.SetSiblingIndex(ringT != null ? ringT.GetSiblingIndex() + 1 : 1);
-                Place(Rt(maskT), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(118f, 118f));
+                else if (maskT.TryGetComponent(out Image maskImg))
+                {
+                    maskImg.material = null;
+                }
+                maskT.SetSiblingIndex(idx++);
+                Place(Rt(maskT), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 3f), new Vector2(108f, 108f));
                 icon.SetParent(maskT, false);
-                Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(108f, 108f));
+                Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(98f, 98f));
             }
 
             Transform status = ult.Find("StatusText");
@@ -433,8 +480,13 @@ namespace ProjectB.EditorScripts.UiKit
                 Place(Rt(keyHint), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-6f, -6f), new Vector2(84f, 28f));
             }
 
+            if (ult.TryGetComponent(out Button btn))
+            {
+                btn.targetGraphic = faceImg;
+            }
             if (ult.TryGetComponent(out UltimateButtonUI ui))
             {
+                Set(ui, "backgroundImage", faceImg);
                 Set(ui, "chargeRingImage", ring);
                 SetBool(ui, "showChargePercent", true);
                 EditorUtility.SetDirty(ui);
@@ -453,18 +505,19 @@ namespace ProjectB.EditorScripts.UiKit
                 {
                     bgImg.sprite = Theme.squircleSprite != null ? Theme.squircleSprite : Theme.cardSprite;
                     bgImg.type = Image.Type.Sliced;
+                    bgImg.material = Theme.surfaceMaterial;
                 }
                 Transform border = root.transform.Find("Border");
                 if (border != null && border.TryGetComponent(out Image borderImg))
                 {
                     borderImg.sprite = Theme.slotFrameSprite;
                     borderImg.type = Image.Type.Sliced;
-                    Stretch(Rt(border), -2f, -2f, -2f, -2f);
+                    Stretch(Rt(border), 1f, 6f, 1f, 0f);
                 }
                 Transform icon = root.transform.Find("Icon");
                 if (icon != null)
                 {
-                    Stretch(Rt(icon), 10f, 10f, 10f, 10f);
+                    Stretch(Rt(icon), 10f, 14f, 10f, 8f);
                 }
                 Transform badge = root.transform.Find("LevelBadge");
                 Image badgeImg = null;
@@ -475,9 +528,10 @@ namespace ProjectB.EditorScripts.UiKit
                     {
                         badgeImg.sprite = Theme.circleSprite;
                         badgeImg.type = Image.Type.Simple;
+                        badgeImg.material = Theme.surfaceMaterial;
                         badgeImg.color = Theme.gold;
                     }
-                    Place(Rt(badge), new Vector2(1f, 0f), new Vector2(0.5f, 0.5f), new Vector2(-4f, 4f), new Vector2(32f, 32f));
+                    Place(Rt(badge), new Vector2(1f, 0f), new Vector2(0.5f, 0.5f), new Vector2(-4f, 4f), new Vector2(34f, 34f));
                     Transform text = badge.Find("Text");
                     if (text != null && text.TryGetComponent(out TMP_Text tmp))
                     {
@@ -485,11 +539,11 @@ namespace ProjectB.EditorScripts.UiKit
                         if (Theme.bodyBoldFont != null)
                         {
                             tmp.font = Theme.bodyBoldFont;
-                            tmp.fontSharedMaterial = Theme.bodyBoldFont.material;
+                            tmp.fontSharedMaterial = Theme.heavyFlatMaterial != null ? Theme.heavyFlatMaterial : Theme.bodyBoldFont.material;
                         }
                         tmp.color = Theme.textDark;
                         tmp.alignment = TextAlignmentOptions.Center;
-                        Stretch(Rt(text), 0f, 0f, 0f, 1f);
+                        Stretch(Rt(text), 0f, 2f, 0f, 0f);
                     }
                 }
                 if (root.TryGetComponent(out AbilityHudSlotUI slotUi))

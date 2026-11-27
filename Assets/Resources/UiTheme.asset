@@ -13,33 +13,33 @@ MonoBehaviour:
   m_Name: UiTheme
   m_EditorClassIdentifier: ProjectB.Runtime::ProjectB.UI.UiTheme
   background: {r: 0.07450981, g: 0.07058824, b: 0.18039216, a: 1}
-  surface: {r: 0.15686275, g: 0.15294118, b: 0.34509805, a: 1}
-  surfaceRaised: {r: 0.20392157, g: 0.2, b: 0.4392157, a: 1}
-  surfaceSunken: {r: 0.07450981, g: 0.07058824, b: 0.17254902, a: 1}
+  surface: {r: 0.16862746, g: 0.16470589, b: 0.3764706, a: 1}
+  surfaceRaised: {r: 0.22745098, g: 0.22352941, b: 0.47843137, a: 1}
+  surfaceSunken: {r: 0.08627451, g: 0.08235294, b: 0.21960784, a: 1}
   outline: {r: 0.32156864, g: 0.3137255, b: 0.6039216, a: 1}
   overlay: {r: 0.03, g: 0.03, b: 0.08, a: 0.78}
   textPrimary: {r: 0.95686275, g: 0.94509804, b: 1, a: 1}
   textSecondary: {r: 0.6627451, g: 0.6509804, b: 0.8392157, a: 1}
   textDisabled: {r: 0.38431373, g: 0.37254903, b: 0.5568628, a: 1}
-  textDark: {r: 0.2, g: 0.11372549, b: 0, a: 1}
+  textDark: {r: 0.16862746, g: 0.08627451, b: 0.015686275, a: 1}
   accent: {r: 0.4862745, g: 0.36078432, b: 1, a: 1}
   success: {r: 0.27058825, g: 0.83137256, b: 0.5137255, a: 1}
   danger: {r: 1, g: 0.3019608, b: 0.41568628, a: 1}
   warning: {r: 1, g: 0.63529414, b: 0.22745098, a: 1}
-  gold: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
+  gold: {r: 1, g: 0.79607844, b: 0.19607843, a: 1}
   shard: {r: 0.24705882, g: 0.8784314, b: 0.8156863, a: 1}
   ad: {r: 0.19607843, g: 0.65882355, b: 1, a: 1}
   white: {r: 1, g: 1, b: 1, a: 1}
-  rarityCommon: {r: 0.7254902, g: 0.7607843, b: 0.8156863, a: 1}
-  rarityRare: {r: 0.23921569, g: 0.60784316, b: 1, a: 1}
+  rarityCommon: {r: 0.7764706, g: 0.8117647, b: 0.87058824, a: 1}
+  rarityRare: {r: 0.29411766, g: 0.65882355, b: 1, a: 1}
   rarityEpic: {r: 0.7137255, g: 0.36078432, b: 1, a: 1}
-  rarityLegendary: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
+  rarityLegendary: {r: 1, g: 0.79607844, b: 0.19607843, a: 1}
   activeSlot: {r: 1, g: 0.5882353, b: 0.2509804, a: 1}
   passiveSlot: {r: 0.23529412, g: 0.78431374, b: 0.8784314, a: 1}
   hpFill: {r: 1, g: 0.30980393, b: 0.47058824, a: 1}
   xpFill: {r: 0.43137255, g: 0.8784314, b: 0.25882354, a: 1}
   ghost: {r: 1, g: 0.8901961, b: 0.6392157, a: 1}
-  overdriveTier1: {r: 1, g: 0.8156863, b: 0.21960784, a: 1}
+  overdriveTier1: {r: 1, g: 0.79607844, b: 0.19607843, a: 1}
   overdriveTier2: {r: 0.36078432, g: 0.95686275, b: 1, a: 1}
   overdriveTier3: {r: 1, g: 0.41568628, b: 0.9019608, a: 1}
   primaryButton:
@@ -70,6 +70,8 @@ MonoBehaviour:
   titleMaterial: {fileID: 2100000, guid: 953e76034f8fdc94881ccf7f8c5d73bf, type: 2}
   numberMaterial: {fileID: 2100000, guid: 6b1e2bd59d78a294ba59ea59d26a059b, type: 2}
   bodyMaterial: {fileID: 2100000, guid: 9fafc264980f6f24392350755d09efe2, type: 2}
+  cardTitleMaterial: {fileID: 2100000, guid: b657207fb298435429350b7f37ed7c1f, type: 2}
+  heavyFlatMaterial: {fileID: 2100000, guid: 09d00c6902200c846a21370ded173adb, type: 2}
   displaySize: 96
   h1Size: 64
   h2Size: 44
@@ -108,6 +110,8 @@ MonoBehaviour:
   shineSprite: {fileID: 21300000, guid: 621edf2072895984c902907128dde51f, type: 3}
   ribbonTailSprite: {fileID: 21300000, guid: 5c328d166f4e23c4f850ce25ec8eedca, type: 3}
   menuBgSprite: {fileID: 21300000, guid: d001b3b4f671d2641a297db7f0cfc285, type: 3}
+  pipSprite: {fileID: 21300000, guid: b51653855076f5444b07e295641cb4e2, type: 3}
+  surfaceMaterial: {fileID: 2100000, guid: e9b1f5b31ab0e994a8dab66ac2ac4197, type: 2}
   iconCoin: {fileID: 21300000, guid: e3fa1a4e170f02049a98ffc822aff0de, type: 3}
   iconShard: {fileID: 21300000, guid: 46a4d2f13c7caac449242f4e5b24f938, type: 3}
   iconAd: {fileID: 21300000, guid: 1fe7f9043bce78b478e605437e367464, type: 3}

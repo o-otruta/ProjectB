@@ -270,7 +270,7 @@ namespace ProjectB.EditorScripts.UiKit
             Transform settings = topBar.Find("SettingsButton");
             if (settings != null)
             {
-                Rt(settings).sizeDelta = new Vector2(96f, 96f);
+                Rt(settings).sizeDelta = new Vector2(100f, 100f);
                 var img = settings.GetComponent<Image>();
                 if (img != null && Theme.squircleSprite != null)
                 {
@@ -279,40 +279,72 @@ namespace ProjectB.EditorScripts.UiKit
                 }
                 if (settings.TryGetComponent(out ThemedButton tb))
                 {
-                    tb.EditorSetup(ButtonStyle.Icon, img, null, settings.Find("Icon")?.GetComponent<Image>(), ButtonSound.Click, customSprite: true);
+                    Image sIcon = settings.Find("Icon")?.GetComponent<Image>();
+                    if (sIcon != null) Rt(sIcon).anchoredPosition = new Vector2(0f, 7f);
+                    tb.EditorSetup(ButtonStyle.Icon, img, null, sIcon, ButtonSound.Click, customSprite: true);
                 }
             }
 
             Transform currencies = topBar.Find("Currencies");
             if (currencies != null)
             {
+                var crt = Rt(currencies);
+                crt.anchorMin = new Vector2(1f, 0.5f);
+                crt.anchorMax = new Vector2(1f, 0.5f);
+                crt.pivot = new Vector2(1f, 0.5f);
+                crt.anchoredPosition = new Vector2(-28f, 0f);
+                crt.sizeDelta = new Vector2(880f, 88f);
+
+                if (currencies.TryGetComponent(out HorizontalLayoutGroup chl))
+                {
+                    chl.spacing = 14f;
+                    chl.childAlignment = TextAnchor.MiddleRight;
+                    chl.childControlWidth = true;
+                    chl.childControlHeight = true;
+                    chl.childForceExpandWidth = false;
+                    chl.childForceExpandHeight = false;
+                }
                 Transform coins = currencies.Find("CoinsPill");
                 Transform shards = currencies.Find("ShardsPill");
                 if (coins != null) coins.SetSiblingIndex(0);
                 if (shards != null) shards.SetSiblingIndex(1);
 
-                StyleCurrencyPill(coins, 236f, 72f);
-                StyleCurrencyPill(shards, 172f, 72f);
+                StyleCurrencyPill(coins, 156f, 76f);
+                StyleCurrencyPill(shards, 124f, 76f);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(crt);
             }
         }
 
-        private static void StyleCurrencyPill(Transform pill, float width, float height)
+        private static void StyleCurrencyPill(Transform pill, float minWidth, float height)
         {
             if (pill == null) return;
-            Rt(pill).sizeDelta = new Vector2(width, height);
-            GetOrAdd<ThemedGraphic>(pill.gameObject).Configure(UiColor.Surface, 0.96f, UiSprite.Pill);
+            Rt(pill).sizeDelta = new Vector2(minWidth, height);
+            var csf = pill.GetComponent<ContentSizeFitter>();
+            if (csf != null) Object.DestroyImmediate(csf);
+            LE(pill.gameObject, minH: height, prefH: height, flexH: 0f, minW: minWidth, prefW: -1f, flexW: 0f);
+            GetOrAdd<ThemedGraphic>(pill.gameObject).Configure(UiColor.SurfaceSunken, 0.98f, UiSprite.Pill);
             if (pill.TryGetComponent(out HorizontalLayoutGroup hl))
             {
-                hl.padding = new RectOffset(16, 22, 6, 8);
-                hl.spacing = 10f;
+                hl.padding = new RectOffset(14, 24, 6, 14);
+                hl.spacing = 12f;
+                hl.childAlignment = TextAnchor.MiddleCenter;
+                hl.childControlWidth = true;
+                hl.childControlHeight = true;
+                hl.childForceExpandWidth = false;
+                hl.childForceExpandHeight = false;
             }
             Transform icon = pill.Find("Icon");
-            if (icon != null) LE(icon.gameObject, prefW: 44f, prefH: 44f);
+            if (icon != null) LE(icon.gameObject, minH: 44f, prefH: 44f, minW: 44f, prefW: 44f);
             Transform amount = pill.Find("Amount");
             if (amount != null)
             {
+                LE(amount.gameObject, minW: -1f, prefW: -1f, flexW: -1f);
                 var tmp = amount.GetComponent<TMP_Text>();
-                if (tmp != null) tmp.alignment = TextAlignmentOptions.MidlineRight;
+                if (tmp != null)
+                {
+                    tmp.alignment = TextAlignmentOptions.MidlineLeft;
+                    tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                }
                 GetOrAdd<ThemedText>(amount.gameObject).Configure(UiTextStyle.Number, 0.78f);
             }
             if (pill.TryGetComponent(out CurrencyLabel cl))
@@ -337,13 +369,13 @@ namespace ProjectB.EditorScripts.UiKit
             Transform name = plate.Find("HeroNameText");
             if (name != null)
             {
-                GetOrAdd<ThemedText>(name.gameObject).Configure(UiTextStyle.Display, 1f);
+                GetOrAdd<ThemedText>(name.gameObject).Configure(UiTextStyle.Display, 1.12f);
                 var rt = Rt(name);
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(0.5f, 1f);
                 rt.anchoredPosition = new Vector2(0f, 0f);
-                rt.sizeDelta = new Vector2(0f, 104f);
+                rt.sizeDelta = new Vector2(0f, 118f);
             }
 
             Transform oldRow = plate.Find("ChipRow");
@@ -358,7 +390,7 @@ namespace ProjectB.EditorScripts.UiKit
             rrt.anchorMin = new Vector2(0f, 1f);
             rrt.anchorMax = new Vector2(1f, 1f);
             rrt.pivot = new Vector2(0.5f, 1f);
-            rrt.anchoredPosition = new Vector2(0f, -110f);
+            rrt.anchoredPosition = new Vector2(0f, -118f);
             rrt.sizeDelta = new Vector2(0f, 56f);
             var layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 22f;
@@ -372,17 +404,23 @@ namespace ProjectB.EditorScripts.UiKit
             {
                 var chip = Img(row.transform, "RoleChip", UiSprite.Pill, UiColor.Gold, 1f, false, true);
                 var chipLayout = chip.gameObject.AddComponent<HorizontalLayoutGroup>();
-                chipLayout.padding = new RectOffset(26, 26, 6, 10);
+                chipLayout.padding = new RectOffset(26, 26, 6, 12);
                 chipLayout.childControlWidth = true;
                 chipLayout.childControlHeight = true;
                 chipLayout.childForceExpandWidth = false;
                 chipLayout.childForceExpandHeight = false;
                 chipLayout.childAlignment = TextAnchor.MiddleCenter;
-                LE(chip.gameObject, prefH: 52f);
+                LE(chip.gameObject, prefH: 54f);
                 role.SetParent(chip.transform, false);
                 var roleText = role.GetComponent<TextMeshProUGUI>();
-                GetOrAdd<ThemedText>(role.gameObject).Configure(UiTextStyle.Caption, 1f);
-                GetOrAdd<ThemedGraphic>(role.gameObject).Configure(UiColor.Background);
+                Object.DestroyImmediate(role.GetComponent<ThemedText>());
+                if (Theme.bodyBoldFont != null) roleText.font = Theme.bodyBoldFont;
+                if (Theme.heavyFlatMaterial != null && Theme.bodyBoldFont != null)
+                {
+                    roleText.fontSharedMaterial = Theme.heavyFlatMaterial;
+                }
+                roleText.fontSize = 25f;
+                GetOrAdd<ThemedGraphic>(role.gameObject).Configure(UiColor.TextDark);
                 roleText.alignment = TextAlignmentOptions.Center;
                 roleText.textWrappingMode = TextWrappingModes.NoWrap;
                 Object.DestroyImmediate(role.GetComponent<ResponsiveRect>());
@@ -425,8 +463,8 @@ namespace ProjectB.EditorScripts.UiKit
             var card = Img(panel, "GoalCard", UiSprite.Card, UiColor.Surface, 1f, true, true);
             card.transform.SetSiblingIndex(panel.Find("NamePlate") != null ? panel.Find("NamePlate").GetSiblingIndex() + 1 : 0);
             Presets(Rt(card),
-                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -196f), new Vector2(940f, 156f)),
-                P(new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(-12f, -24f), new Vector2(-72f, 156f)));
+                P(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -204f), new Vector2(940f, 164f)),
+                P(new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(-12f, -24f), new Vector2(-72f, 164f)));
             var button = card.gameObject.AddComponent<Button>();
             button.transition = Selectable.Transition.None;
             button.targetGraphic = card;
@@ -463,7 +501,7 @@ namespace ProjectB.EditorScripts.UiKit
             rwt.anchorMin = new Vector2(0f, 0f);
             rwt.anchorMax = new Vector2(1f, 0f);
             rwt.pivot = new Vector2(0f, 0f);
-            rwt.anchoredPosition = new Vector2(28f, 18f);
+            rwt.anchoredPosition = new Vector2(28f, 24f);
             rwt.sizeDelta = new Vector2(-218f, 40f);
             reward.textWrappingMode = TextWrappingModes.NoWrap;
 
@@ -474,13 +512,14 @@ namespace ProjectB.EditorScripts.UiKit
 
             var frame = Img(card.transform, "RewardFrame", UiSprite.Squircle, UiColor.SurfaceSunken, 1f, false, true);
             Place(Rt(frame), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-22f, 2f), new Vector2(108f, 108f));
-            var ring = Img(frame.transform, "Ring", UiSprite.Outline, UiColor.Gold, 1f, false, true);
-            Stretch(Rt(ring), 0f, 0f, 0f, 0f);
+            var ring = Img(frame.transform, "Ring", UiSprite.SlotFrame, UiColor.Gold, 1f, false, true);
+            Stretch(Rt(ring), 2f, 8f, 2f, 1f);
             var icon = Icon(frame.transform, "Icon", null, 70f);
             Place(Rt(icon), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), new Vector2(70f, 70f));
 
+            var catalog = AssetDatabase.LoadAssetAtPath<ProjectB.Abilities.AbilityCatalog>("Assets/_ScriptableObjects/Abilities/AbilityCatalog.asset");
             var ui = card.gameObject.AddComponent<PlayGoalCardUI>();
-            ui.EditorSetup(value, fill, reward, icon, button);
+            ui.EditorSetup(value, fill, reward, icon, button, catalog);
         }
 
         // ------------------------------------------------------------------ tiles + detail panel
@@ -511,7 +550,7 @@ namespace ProjectB.EditorScripts.UiKit
             }
             block.SetSiblingIndex(card.GetSiblingIndex());
             Presets(Rt(block),
-                P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 204f), new Vector2(-64f, 0f)),
+                P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 206f), new Vector2(-64f, 0f)),
                 P(new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-12f, 196f), new Vector2(-72f, 0f)));
 
             // Detail panel: speech bubble above the tiles; its tail is moved under the expanded tile at runtime.
@@ -593,10 +632,11 @@ namespace ProjectB.EditorScripts.UiKit
         /// <summary>Row → tile (icon, caption, name centred; name up to 2 lines). Returns its gold selection frame.</summary>
         private static GameObject RestyleTile(Transform tile)
         {
+            GetOrAdd<ThemedGraphic>(tile.gameObject).Configure(UiColor.Surface, 1f, UiSprite.Card);
             Object.DestroyImmediate(tile.GetComponent<AdaptiveLayoutGroup>());
             Object.DestroyImmediate(tile.GetComponent<HorizontalLayoutGroup>());
             var stack = GetOrAdd<VerticalLayoutGroup>(tile.gameObject);
-            stack.padding = new RectOffset(14, 14, 18, 22);
+            stack.padding = new RectOffset(14, 14, 20, 28);
             stack.spacing = 6f;
             stack.childAlignment = TextAnchor.UpperCenter;
             stack.childControlWidth = true;
@@ -606,7 +646,7 @@ namespace ProjectB.EditorScripts.UiKit
 
             var le = GetOrAdd<LayoutElement>(tile.gameObject);
             le.preferredHeight = -1f;
-            le.minHeight = 200f;
+            le.minHeight = 216f;
             le.preferredWidth = 0f;
             le.flexibleWidth = 1f;
 
@@ -638,7 +678,8 @@ namespace ProjectB.EditorScripts.UiKit
                 nle.preferredHeight = TILE_NAME_HEIGHT;
                 var tmp = name.GetComponent<TextMeshProUGUI>();
                 tmp.enableAutoSizing = false;
-                GetOrAdd<ThemedText>(name.gameObject).Configure(UiTextStyle.Body, 0.92f);
+                GetOrAdd<ThemedText>(name.gameObject).Configure(UiTextStyle.Caption, 1.32f);
+                GetOrAdd<ThemedGraphic>(name.gameObject).Configure(UiColor.White);
                 tmp.alignment = TextAlignmentOptions.Center;
                 tmp.textWrappingMode = TextWrappingModes.Normal;
                 tmp.overflowMode = TextOverflowModes.Ellipsis;
@@ -651,7 +692,7 @@ namespace ProjectB.EditorScripts.UiKit
             if (old != null) Object.DestroyImmediate(old.gameObject);
             var frame = Img(tile, "Selected", UiSprite.Outline, UiColor.Gold, 1f, false, true);
             LE(frame.gameObject, ignore: true);
-            Stretch(Rt(frame), 4f, 9f, 4f, 4f);
+            Stretch(Rt(frame), 3f, 15f, 3f, 2f);
             frame.gameObject.SetActive(false);
             return frame.gameObject;
         }
@@ -662,8 +703,8 @@ namespace ProjectB.EditorScripts.UiKit
         {
             StyleSquircleNavButton(panel.Find("PrevHeroButton"));
             StyleSquircleNavButton(panel.Find("NextHeroButton"));
-            SetPortrait(panel.Find("PrevHeroButton"), P(new Vector2(0f, 0.56f), new Vector2(0f, 0.56f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(96f, 96f)));
-            SetPortrait(panel.Find("NextHeroButton"), P(new Vector2(1f, 0.56f), new Vector2(1f, 0.56f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(96f, 96f)));
+            SetPortrait(panel.Find("PrevHeroButton"), P(new Vector2(0f, 0.56f), new Vector2(0f, 0.56f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(100f, 100f)));
+            SetPortrait(panel.Find("NextHeroButton"), P(new Vector2(1f, 0.56f), new Vector2(1f, 0.56f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(100f, 100f)));
             Transform lockOv = panel.Find("LockOverlay");
             if (lockOv != null)
             {
@@ -690,7 +731,7 @@ namespace ProjectB.EditorScripts.UiKit
                 hl.childControlHeight = false;
                 hl.childForceExpandWidth = false;
                 hl.childForceExpandHeight = false;
-                SetPortrait(pagination, P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 462f), new Vector2(360f, 28f)));
+                SetPortrait(pagination, P(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 468f), new Vector2(360f, 28f)));
                 Transform abilityBlock = panel.Find("AbilityBlock");
                 if (abilityBlock != null && abilityBlock.GetSiblingIndex() < pagination.GetSiblingIndex())
                 {
@@ -710,7 +751,9 @@ namespace ProjectB.EditorScripts.UiKit
             }
             if (t.TryGetComponent(out ThemedButton tb))
             {
-                tb.EditorSetup(ButtonStyle.Icon, img, null, t.Find("Icon")?.GetComponent<Image>(), ButtonSound.Click, customSprite: true);
+                Image navIcon = t.Find("Icon")?.GetComponent<Image>();
+                if (navIcon != null) Rt(navIcon).anchoredPosition = new Vector2(0f, 7f);
+                tb.EditorSetup(ButtonStyle.Icon, img, null, navIcon, ButtonSound.Click, customSprite: true);
             }
         }
 
@@ -720,13 +763,15 @@ namespace ProjectB.EditorScripts.UiKit
             if (start != null)
             {
                 Presets(Rt(start),
-                    P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 32f), new Vector2(-64f, 148f)),
-                    P(new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-12f, 32f), new Vector2(-72f, 142f)));
+                    P(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(-64f, 158f)),
+                    P(new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-12f, 28f), new Vector2(-72f, 148f)));
                 Transform startText = start.Find("Text");
                 if (startText != null)
                 {
                     var tg = startText.GetComponent<ThemedGraphic>();
                     if (tg != null) Object.DestroyImmediate(tg);
+                    GetOrAdd<ThemedText>(startText.gameObject).Configure(UiTextStyle.Display, 0.86f);
+                    Stretch(Rt(startText), 16f, 32f, 16f, 4f);
                 }
                 if (start.TryGetComponent(out ThemedButton tb)) tb.ApplyTheme(Theme);
             }
@@ -744,7 +789,7 @@ namespace ProjectB.EditorScripts.UiKit
 
             foreach (BottomTabUI tab in bottomBar.GetComponentsInChildren<BottomTabUI>(true))
             {
-                tab.activeIconY = 26f;
+                tab.activeIconY = 34f;
                 if (tab.bgImage != null && Theme.buttonSprite != null)
                 {
                     tab.bgImage.sprite = Theme.buttonSprite;
@@ -752,7 +797,7 @@ namespace ProjectB.EditorScripts.UiKit
                 }
                 if (tab.labelText != null)
                 {
-                    Rt(tab.labelText).anchoredPosition = new Vector2(0f, 16f);
+                    Rt(tab.labelText).anchoredPosition = new Vector2(0f, 28f);
                 }
                 tab.ApplyTheme(Theme);
                 EditorUtility.SetDirty(tab);

@@ -136,14 +136,14 @@ namespace ProjectB.EditorScripts
             var frame = Img(root.transform, "Frame", UiSprite.Outline, UiColor.RarityCommon, 1f, false, false);
             LE(frame.gameObject, ignore: true);
             Stretch(Rt(frame), 0f, 6f, 0f, 0f);
-            var stripe = Img(root.transform, "RarityStripe", UiSprite.Pill, UiColor.RarityCommon, 1f, false, false);
+            var stripe = Img(root.transform, "RarityStripe", UiSprite.Solid, UiColor.RarityCommon, 1f, false, false);
             LE(stripe.gameObject, ignore: true);
             var srt = Rt(stripe);
-            srt.anchorMin = new Vector2(0f, 0.15f);
-            srt.anchorMax = new Vector2(0f, 0.85f);
+            srt.anchorMin = new Vector2(0f, 0.16f);
+            srt.anchorMax = new Vector2(0f, 0.84f);
             srt.pivot = new Vector2(0f, 0.5f);
-            srt.anchoredPosition = new Vector2(8f, 3f);
-            srt.sizeDelta = new Vector2(8f, 0f);
+            srt.anchoredPosition = new Vector2(12f, 3f);
+            srt.sizeDelta = new Vector2(6f, 0f);
 
             var iconBg = Img(root.transform, "IconBg", UiSprite.Card, UiColor.SurfaceRaised, 1f, false, false);
             LE(iconBg.gameObject, prefW: 132f, prefH: 132f, minW: 132f, minH: 132f);
@@ -162,6 +162,7 @@ namespace ProjectB.EditorScripts
             var name = Txt(col.transform, "Name", "Ability", UiTextStyle.H2, UiColor.TextPrimary, TextAlignmentOptions.MidlineLeft, false, 0.8f);
             name.textWrappingMode = TextWrappingModes.NoWrap;
             name.overflowMode = TextOverflowModes.Ellipsis;
+            LE(name.gameObject, minH: 46f, prefH: 46f);
             var meta = Txt(col.transform, "MetaTag", "Active • Rare", UiTextStyle.Caption, UiColor.TextSecondary, TextAlignmentOptions.MidlineLeft, false);
             var desc = Txt(col.transform, "Description", "Description", UiTextStyle.Body, UiColor.TextSecondary, TextAlignmentOptions.TopLeft, false, 0.85f);
             desc.overflowMode = TextOverflowModes.Overflow;

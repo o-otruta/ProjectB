@@ -54,6 +54,14 @@ namespace ProjectB.UI
                         image.type = s.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
                     }
                 }
+                if (UiTheme.UsesSurfaceMaterial(sprite) && alpha >= 0.85f && theme.surfaceMaterial != null)
+                {
+                    image.material = theme.surfaceMaterial;
+                }
+                else if (image.material == theme.surfaceMaterial)
+                {
+                    image.material = null;
+                }
             }
         }
     }

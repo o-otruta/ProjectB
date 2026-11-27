@@ -77,17 +77,21 @@ namespace ProjectB.EditorScripts.UiKit
             theme.shineSprite = UiKitGenerator.LoadFrame("kit_shine");
             theme.ribbonTailSprite = UiKitGenerator.LoadFrame("kit_ribbon_tail");
             theme.menuBgSprite = UiKitGenerator.LoadFrame("kit_menu_bg");
+            theme.pipSprite = UiKitGenerator.LoadFrame("kit_pip");
+            theme.surfaceMaterial = UiKitGenerator.EnsureSurfaceMaterial();
 
-            // Sync v2 palette tokens onto the serialized asset.
+            // Sync v4 palette tokens onto the serialized asset.
             theme.background = UiTheme.Hex(0x13122E);
-            theme.surface = UiTheme.Hex(0x282758);
-            theme.surfaceRaised = UiTheme.Hex(0x343370);
-            theme.surfaceSunken = UiTheme.Hex(0x13122C);
+            theme.surface = UiTheme.Hex(0x2B2A60);
+            theme.surfaceRaised = UiTheme.Hex(0x3A397A);
+            theme.surfaceSunken = UiTheme.Hex(0x161538);
             theme.outline = UiTheme.Hex(0x52509A);
-            theme.textDark = UiTheme.Hex(0x331D00);
-            theme.gold = UiTheme.Hex(0xFFD038);
-            theme.rarityLegendary = UiTheme.Hex(0xFFD038);
-            theme.overdriveTier1 = UiTheme.Hex(0xFFD038);
+            theme.textDark = UiTheme.Hex(0x2B1604);
+            theme.gold = UiTheme.Hex(0xFFCB32);
+            theme.rarityCommon = UiTheme.Hex(0xC6CFDE);
+            theme.rarityRare = UiTheme.Hex(0x4BA8FF);
+            theme.rarityLegendary = UiTheme.Hex(0xFFCB32);
+            theme.overdriveTier1 = UiTheme.Hex(0xFFCB32);
             theme.hpFill = UiTheme.Hex(0xFF4F78);
             theme.xpFill = UiTheme.Hex(0x6EE042);
             theme.ad = UiTheme.Hex(0x32A8FF);
@@ -131,6 +135,8 @@ namespace ProjectB.EditorScripts.UiKit
             theme.titleMaterial = AssetDatabase.LoadAssetAtPath<Material>(UiFontBuilder.TITLE_MATERIAL);
             theme.numberMaterial = AssetDatabase.LoadAssetAtPath<Material>(UiFontBuilder.NUMBER_MATERIAL);
             theme.bodyMaterial = AssetDatabase.LoadAssetAtPath<Material>(UiFontBuilder.BODY_MATERIAL);
+            theme.cardTitleMaterial = AssetDatabase.LoadAssetAtPath<Material>(UiFontBuilder.CARD_TITLE_MATERIAL);
+            theme.heavyFlatMaterial = AssetDatabase.LoadAssetAtPath<Material>(UiFontBuilder.HEAVY_FLAT_MATERIAL);
             theme.iconSpriteAsset = AssetDatabase.LoadAssetAtPath<TMP_SpriteAsset>(UiKitGenerator.SPRITE_ASSET_PATH);
 
             EditorUtility.SetDirty(theme);
@@ -227,14 +233,32 @@ namespace ProjectB.EditorScripts.UiKit
                 EditorUtility.SetDirty(text);
             }
 
-            // Builtin UI sprites → kit sprites.
+            // Builtin UI sprites → kit sprites + assign ToySurface shader material to opaque kit shapes.
             foreach (var image in root.GetComponentsInChildren<Image>(true))
             {
                 Sprite replacement = MapBuiltinSprite(image.sprite, theme);
-                if (replacement == null) continue;
-                image.sprite = replacement;
-                image.type = replacement.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
-                EditorUtility.SetDirty(image);
+                if (replacement != null)
+                {
+                    image.sprite = replacement;
+                    image.type = replacement.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+                    EditorUtility.SetDirty(image);
+                }
+
+                if (theme.surfaceMaterial != null && theme.UsesSurfaceMaterial(image.sprite))
+                {
+                    bool isTabPlate = image.GetComponentInParent<BottomTabUI>() is BottomTabUI tab && tab.bgImage == image;
+                    Material desired = (isTabPlate || image.color.a >= 0.85f) ? theme.surfaceMaterial : null;
+                    if (image.material != desired)
+                    {
+                        image.material = desired;
+                        EditorUtility.SetDirty(image);
+                    }
+                }
+                else if (theme.surfaceMaterial != null && image.material == theme.surfaceMaterial)
+                {
+                    image.material = null;
+                    EditorUtility.SetDirty(image);
+                }
             }
         }
 

@@ -15,6 +15,7 @@ namespace ProjectB.UI
         [SerializeField] private UiTextStyle style = UiTextStyle.Body;
         [SerializeField] private bool applySize = true;
         [SerializeField, Min(0.1f)] private float sizeScale = 1f;
+        [SerializeField] private bool useHeavyFlat;
 
         public UiTextStyle Style => style;
 
@@ -23,11 +24,12 @@ namespace ProjectB.UI
             ApplyTheme(UiTheme.Current);
         }
 
-        public void Configure(UiTextStyle textStyle, float scale = 1f, bool setSize = true)
+        public void Configure(UiTextStyle textStyle, float scale = 1f, bool setSize = true, bool heavyFlat = false)
         {
             style = textStyle;
             sizeScale = scale;
             applySize = setSize;
+            useHeavyFlat = heavyFlat;
             ApplyTheme(UiTheme.Current);
         }
 
@@ -38,10 +40,25 @@ namespace ProjectB.UI
             if (text == null) return;
 
             TMP_FontAsset font = theme.GetFont(style);
+            bool skipOutline = (style == UiTextStyle.Button || style == UiTextStyle.Display)
+                && GetComponentInParent<ThemedButton>(true) is ThemedButton parentBtn
+                && parentBtn.Style == ButtonStyle.Primary
+                && parentBtn.Label == text;
+            bool flatHeavy = useHeavyFlat || skipOutline;
+            if (flatHeavy && theme.bodyBoldFont != null)
+            {
+                font = theme.bodyBoldFont;
+            }
             if (font != null && text.font != font) text.font = font;
 
             Material preset = theme.GetMaterial(style);
-            if (preset != null && font != null && preset.mainTexture == font.atlasTexture)
+            if (flatHeavy)
+            {
+                text.fontSharedMaterial = (theme.heavyFlatMaterial != null && theme.bodyBoldFont != null)
+                    ? theme.heavyFlatMaterial
+                    : (font != null ? font.material : text.fontSharedMaterial);
+            }
+            else if (preset != null && font != null && preset.mainTexture == font.atlasTexture)
             {
                 text.fontSharedMaterial = preset;
             }

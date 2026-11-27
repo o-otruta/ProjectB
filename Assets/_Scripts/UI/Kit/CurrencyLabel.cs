@@ -33,6 +33,7 @@ namespace ProjectB.UI
         private bool animating;
         private bool hasValue;
         private int lastWrittenValue = int.MinValue;
+        private int lastWrittenLength = -1;
 
         public int TargetValue => targetValue;
         public int DisplayedValue => Mathf.RoundToInt(displayedValue);
@@ -112,6 +113,11 @@ namespace ProjectB.UI
             int pos = UiFormat.WriteString(buffer, 0, prefix);
             pos = UiFormat.WriteGrouped(buffer, pos, value);
             amountText.SetCharArray(buffer, 0, pos);
+            if (pos != lastWrittenLength)
+            {
+                lastWrittenLength = pos;
+                if (transform is RectTransform rt) LayoutRebuilder.MarkLayoutForRebuild(rt);
+            }
         }
 
 #if UNITY_EDITOR

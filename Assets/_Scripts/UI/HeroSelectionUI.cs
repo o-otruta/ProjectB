@@ -562,17 +562,18 @@ namespace ProjectB.UI
                 bool active = i == index;
                 bool unlocked = selectedHeroService.IsHeroUnlocked(heroes[i]);
                 Image dot = paginationDots[i];
+                if (theme.surfaceMaterial != null) dot.material = theme.surfaceMaterial;
                 if (active && theme.pillSprite != null)
                 {
                     dot.sprite = theme.pillSprite;
                     dot.type = Image.Type.Sliced;
-                    dot.rectTransform.sizeDelta = new Vector2(52f, 18f);
+                    dot.rectTransform.sizeDelta = new Vector2(56f, 22f);
                 }
                 else
                 {
                     if (theme.circleSprite != null) dot.sprite = theme.circleSprite;
                     dot.type = Image.Type.Simple;
-                    dot.rectTransform.sizeDelta = new Vector2(18f, 18f);
+                    dot.rectTransform.sizeDelta = new Vector2(22f, 22f);
                 }
                 dot.color = active ? theme.gold : (unlocked ? theme.surfaceRaised : theme.textDisabled);
                 dot.rectTransform.localScale = Vector3.one;

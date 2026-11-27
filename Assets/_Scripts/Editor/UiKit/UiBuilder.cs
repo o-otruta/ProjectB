@@ -94,6 +94,10 @@ namespace ProjectB.EditorScripts.UiKit
             Color c = Theme.GetColor(color);
             c.a *= alpha;
             img.color = c;
+            if (UiTheme.UsesSurfaceMaterial(sprite) && alpha >= 0.85f && Theme.surfaceMaterial != null)
+            {
+                img.material = Theme.surfaceMaterial;
+            }
             if (themed) go.AddComponent<ThemedGraphic>().Configure(color, alpha, sprite);
             return img;
         }
@@ -150,7 +154,7 @@ namespace ProjectB.EditorScripts.UiKit
             if (icon != null && hasLabel)
             {
                 var row = Go("Content", go.transform, typeof(HorizontalLayoutGroup));
-                Stretch(Rt(row), 16f, style == ButtonStyle.Icon ? 0f : 12f, 16f, 0f);
+                Stretch(Rt(row), 16f, style == ButtonStyle.Icon ? 0f : 20f, 16f, 2f);
                 var hl = row.GetComponent<HorizontalLayoutGroup>();
                 hl.childAlignment = TextAnchor.MiddleCenter;
                 hl.spacing = 12f;
@@ -172,7 +176,7 @@ namespace ProjectB.EditorScripts.UiKit
             else if (hasLabel)
             {
                 text = Txt(go.transform, "Text", label, labelStyle, UiColor.White, TextAlignmentOptions.Center, false, labelScale);
-                Stretch(Rt(text), 16f, 14f, 16f, 2f);
+                Stretch(Rt(text), 16f, 22f, 16f, 2f);
                 text.textWrappingMode = TextWrappingModes.NoWrap;
                 text.enableAutoSizing = true;
                 text.fontSizeMin = 18f;

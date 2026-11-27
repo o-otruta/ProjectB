@@ -83,9 +83,21 @@ namespace ProjectB.UI
             labelColor = theme.textDark;
             iconActiveColor = theme.white;
             iconInactiveColor = UiTheme.WithAlpha(theme.white, 0.78f);
-            if (labelText != null && labelText.font != null)
+            if (bgImage != null && theme.surfaceMaterial != null)
             {
-                labelText.fontSharedMaterial = labelText.font.material;
+                bgImage.material = theme.surfaceMaterial;
+            }
+            if (labelText != null)
+            {
+                if (theme.bodyBoldFont != null) labelText.font = theme.bodyBoldFont;
+                if (theme.heavyFlatMaterial != null && theme.bodyBoldFont != null)
+                {
+                    labelText.fontSharedMaterial = theme.heavyFlatMaterial;
+                }
+                else if (labelText.font != null)
+                {
+                    labelText.fontSharedMaterial = labelText.font.material;
+                }
             }
             ApplyState(isActive ? 1f : 0f);
         }

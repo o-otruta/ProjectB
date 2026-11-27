@@ -86,7 +86,8 @@ namespace ProjectB.UI
         CardHeader = 20,
         Shine = 21,
         RibbonTail = 22,
-        MenuBg = 23
+        MenuBg = 23,
+        Pip = 24
     }
 
     [Serializable]
@@ -108,9 +109,9 @@ namespace ProjectB.UI
 
         [Header("Palette — night surfaces")]
         public Color background = Hex(0x13122E);
-        public Color surface = Hex(0x282758);
-        public Color surfaceRaised = Hex(0x343370);
-        public Color surfaceSunken = Hex(0x13122C);
+        public Color surface = Hex(0x302F6A);
+        public Color surfaceRaised = Hex(0x3E3D82);
+        public Color surfaceSunken = Hex(0x1A1940);
         public Color outline = Hex(0x52509A);
         public Color overlay = new Color(0.03f, 0.03f, 0.08f, 0.78f);
 
@@ -125,7 +126,7 @@ namespace ProjectB.UI
         public Color success = Hex(0x45D483);
         public Color danger = Hex(0xFF4D6A);
         public Color warning = Hex(0xFFA23A);
-        public Color gold = Hex(0xFFD038);
+        public Color gold = Hex(0xFFCB32);
         public Color shard = Hex(0x3FE0D0);
         public Color ad = Hex(0x32A8FF);
         public Color white = Color.white;
@@ -134,7 +135,7 @@ namespace ProjectB.UI
         public Color rarityCommon = Hex(0xB9C2D0);
         public Color rarityRare = Hex(0x3D9BFF);
         public Color rarityEpic = Hex(0xB65CFF);
-        public Color rarityLegendary = Hex(0xFFD038);
+        public Color rarityLegendary = Hex(0xFFCB32);
 
         [Header("Gameplay HUD")]
         public Color activeSlot = Hex(0xFF9640);
@@ -143,7 +144,7 @@ namespace ProjectB.UI
         public Color xpFill = Hex(0x6EE042);
         public Color ghost = Hex(0xFFE3A3);
         [Tooltip("Overdrive tiers: Lv 10 (gold), Lv 20 (glow), Lv 30+ (iridescent base).")]
-        public Color overdriveTier1 = Hex(0xFFD038);
+        public Color overdriveTier1 = Hex(0xFFCB32);
         public Color overdriveTier2 = Hex(0x5CF4FF);
         public Color overdriveTier3 = Hex(0xFF6AE6);
 
@@ -168,6 +169,8 @@ namespace ProjectB.UI
         public Material titleMaterial;
         public Material numberMaterial;
         public Material bodyMaterial;
+        public Material cardTitleMaterial;
+        public Material heavyFlatMaterial;
         public float displaySize = 96f;
         public float h1Size = 64f;
         public float h2Size = 44f;
@@ -212,6 +215,8 @@ namespace ProjectB.UI
         public Sprite shineSprite;
         public Sprite ribbonTailSprite;
         public Sprite menuBgSprite;
+        public Sprite pipSprite;
+        public Material surfaceMaterial;
 
         [Header("Icons")]
         public Sprite iconCoin;
@@ -382,7 +387,7 @@ namespace ProjectB.UI
                 case UiTextStyle.Button:
                     return displayFont != null ? displayFont : bodyFont;
                 case UiTextStyle.H2:
-                    return displayFont != null ? displayFont : bodyBoldFont;
+                    return bodyBoldFont != null ? bodyBoldFont : displayFont;
                 case UiTextStyle.Caption:
                 case UiTextStyle.Micro:
                     return bodyBoldFont != null ? bodyBoldFont : bodyFont;
@@ -391,7 +396,7 @@ namespace ProjectB.UI
             }
         }
 
-        /// <summary>Material preset: Title (outline + underlay), Number (thick outline) or Body (plain).</summary>
+        /// <summary>Material preset: Title (outline + underlay), Number (thick outline), CardTitle (heavy bold + outline), or Body (plain).</summary>
         public Material GetMaterial(UiTextStyle style)
         {
             switch (style)
@@ -403,7 +408,7 @@ namespace ProjectB.UI
                 case UiTextStyle.Number:
                     return numberMaterial;
                 case UiTextStyle.H2:
-                    return titleMaterial;
+                    return cardTitleMaterial != null ? cardTitleMaterial : titleMaterial;
                 default:
                     return bodyMaterial;
             }
@@ -436,8 +441,52 @@ namespace ProjectB.UI
                 case UiSprite.Shine: return shineSprite;
                 case UiSprite.RibbonTail: return ribbonTailSprite;
                 case UiSprite.MenuBg: return menuBgSprite;
+                case UiSprite.Pip: return pipSprite;
                 default: return null;
             }
+        }
+
+        public static bool UsesSurfaceMaterial(UiSprite sprite)
+        {
+            switch (sprite)
+            {
+                case UiSprite.Panel:
+                case UiSprite.Card:
+                case UiSprite.Row:
+                case UiSprite.Button:
+                case UiSprite.ButtonPressed:
+                case UiSprite.Pill:
+                case UiSprite.Circle:
+                case UiSprite.Knob:
+                case UiSprite.Squircle:
+                case UiSprite.CardHeader:
+                case UiSprite.BarFrame:
+                case UiSprite.BarFill:
+                case UiSprite.RibbonTail:
+                case UiSprite.Pip:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public bool UsesSurfaceMaterial(Sprite sprite)
+        {
+            if (sprite == null) return false;
+            return sprite == panelSprite
+                || sprite == cardSprite
+                || sprite == rowSprite
+                || sprite == buttonSprite
+                || sprite == buttonPressedSprite
+                || sprite == pillSprite
+                || sprite == circleSprite
+                || sprite == knobSprite
+                || sprite == squircleSprite
+                || sprite == cardHeaderSprite
+                || sprite == barFrameSprite
+                || sprite == barFillSprite
+                || sprite == ribbonTailSprite
+                || sprite == pipSprite;
         }
 
         public static Color Hex(int rgb, float alpha = 1f)

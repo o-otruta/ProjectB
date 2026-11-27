@@ -25,6 +25,7 @@ namespace ProjectB.EditorScripts.UiKit
         public const string ATLAS_PATH = KIT_DIR + "/UiKit.spriteatlasv2";
         public const string SPRITE_SHEET_PATH = KIT_DIR + "/UiIconSheet.png";
         public const string SPRITE_ASSET_PATH = KIT_DIR + "/UiIconSheet.asset";
+        public const string SURFACE_MATERIAL_PATH = KIT_DIR + "/UiToySurface.mat";
         public const string AUDIO_DIR = "Assets/_Audio/SFX";
 
         private const int ICON_SCALE = 8;
@@ -43,15 +44,15 @@ namespace ProjectB.EditorScripts.UiKit
 
         public static readonly FrameSpec[] Frames =
         {
-            new FrameSpec { name = "kit_panel", width = 128, height = 128, border = new Vector4(40, 48, 40, 40) },
-            new FrameSpec { name = "kit_card", width = 96, height = 96, border = new Vector4(30, 36, 30, 30) },
-            new FrameSpec { name = "kit_row", width = 80, height = 80, border = new Vector4(24, 30, 24, 24) },
-            new FrameSpec { name = "kit_button", width = 96, height = 104, border = new Vector4(34, 46, 34, 34) },
-            new FrameSpec { name = "kit_button_pressed", width = 96, height = 104, border = new Vector4(34, 46, 34, 34) },
-            new FrameSpec { name = "kit_pill", width = 128, height = 64, border = new Vector4(32, 32, 32, 32) },
+            new FrameSpec { name = "kit_panel", width = 112, height = 128, border = new Vector4(36, 63, 36, 34) },
+            new FrameSpec { name = "kit_card", width = 96, height = 108, border = new Vector4(30, 53, 30, 28) },
+            new FrameSpec { name = "kit_row", width = 84, height = 96, border = new Vector4(26, 44, 26, 24) },
+            new FrameSpec { name = "kit_button", width = 96, height = 112, border = new Vector4(30, 58, 30, 28) },
+            new FrameSpec { name = "kit_button_pressed", width = 96, height = 96, border = new Vector4(30, 39, 30, 28) },
+            new FrameSpec { name = "kit_pill", width = 96, height = 68, border = new Vector4(26, 37, 26, 24) },
             new FrameSpec { name = "kit_circle", width = 128, height = 128, border = Vector4.zero },
-            new FrameSpec { name = "kit_slot_frame", width = 64, height = 64, border = new Vector4(22, 22, 22, 22) },
-            new FrameSpec { name = "kit_bar_frame", width = 64, height = 32, border = new Vector4(16, 16, 16, 16) },
+            new FrameSpec { name = "kit_slot_frame", width = 80, height = 80, border = new Vector4(26, 26, 26, 26) },
+            new FrameSpec { name = "kit_bar_frame", width = 64, height = 40, border = new Vector4(20, 20, 20, 20) },
             new FrameSpec { name = "kit_bar_fill", width = 16, height = 32, border = Vector4.zero },
             new FrameSpec { name = "kit_solid", width = 8, height = 8, border = new Vector4(2, 2, 2, 2) },
             new FrameSpec { name = "kit_glow", width = 128, height = 128, border = Vector4.zero },
@@ -60,13 +61,38 @@ namespace ProjectB.EditorScripts.UiKit
             new FrameSpec { name = "kit_ring_thin", width = 128, height = 128, border = Vector4.zero },
             new FrameSpec { name = "kit_vignette", width = 128, height = 128, border = Vector4.zero },
             new FrameSpec { name = "kit_starfield", width = 256, height = 256, border = Vector4.zero },
-            new FrameSpec { name = "kit_squircle", width = 64, height = 64, border = new Vector4(16, 18, 16, 16) },
-            new FrameSpec { name = "kit_slot_dashed", width = 64, height = 64, border = new Vector4(18, 18, 18, 18) },
-            new FrameSpec { name = "kit_card_header", width = 96, height = 48, border = new Vector4(26, 6, 26, 26) },
+            new FrameSpec { name = "kit_squircle", width = 80, height = 92, border = new Vector4(24, 42, 24, 22) },
+            new FrameSpec { name = "kit_slot_dashed", width = 80, height = 80, border = new Vector4(26, 26, 26, 26) },
+            new FrameSpec { name = "kit_card_header", width = 96, height = 64, border = new Vector4(30, 8, 30, 28) },
             new FrameSpec { name = "kit_shine", width = 128, height = 128, border = Vector4.zero },
             new FrameSpec { name = "kit_ribbon_tail", width = 64, height = 64, border = Vector4.zero },
-            new FrameSpec { name = "kit_menu_bg", width = 256, height = 256, border = Vector4.zero }
+            new FrameSpec { name = "kit_menu_bg", width = 256, height = 256, border = Vector4.zero },
+            new FrameSpec { name = "kit_pip", width = 48, height = 28, border = new Vector4(12, 13, 12, 11) }
         };
+
+        [MenuItem("ProjectB/UI/Generate UI Kit (Frames Only)")]
+        public static void GenerateFramesOnly()
+        {
+            EnsureFolder(KIT_DIR);
+            EnsureFolder(FRAMES_DIR);
+
+            foreach (FrameSpec spec in Frames)
+            {
+                WritePng($"{FRAMES_DIR}/{spec.name}.png", spec.width, spec.height, DrawFrame(spec));
+            }
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            foreach (FrameSpec spec in Frames)
+            {
+                ConfigureSprite($"{FRAMES_DIR}/{spec.name}.png", spec.border, spec.name == "kit_starfield");
+            }
+
+            BuildSpriteAtlas();
+            EnsureSurfaceMaterial();
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[UiKitGenerator] Regenerated {Frames.Length} frames and atlas (icons/audio untouched).");
+        }
 
         [MenuItem("ProjectB/UI/Generate UI Kit (Sprites, Icons, Atlas)")]
         public static void GenerateAll()
@@ -107,6 +133,7 @@ namespace ProjectB.EditorScripts.UiKit
             }
 
             BuildSpriteAtlas();
+            EnsureSurfaceMaterial();
             BuildInlineSpriteAsset(iconPixels, iconSizes);
             GenerateUiSounds();
 
@@ -117,6 +144,29 @@ namespace ProjectB.EditorScripts.UiKit
         public static Sprite LoadFrame(string name) => AssetDatabase.LoadAssetAtPath<Sprite>($"{FRAMES_DIR}/{name}.png");
         public static Sprite LoadIcon(string name) => AssetDatabase.LoadAssetAtPath<Sprite>($"{ICONS_DIR}/icon_{name}.png");
 
+        public static Material EnsureSurfaceMaterial()
+        {
+            Shader shader = Shader.Find("ProjectB/UI/ToySurface");
+            if (shader == null)
+            {
+                Debug.LogWarning("[UiKitGenerator] ProjectB/UI/ToySurface shader not found.");
+                return null;
+            }
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(SURFACE_MATERIAL_PATH);
+            bool isNew = mat == null;
+            if (isNew)
+            {
+                mat = new Material(shader) { name = "UiToySurface" };
+                AssetDatabase.CreateAsset(mat, SURFACE_MATERIAL_PATH);
+            }
+            else if (mat.shader != shader)
+            {
+                mat.shader = shader;
+            }
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         // ------------------------------------------------------------------ frames
 
         private static Color32[] DrawFrame(FrameSpec spec)
@@ -125,29 +175,30 @@ namespace ProjectB.EditorScripts.UiKit
             var buf = new Color32[w * h];
             switch (spec.name)
             {
-                case "kit_panel": FillSurfaceBlock(buf, w, h, 26f, outline: 2.5f, ledge: 7f, highlight: 3f, shadow: 4f, isButton: false); break;
-                case "kit_card": FillSurfaceBlock(buf, w, h, 20f, outline: 2.5f, ledge: 6f, highlight: 2.5f, shadow: 4f, isButton: false); break;
-                case "kit_row": FillSurfaceBlock(buf, w, h, 16f, outline: 2.5f, ledge: 5f, highlight: 2.5f, shadow: 3f, isButton: false); break;
-                case "kit_button": FillSurfaceBlock(buf, w, h, 22f, outline: 2.5f, ledge: 11f, highlight: 5f, shadow: 4f, isButton: true); break;
-                case "kit_button_pressed": FillSurfaceBlock(buf, w, h, 22f, outline: 2.5f, ledge: 4f, highlight: 4f, shadow: 2f, isButton: true); break;
-                case "kit_pill": FillSurfaceBlock(buf, w, h, (h - 6f) * 0.5f, outline: 2.2f, ledge: 3f, highlight: 2.2f, shadow: 3f, isButton: false); break;
-                case "kit_circle": FillCircleBlock(buf, w, h, outline: 3.5f, ledge: 6f, highlight: 5f, shade: 5f); break;
-                case "kit_slot_frame": FillRing(buf, w, h, 16f, 5f); break;
+                case "kit_panel": FillSurfaceBlock(buf, w, h, 32f, outline: 6.5f, ledge: 14f, highlight: 7.5f, shadow: 15f, isButton: false); break;
+                case "kit_card": FillSurfaceBlock(buf, w, h, 26f, outline: 6.0f, ledge: 12f, highlight: 6.5f, shadow: 13f, isButton: false); break;
+                case "kit_row": FillSurfaceBlock(buf, w, h, 22f, outline: 5.5f, ledge: 10f, highlight: 6.0f, shadow: 10f, isButton: false); break;
+                case "kit_button": FillSurfaceBlock(buf, w, h, 26f, outline: 6.0f, ledge: 16f, highlight: 10.5f, shadow: 14f, isButton: true); break;
+                case "kit_button_pressed": FillSurfaceBlock(buf, w, h, 26f, outline: 6.0f, ledge: 6f, highlight: 8.0f, shadow: 5f, isButton: true); break;
+                case "kit_pill": FillSurfaceBlock(buf, w, h, 22f, outline: 5.0f, ledge: 6f, highlight: 5.5f, shadow: 7f, isButton: true); break;
+                case "kit_circle": FillCircleBlock(buf, w, h, outline: 6.0f, ledge: 10f, highlight: 8f, shade: 10f); break;
+                case "kit_slot_frame": FillRing(buf, w, h, 20f, 5.5f); break;
                 case "kit_bar_frame": FillBarFrame(buf, w, h); break;
                 case "kit_bar_fill": FillBarFill(buf, w, h); break;
                 case "kit_solid": Fill(buf, new Color32(255, 255, 255, 255)); break;
                 case "kit_glow": FillGlow(buf, w, h, 0.5f); break;
-                case "kit_outline": FillRing(buf, w, h, 22f, 5f); break;
-                case "kit_knob": FillCircleBlock(buf, w, h, outline: 3.5f, ledge: 5f, highlight: 5f, shade: 5f); break;
+                case "kit_outline": FillRing(buf, w, h, 26f, 6.5f); break;
+                case "kit_knob": FillCircleBlock(buf, w, h, outline: 5.0f, ledge: 7f, highlight: 6f, shade: 7f); break;
                 case "kit_ring_thin": FillCircleRing(buf, w, h, 12f); break;
                 case "kit_vignette": FillVignette(buf, w, h); break;
                 case "kit_starfield": FillStarfield(buf, w, h); break;
-                case "kit_squircle": FillSurfaceBlock(buf, w, h, 14f, outline: 2.2f, ledge: 4f, highlight: 2.2f, shadow: 3f, isButton: false); break;
-                case "kit_slot_dashed": FillDashedSlot(buf, w, h, 14f, 3.5f); break;
-                case "kit_card_header": FillCardHeader(buf, w, h, 18f, outline: 2.5f); break;
+                case "kit_squircle": FillSurfaceBlock(buf, w, h, 20f, outline: 5.5f, ledge: 10f, highlight: 6.0f, shadow: 10f, isButton: true); break;
+                case "kit_slot_dashed": FillDashedSlot(buf, w, h, 20f, 4.0f); break;
+                case "kit_card_header": FillCardHeader(buf, w, h, 26f, outline: 6.0f); break;
                 case "kit_shine": FillShine(buf, w, h); break;
                 case "kit_ribbon_tail": FillRibbonTail(buf, w, h); break;
                 case "kit_menu_bg": FillMenuBg(buf, w, h); break;
+                case "kit_pip": FillSurfaceBlock(buf, w, h, 7f, outline: 3.2f, ledge: 3f, highlight: 4.0f, shadow: 2f, isButton: false, padX: 1.5f, padTop: 1f); break;
             }
             return buf;
         }
@@ -171,28 +222,25 @@ namespace ProjectB.EditorScripts.UiKit
             for (int i = 0; i < buf.Length; i++) buf[i] = c;
         }
 
-        // Glossy toy-vector 9-slice block (UI Kit v2):
-        // - Thin dark outer contour + subtle soft drop shadow below the bottom edge
-        // - Tinted 3D thickness ledge at the bottom (amber-orange on gold, indigo on dark cards, not pitch black)
-        // - Bright upper bevel rim so dark panels stand out crisply against the background
-        // - Smooth vertical face gradient
-        private static void FillSurfaceBlock(Color32[] buf, int w, int h, float r, float outline, float ledge, float highlight, float shadow, bool isButton)
+        // Glossy toy-vector 9-slice block (UI Kit v4, decoded by ProjectB/UI/ToySurface):
+        // Perceptual luminance anchors: 0.00 shadow, 0.05 outline, 0.38 3D bottom ledge, 0.72..0.77 face, 0.78..1.00 top bevel.
+        private static void FillSurfaceBlock(Color32[] buf, int w, int h, float r, float outline, float ledge, float highlight, float shadow, bool isButton, float padX = 4f, float padTop = 2f)
         {
-            float padX = 2f;
-            float padTop = 1.5f;
-            float bodyBottom = shadow + 1f;
+            float bodyBottom = shadow + 2f;
             float bodyH = h - padTop - bodyBottom;
             float bodyW = w - padX * 2f;
+            r = Mathf.Min(r, Mathf.Min(bodyW, bodyH) * 0.5f);
 
-            float outlineLum = isButton ? 0.16f : 0.14f;
-            float ledgeLum = isButton ? 0.62f : 0.44f;
-            float topGradLum = isButton ? 0.98f : 0.92f;
-            float botGradLum = isButton ? 0.88f : 0.76f;
+            const float outlineLum = 0.05f;
+            const float ledgeLum = 0.38f;
+            const float botGradLum = 0.72f;
+            const float topGradLum = 0.77f;
 
             float faceBottom = bodyBottom + outline + ledge;
             float faceTop = h - padTop - outline;
             float faceH = Mathf.Max(1f, faceTop - faceBottom);
             float faceR = Mathf.Max(1f, r - outline);
+            float blur = Mathf.Max(2.0f, shadow * 0.32f);
 
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
@@ -202,13 +250,16 @@ namespace ProjectB.EditorScripts.UiKit
                 float dOuter = RoundedRectSdf(px - padX, py - bodyBottom, bodyW, bodyH, r);
                 float bodyAlpha = Mathf.Clamp01(0.5f - dOuter);
 
-                // Soft drop shadow shifted downward below the block.
-                float dShadow = RoundedRectSdf(px - padX, py - (bodyBottom - shadow), bodyW, bodyH, r);
-                float shadowAlpha = Mathf.Clamp01(0.5f - dShadow) * 0.36f * Mathf.Clamp01((py + 0.5f) / Mathf.Max(1f, shadow));
+                // Expressive hard-edged drop shadow shifted downward below the block.
+                float dShadow = RoundedRectSdf(px - padX, py - (bodyBottom - shadow * 0.78f), bodyW, bodyH, r);
+                float sT = Mathf.Clamp01(1f - (dShadow + blur * 0.1f) / blur);
+                float edgeFadeY = Mathf.Clamp01(py / 2.0f);
+                float edgeFadeX = Mathf.Clamp01(Mathf.Min(px, w - px) / 2.0f);
+                float shadowAlpha = sT * sT * (isButton ? 0.86f : 0.80f) * edgeFadeY * edgeFadeX;
 
                 if (bodyAlpha <= 0f)
                 {
-                    buf[y * w + x] = shadowAlpha > 0.005f ? Lum(0.04f, shadowAlpha) : default;
+                    buf[y * w + x] = shadowAlpha > 0.005f ? Lum(0.00f, shadowAlpha) : default;
                     continue;
                 }
 
@@ -223,18 +274,21 @@ namespace ProjectB.EditorScripts.UiKit
                 float tY = Mathf.Clamp01((py - faceBottom) / faceH);
                 float faceLum = Mathf.Lerp(botGradLum, topGradLum, tY);
 
-                // Upper rim highlight (top edge + upper side bevel).
+                // Luminous top & upper-corner inner bevel highlight.
                 float topDist = faceTop - py;
+                float rim = 0f;
                 if (topDist < highlight)
                 {
-                    float rimT = 1f - Mathf.Clamp01(topDist / highlight);
-                    faceLum = Mathf.Lerp(faceLum, 1f, rimT * (isButton ? 0.72f : 0.85f));
+                    rim = Mathf.Max(rim, 1f - Mathf.Clamp01(topDist / highlight));
                 }
-                else if (!isButton && -dFace < 1.8f && tY > 0.35f)
+                float sideRange = isButton ? highlight * 0.55f : 3.5f;
+                float minTy = isButton ? 0.45f : 0.25f;
+                if (-dFace < sideRange && tY > minTy)
                 {
-                    float sideRim = Mathf.Clamp01((1.8f + dFace) / 1.8f) * Mathf.Clamp01((tY - 0.35f) / 0.45f);
-                    faceLum = Mathf.Lerp(faceLum, 1f, sideRim * 0.5f);
+                    float sideRim = Mathf.Clamp01((sideRange + dFace) / sideRange) * Mathf.Clamp01((tY - minTy) / (1f - minTy));
+                    rim = Mathf.Max(rim, sideRim * (isButton ? 0.85f : 0.72f));
                 }
+                faceLum = Mathf.Lerp(faceLum, 1.00f, rim);
 
                 // Compose: outline -> tinted 3D ledge -> raised face.
                 float interiorLum = Mathf.Lerp(ledgeLum, faceLum, faceAlpha);
@@ -242,18 +296,19 @@ namespace ProjectB.EditorScripts.UiKit
 
                 // Blend outer body edge smoothly over drop shadow if present.
                 float outAlpha = Mathf.Max(bodyAlpha, shadowAlpha);
-                float outLum = Mathf.Lerp(0.04f, l, bodyAlpha / Mathf.Max(0.001f, outAlpha));
+                float outLum = Mathf.Lerp(0.00f, l, bodyAlpha / Mathf.Max(0.001f, outAlpha));
                 buf[y * w + x] = Lum(outLum, outAlpha);
             }
         }
 
-        /// <summary>Round "voxel block" (icon buttons, knobs): thin contour, tinted bottom crescent ledge, bright top rim.</summary>
+        /// <summary>Round "voxel block" (icon buttons, knobs): bold contour, tinted bottom crescent ledge, bold shadow, bright top rim.</summary>
         private static void FillCircleBlock(Color32[] buf, int w, int h, float outline, float ledge, float highlight, float shade)
         {
-            float cx = w * 0.5f, cy = h * 0.5f + 1.5f, r = w * 0.5f - 3f;
+            float cx = w * 0.5f, cy = h * 0.5f + shade * 0.35f, r = w * 0.5f - shade * 0.55f - 2f;
             float innerR = r - outline;
             float fcy = cy + ledge * 0.45f;
             float fr = innerR - ledge * 0.45f;
+            float blur = Mathf.Max(2.0f, shade * 0.35f);
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
@@ -263,13 +318,15 @@ namespace ProjectB.EditorScripts.UiKit
                 float dOuter = dist - r;
                 float bodyAlpha = Mathf.Clamp01(0.5f - dOuter);
 
-                float sdy = py - (cy - 3f);
+                float sdy = py - (cy - shade * 0.75f);
                 float dShadow = Mathf.Sqrt(dx * dx + sdy * sdy) - r;
-                float shadowAlpha = Mathf.Clamp01(0.5f - dShadow) * 0.32f;
+                float sT = Mathf.Clamp01(1f - (dShadow + blur * 0.1f) / blur);
+                float edgeFadeY = Mathf.Clamp01(py / 2.0f);
+                float shadowAlpha = sT * sT * 0.80f * edgeFadeY;
 
                 if (bodyAlpha <= 0f)
                 {
-                    buf[y * w + x] = shadowAlpha > 0.005f ? Lum(0.04f, shadowAlpha) : default;
+                    buf[y * w + x] = shadowAlpha > 0.005f ? Lum(0.00f, shadowAlpha) : default;
                     continue;
                 }
 
@@ -279,17 +336,17 @@ namespace ProjectB.EditorScripts.UiKit
                 float faceAlpha = Mathf.Clamp01(0.5f - dFace);
 
                 float tY = Mathf.Clamp01((py - (fcy - fr)) / Mathf.Max(1f, fr * 2f));
-                float faceLum = Mathf.Lerp(0.80f, 0.96f, tY);
+                float faceLum = Mathf.Lerp(0.72f, 0.77f, tY);
                 float topDist = fcy + fr - py;
                 if (topDist < highlight)
                 {
-                    faceLum = Mathf.Lerp(faceLum, 1f, 1f - Mathf.Clamp01(topDist / highlight));
+                    faceLum = Mathf.Lerp(faceLum, 1.00f, 1f - Mathf.Clamp01(topDist / highlight));
                 }
 
-                float interiorLum = Mathf.Lerp(0.50f, faceLum, faceAlpha);
-                float l = Mathf.Lerp(0.14f, interiorLum, innerAlpha);
+                float interiorLum = Mathf.Lerp(0.38f, faceLum, faceAlpha);
+                float l = Mathf.Lerp(0.05f, interiorLum, innerAlpha);
                 float outAlpha = Mathf.Max(bodyAlpha, shadowAlpha);
-                float outLum = Mathf.Lerp(0.04f, l, bodyAlpha / Mathf.Max(0.001f, outAlpha));
+                float outLum = Mathf.Lerp(0.00f, l, bodyAlpha / Mathf.Max(0.001f, outAlpha));
                 buf[y * w + x] = Lum(outLum, outAlpha);
             }
         }
@@ -332,14 +389,14 @@ namespace ProjectB.EditorScripts.UiKit
 
         private static void FillCardHeader(Color32[] buf, int w, int h, float r, float outline)
         {
-            float padX = 1.5f;
-            float padTop = 1.5f;
+            float padX = 4f;
+            float padTop = 2f;
             float bw = w - padX * 2f;
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
                 float px = x + 0.5f, py = y + 0.5f;
-                // Top-rounded, bottom-flat SDF: clamp y test so bottom corners stay square.
+                // Top-rounded, bottom-flat SDF matching kit_card outer width (padX = 4, padTop = 2).
                 float testY = py < h * 0.5f ? h * 0.5f : py;
                 float dTop = RoundedRectSdf(px - padX, testY - padTop, bw, h - padTop * 2f, r);
                 float dBottom = -py;
@@ -347,16 +404,16 @@ namespace ProjectB.EditorScripts.UiKit
                 float alpha = Mathf.Clamp01(0.5f - d);
                 if (alpha <= 0f) { buf[y * w + x] = default; continue; }
 
-                bool bottomLine = py < 2.5f;
+                bool bottomLine = py < 5.5f;
                 float dInnerTop = RoundedRectSdf(px - padX - outline, testY - padTop, bw - outline * 2f, h - padTop - outline, Mathf.Max(1f, r - outline));
                 float innerAlpha = bottomLine ? 0f : Mathf.Clamp01(0.5f - dInnerTop);
 
                 float tY = Mathf.Clamp01(py / (h - padTop - outline));
-                float faceLum = Mathf.Lerp(0.84f, 0.96f, tY);
+                float faceLum = Mathf.Lerp(0.72f, 0.78f, tY);
                 float topDist = (h - padTop - outline) - py;
-                if (topDist < 3f) faceLum = Mathf.Lerp(faceLum, 1f, 1f - Mathf.Clamp01(topDist / 3f));
+                if (topDist < 6.5f) faceLum = Mathf.Lerp(faceLum, 1.00f, 1f - Mathf.Clamp01(topDist / 6.5f));
 
-                float l = Mathf.Lerp(0.16f, faceLum, innerAlpha);
+                float l = Mathf.Lerp(0.05f, faceLum, innerAlpha);
                 buf[y * w + x] = Lum(l, alpha);
             }
         }
@@ -400,9 +457,9 @@ namespace ProjectB.EditorScripts.UiKit
                 float alpha = Mathf.Clamp01(0.5f - d);
                 if (alpha <= 0f) { buf[y * w + x] = default; continue; }
 
-                bool onOutline = d > -2.5f && px > 2f;
+                bool onOutline = d > -5.5f && px > 2f;
                 bool foldShadow = py < bot + 14f && px < w * 0.35f;
-                float l = onOutline ? 0.16f : (foldShadow ? 0.68f : 0.90f);
+                float l = onOutline ? 0.05f : (foldShadow ? 0.38f : 0.76f);
                 buf[y * w + x] = Lum(l, alpha);
             }
         }
@@ -479,7 +536,7 @@ namespace ProjectB.EditorScripts.UiKit
                 float alpha = Mathf.Clamp01(0.5f - d);
                 if (alpha <= 0f) { buf[y * w + x] = default; continue; }
                 // Dark outline (matches the block kit) + recessed track with an inner top shadow.
-                float l = -d < 4f ? Mathf.Lerp(0.85f, 0.14f, Mathf.Clamp01(4.5f + d)) : (y > h - 10 ? 0.7f : 0.85f);
+                float l = -d < 5.5f ? Mathf.Lerp(0.72f, 0.05f, Mathf.Clamp01(5.8f + d)) : (y > h - 11 ? 0.38f : 0.72f);
                 buf[y * w + x] = Lum(l, alpha);
             }
         }
@@ -489,7 +546,7 @@ namespace ProjectB.EditorScripts.UiKit
             for (int y = 0; y < h; y++)
             {
                 float t = (float)y / (h - 1);
-                float l = t >= 0.72f ? 1f : Mathf.Lerp(0.78f, 0.92f, t / 0.72f);
+                float l = t >= 0.70f ? 0.95f : Mathf.Lerp(0.72f, 0.77f, t / 0.70f);
                 for (int x = 0; x < w; x++) buf[y * w + x] = Lum(l, 1f);
             }
         }
