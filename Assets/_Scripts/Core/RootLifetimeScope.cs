@@ -4,6 +4,7 @@ using VContainer.Unity;
 using ProjectB.Ads;
 using ProjectB.Data.Platform;
 using ProjectB.Meta;
+using ProjectB.Visuals;
 
 namespace ProjectB.Core
 {
@@ -13,6 +14,7 @@ namespace ProjectB.Core
         {
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount = 0;
+            GameplayShaderWarmup.WarmUpIfNeeded();
             base.Awake();
             DontDestroyOnLoad(gameObject);
         }

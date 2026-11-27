@@ -67,11 +67,14 @@ namespace ProjectB.Tests.EditMode
             manager.OnKillsInRun(2000);
             Assert.IsTrue(saveManager.IsAbilityUnlocked("BlackHole"));
 
-            // Upgrade ability to Lv 10 (Overdrive I) -> VitalityRegen
+            // Upgrade ability to Lv 10 (Overdrive I) -> 800 coins
+            int coinsBeforeOverdrive = saveManager.Data.coins;
             manager.OnAbilityUpgraded("Shooter", 9);
-            Assert.IsFalse(saveManager.IsAbilityUnlocked("VitalityRegen"));
+            Assert.AreEqual(coinsBeforeOverdrive, saveManager.Data.coins);
+            Assert.IsFalse(saveManager.Data.completedAchievements.Contains("ability_lvl_10"));
             manager.OnAbilityUpgraded("Shooter", 10);
-            Assert.IsTrue(saveManager.IsAbilityUnlocked("VitalityRegen"));
+            Assert.AreEqual(coinsBeforeOverdrive + 800, saveManager.Data.coins);
+            Assert.IsTrue(saveManager.Data.completedAchievements.Contains("ability_lvl_10"));
 
             // Find Mystery Crystal -> coins reward
             int coinsBefore = saveManager.Data.coins;

@@ -837,13 +837,13 @@ namespace ProjectB.Tests.EditMode
             var activesLabel = (TextMeshProUGUI)GetPrivateField(cheatMenu, "activesTabLabel");
             var passivesLabel = (TextMeshProUGUI)GetPrivateField(cheatMenu, "passivesTabLabel");
             Assert.AreEqual("ACTIVES (17)", activesLabel.text);
-            Assert.AreEqual("PASSIVES (10)", passivesLabel.text);
+            Assert.AreEqual("PASSIVES (9)", passivesLabel.text);
 
             var passivesBtn = (Button)GetPrivateField(cheatMenu, "passivesTabBtn");
             passivesBtn.onClick.Invoke();
             Canvas.ForceUpdateCanvases();
 
-            Assert.AreEqual(10, contentTransform.childCount, "Expected all 10 Passive abilities in PASSIVES tab with no leftovers");
+            Assert.AreEqual(9, contentTransform.childCount, "Expected all 9 Passive abilities in PASSIVES tab with no leftovers");
         }
 
         [Test]
@@ -887,15 +887,15 @@ namespace ProjectB.Tests.EditMode
 
             Assert.AreEqual(17, contentTransform.childCount, "Ability picker must list all 17 Active abilities from CardCatalog when cardPool is null");
             Assert.AreEqual("ACTIVES (17)", activesLabel.text);
-            Assert.AreEqual("PASSIVES (10)", passivesLabel.text);
+            Assert.AreEqual("PASSIVES (9)", passivesLabel.text);
 
             var passivesBtn = (Button)GetPrivateField(cheatMenu, "passivesTabBtn");
             passivesBtn.onClick.Invoke();
             Canvas.ForceUpdateCanvases();
-            Assert.AreEqual(10, contentTransform.childCount, "Ability picker must list all 10 Passive abilities from CardCatalog");
+            Assert.AreEqual(9, contentTransform.childCount, "Ability picker must list all 9 Passive abilities from CardCatalog");
 
             var cachedCards = (List<AbilityCardData>)GetPrivateField(cheatMenu, "cachedCards");
-            Assert.AreEqual(27, cachedCards.Count);
+            Assert.AreEqual(26, cachedCards.Count);
             AbilityCardData sampleActive = cachedCards.Find(c => c.abilityData != null && c.abilityData.type == AbilityType.Active);
             Assert.IsNotNull(sampleActive);
             Assert.IsTrue(cheatMenu.GrantOrUpgradeAbility(sampleActive));

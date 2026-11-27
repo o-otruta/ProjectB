@@ -137,11 +137,11 @@
   - Также: Crit Chance / Crit Multiplier, Cooldown Reduction (оружие, способности и ульта), Global Area, регенерация, бонус к монетам/XP.
 - **Защита героя:** после получения урона — короткие i-frames (`RunRulesConfig.postHitInvulnerabilityDuration = 0.18s`, расширяются Созвездием), вспышка модели и красная виньетка на HUD.
 
-**Типы карточек (`Resources/CardCatalog.asset`, 96 шт.):**
+**Типы карточек (`Resources/CardCatalog.asset`, 95 шт.):**
 | Тип | Класс | Кол-во | Примеры |
 |---|---|---|---|
-| Новая способность | `AbilityCardData` | 27 | «+Fireball», «+Chain Lightning» |
-| Улучшение способности | `AbilityModifierCardData` | 63 | «Chain Lightning: +6 Damage», «Spire: Wider Blast» |
+| Новая способность | `AbilityCardData` | 26 | «+Fireball», «+Chain Lightning» |
+| Улучшение способности | `AbilityModifierCardData` | 62 | «Chain Lightning: +6 Damage», «Spire: Wider Blast» |
 | Пассивный бафф героя | `StatUpgradeCardData` | 3 | Global Damage, Max HP, Magnet Radius |
 | Улучшение оружия | `WeaponUpgradeCardData` | 3 | `Multishot` (+1 снаряд веером), `FireRate` (+20%), `Power` (+30% урона) |
 
@@ -272,7 +272,7 @@
 | Прогресс | W5 → 200; W10 → Laser Turret; W20 → **Mage**; W35 → Vampiric Fang; W60 → 3000; 25 забегов → 1000 |
 | Боссы | первый мини-босс → **+1 активный слот**; 15 мини-боссов → 1000; Golem → **+1 пассивный слот**; Necromancer → 15 Осколков; Frost Lich → 20 Осколков; Demon Lord → 6000; босс до ярости → Seismic Hammer; добить босса при ≤ 20% HP → 1000 |
 | Бой | 500 убийств за забег → Arcane Tornado; 2000 за забег → Black Hole; комбо x50 → Shadow Decoy; комбо x150 → 1200; 30 элит → Skyfall Spire; бочка задела 12+ врагов → 600; 5 Gold Goblin → Golden Idol; 10 панцирей Siege Golemite → 1000; Vacuum Magnet 200+ XP → 600 |
-| Мастерство | 5 способностей за забег → Dragon Whelp; 8 → 1600; Lv 10 → Vitality Regen; Lv 20 → 1500; Lv 30 → 3000; первая синергия → 400; 3 синергии за забег → 1600; 6 разных синергий → 2000; 50 ульт → 600 |
+| Мастерство | 5 способностей за забег → Dragon Whelp; 8 → 1600; Lv 10 → 800; Lv 20 → 1500; Lv 30 → 3000; первая синергия → 400; 3 синергии за забег → 1600; 6 разных синергий → 2000; 50 ульт → 600 |
 | Испытания | 5 волн без урона → Sniper Lens; 15 волн без урона → 2000; W15 с ≤ 1 активной → 1200; W20 без пассивок → 1200; W25 без рероллов → 1000; W10 быстрее 4 мин → 1000; забег 30 мин → 1600; все 5 событий волн → 1600; все 3 мутатора → 1200; Second Wind → 600 |
 | Герои | 3 Алтаря → **Ranger**; 3 больших босса → **Necromancer**; W30 за каждого из 4 героев → 1000; W15 всеми 4 героями → 2000 |
 | Мета | первая звезда → 200; 15 звёзд → 1000; первый Keystone → 10 Осколков; 25 уровней апгрейдов → 1000; 7 дейли → 600; все закрытые способности → 4000 |
@@ -308,7 +308,7 @@
 
 Все параметры ульт — в `HeroData` (Data-Driven), CDR применяется к оружию и ульте.
 
-### 5.2 Способности (27: 17 активных + 10 пассивных)
+### 5.2 Способности (26: 17 активных + 9 пассивных)
 **Активные:**
 | Редкость | Способности |
 |---|---|
@@ -321,7 +321,7 @@
 | Редкость | Способности |
 |---|---|
 | **Common** | Battle Fury (+15% урона), Iron Skin (+20 брони), Titan Heart (+2 HP/с) |
-| **Rare** | Swift Boots (+1.0 скорости), Area Tome (+12% площади), Chrono Tome (−10% перезарядки), Vitality Regen (+3 HP/с) 🔒, Golden Idol (+25% монет) 🔒 |
+| **Rare** | Swift Boots (+1.0 скорости), Area Tome (+12% площади), Chrono Tome (−10% перезарядки), Golden Idol (+25% монет) 🔒 |
 | **Epic** | Sniper Lens (`CriticalLens`, +12% крита) 🔒, Vampiric Fang (+2 HP за каждые 8 убийств) 🔒 |
 
 🔒 — открывается ачивкой (см. 4.4).

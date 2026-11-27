@@ -12,10 +12,13 @@ namespace ProjectB.Enemies
     /// </summary>
     public class FrostSlowZone : MonoBehaviour
     {
+        private static readonly int FadePropertyId = Shader.PropertyToID("_Fade");
         private static Material fallbackZoneMaterial;
 
         private float radius = 2.6f;
+        private float totalDuration = 3.5f;
         private float remainingDuration;
+        private float elapsedTime;
         private float slowFactor = 0.55f;
         private float slowRefreshDuration = 0.35f;
         private float tickInterval = 0.15f;
@@ -25,6 +28,9 @@ namespace ProjectB.Enemies
         private IObjectPool<FrostSlowZone> pool;
         private Action<FrostSlowZone> onReleasedCallback;
         private Transform visualRoot;
+        private MeshRenderer patchRenderer;
+        private MaterialPropertyBlock fadePropBlock;
+        private float lastPushedFade = -1f;
         private bool isReturned;
 
         public float Radius => radius;
@@ -48,7 +54,10 @@ namespace ProjectB.Enemies
             EnsureVisual(zoneMaterial, customVisualPrefab);
 
             this.radius = Mathf.Max(0.5f, radius);
-            remainingDuration = Mathf.Max(0.25f, duration);
+            totalDuration = Mathf.Max(0.25f, duration);
+            remainingDuration = totalDuration;
+            elapsedTime = 0f;
+            lastPushedFade = -1f;
             this.slowFactor = Mathf.Clamp(slowFactor, 0.25f, 0.95f);
             this.slowRefreshDuration = Mathf.Max(0.1f, slowRefreshDuration);
             this.tickInterval = Mathf.Max(0.05f, tickInterval);
@@ -62,8 +71,11 @@ namespace ProjectB.Enemies
             transform.position = new Vector3(position.x, 0.03f, position.z);
             if (visualRoot != null)
             {
-                visualRoot.localScale = new Vector3(this.radius, 1f, this.radius);
+                float initialScale = this.radius * 0.65f;
+                visualRoot.localScale = new Vector3(initialScale, 1f, initialScale);
+                visualRoot.localRotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
             }
+            PushFadeProperty(0.25f);
 
             gameObject.SetActive(true);
             CheckAndApplySlow();
@@ -81,6 +93,8 @@ namespace ProjectB.Enemies
                 inst.transform.localRotation = Quaternion.identity;
                 inst.transform.localScale = Vector3.one;
                 visualRoot = inst.transform;
+                Transform patchTr = inst.transform.Find("FrostPatch");
+                patchRenderer = patchTr != null ? patchTr.GetComponent<MeshRenderer>() : null;
                 var renderers = inst.GetComponentsInChildren<MeshRenderer>(true);
                 for (int i = 0; i < renderers.Length; i++)
                 {
@@ -88,6 +102,7 @@ namespace ProjectB.Enemies
                     {
                         renderers[i].shadowCastingMode = ShadowCastingMode.Off;
                         renderers[i].receiveShadows = false;
+                        if (patchRenderer == null) patchRenderer = renderers[i];
                     }
                 }
                 return;
@@ -110,7 +125,8 @@ namespace ProjectB.Enemies
             if (provided != null) return provided;
             if (fallbackZoneMaterial == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+                Shader shader = Shader.Find("ProjectB/FrostZoneGround");
+                if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
                 if (shader == null) shader = Shader.Find("Sprites/Default");
                 fallbackZoneMaterial = new Material(shader)
                 {
@@ -119,11 +135,15 @@ namespace ProjectB.Enemies
                 };
                 if (fallbackZoneMaterial.HasProperty("_BaseColor"))
                 {
-                    fallbackZoneMaterial.SetColor("_BaseColor", new Color(0.42f, 0.88f, 1f, 0.52f));
+                    fallbackZoneMaterial.SetColor("_BaseColor", new Color(0.20f, 0.46f, 0.72f, 0.65f));
+                }
+                else if (fallbackZoneMaterial.HasProperty("_MidColor"))
+                {
+                    fallbackZoneMaterial.SetColor("_MidColor", new Color(0.18f, 0.44f, 0.68f, 0.62f));
                 }
                 else
                 {
-                    fallbackZoneMaterial.color = new Color(0.42f, 0.88f, 1f, 0.52f);
+                    fallbackZoneMaterial.color = new Color(0.20f, 0.46f, 0.72f, 0.65f);
                 }
             }
             return fallbackZoneMaterial;
@@ -164,18 +184,34 @@ namespace ProjectB.Enemies
             if (deltaTime < 0f) return true;
 
             remainingDuration -= deltaTime;
+            elapsedTime += deltaTime;
             if (remainingDuration <= 0f)
             {
                 ForceExpire();
                 return false;
             }
 
-            if (visualRoot != null && remainingDuration < 0.4f)
+            float scaleFactor = 1f;
+            float fade = 1f;
+            if (elapsedTime < 0.15f)
             {
-                float fadeScale = Mathf.Clamp01(remainingDuration / 0.4f);
-                float r = radius * Mathf.Lerp(0.35f, 1f, fadeScale);
+                float inT = Mathf.Clamp01(elapsedTime / 0.15f);
+                scaleFactor = Mathf.Lerp(0.65f, 1f, inT);
+                fade = Mathf.Lerp(0.25f, 1f, inT);
+            }
+            else if (remainingDuration < 0.45f)
+            {
+                float outT = Mathf.Clamp01(remainingDuration / 0.45f);
+                scaleFactor = Mathf.Lerp(0.78f, 1f, outT);
+                fade = outT;
+            }
+
+            if (visualRoot != null)
+            {
+                float r = radius * scaleFactor;
                 visualRoot.localScale = new Vector3(r, 1f, r);
             }
+            PushFadeProperty(fade);
 
             tickTimer -= deltaTime;
             if (tickTimer <= 0f)
@@ -185,6 +221,17 @@ namespace ProjectB.Enemies
             }
 
             return true;
+        }
+
+        private void PushFadeProperty(float fade)
+        {
+            if (patchRenderer == null) return;
+            float clamped = Mathf.Clamp01(fade);
+            if (Mathf.Approximately(lastPushedFade, clamped)) return;
+            lastPushedFade = clamped;
+            if (fadePropBlock == null) fadePropBlock = new MaterialPropertyBlock();
+            fadePropBlock.SetFloat(FadePropertyId, clamped);
+            patchRenderer.SetPropertyBlock(fadePropBlock);
         }
 
         public void ForceExpire()

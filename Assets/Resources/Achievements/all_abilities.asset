@@ -21,7 +21,7 @@ MonoBehaviour:
   descriptionKey: ach.all_abilities.desc
   icon: {fileID: 21300000, guid: cfcdb956bbd604848a773bccfc8941fd, type: 3}
   conditionType: 31
-  targetValue: 11
+  targetValue: 10
   targetId: 
   conditionParam: 0
   runConstraint:

@@ -1154,17 +1154,18 @@ namespace ProjectB.Enemies
                 cachedFrostZoneMaterial = Resources.Load<Material>("FrostWispZoneMat");
                 if (cachedFrostZoneMaterial == null)
                 {
-                    Shader urpUnlit = Shader.Find("Universal Render Pipeline/Unlit");
-                    if (urpUnlit != null)
+                    Shader frostShader = Shader.Find("ProjectB/FrostZoneGround");
+                    if (frostShader == null) frostShader = Shader.Find("Universal Render Pipeline/Unlit");
+                    if (frostShader != null)
                     {
-                        cachedFrostZoneMaterial = new Material(urpUnlit)
+                        cachedFrostZoneMaterial = new Material(frostShader)
                         {
                             name = "FrostZoneRuntimeMat",
                             enableInstancing = true
                         };
                         if (cachedFrostZoneMaterial.HasProperty("_BaseColor"))
                         {
-                            cachedFrostZoneMaterial.SetColor("_BaseColor", new Color(0.45f, 0.90f, 1.0f, 0.50f));
+                            cachedFrostZoneMaterial.SetColor("_BaseColor", new Color(0.20f, 0.46f, 0.72f, 0.65f));
                         }
                     }
                 }

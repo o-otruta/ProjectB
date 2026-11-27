@@ -6,6 +6,8 @@ namespace ProjectB.Abilities
     public class IceAuraAbility : ActiveAbility
     {
         public const float VISUAL_Y_OFFSET = 0.03f;
+        private const float PULSE_DURATION = 0.32f;
+        private static readonly int PulsePropertyId = Shader.PropertyToID("_Pulse");
 
         private IceAuraAbilityData IceData => Data as IceAuraAbilityData;
 
@@ -19,6 +21,16 @@ namespace ProjectB.Abilities
         private Collider[] hitBuffer = new Collider[128];
         private GameObject visualAura;
         private bool usesCustomVisualPrefab;
+        private Transform groundFieldTransform;
+        private MeshRenderer groundFieldRenderer;
+        private Transform crystalRingTransform;
+        private Transform[] crystalTransforms;
+        private float[] crystalBaseAngles;
+        private ParticleSystem snowParticles;
+        private MaterialPropertyBlock pulsePropBlock;
+        private float pulseTimer;
+        private float lastPushedPulse = -1f;
+        private float crystalTierScale = 1f;
 
         public Transform VisualTransform => visualAura != null ? visualAura.transform : null;
 
@@ -78,8 +90,43 @@ namespace ProjectB.Abilities
                 }
             }
 
+            CacheVisualParts();
             UpdateVisualVerticalOffset();
             UpdateVisualSize();
+        }
+
+        private void CacheVisualParts()
+        {
+            groundFieldTransform = visualAura.transform.Find("GroundField");
+            groundFieldRenderer = groundFieldTransform != null ? groundFieldTransform.GetComponent<MeshRenderer>() : null;
+            crystalRingTransform = visualAura.transform.Find("CrystalRing");
+            snowParticles = visualAura.GetComponentInChildren<ParticleSystem>(true);
+
+            if (crystalRingTransform != null)
+            {
+                int count = crystalRingTransform.childCount;
+                crystalTransforms = new Transform[count];
+                crystalBaseAngles = new float[count];
+                float step = count > 0 ? (Mathf.PI * 2f) / count : 0f;
+                for (int i = 0; i < count; i++)
+                {
+                    crystalTransforms[i] = crystalRingTransform.GetChild(i);
+                    crystalBaseAngles[i] = step * i;
+                }
+            }
+            else
+            {
+                crystalTransforms = null;
+                crystalBaseAngles = null;
+            }
+
+            if (pulsePropBlock == null)
+            {
+                pulsePropBlock = new MaterialPropertyBlock();
+            }
+            pulseTimer = 0f;
+            lastPushedPulse = -1f;
+            PushPulseProperty(0f);
         }
 
         private void UpdateVisualVerticalOffset()
@@ -90,11 +137,43 @@ namespace ProjectB.Abilities
 
         private void UpdateVisualSize()
         {
-            if (visualAura != null)
+            if (visualAura == null) return;
+
+            float r = EffectiveRadius;
+            if (groundFieldTransform != null)
+            {
+                visualAura.transform.localScale = Vector3.one;
+                groundFieldTransform.localScale = new Vector3(r * 2f, r * 2f, 1f);
+
+                if (crystalTransforms != null)
+                {
+                    float ringRadius = r * 0.95f;
+                    Vector3 cScale = Vector3.one * crystalTierScale;
+                    for (int i = 0; i < crystalTransforms.Length; i++)
+                    {
+                        Transform crystal = crystalTransforms[i];
+                        if (crystal == null) continue;
+                        float angle = crystalBaseAngles[i];
+                        float y = crystal.localPosition.y;
+                        crystal.localPosition = new Vector3(Mathf.Cos(angle) * ringRadius, y, Mathf.Sin(angle) * ringRadius);
+                        crystal.localRotation = Quaternion.Euler(0f, -angle * Mathf.Rad2Deg + 90f, 0f);
+                        crystal.localScale = cScale;
+                    }
+                }
+
+                if (snowParticles != null)
+                {
+                    var shape = snowParticles.shape;
+                    shape.radius = Mathf.Max(0.5f, r * 0.92f);
+                    var emission = snowParticles.emission;
+                    emission.rateOverTime = Mathf.Clamp(r * 7.5f, 18f, 36f);
+                }
+            }
+            else
             {
                 visualAura.transform.localScale = usesCustomVisualPrefab
-                    ? new Vector3(EffectiveRadius, 1f, EffectiveRadius)
-                    : new Vector3(EffectiveRadius * 2f, 0.01f, EffectiveRadius * 2f);
+                    ? new Vector3(r, 1f, r)
+                    : new Vector3(r * 2f, 0.01f, r * 2f);
             }
         }
 
@@ -119,12 +198,14 @@ namespace ProjectB.Abilities
             if (tier == 1)
             {
                 currentRadius *= 1.2f;
+                crystalTierScale = 1.15f;
                 UpdateVisualSize();
             }
             else if (tier == 2)
             {
                 currentRadius *= 1.15f;
                 currentSlowFactor = Mathf.Max(0.1f, currentSlowFactor - 0.1f);
+                crystalTierScale = 1.28f;
                 UpdateVisualSize();
             }
         }
@@ -142,9 +223,35 @@ namespace ProjectB.Abilities
             if (Data == null || Time.deltaTime <= 0f) return;
 
             UpdateVisualVerticalOffset();
-            if (visualAura != null)
+            if (crystalRingTransform != null)
+            {
+                crystalRingTransform.Rotate(Vector3.up, 26f * Time.deltaTime, Space.Self);
+                if (crystalTransforms != null)
+                {
+                    float now = Time.time;
+                    for (int i = 0; i < crystalTransforms.Length; i++)
+                    {
+                        Transform crystal = crystalTransforms[i];
+                        if (crystal == null) continue;
+                        Vector3 pos = crystal.localPosition;
+                        pos.y = Mathf.Sin(now * 2.6f + i * 0.85f) * 0.045f;
+                        crystal.localPosition = pos;
+                    }
+                }
+            }
+            else if (visualAura != null)
             {
                 visualAura.transform.Rotate(Vector3.up, 18f * Time.deltaTime, Space.Self);
+            }
+
+            if (pulseTimer > 0f)
+            {
+                pulseTimer = Mathf.Max(0f, pulseTimer - Time.deltaTime);
+                PushPulseProperty(pulseTimer / PULSE_DURATION);
+            }
+            else if (lastPushedPulse > 0.0001f)
+            {
+                PushPulseProperty(0f);
             }
 
             if (Time.time >= nextTickTime)
@@ -154,8 +261,22 @@ namespace ProjectB.Abilities
             }
         }
 
+        private void PushPulseProperty(float pulseValue)
+        {
+            if (groundFieldRenderer == null) return;
+            float clamped = Mathf.Clamp01(pulseValue);
+            if (Mathf.Approximately(lastPushedPulse, clamped)) return;
+            lastPushedPulse = clamped;
+            if (pulsePropBlock == null) pulsePropBlock = new MaterialPropertyBlock();
+            pulsePropBlock.SetFloat(PulsePropertyId, clamped);
+            groundFieldRenderer.SetPropertyBlock(pulsePropBlock);
+        }
+
         private void ApplyAuraTick()
         {
+            pulseTimer = PULSE_DURATION;
+            PushPulseProperty(1f);
+
             int targetsFound = Physics.OverlapSphereNonAlloc(transform.position, EffectiveRadius, hitBuffer, IceData.targetLayer);
             
             for (int i = 0; i < targetsFound; i++)

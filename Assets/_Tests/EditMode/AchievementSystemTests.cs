@@ -331,7 +331,8 @@ namespace ProjectB.Tests.EditMode
             save.Data.metaUpgradeLevels["hero_damage"] = 5;
             save.Data.dailyBonusCycle = 1;
             save.Data.dailyBonusDay = 1;
-            for (int i = 0; i < 11; i++) save.Data.unlockedAbilityIds.Add("ability_" + i);
+            int lockedAbilityTarget = Find("all_abilities").targetValue;
+            for (int i = 0; i < lockedAbilityTarget; i++) save.Data.unlockedAbilityIds.Add("ability_" + i);
 
             int shardsBefore = save.Data.bossShards;
             sync.Sync();

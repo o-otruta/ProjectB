@@ -8,6 +8,7 @@ using ProjectB.UI;
 using ProjectB.Meta;
 using VContainer;
 using ProjectB.Core.Events;
+using ProjectB.Visuals;
 
 namespace ProjectB.Core
 {
@@ -93,7 +94,8 @@ namespace ProjectB.Core
         {
             Application.targetFrameRate = 60;
             // На мобилках vSync часто мешает targetFrameRate, поэтому отключаем его
-            QualitySettings.vSyncCount = 0; 
+            QualitySettings.vSyncCount = 0;
+            GameplayShaderWarmup.WarmUpIfNeeded();
         }
 
         private void Start()

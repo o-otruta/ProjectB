@@ -30,6 +30,6 @@ MonoBehaviour:
     maxPassiveAbilities: -1
     noRerolls: 0
     maxRunSeconds: 0
-  rewardType: 1
-  rewardValue: 0
-  rewardId: VitalityRegen
+  rewardType: 3
+  rewardValue: 800
+  rewardId: 

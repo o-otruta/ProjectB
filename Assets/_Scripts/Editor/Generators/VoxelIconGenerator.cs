@@ -645,7 +645,6 @@ namespace ProjectB.EditorScripts
                 "BattleFury" => "battle_fury",
                 "IronSkin" => "iron_skin",
                 "SwiftBoots" => "swift_boots",
-                "VitalityRegen" => "vitality_regen",
                 "ChainLightning" => "chain_lightning",
                 "PoisonAlchemist" => "poison_flask",
                 "GuardianShield" => "guardian_shield",

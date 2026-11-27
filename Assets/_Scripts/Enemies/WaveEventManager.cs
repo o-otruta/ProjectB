@@ -1124,10 +1124,13 @@ namespace ProjectB.Enemies
             {
                 RenderSettings.fog = true;
                 RenderSettings.fogMode = FogMode.Linear;
-                Color baseColor = hasCapturedFogBase && originalFogEnabled ? originalFogColor : lastFogVisualMutator.fogColor;
+                float defaultStart = Mathf.Max(lastFogVisualMutator.fogEndDistance * 2.5f, 45f);
+                float defaultEnd = Mathf.Max(lastFogVisualMutator.fogEndDistance * 3.5f, 75f);
+                bool hasVisibleBaseFog = hasCapturedFogBase && originalFogEnabled && originalFogEndDistance < 200f;
+                Color baseColor = hasVisibleBaseFog ? originalFogColor : lastFogVisualMutator.fogColor;
+                float baseStart = hasVisibleBaseFog ? originalFogStartDistance : defaultStart;
+                float baseEnd = hasVisibleBaseFog ? originalFogEndDistance : defaultEnd;
                 RenderSettings.fogColor = Color.Lerp(baseColor, lastFogVisualMutator.fogColor, fogBlend);
-                float baseStart = hasCapturedFogBase && originalFogEnabled ? originalFogStartDistance : Mathf.Max(lastFogVisualMutator.fogEndDistance * 2.5f, 45f);
-                float baseEnd = hasCapturedFogBase && originalFogEnabled ? originalFogEndDistance : Mathf.Max(lastFogVisualMutator.fogEndDistance * 3.5f, 75f);
                 RenderSettings.fogStartDistance = Mathf.Lerp(baseStart, Mathf.Max(1f, lastFogVisualMutator.fogStartDistance), fogBlend);
                 RenderSettings.fogEndDistance = Mathf.Lerp(baseEnd, Mathf.Max(lastFogVisualMutator.fogStartDistance + 1f, lastFogVisualMutator.fogEndDistance), fogBlend);
             }

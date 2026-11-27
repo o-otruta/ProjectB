@@ -21,18 +21,16 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: FrostWispZoneMat
-  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
+  m_Shader: {fileID: 4800000, guid: 45b6906c6d3a25e4d9389d4a9cb3d74f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _SURFACE_TYPE_TRANSPARENT
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 1
   m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   - DepthOnly
@@ -60,6 +58,8 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _Fade: 1
+    - _PixelSteps: 22
     - _QueueOffset: 0
     - _SampleGI: 0
     - _SrcBlend: 5
@@ -69,6 +69,10 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _BaseColor: {r: 0.4, g: 0.88, b: 1, a: 0.48}
-    - _Color: {r: 0.4, g: 0.88, b: 1, a: 0.48}
+    - _Color: {r: 0.39999998, g: 0.88, b: 1, a: 0.48}
+    - _CoreColor: {r: 0.08, g: 0.22, b: 0.44, a: 0.72}
+    - _CrackColor: {r: 0.56, g: 0.82, b: 0.96, a: 0.78}
+    - _MidColor: {r: 0.18, g: 0.44, b: 0.68, a: 0.62}
+    - _RimColor: {r: 0.76, g: 0.9, b: 0.98, a: 0.9}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
