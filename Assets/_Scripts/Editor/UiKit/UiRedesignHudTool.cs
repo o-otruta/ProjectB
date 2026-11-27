@@ -290,13 +290,19 @@ namespace ProjectB.EditorScripts.UiKit
 
             Transform content = comboHud.Find("Content");
             if (content == null) return;
+            // Combo floats over the arena without a panel; the combo timer is shown by fading the texts.
             if (content.TryGetComponent(out Image bg))
             {
-                bg.enabled = true;
-                bg.sprite = Theme.cardSprite;
-                bg.type = Image.Type.Sliced;
-                bg.material = Theme.surfaceMaterial;
-                bg.color = UiTheme.WithAlpha(Theme.surface, 0.98f);
+                Undo.DestroyObjectImmediate(bg);
+            }
+            CanvasGroup fadeGroup = GetOrAdd<CanvasGroup>(content.gameObject);
+            fadeGroup.interactable = false;
+            fadeGroup.blocksRaycasts = false;
+            if (comboHud.TryGetComponent(out ComboHudUI comboUi))
+            {
+                var so = new SerializedObject(comboUi);
+                so.FindProperty("fadeGroup").objectReferenceValue = fadeGroup;
+                so.ApplyModifiedPropertiesWithoutUndo();
             }
             Transform comboText = content.Find("ComboText");
             if (comboText != null)
@@ -308,7 +314,8 @@ namespace ProjectB.EditorScripts.UiKit
             Transform bonusText = content.Find("BonusText");
             if (bonusText != null)
             {
-                GetOrAdd<ThemedText>(bonusText.gameObject).Configure(UiTextStyle.Micro, 1f);
+                // H2 preset = outlined Rubik, readable over grass without a panel; size stays micro.
+                GetOrAdd<ThemedText>(bonusText.gameObject).Configure(UiTextStyle.H2, 1f, setSize: false);
                 if (bonusText.TryGetComponent(out TMP_Text bonusTmp))
                 {
                     bonusTmp.textWrappingMode = TextWrappingModes.NoWrap;
@@ -322,8 +329,7 @@ namespace ProjectB.EditorScripts.UiKit
             Transform timerBg = content.Find("TimerBarBg");
             if (timerBg != null)
             {
-                Rt(timerBg).anchoredPosition = new Vector2(0f, 24f);
-                Rt(timerBg).sizeDelta = new Vector2(-36f, 20f);
+                Undo.DestroyObjectImmediate(timerBg.gameObject);
             }
         }
 

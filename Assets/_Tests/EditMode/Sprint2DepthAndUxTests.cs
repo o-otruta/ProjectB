@@ -499,7 +499,11 @@ namespace ProjectB.Tests.EditMode
                 Assert.LessOrEqual(bossBar.anchoredPosition.y, -225f, "BossHealthBar must sit cleanly below the HP bar");
                 var combo = safeArea.GetComponentInChildren<ComboHudUI>(true);
                 Assert.IsNotNull(combo);
-                Assert.IsNull(GetPrivateField(combo, "backgroundImage"), "Combo HUD is drawn without a background panel");
+                Transform comboContent = combo.transform.Find("Content");
+                Assert.IsNotNull(comboContent);
+                Assert.IsNull(comboContent.GetComponent<Image>(), "Combo HUD is drawn without a background panel");
+                Assert.IsNull(comboContent.Find("TimerBarBg"), "Combo timer is shown by blinking, not by a bar");
+                Assert.IsNotNull(GetPrivateField(combo, "fadeGroup"), "ComboHudUI.fadeGroup must be wired for the expiry blink");
             }
             finally
             {

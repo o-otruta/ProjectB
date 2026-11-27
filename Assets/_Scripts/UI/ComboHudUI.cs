@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 using VContainer;
 using ProjectB.Core;
@@ -23,11 +22,20 @@ namespace ProjectB.UI
         [SerializeField] private GameObject rootContainer;
         [SerializeField] private TextMeshProUGUI comboText;
         [SerializeField] private TextMeshProUGUI bonusText;
-        [SerializeField] private Image timerFillImage;
-        [SerializeField] private Image backgroundImage;
+
+        [Header("Expiry blink (replaces the timer bar)")]
+        [Tooltip("Fades the combo texts; the combo timer is shown by blinking instead of a bar.")]
+        [SerializeField] private CanvasGroup fadeGroup;
+        [Tooltip("Remaining combo time (0..1) below which the counter starts blinking.")]
+        [SerializeField, Range(0.05f, 1f)] private float blinkStartThreshold = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float blinkMinAlpha = 0.3f;
+        [Tooltip("Blink rate (Hz) when blinking starts and right before the combo expires.")]
+        [SerializeField, Min(0.1f)] private float blinkRateStart = 1.5f;
+        [SerializeField, Min(0.1f)] private float blinkRateEnd = 4f;
 
         private RunComboTracker comboTracker;
         private bool isSubscribed;
+        private float blinkPhase;
         private float punchScale = 1f;
         private int lastDisplayedCombo = -1;
         private int lastDisplayedTier = -1;
@@ -141,10 +149,7 @@ namespace ProjectB.UI
         {
             if (comboTracker == null || rootContainer == null || !rootContainer.activeSelf) return;
 
-            if (timerFillImage != null)
-            {
-                timerFillImage.fillAmount = comboTracker.NormalizedRemainingTime;
-            }
+            UpdateExpiryBlink(comboTracker.NormalizedRemainingTime);
 
             if (punchScale > 1.001f)
             {
@@ -156,6 +161,25 @@ namespace ProjectB.UI
                 punchScale = 1f;
                 rootContainer.transform.localScale = Vector3.one;
             }
+        }
+
+        private void UpdateExpiryBlink(float remaining)
+        {
+            if (fadeGroup == null) return;
+
+            if (remaining >= blinkStartThreshold)
+            {
+                blinkPhase = 0f;
+                if (fadeGroup.alpha != 1f) fadeGroup.alpha = 1f;
+                return;
+            }
+
+            // Scaled time: the blink freezes with the combo timer on pause / level-up.
+            float urgency = 1f - Mathf.Clamp01(remaining / blinkStartThreshold);
+            float rate = Mathf.Lerp(blinkRateStart, blinkRateEnd, urgency);
+            blinkPhase = Mathf.Repeat(blinkPhase + Time.deltaTime * rate, 1f);
+            float wave = 0.5f + 0.5f * Mathf.Cos(blinkPhase * 2f * Mathf.PI);
+            fadeGroup.alpha = Mathf.Lerp(blinkMinAlpha, 1f, wave);
         }
 
         public void RefreshDisplay()
@@ -204,23 +228,10 @@ namespace ProjectB.UI
             }
             if (bonusText != null)
             {
-                bonusText.color = UiTheme.Current.textSecondary;
+                bonusText.color = UiTheme.Current.textPrimary;
             }
 
-            if (timerFillImage != null)
-            {
-                timerFillImage.fillAmount = comboTracker.NormalizedRemainingTime;
-                timerFillImage.color = tierColor;
-            }
-
-            if (backgroundImage != null)
-            {
-                backgroundImage.enabled = true;
-                UiTheme theme = UiTheme.Current;
-                backgroundImage.color = tier > 0
-                    ? UiTheme.WithAlpha(theme.surfaceRaised, 0.96f)
-                    : UiTheme.WithAlpha(theme.surface, 0.96f);
-            }
+            UpdateExpiryBlink(comboTracker.NormalizedRemainingTime);
         }
 
         private static Color GetTierColor(int tier)
