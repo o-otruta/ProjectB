@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using ProjectB.Abilities;
 using ProjectB.Core;
 using ProjectB.Data;
 using ProjectB.Meta;
@@ -23,6 +24,7 @@ namespace ProjectB.UI
         [SerializeField] private Image rewardIcon;
         [Tooltip("Whole card: opens the Achievements tab focused on the goal achievement.")]
         [SerializeField] private Button cardButton;
+        [SerializeField] private AbilityCatalog abilityCatalog;
 
         private SaveManager saveManager;
         private AchievementManager achievementManager;
@@ -124,11 +126,11 @@ namespace ProjectB.UI
             if (rewardText != null)
             {
                 rewardText.text = Loc.Format("ui.play.next_reward", target,
-                    $"<color=#{ColorUtility.ToHtmlStringRGB(UiTheme.Current.gold)}>{RewardDisplayFormatter.FormatRewardShort(goal)}</color>");
+                    $"<color=#{ColorUtility.ToHtmlStringRGB(UiTheme.Current.gold)}>{RewardDisplayFormatter.FormatRewardShort(goal, abilityCatalog)}</color>");
             }
             if (rewardIcon != null)
             {
-                Sprite icon = RewardDisplayFormatter.ResolveRewardIcon(goal);
+                Sprite icon = RewardDisplayFormatter.ResolveRewardIcon(goal, abilityCatalog);
                 rewardIcon.sprite = icon;
                 rewardIcon.enabled = icon != null;
             }
@@ -157,13 +159,14 @@ namespace ProjectB.UI
         }
 
 #if UNITY_EDITOR
-        public void EditorSetup(TMP_Text best, Image fill, TMP_Text reward, Image icon, Button button)
+        public void EditorSetup(TMP_Text best, Image fill, TMP_Text reward, Image icon, Button button, AbilityCatalog catalog = null)
         {
             bestValueText = best;
             progressFill = fill;
             rewardText = reward;
             rewardIcon = icon;
             cardButton = button;
+            if (catalog != null) abilityCatalog = catalog;
         }
 #endif
     }

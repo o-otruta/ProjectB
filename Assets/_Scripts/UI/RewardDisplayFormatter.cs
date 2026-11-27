@@ -3,17 +3,19 @@ using UnityEngine;
 using ProjectB.Abilities;
 using ProjectB.Core;
 using ProjectB.Data;
+using ProjectB.LevelUp;
 
 namespace ProjectB.UI
 {
     public static class RewardDisplayFormatter
     {
         private static AbilityCatalog cachedAbilityCatalog;
+        private static CardCatalog cachedCardCatalog;
         private static HeroCatalog cachedHeroCatalog;
 
-        public static string ResolveAbilityName(string abilityId, AbilityCatalog abilityCatalog = null)
+        private static AbilityData FindAbility(string abilityId, AbilityCatalog abilityCatalog)
         {
-            if (string.IsNullOrEmpty(abilityId)) return string.Empty;
+            if (string.IsNullOrEmpty(abilityId)) return null;
 
             AbilityCatalog catalog = abilityCatalog != null ? abilityCatalog : GetAbilityCatalog();
             if (catalog != null && catalog.abilities != null)
@@ -23,10 +25,37 @@ namespace ProjectB.UI
                     AbilityData ab = catalog.abilities[i];
                     if (ab != null && ab.id == abilityId)
                     {
-                        string resolved = Loc.Name(ab);
-                        return !string.IsNullOrEmpty(resolved) ? resolved : HumanizeIdentifier(abilityId);
+                        return ab;
                     }
                 }
+            }
+
+            CardCatalog cardCatalog = GetCardCatalog();
+            if (cardCatalog != null && cardCatalog.cards != null)
+            {
+                for (int i = 0; i < cardCatalog.cards.Count; i++)
+                {
+                    if (cardCatalog.cards[i] is AbilityCardData ac
+                        && ac.abilityData != null
+                        && ac.abilityData.id == abilityId)
+                    {
+                        return ac.abilityData;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static string ResolveAbilityName(string abilityId, AbilityCatalog abilityCatalog = null)
+        {
+            if (string.IsNullOrEmpty(abilityId)) return string.Empty;
+
+            AbilityData ab = FindAbility(abilityId, abilityCatalog);
+            if (ab != null)
+            {
+                string resolved = Loc.Name(ab);
+                return !string.IsNullOrEmpty(resolved) ? resolved : HumanizeIdentifier(abilityId);
             }
 
             return abilityId switch
@@ -95,16 +124,8 @@ namespace ProjectB.UI
                     return theme.iconShard != null ? theme.iconShard : theme.iconStar;
                 case AchievementRewardType.UnlockAbility:
                 {
-                    AbilityCatalog catalog = abilityCatalog != null ? abilityCatalog : GetAbilityCatalog();
-                    if (catalog != null && catalog.abilities != null)
-                    {
-                        for (int i = 0; i < catalog.abilities.Count; i++)
-                        {
-                            AbilityData ab = catalog.abilities[i];
-                            if (ab != null && ab.id == ach.rewardId) return ab.icon;
-                        }
-                    }
-                    return theme.iconStar;
+                    AbilityData ab = FindAbility(ach.rewardId, abilityCatalog);
+                    return ab != null && ab.icon != null ? ab.icon : theme.iconStar;
                 }
                 case AchievementRewardType.UnlockHero:
                 {
@@ -193,6 +214,15 @@ namespace ProjectB.UI
                 cachedAbilityCatalog = Resources.Load<AbilityCatalog>("AbilityCatalog");
             }
             return cachedAbilityCatalog;
+        }
+
+        private static CardCatalog GetCardCatalog()
+        {
+            if (cachedCardCatalog == null)
+            {
+                cachedCardCatalog = Resources.Load<CardCatalog>(CardCatalog.DEFAULT_RESOURCE_PATH);
+            }
+            return cachedCardCatalog;
         }
 
         private static HeroCatalog GetHeroCatalog()
