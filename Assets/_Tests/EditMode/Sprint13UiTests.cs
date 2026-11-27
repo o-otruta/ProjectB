@@ -264,7 +264,7 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(tabBar, "MainMenu needs a TabBarUI");
                 Assert.AreEqual(5, tabBar.TabCount);
 
-                var expected = new[] { theme.tabUpgrades, theme.tabAbilities, theme.tabPlay, theme.tabAchievements, theme.tabBonus };
+                var expected = new[] { theme.tabUpgrades, theme.tabConstellations, theme.tabPlay, theme.tabAbilities, theme.tabAchievements };
                 var tabs = (BottomTabUI[])GetPrivate(tabBar, "tabs");
                 for (int i = 0; i < tabs.Length; i++)
                 {
@@ -295,9 +295,9 @@ namespace ProjectB.Tests.EditMode
             Assert.AreEqual(0, cam.cullingMask, "camera renders nothing behind opaque screens");
             Assert.IsFalse(hero.activeSelf, "rotating preview hero is deactivated");
 
-            menu.OnAchievementsClicked();
+            menu.OnConstellationClicked();
             Assert.IsFalse(menu.IsHeroPreviewActive);
-            menu.OnBonusClicked();
+            menu.OnAchievementsClicked();
             Assert.IsFalse(menu.IsHeroPreviewActive);
             menu.OnAbilitiesClicked();
             Assert.IsFalse(menu.IsHeroPreviewActive);
@@ -306,6 +306,11 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(menu.IsHeroPreviewActive);
             Assert.AreEqual(originalMask, cam.cullingMask);
             Assert.IsTrue(hero.activeSelf);
+
+            // Daily Bonus is a modal popup: opening it on Play keeps Play tab and hero preview state intact.
+            menu.OnBonusClicked();
+            Assert.AreEqual(MainMenuUI.TAB_PLAY, menu.SelectedTab);
+            Assert.IsTrue(menu.IsHeroPreviewActive);
 
             WithScene(MainMenuPath, scene =>
             {
@@ -316,7 +321,7 @@ namespace ProjectB.Tests.EditMode
                 Assert.IsNotNull(GetPrivate(sceneMenu, "shardsLabel"), "header Boss Shard pill (shards visible everywhere)");
 
                 // Every non-Play screen is opaque.
-                foreach (string name in new[] { "UpgradesPanel", "AbilitiesPanel", "AchievementsPanel", "DailyBonusScreenPanel" })
+                foreach (string name in new[] { "UpgradesPanel", "ConstellationPanel", "AbilitiesPanel", "AchievementsPanel" })
                 {
                     GameObject panel = null;
                     foreach (RectTransform rt in FindInScene<RectTransform>(scene)) if (rt.name == name) panel = rt.gameObject;

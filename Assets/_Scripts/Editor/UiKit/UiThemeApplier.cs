@@ -124,6 +124,7 @@ namespace ProjectB.EditorScripts.UiKit
             theme.iconGlobe = UiKitGenerator.LoadIcon("globe");
 
             theme.tabUpgrades = UiKitGenerator.LoadIcon("tab_upgrades");
+            theme.tabConstellations = UiKitGenerator.LoadIcon("tab_constellations");
             theme.tabAbilities = UiKitGenerator.LoadIcon("tab_abilities");
             theme.tabPlay = UiKitGenerator.LoadIcon("tab_play");
             theme.tabAchievements = UiKitGenerator.LoadIcon("tab_achievements");

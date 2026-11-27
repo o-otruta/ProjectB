@@ -19,10 +19,10 @@ namespace ProjectB.UI
     public class MainMenuUI : MonoBehaviour
     {
         public const int TAB_UPGRADES = 0;
-        public const int TAB_ABILITIES = 1;
+        public const int TAB_CONSTELLATIONS = 1;
         public const int TAB_PLAY = 2;
-        public const int TAB_ACHIEVEMENTS = 3;
-        public const int TAB_BONUS = 4;
+        public const int TAB_ABILITIES = 3;
+        public const int TAB_ACHIEVEMENTS = 4;
 
         [SerializeField] private TextMeshProUGUI coinsText;
         [SerializeField] private GameObject achievementsBadge;
@@ -40,6 +40,8 @@ namespace ProjectB.UI
         [SerializeField] private CurrencyLabel coinsLabel;
         [SerializeField] private CurrencyLabel shardsLabel;
         [SerializeField] private TabBarUI tabBar;
+        [SerializeField] private Button dailyBonusButton;
+        [SerializeField] private BadgeUI dailyBonusBadge;
         [SerializeField] private Camera previewCamera;
         [SerializeField] private GameObject heroPreviewRoot;
 
@@ -56,6 +58,7 @@ namespace ProjectB.UI
         private LocalizationService localization;
         private GameInputService gameInput;
         private InputModeService inputModeService;
+        private TalentTreeManager talentTreeManager;
         private HeroSelectionUI heroSelectionUI;
         private Action<InputMode> cachedInputModeHandler;
         private Action cachedSettingsClosedHandler;
@@ -77,9 +80,14 @@ namespace ProjectB.UI
             MetaUpgradeManager metaUpgradeManager = null,
             LocalizationService localization = null,
             GameInputService gameInput = null,
-            InputModeService inputModeService = null)
+            InputModeService inputModeService = null,
+            TalentTreeManager talentTreeManager = null)
         {
             UnsubscribeInputMode();
+            if (this.talentTreeManager != null)
+            {
+                this.talentTreeManager.OnTreeChanged -= UpdateBadges;
+            }
             this.saveManager = saveManager;
             this.bonusManager = bonusManager;
             this.achievementManager = achievementManager;
@@ -88,6 +96,7 @@ namespace ProjectB.UI
             this.localization = localization;
             this.gameInput = gameInput;
             this.inputModeService = inputModeService;
+            this.talentTreeManager = talentTreeManager;
 
             if (this.saveManager != null)
             {
@@ -110,6 +119,11 @@ namespace ProjectB.UI
                 this.metaUpgradeManager.OnUpgradePurchased += HandleMetaUpgradePurchased;
             }
 
+            if (this.talentTreeManager != null)
+            {
+                this.talentTreeManager.OnTreeChanged += UpdateBadges;
+            }
+
             if (this.localization != null)
             {
                 this.localization.LanguageChanged += RefreshFtueTexts;
@@ -117,16 +131,21 @@ namespace ProjectB.UI
 
             SubscribeInputMode();
             RefreshFtueTexts();
+            UpdateBadges();
         }
 
         private void Awake()
         {
             if (previewCamera != null) previewCullingMask = previewCamera.cullingMask;
             if (playScreenPanel != null) heroSelectionUI = playScreenPanel.GetComponentInChildren<HeroSelectionUI>(true);
+            cachedSettingsClosedHandler ??= FocusCurrentTab;
             if (settingsPopupUI != null)
             {
-                cachedSettingsClosedHandler ??= FocusCurrentTab;
                 settingsPopupUI.OnClosed += cachedSettingsClosedHandler;
+            }
+            if (dailyBonusScreenUI != null)
+            {
+                dailyBonusScreenUI.OnClosed += cachedSettingsClosedHandler;
             }
         }
 
@@ -155,6 +174,12 @@ namespace ProjectB.UI
                 return;
             }
 
+            if (dailyBonusScreenUI != null && dailyBonusScreenUI.IsOpen)
+            {
+                dailyBonusScreenUI.Hide();
+                return;
+            }
+
             if (achievementScreenUI != null && achievementScreenUI.IsRewardPopupOpen)
             {
                 achievementScreenUI.HideRewardPopup();
@@ -162,16 +187,9 @@ namespace ProjectB.UI
                 return;
             }
 
-            if (constellationTreeUI != null && constellationTreeUI.IsOpen)
+            if (constellationTreeUI != null && constellationTreeUI.IsOpen && constellationTreeUI.IsDetailOpen)
             {
-                if (constellationTreeUI.IsDetailOpen)
-                {
-                    constellationTreeUI.CloseDetail();
-                }
-                else
-                {
-                    constellationTreeUI.HandleBack();
-                }
+                constellationTreeUI.CloseDetail();
                 return;
             }
 
@@ -188,6 +206,10 @@ namespace ProjectB.UI
             {
                 settingsPopupUI.OnClosed -= cachedSettingsClosedHandler;
             }
+            if (dailyBonusScreenUI != null && cachedSettingsClosedHandler != null)
+            {
+                dailyBonusScreenUI.OnClosed -= cachedSettingsClosedHandler;
+            }
             if (saveManager != null)
             {
                 saveManager.OnDataChanged -= UpdateCoinsDisplay;
@@ -203,6 +225,10 @@ namespace ProjectB.UI
             if (metaUpgradeManager != null)
             {
                 metaUpgradeManager.OnUpgradePurchased -= HandleMetaUpgradePurchased;
+            }
+            if (talentTreeManager != null)
+            {
+                talentTreeManager.OnTreeChanged -= UpdateBadges;
             }
             if (localization != null)
             {
@@ -259,21 +285,27 @@ namespace ProjectB.UI
         private void UpdateBadges()
         {
             int newAchievements = achievementManager != null ? achievementManager.unlockedThisRun.Count : 0;
+            int affordableStars = talentTreeManager != null ? talentTreeManager.GetAffordableWithShardsCount() : 0;
             bool bonusAvailable = bonusManager != null && bonusManager.IsRewardAvailable();
             isFtueUpgradesHintActive = ShouldShowFtueUpgradesHint();
 
             RefreshFtueHintVisuals();
 
+            if (dailyBonusBadge != null)
+            {
+                dailyBonusBadge.SetDot(bonusAvailable);
+            }
+
             if (tabBar != null)
             {
                 tabBar.SetBadgeDot(TAB_UPGRADES, isFtueUpgradesHintActive);
+                tabBar.SetBadge(TAB_CONSTELLATIONS, affordableStars);
                 tabBar.SetBadge(TAB_ACHIEVEMENTS, newAchievements);
-                tabBar.SetBadgeDot(TAB_BONUS, bonusAvailable);
                 return;
             }
 
             if (achievementsBadge != null) achievementsBadge.SetActive(newAchievements > 0);
-            if (bonusBadge != null) bonusBadge.SetActive(bonusAvailable);
+            if (dailyBonusBadge == null && bonusBadge != null) bonusBadge.SetActive(bonusAvailable);
         }
 
         private void RefreshFtueHintVisuals()
@@ -315,18 +347,23 @@ namespace ProjectB.UI
             if (achievementScreenUI != null) achievementScreenUI.Hide();
             if (abilitiesScreenUI != null) abilitiesScreenUI.Hide();
             if (metaUpgradeUI != null) metaUpgradeUI.Hide();
-            if (dailyBonusScreenUI != null) dailyBonusScreenUI.gameObject.SetActive(false);
+            if (dailyBonusScreenUI != null && dailyBonusScreenUI.IsOpen) dailyBonusScreenUI.Hide();
             if (playScreenPanel != null) playScreenPanel.SetActive(false);
             if (constellationTreeUI != null) constellationTreeUI.Hide();
             SetHeroPreviewActive(false);
         }
 
-        /// <summary>Opens the Radial Constellation Tree (from the Upgrades tab).</summary>
+        /// <summary>Opens the Radial Constellation Tree tab.</summary>
         public void OnConstellationClicked()
         {
-            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            OpenConstellationTab(playSound: true);
+        }
+
+        private void OpenConstellationTab(bool playSound)
+        {
+            if (playSound) audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             CloseAllPanels();
-            SelectTab(TAB_UPGRADES);
+            SelectTab(TAB_CONSTELLATIONS);
             if (constellationTreeUI != null)
             {
                 constellationTreeUI.SetMainMenu(this);
@@ -335,6 +372,17 @@ namespace ProjectB.UI
             else
             {
                 Debug.LogWarning("[MainMenuUI] ConstellationTreeUI reference is missing!");
+            }
+            FocusCurrentTab();
+        }
+
+        /// <summary>Switches to the Constellations tab and focuses a specific star node.</summary>
+        public void OpenConstellationNode(string nodeId)
+        {
+            OpenConstellationTab(playSound: false);
+            if (constellationTreeUI != null && !string.IsNullOrEmpty(nodeId))
+            {
+                constellationTreeUI.FocusNode(nodeId, playSound: false);
             }
         }
 
@@ -447,13 +495,14 @@ namespace ProjectB.UI
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             DevLog.Log("[MainMenuUI] Bonus clicked");
-            CloseAllPanels();
-            SelectTab(TAB_BONUS);
             if (dailyBonusScreenUI != null)
             {
-                dailyBonusScreenUI.gameObject.SetActive(true);
+                dailyBonusScreenUI.Show();
             }
-            FocusCurrentTab();
+            else
+            {
+                Debug.LogWarning("[MainMenuUI] DailyBonusScreenUI reference is missing!");
+            }
         }
 
         private void SubscribeInputMode()
@@ -487,7 +536,7 @@ namespace ProjectB.UI
         public void FocusCurrentTab()
         {
             if (settingsPopupUI != null && settingsPopupUI.IsOpen) return;
-            if (constellationTreeUI != null && constellationTreeUI.IsOpen) return;
+            if (dailyBonusScreenUI != null && dailyBonusScreenUI.IsOpen) return;
 
             Selectable target = null;
             switch (selectedTab)
@@ -502,14 +551,14 @@ namespace ProjectB.UI
                 case TAB_UPGRADES:
                     target = metaUpgradeUI != null ? metaUpgradeUI.GetFirstSelectable() : null;
                     break;
+                case TAB_CONSTELLATIONS:
+                    target = constellationTreeUI != null ? constellationTreeUI.GetFirstSelectable() : null;
+                    break;
                 case TAB_ABILITIES:
                     target = abilitiesScreenUI != null ? abilitiesScreenUI.GetFirstSelectable() : null;
                     break;
                 case TAB_ACHIEVEMENTS:
                     target = achievementScreenUI != null ? achievementScreenUI.GetFirstSelectable() : null;
-                    break;
-                case TAB_BONUS:
-                    target = dailyBonusScreenUI != null ? dailyBonusScreenUI.GetFirstSelectable() : null;
                     break;
             }
 

@@ -242,6 +242,17 @@ namespace ProjectB.EditorScripts.UiKit
                 p.Rect(15, 12, 16, 21, ND);
                 p.Star(19.4f, 18.2f, 3.6f, 1.5f, Y);
             });
+            yield return Tab("tab_constellations", p =>
+            {
+                p.Line(12, 12, 12, 4, 2f, YD);
+                p.Line(12, 12, 5, 18, 2f, YD);
+                p.Line(12, 12, 19, 18, 2f, YD);
+                p.Star(12, 4, 3.6f, 1.5f, Y);
+                p.Star(5, 18, 3.4f, 1.4f, Y);
+                p.Star(19, 18, 3.4f, 1.4f, Y);
+                p.Poly(C, V2(12, 7.5f), V2(15.5f, 12), V2(12, 16.5f), V2(8.5f, 12));
+                p.Poly(CL, V2(12, 7.5f), V2(12, 12), V2(8.5f, 12));
+            });
             yield return Tab("tab_abilities", p =>
             {
                 p.Rect(5, 19, 20, 21, Wd);

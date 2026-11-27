@@ -51,6 +51,8 @@ namespace ProjectB.UI
         private AchievementManager achievementManager;
         private AbilitySlotService abilitySlotService;
         private ISynergyUnlockProvider synergyUnlockProvider;
+        private MainMenuUI mainMenu;
+        private Action<string> cachedSynergyClickHandler;
 
         private readonly PanelCanvasVisibility panelVisibility = new PanelCanvasVisibility();
         private readonly List<AbilityCollectionItemUI>[] categoryItems =
@@ -108,13 +110,15 @@ namespace ProjectB.UI
             SaveManager saveManager,
             AchievementManager achievementManager = null,
             AbilitySlotService abilitySlotService = null,
-            ISynergyUnlockProvider synergyUnlockProvider = null)
+            ISynergyUnlockProvider synergyUnlockProvider = null,
+            MainMenuUI mainMenu = null)
         {
             bool achChanged = !ReferenceEquals(this.achievementManager, achievementManager);
             this.saveManager = saveManager;
             this.achievementManager = achievementManager;
             this.abilitySlotService = abilitySlotService;
             this.synergyUnlockProvider = synergyUnlockProvider;
+            this.mainMenu = mainMenu;
 
             if (achChanged)
             {
@@ -598,6 +602,8 @@ namespace ProjectB.UI
         {
             int index = pool.Count;
             var item = Instantiate(itemPrefab, contentContainer);
+            cachedSynergyClickHandler ??= HandleSynergyClicked;
+            item.SetSynergyClickHandler(cachedSynergyClickHandler);
             BindItem(targetFilter, index, item);
             pool.Add(item);
         }
@@ -679,7 +685,8 @@ namespace ProjectB.UI
                     leftIcon = selfIcon,
                     rightIcon = FindAbilityIcon(partnerId),
                     name = Loc.Name(syn),
-                    unlocked = unlocked
+                    unlocked = unlocked,
+                    synergyId = syn.id
                 });
             }
         }
@@ -693,8 +700,17 @@ namespace ProjectB.UI
                 leftIcon = FindAbilityIcon(a),
                 rightIcon = FindAbilityIcon(b),
                 name = Loc.Name(syn),
-                unlocked = unlocked
+                unlocked = unlocked,
+                synergyId = syn.id
             };
+        }
+
+        private void HandleSynergyClicked(string synergyId)
+        {
+            if (mainMenu == null || string.IsNullOrEmpty(synergyId)) return;
+            UiAudio.Click();
+            TalentNodeData node = (synergyUnlockProvider as TalentTreeManager)?.FindSynergyNode(synergyId);
+            mainMenu.OpenConstellationNode(node != null ? node.id : null);
         }
 
         private Sprite FindAbilityIcon(string abilityId)

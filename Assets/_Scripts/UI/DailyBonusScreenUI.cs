@@ -12,12 +12,16 @@ using ProjectB.Data.Meta;
 namespace ProjectB.UI
 {
     /// <summary>
-    /// Daily Bonus tab. Sprint 13.2: big title, "Cycle 2 · ×1.2" caption and a countdown to the next reward,
-    /// 4 + 3 grid with a wide Day-7 chest cell, collected / today (glow + pulse) / future states,
-    /// Claim (Primary) and ▶ x2 (Ad) buttons. The header coin pill counts up on claim.
+    /// Daily Bonus modal popup. 4 + 3 grid (Portrait) / 7-day row (Landscape) with a wide Day-7 chest cell,
+    /// collected / today (glow + pulse) / future states, Claim (Primary) and ▶ x2 (Ad) buttons.
     /// </summary>
     public class DailyBonusScreenUI : MonoBehaviour
     {
+        [Header("Popup Shell")]
+        [SerializeField] private GameObject popupPanel;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private Button backgroundButton;
+
         [SerializeField] private DailyBonusItemUI[] dayItems = new DailyBonusItemUI[7];
         [SerializeField] private Button claimButton;
         [SerializeField] private Button claimDoubleButton;
@@ -29,6 +33,7 @@ namespace ProjectB.UI
 
         private DailyBonusManager bonusManager;
         private AdManager adManager;
+        private InputModeService inputModeService;
         private readonly char[] timerBuffer = new char[64];
         private int lastTimerSeconds = -1;
         private string cachedNextRewardPrefix = "Next reward in ";
@@ -36,6 +41,10 @@ namespace ProjectB.UI
         private string cachedMinuteSuffix = "m";
         private string cachedSecondSuffix = "s";
         private Action cachedLanguageChanged;
+        private bool buttonsWired;
+
+        public bool IsOpen => popupPanel != null ? popupPanel.activeSelf : gameObject.activeSelf;
+        public event Action OnClosed;
 
         public Selectable GetFirstSelectable()
         {
@@ -47,14 +56,29 @@ namespace ProjectB.UI
             {
                 return claimDoubleButton;
             }
-            return UiFocusHelper.FindFirstInteractable(transform);
+            if (closeButton != null && closeButton.gameObject.activeInHierarchy && closeButton.interactable)
+            {
+                return closeButton;
+            }
+            Transform root = popupPanel != null ? popupPanel.transform : transform;
+            return UiFocusHelper.FindFirstInteractable(root);
         }
 
         [Inject]
-        public void Construct(DailyBonusManager bonusManager, AdManager adManager = null)
+        public void Construct(DailyBonusManager bonusManager, AdManager adManager = null, InputModeService inputModeService = null)
         {
+            if (this.bonusManager != null)
+            {
+                this.bonusManager.OnBonusStateChanged -= RefreshUI;
+            }
+            if (this.adManager != null)
+            {
+                this.adManager.OnAdStateChanged -= RefreshUI;
+            }
+
             this.bonusManager = bonusManager;
             this.adManager = adManager;
+            this.inputModeService = inputModeService;
 
             if (this.bonusManager != null)
             {
@@ -64,6 +88,22 @@ namespace ProjectB.UI
             {
                 this.adManager.OnAdStateChanged += RefreshUI;
             }
+        }
+
+        private void Awake()
+        {
+            WireButtons();
+            if (popupPanel != null) popupPanel.SetActive(false);
+        }
+
+        private void WireButtons()
+        {
+            if (buttonsWired) return;
+            buttonsWired = true;
+            if (claimButton != null) claimButton.onClick.AddListener(OnClaimClicked);
+            if (claimDoubleButton != null) claimDoubleButton.onClick.AddListener(OnClaimDoubleClicked);
+            if (closeButton != null) closeButton.onClick.AddListener(Hide);
+            if (backgroundButton != null) backgroundButton.onClick.AddListener(Hide);
         }
 
         private void OnEnable()
@@ -112,17 +152,38 @@ namespace ProjectB.UI
             {
                 adManager.OnAdStateChanged -= RefreshUI;
             }
+            if (buttonsWired)
+            {
+                if (claimButton != null) claimButton.onClick.RemoveListener(OnClaimClicked);
+                if (claimDoubleButton != null) claimDoubleButton.onClick.RemoveListener(OnClaimDoubleClicked);
+                if (closeButton != null) closeButton.onClick.RemoveListener(Hide);
+                if (backgroundButton != null) backgroundButton.onClick.RemoveListener(Hide);
+            }
         }
 
-        private void Start()
+        public void Show()
         {
-            if (claimButton != null) claimButton.onClick.AddListener(OnClaimClicked);
-            if (claimDoubleButton != null) claimDoubleButton.onClick.AddListener(OnClaimDoubleClicked);
+            WireButtons();
+            if (popupPanel != null) popupPanel.SetActive(true);
+            else if (!gameObject.activeSelf) gameObject.SetActive(true);
+
+            RefreshLocalizedTimerUnits();
+            lastTimerSeconds = -1;
+            if (bonusManager != null) RefreshUI();
+            UiFocusHelper.SetFirstSelected(GetFirstSelectable(), inputModeService);
+        }
+
+        public void Hide()
+        {
+            UiAudio.Click();
+            if (popupPanel != null) popupPanel.SetActive(false);
+            else if (gameObject.activeSelf) gameObject.SetActive(false);
+            OnClosed?.Invoke();
         }
 
         private void Update()
         {
-            if (timerText == null || bonusManager == null) return;
+            if (!IsOpen || timerText == null || bonusManager == null) return;
             int seconds = SecondsUntilNextReward(DateTime.UtcNow);
             if (seconds == lastTimerSeconds) return;
             lastTimerSeconds = seconds;

@@ -11,8 +11,7 @@ using ProjectB.Data;
 namespace ProjectB.UI
 {
     /// <summary>
-    /// Upgrades tab. Sprint 13.2: a wide Constellation banner (starfield + Boss Shard counter) above the list
-    /// replaces the clipped STARS button; rows refresh whenever the coin balance changes.
+    /// Upgrades tab. Permanent coin-based meta-upgrades list; rows refresh whenever the coin balance changes.
     /// </summary>
     public class MetaUpgradeUI : MonoBehaviour
     {
@@ -21,14 +20,8 @@ namespace ProjectB.UI
         [SerializeField] private Transform itemsContainer;
         [SerializeField] private UpgradeItemUI itemPrefab;
 
-        [Header("Sprint 13: Constellation banner")]
-        [SerializeField] private Button constellationBanner;
-        [SerializeField] private TMP_Text bannerShardsText;
-        [SerializeField] private TMP_Text bannerProgressText;
-
         private MetaUpgradeManager upgradeManager;
         private SaveManager saveManager;
-        private TalentTreeManager talentTreeManager;
         private readonly List<UpgradeItemUI> spawnedItems = new List<UpgradeItemUI>();
         private Action cachedLanguageChanged;
 
@@ -48,11 +41,10 @@ namespace ProjectB.UI
         }
 
         [Inject]
-        public void Construct(MetaUpgradeManager upgradeManager, SaveManager saveManager = null, TalentTreeManager talentTreeManager = null)
+        public void Construct(MetaUpgradeManager upgradeManager, SaveManager saveManager = null)
         {
             this.upgradeManager = upgradeManager;
             this.saveManager = saveManager;
-            this.talentTreeManager = talentTreeManager;
 
             if (this.upgradeManager != null)
             {
@@ -133,10 +125,6 @@ namespace ProjectB.UI
 
         public Selectable GetFirstSelectable()
         {
-            if (constellationBanner != null && constellationBanner.gameObject.activeInHierarchy && constellationBanner.interactable)
-            {
-                return constellationBanner;
-            }
             for (int i = 0; i < spawnedItems.Count; i++)
             {
                 if (spawnedItems[i] != null && spawnedItems[i].BuyButton != null &&
@@ -156,19 +144,6 @@ namespace ProjectB.UI
                 {
                     item.Refresh();
                 }
-            }
-            RefreshBanner();
-        }
-
-        private void RefreshBanner()
-        {
-            if (bannerShardsText != null && saveManager != null && saveManager.Data != null)
-            {
-                bannerShardsText.text = UiFormat.Grouped(saveManager.Data.bossShards);
-            }
-            if (bannerProgressText != null && talentTreeManager != null)
-            {
-                bannerProgressText.text = Loc.Format("ui.constellation.stars_lit_short", talentTreeManager.UnlockedCount, Mathf.Max(0, talentTreeManager.Nodes.Count - 1));
             }
         }
     }

@@ -138,6 +138,7 @@ MonoBehaviour:
   iconSound: {fileID: 21300000, guid: 3060d09181831404da05bb601f75048c, type: 3}
   iconGlobe: {fileID: 21300000, guid: e7cf5aa1b97c6ae44a70bc17fdd43ec7, type: 3}
   tabUpgrades: {fileID: 21300000, guid: 8b095efb74f8d8c45bc5042f7b23a7e2, type: 3}
+  tabConstellations: {fileID: 21300000, guid: 1b465fb1c469b154c849448a1585bf07, type: 3}
   tabAbilities: {fileID: 21300000, guid: b3fafe48dd0f37a43a7e719219e49851, type: 3}
   tabPlay: {fileID: 21300000, guid: 345689560a27ba445ad4e628334033cb, type: 3}
   tabAchievements: {fileID: 21300000, guid: 405d88c7b0ee3054991b3205e1be9d5f, type: 3}

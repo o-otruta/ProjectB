@@ -38,6 +38,7 @@ namespace ProjectB.Meta
         private readonly AbilitySlotService slotService;
         private readonly TalentTreeData treeData;
         private readonly Dictionary<string, TalentNodeData> nodesById = new Dictionary<string, TalentNodeData>(StringComparer.Ordinal);
+        private readonly List<TalentNodeData> orderedNodes = new List<TalentNodeData>();
         private readonly HashSet<string> gatedSynergyIds = new HashSet<string>(StringComparer.Ordinal);
         private readonly float[] effectTotals;
         private bool effectsDirty = true;
@@ -71,6 +72,7 @@ namespace ProjectB.Meta
                     TalentNodeData node = treeData.nodes[i];
                     if (node == null || string.IsNullOrEmpty(node.id) || nodesById.ContainsKey(node.id)) continue;
                     nodesById.Add(node.id, node);
+                    orderedNodes.Add(node);
                     if (node.nodeType == TalentNodeType.Synergy && !string.IsNullOrEmpty(node.synergyId))
                     {
                         gatedSynergyIds.Add(node.synergyId);
@@ -141,6 +143,25 @@ namespace ProjectB.Meta
         }
 
         public TalentNodeState GetState(string id) => GetState(GetNode(id));
+
+        /// <summary>
+        /// Number of connected, non-unlocked stars currently affordable with Boss Shards
+        /// (excludes coin-only buys so the tab badge reflects shard progression without coin spam).
+        /// </summary>
+        public int GetAffordableWithShardsCount()
+        {
+            int count = 0;
+            for (int i = 0; i < orderedNodes.Count; i++)
+            {
+                TalentNodeData node = orderedNodes[i];
+                if (node == null || string.IsNullOrEmpty(node.id)) continue;
+                if (CanUnlock(node.id, payWithCoins: false) == TalentUnlockResult.Success)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
 
         public TalentUnlockResult CanUnlock(string id, bool payWithCoins = false)
         {

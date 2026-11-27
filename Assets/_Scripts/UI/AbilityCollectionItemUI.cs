@@ -22,12 +22,14 @@ namespace ProjectB.UI
             public Sprite rightIcon;
             public string name;
             public bool unlocked;
+            public string synergyId;
         }
 
         private sealed class ChipView
         {
             public GameObject root;
             public Image background;
+            public Button button;
             public Image leftIcon;
             public Image rightIcon;
             public TMP_Text label;
@@ -36,6 +38,7 @@ namespace ProjectB.UI
             public Sprite lastRightIcon;
             public string lastName;
             public bool lastUnlocked;
+            public string lastSynergyId;
         }
 
         private enum BoundKind : byte
@@ -72,8 +75,19 @@ namespace ProjectB.UI
         private string boundComboPairLabel;
         private SystemLanguage boundLanguage;
         private bool boundSupportsChips;
+        private Action<string> onSynergyClicked;
+        private Button cardButton;
 
         public bool SupportsSynergyChips => synergyChipsContainer != null && synergyChipTemplate != null;
+
+        public void SetSynergyClickHandler(Action<string> handler)
+        {
+            onSynergyClicked = handler;
+            if (cardButton != null)
+            {
+                cardButton.interactable = boundKind == BoundKind.Synergy && boundSynergy != null && onSynergyClicked != null;
+            }
+        }
 
         public void Setup(AbilityData data, bool isUnlocked, string unlockRequirementText, string synergyHint = null)
         {
@@ -101,6 +115,7 @@ namespace ProjectB.UI
             boundComboPairLabel = null;
             boundLanguage = currentLanguage;
             boundSupportsChips = supportsChips;
+            if (cardButton != null) cardButton.interactable = false;
 
             UiTheme theme = UiTheme.Current;
             Color rarityColor = theme.GetRarityColor(data.rarity);
@@ -208,6 +223,19 @@ namespace ProjectB.UI
             boundLanguage = currentLanguage;
             boundSupportsChips = supportsChips;
 
+            if (cardButton == null)
+            {
+                cardButton = GetComponent<Button>();
+                if (cardButton == null)
+                {
+                    cardButton = gameObject.AddComponent<Button>();
+                    cardButton.transition = Selectable.Transition.None;
+                    if (cardBackground != null) cardButton.targetGraphic = cardBackground;
+                }
+                cardButton.onClick.AddListener(HandleCardClicked);
+            }
+            cardButton.interactable = onSynergyClicked != null;
+
             UiTheme theme = UiTheme.Current;
             Color accentColor = theme.shard;
 
@@ -288,14 +316,33 @@ namespace ProjectB.UI
             {
                 GameObject instance = Instantiate(synergyChipTemplate, synergyChipsContainer);
                 Transform t = instance.transform;
-                chipViews.Add(new ChipView
+                Image bg = instance.GetComponent<Image>();
+                if (bg != null) bg.raycastTarget = true;
+                Button btn = instance.GetComponent<Button>();
+                if (btn == null)
+                {
+                    btn = instance.AddComponent<Button>();
+                    btn.transition = Selectable.Transition.None;
+                    if (bg != null) btn.targetGraphic = bg;
+                }
+                var view = new ChipView
                 {
                     root = instance,
-                    background = instance.GetComponent<Image>(),
+                    background = bg,
+                    button = btn,
                     leftIcon = ResolveIconImage(t.Find("Left")),
                     rightIcon = ResolveIconImage(t.Find("Right")),
                     label = t.Find("Name") != null ? t.Find("Name").GetComponent<TMP_Text>() : null
+                };
+                ChipView captured = view;
+                btn.onClick.AddListener(() =>
+                {
+                    if (!string.IsNullOrEmpty(captured.lastSynergyId))
+                    {
+                        onSynergyClicked?.Invoke(captured.lastSynergyId);
+                    }
                 });
+                chipViews.Add(view);
             }
 
             for (int i = 0; i < chipViews.Count; i++)
@@ -306,10 +353,15 @@ namespace ProjectB.UI
                 if (!visible) continue;
 
                 SynergyChip data = chips[i];
+                if (view.button != null)
+                {
+                    view.button.interactable = onSynergyClicked != null && !string.IsNullOrEmpty(data.synergyId);
+                }
                 if (view.hasData
                     && view.lastLeftIcon == data.leftIcon
                     && view.lastRightIcon == data.rightIcon
                     && view.lastUnlocked == data.unlocked
+                    && string.Equals(view.lastSynergyId, data.synergyId, StringComparison.Ordinal)
                     && string.Equals(view.lastName, data.name, StringComparison.Ordinal))
                 {
                     continue;
@@ -320,6 +372,7 @@ namespace ProjectB.UI
                 view.lastRightIcon = data.rightIcon;
                 view.lastName = data.name;
                 view.lastUnlocked = data.unlocked;
+                view.lastSynergyId = data.synergyId;
 
                 ApplyIcon(view.leftIcon, data.leftIcon, data.unlocked);
                 ApplyIcon(view.rightIcon, data.rightIcon, data.unlocked);
@@ -353,6 +406,14 @@ namespace ProjectB.UI
             bool shouldEnable = sprite != null;
             if (img.enabled != shouldEnable) img.enabled = shouldEnable;
             img.color = unlocked ? Color.white : UiTheme.WithAlpha(Color.white, 0.4f);
+        }
+
+        private void HandleCardClicked()
+        {
+            if (boundKind == BoundKind.Synergy && boundSynergy != null && !string.IsNullOrEmpty(boundSynergy.id))
+            {
+                onSynergyClicked?.Invoke(boundSynergy.id);
+            }
         }
 
         private static void SetTextIfChanged(TMP_Text textComponent, string value)

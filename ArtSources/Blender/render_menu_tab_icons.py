@@ -710,6 +710,107 @@ def build_bonus_voxels() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# 6. Tab_Constellations — 3D Constellation Star Map (Gold Stars + Cyan Core Shard)
+# ---------------------------------------------------------------------------
+def build_constellations_voxels() -> dict:
+    v: dict = {}
+    IND = "#363E70"
+    IND_HI = "#5765A3"
+    IND_DK = "#21264A"
+    GOLD = "#FFC019"
+    GOLD_HI = "#FFE66E"
+    GOLD_DK = "#BA6C0B"
+    CYAN = "#38E4FF"
+    CYAN_HI = "#B8F8FF"
+    CYAN_DK = "#1898B8"
+    GLOW_Y = "#FFF4A3"
+
+    def draw_beam(x0: int, z0: int, x1: int, z1: int, y_min: int, y_max: int, mat: int, col_hi: str, col_mid: str, col_dk: str):
+        steps = max(abs(x1 - x0), abs(z1 - z0)) * 2
+        if steps == 0:
+            return
+        for s in range(steps + 1):
+            t = s / float(steps)
+            cx = int(round(x0 + (x1 - x0) * t))
+            cz = int(round(z0 + (z1 - z0) * t))
+            for dx, dz in ((0, 0), (1, 0), (0, 1)):
+                for y in range(y_min, y_max + 1):
+                    col = col_hi if y == y_min else (col_dk if y == y_max else col_mid)
+                    set_vox(v, cx + dx, y, cz + dz, mat, col)
+
+    # Outer indigo astrolabe ring (r ~ 6.6) backing the constellation so the silhouette is chunky
+    for z in range(-8, 9):
+        for x in range(-8, 9):
+            dist = math.hypot(x, z - 0.5)
+            if 5.5 <= dist <= 7.5:
+                for y in (0, 1):
+                    if y == 0 and x <= 0 and z >= 0:
+                        col = IND_HI
+                    elif y == 1 or x >= 4 or z <= -4:
+                        col = IND_DK
+                    else:
+                        col = IND
+                    set_vox(v, x, y, z, MAT_MATTE, col)
+
+    # Constellation star positions (x, z)
+    nodes = [
+        (0, 7),    # Top star
+        (-6, -5),  # Bottom-left star
+        (6, -5),   # Bottom-right star
+    ]
+
+    # Golden beams from central core to each star + subtle cross-links
+    for nx, nz in nodes:
+        draw_beam(0, 0, nx, nz, -1, 1, MAT_METAL, GOLD_HI, GOLD, GOLD_DK)
+
+    # Central Gold Ring Frame around the Cyan Boss Shard Core
+    for z in range(-3, 4):
+        for x in range(-3, 4):
+            if abs(x) + abs(z) <= 4 and abs(x) + abs(z) >= 2:
+                for y in (-1, 0, 1):
+                    col = GOLD_HI if (y == -1 and x <= 0) else (GOLD_DK if y == 1 else GOLD)
+                    set_vox(v, x, y, z, MAT_METAL, col)
+
+    # Central Glowing Cyan Boss Shard (y in [-2..1], tall diamond)
+    shard_pts = [
+        (0, 3), (-1, 2), (0, 2), (1, 2),
+        (-2, 1), (-1, 1), (0, 1), (1, 1), (2, 1),
+        (-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0),
+        (-2, -1), (-1, -1), (0, -1), (1, -1), (2, -1),
+        (-1, -2), (0, -2), (1, -2), (0, -3),
+    ]
+    for sx, sz in shard_pts:
+        for y in (-2, 0, -1):
+            if abs(sx) == 2 and y == -2:
+                continue
+            col = CYAN_HI if (sx <= 0 and sz >= 0 and y <= -1) else (CYAN_DK if (sx > 0 and sz < 0) else CYAN)
+            set_vox(v, sx, y, sz, MAT_GLOW, col)
+    set_vox(v, 0, -3, 0, MAT_GLOW, CYAN_HI)
+    set_vox(v, 0, -3, 1, MAT_GLOW, CYAN_HI)
+
+    # 3 Chunky Gold Star Nodes at the constellation tips
+    star_offsets = [
+        (0, 2),
+        (-1, 1), (0, 1), (1, 1),
+        (-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0),
+        (-1, -1), (0, -1), (1, -1),
+        (0, -2),
+    ]
+    for nx, nz in nodes:
+        for dx, dz in star_offsets:
+            for y in (-2, -1, 0, 1):
+                if abs(dx) + abs(dz) == 2 and y in (-2, 1):
+                    continue
+                if dx == 0 and dz == 0 and y == -2:
+                    set_vox(v, nx + dx, y, nz + dz, MAT_GLOW, GLOW_Y)
+                else:
+                    col = GOLD_HI if (dx <= 0 and dz >= 0 and y <= -1) else (GOLD_DK if y >= 1 else GOLD)
+                    set_vox(v, nx + dx, y, nz + dz, MAT_METAL, col)
+
+    return v
+
+
+# ---------------------------------------------------------------------------
 # Studio Lighting & Camera Framing
 # ---------------------------------------------------------------------------
 
@@ -963,6 +1064,7 @@ def main():
         ("Tab_Play", "icon_tab_play.png", build_play_voxels, 0.0, -16.0, 18.0, 0.82),
         ("Tab_Achievements", "icon_tab_achievements.png", build_achievements_voxels, 2.2, -21.0, 25.0, 0.81),
         ("Tab_Bonus", "icon_tab_bonus.png", build_bonus_voxels, 4.4, -24.0, 25.0, 0.81),
+        ("Tab_Constellations", "icon_tab_constellations.png", build_constellations_voxels, 6.6, -18.0, 22.0, 0.82),
     ]
 
     collections: list[bpy.types.Collection] = []

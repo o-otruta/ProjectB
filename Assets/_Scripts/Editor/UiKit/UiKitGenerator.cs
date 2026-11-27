@@ -38,7 +38,7 @@ namespace ProjectB.EditorScripts.UiKit
         // (ArtSources/Blender/render_menu_tab_icons.py) and must not be overwritten by 24x24 pixel art.
         private static readonly HashSet<string> BlenderAuthoredIcons = new HashSet<string>
         {
-            "tab_upgrades", "tab_abilities", "tab_play", "tab_achievements", "tab_bonus"
+            "tab_upgrades", "tab_constellations", "tab_abilities", "tab_play", "tab_achievements", "tab_bonus"
         };
 
         public struct FrameSpec

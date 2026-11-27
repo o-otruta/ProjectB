@@ -895,13 +895,29 @@ namespace ProjectB.Tests.EditMode
                 var settings = settingsGo.GetComponent<SettingsPopupUI>();
                 typeof(SettingsPopupUI).GetField("popupPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(settings, settingsPanel);
 
+                var dailyGo = Track(new GameObject("DailyBonus", typeof(RectTransform), typeof(DailyBonusScreenUI)));
+                var dailyPanel = new GameObject("PopupPanel", typeof(RectTransform));
+                dailyPanel.transform.SetParent(dailyGo.transform, false);
+                dailyPanel.SetActive(false);
+                var daily = dailyGo.GetComponent<DailyBonusScreenUI>();
+                typeof(DailyBonusScreenUI).GetField("popupPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(daily, dailyPanel);
+
                 var menu = menuGo.GetComponent<MainMenuUI>();
                 typeof(MainMenuUI).GetField("playScreenPanel", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(menu, playPanel);
                 typeof(MainMenuUI).GetField("settingsPopupUI", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(menu, settings);
+                typeof(MainMenuUI).GetField("dailyBonusScreenUI", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(menu, daily);
                 menu.Construct(save, bonus);
 
                 // Switch to Abilities tab
                 menu.OnAbilitiesClicked();
+                Assert.AreEqual(MainMenuUI.TAB_ABILITIES, menu.SelectedTab);
+
+                // Open Daily Bonus modal -> Cancel closes Daily Bonus without leaving Abilities tab
+                menu.OnBonusClicked();
+                Assert.IsTrue(daily.IsOpen);
+                Assert.AreEqual(MainMenuUI.TAB_ABILITIES, menu.SelectedTab);
+                menu.HandleCancelInput();
+                Assert.IsFalse(daily.IsOpen);
                 Assert.AreEqual(MainMenuUI.TAB_ABILITIES, menu.SelectedTab);
 
                 // Open settings -> Cancel closes settings first
@@ -1350,12 +1366,13 @@ namespace ProjectB.Tests.EditMode
                     Assert.AreEqual(3, adaptiveGrid.UltraWideColumns);
                 }
 
-                Transform daysContainer = safe.Find("DailyBonusScreenPanel/DaysContainer");
+                Transform daysContainer = safe.Find("DailyBonusPopup/PopupPanel/Window/DaysContainer");
                 Assert.IsNotNull(daysContainer);
                 var daysAdaptive = daysContainer.GetComponent<AdaptiveLayoutGroup>();
                 Assert.IsNotNull(daysAdaptive);
                 Assert.AreEqual(LayoutAxis.Vertical, daysAdaptive.GetSettings(LayoutMode.Portrait).axis);
                 Assert.AreEqual(LayoutAxis.Horizontal, daysAdaptive.GetSettings(LayoutMode.Landscape).axis, "Daily 7 days sit in one row in Landscape");
+                Assert.IsTrue(safe.Find("DailyBonusPopup/PopupPanel/Window").GetComponent<ResponsiveRect>().HasPreset(LayoutMode.Landscape));
 
                 Transform detailSheet = safe.Find("ConstellationScreen/ConstellationPanel/DetailSheet");
                 Assert.IsNotNull(detailSheet);

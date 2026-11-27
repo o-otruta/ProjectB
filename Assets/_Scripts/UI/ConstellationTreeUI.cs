@@ -174,19 +174,31 @@ namespace ProjectB.UI
         public void Show()
         {
             if (panel != null) panel.SetActive(true);
-            SetMenuHeroPreviewVisible(false);
+            if (mainMenu == null) SetMenuHeroPreviewVisible(false);
             EnsureBuilt();
             CloseDetail();
             RefreshAll();
             panZoom?.ResetView();
-            UiFocusHelper.SetFirstSelected(backButton != null ? (Selectable)backButton : centerButton);
+            if (mainMenu == null)
+            {
+                UiFocusHelper.SetFirstSelected(backButton != null ? (Selectable)backButton : centerButton);
+            }
         }
 
         public void Hide()
         {
             bool wasOpen = panel != null && panel.activeSelf;
             if (panel != null) panel.SetActive(false);
-            if (wasOpen) SetMenuHeroPreviewVisible(true);
+            if (wasOpen && mainMenu == null) SetMenuHeroPreviewVisible(true);
+        }
+
+        public Selectable GetFirstSelectable()
+        {
+            if (centerButton != null && centerButton.gameObject.activeInHierarchy && centerButton.interactable)
+            {
+                return centerButton;
+            }
+            return UiFocusHelper.FindFirstInteractable(panel != null ? panel.transform : transform);
         }
 
         private GameObject menuHeroPreview;
@@ -208,7 +220,7 @@ namespace ProjectB.UI
         public void HandleBack()
         {
             audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
-            if (mainMenu != null) mainMenu.OnUpgradesClicked();
+            if (mainMenu != null) mainMenu.OnPlayClicked();
             else Hide();
         }
 
@@ -454,16 +466,34 @@ namespace ProjectB.UI
 
         public void SelectNode(TalentNodeData node)
         {
+            SelectNodeInternal(node, playSound: true);
+        }
+
+        public void FocusNode(string nodeId, bool playSound = false)
+        {
+            EnsureBuilt();
+            TalentNodeData node = talentTree != null ? talentTree.GetNode(nodeId) : null;
+            if (node != null)
+            {
+                SelectNodeInternal(node, playSound);
+            }
+        }
+
+        private void SelectNodeInternal(TalentNodeData node, bool playSound)
+        {
             if (node == null) return;
-            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            if (playSound) audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             selectedNode = node;
             if (detailSheet != null) detailSheet.SetActive(true);
 
             if (panZoom != null && panZoom.Viewport != null)
             {
-                // Bring the tapped node into the upper half of the screen (above the bottom sheet)
-                float upper = panZoom.Viewport.rect.height * 0.2f;
-                panZoom.FocusOn(node.position, new Vector2(0f, upper));
+                // Portrait: keep node above the bottom detail sheet. Landscape: shift left of the right-side drawer.
+                Rect vr = panZoom.Viewport.rect;
+                Vector2 offset = vr.width > vr.height
+                    ? new Vector2(-vr.width * 0.16f, 0f)
+                    : new Vector2(0f, vr.height * 0.2f);
+                panZoom.FocusOn(node.position, offset);
             }
 
             RefreshAll();

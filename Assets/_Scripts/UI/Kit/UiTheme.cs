@@ -247,6 +247,7 @@ namespace ProjectB.UI
 
         [Header("Main menu tab icons")]
         public Sprite tabUpgrades;
+        public Sprite tabConstellations;
         public Sprite tabAbilities;
         public Sprite tabPlay;
         public Sprite tabAchievements;
