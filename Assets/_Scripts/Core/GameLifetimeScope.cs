@@ -29,6 +29,7 @@ namespace ProjectB.Core
             RegisterResourceConfig<ComboConfig>(builder, ComboConfig.DEFAULT_RESOURCE_PATH);
             RegisterResourceConfig<PickupConfig>(builder, PickupConfig.DEFAULT_RESOURCE_PATH);
             RegisterResourceConfig<SecretConfig>(builder, SecretConfig.DEFAULT_RESOURCE_PATH);
+            RegisterResourceConfig<BarrelConfig>(builder, BarrelConfig.DEFAULT_RESOURCE_PATH);
             RegisterResourceConfig<CardCatalog>(builder, CardCatalog.DEFAULT_RESOURCE_PATH);
 
             // Register Core Systems

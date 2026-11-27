@@ -19,6 +19,7 @@ namespace ProjectB.Core
         public const string KEY_FTUE_LEVELUP_HINT = "ftue.levelup_hint";
         public const string KEY_FTUE_ULTIMATE_HINT = "ftue.ultimate_hint";
         public const string KEY_FTUE_UPGRADES_HINT = "ftue.upgrades_hint";
+        public const string KEY_FTUE_BARREL_HINT = "ftue.barrel_hint";
 
         public static readonly SystemLanguage[] SupportedLanguages =
         {
@@ -147,6 +148,7 @@ namespace ProjectB.Core
             target[KEY_FTUE_LEVELUP_HINT] = "Choose an upgrade";
             target[KEY_FTUE_ULTIMATE_HINT] = "Ultimate ready! Tap to unleash";
             target[KEY_FTUE_UPGRADES_HINT] = "Upgrade your hero!";
+            target[KEY_FTUE_BARREL_HINT] = "Kick the barrel into enemies!";
         }
 
         private static void LoadTableInto(string code, Dictionary<string, string> target)

@@ -2,8 +2,10 @@ using System;
 using TMPro;
 using UnityEngine;
 using VContainer;
+using ProjectB.Arena;
 using ProjectB.Core;
 using ProjectB.Core.Events;
+using ProjectB.Data;
 using ProjectB.Enemies;
 using ProjectB.LevelUp;
 using ProjectB.Meta;
@@ -16,7 +18,9 @@ namespace ProjectB.UI
     /// (<c>SaveManager.IsFirstRun</c>):
     /// 1) drag-to-move hint until first movement;
     /// 2) highlight on the first LevelUp card selection;
-    /// 3) highlight on the first ready ultimate after the first LevelUp or wave 2+.
+    /// 3) highlight on the first ready ultimate after the first LevelUp or wave 2+;
+    /// 4) a tutorial explosive barrel placed on the path of the first enemy pack with a "kick it" hint
+    ///    that follows the barrel on screen (<see cref="BarrelConfig"/>).
     /// Zero-GC during <c>Update</c>.
     /// </summary>
     public sealed class GameplayFtueUI : MonoBehaviour
@@ -38,6 +42,17 @@ namespace ProjectB.UI
         [SerializeField] private TMP_Text ultimateHintText;
         [SerializeField] private GameObject ultimateHighlightRing;
 
+        [Header("Tutorial Barrel Hint")]
+        [SerializeField] private GameObject barrelHintRoot;
+        [SerializeField] private CanvasGroup barrelHintGroup;
+        [SerializeField] private TMP_Text barrelHintText;
+        [Tooltip("Hint follows the tutorial barrel on screen; offset in world units above the barrel.")]
+        [SerializeField, Min(0f)] private float barrelHintWorldHeight = 2.4f;
+        [SerializeField, Min(0.05f)] private float barrelProbeInterval = 0.25f;
+
+        private const int BARREL_PROBE_BUFFER = 16;
+        private static readonly Collider[] BarrelProbeBuffer = new Collider[BARREL_PROBE_BUFFER];
+
         private SaveManager saveManager;
         private LocalizationService localization;
         private GameManager gameManager;
@@ -49,6 +64,16 @@ namespace ProjectB.UI
         private GameEventBus eventBus;
         private MoveInputService moveInputService;
         private InputModeService inputModeService;
+        private ArenaGenerator arenaGenerator;
+        private BarrelConfig barrelConfig;
+        private Camera worldCamera;
+        private Canvas hintCanvas;
+        private ExplosiveBarrel tutorialBarrel;
+        private float barrelProbeTimer;
+        private float barrelHintTimer;
+        private int enemyProbeMask;
+        private Action<BarrelIgnitedEvent> cachedBarrelIgnitedHandler;
+        private Action<BarrelExplodedEvent> cachedBarrelExplodedHandler;
 
         private Action<WaveCompletedEvent> cachedWaveCompletedHandler;
         private Action cachedUltimateChangedHandler;
@@ -67,6 +92,8 @@ namespace ProjectB.UI
         private bool hasCompletedFirstLevelUp;
         private bool hasDismissedUltimateHint;
         private bool reachedWaveTwo;
+        private bool isShowingBarrelHint;
+        private bool hasCompletedBarrelHint;
 
         public bool IsFtueActive => isFtueActive;
         public bool IsMoveHintVisible => isShowingMoveHint;
@@ -75,6 +102,9 @@ namespace ProjectB.UI
         public bool HasDismissedMoveHint => hasDismissedMoveHint;
         public bool HasCompletedFirstLevelUp => hasCompletedFirstLevelUp;
         public bool HasDismissedUltimateHint => hasDismissedUltimateHint;
+        public bool IsBarrelHintVisible => isShowingBarrelHint;
+        public bool HasCompletedBarrelHint => hasCompletedBarrelHint;
+        public ExplosiveBarrel TutorialBarrel => tutorialBarrel;
 
         [Inject]
         public void Construct(
@@ -88,8 +118,12 @@ namespace ProjectB.UI
             CardSelectionUI cardSelectionUI = null,
             GameEventBus eventBus = null,
             MoveInputService moveInputService = null,
-            InputModeService inputModeService = null)
+            InputModeService inputModeService = null,
+            ArenaGenerator arenaGenerator = null,
+            BarrelConfig barrelConfig = null)
         {
+            this.arenaGenerator = arenaGenerator;
+            this.barrelConfig = barrelConfig;
             this.saveManager = saveManager;
             this.localization = localization;
             this.gameManager = gameManager;
@@ -127,6 +161,7 @@ namespace ProjectB.UI
 
             CacheDelegates();
             Subscribe();
+            EnsureBarrelHintBuilt();
 
             if (heroMovement != null)
             {
@@ -176,6 +211,237 @@ namespace ProjectB.UI
             {
                 EvaluateUltimateHint();
             }
+
+            if (!hasCompletedBarrelHint)
+            {
+                TickBarrelHint(Time.deltaTime);
+            }
+        }
+
+        private void TickBarrelHint(float dt)
+        {
+            if (barrelConfig != null && !barrelConfig.ftueSpawnBarrel)
+            {
+                hasCompletedBarrelHint = true;
+                return;
+            }
+
+            bool playing = gameManager == null || gameManager.CurrentState == GameState.Playing;
+            if (!playing || dt <= 0f) return;
+
+            if (isShowingBarrelHint)
+            {
+                barrelHintTimer -= dt;
+                if (tutorialBarrel == null || tutorialBarrel.IsDead || !tutorialBarrel.gameObject.activeInHierarchy || barrelHintTimer <= 0f)
+                {
+                    CompleteBarrelHint();
+                    return;
+                }
+                PositionBarrelHint();
+                return;
+            }
+
+            // Wait until the player has learned to move, then place the barrel when the first pack approaches.
+            if (!hasDismissedMoveHint || arenaGenerator == null || heroMovement == null) return;
+
+            barrelProbeTimer -= dt;
+            if (barrelProbeTimer > 0f) return;
+            barrelProbeTimer = barrelProbeInterval;
+
+            float triggerDistance = barrelConfig != null ? barrelConfig.ftueTriggerEnemyDistance : 11f;
+            if (TryFindNearestEnemyDirection(triggerDistance, out Vector3 enemyDir))
+            {
+                SpawnTutorialBarrel(enemyDir);
+            }
+        }
+
+        /// <summary>Places the tutorial barrel towards <paramref name="direction"/> from the hero and shows the hint.</summary>
+        public ExplosiveBarrel SpawnTutorialBarrel(Vector3 direction)
+        {
+            if (hasCompletedBarrelHint || arenaGenerator == null || heroMovement == null) return null;
+
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) direction = Vector3.forward;
+            direction.Normalize();
+
+            float distance = barrelConfig != null ? barrelConfig.ftueBarrelDistance : 3.5f;
+            Vector3 heroPos = heroMovement.transform.position;
+            heroPos.y = 0f;
+            Vector3 position = heroPos + direction * distance;
+
+            int obstacleMask = LayerMask.GetMask("Obstacles");
+            if (obstacleMask != 0)
+            {
+                // Rotate the candidate around the hero (0, +-35, +-70 deg) until it is clear of obstacles.
+                for (int i = 0; i < 5; i++)
+                {
+                    float angle = i == 0 ? 0f : ((i + 1) / 2) * 35f * ((i & 1) == 1 ? 1f : -1f);
+                    Vector3 candidate = heroPos + Quaternion.Euler(0f, angle, 0f) * direction * distance;
+                    if (!Physics.CheckSphere(candidate + Vector3.up * 0.7f, 0.9f, obstacleMask, QueryTriggerInteraction.Ignore))
+                    {
+                        position = candidate;
+                        break;
+                    }
+                }
+            }
+
+            tutorialBarrel = arenaGenerator.SpawnBarrelAtPosition(position);
+            if (tutorialBarrel == null)
+            {
+                hasCompletedBarrelHint = true;
+                return null;
+            }
+
+            ShowBarrelHint();
+            return tutorialBarrel;
+        }
+
+        private bool TryFindNearestEnemyDirection(float radius, out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            if (enemyProbeMask == 0)
+            {
+                int mask = LayerMask.GetMask("Enemy", "Enemies");
+                enemyProbeMask = mask != 0 ? mask : (1 << 8);
+            }
+
+            Vector3 heroPos = heroMovement.transform.position;
+            int hits = Physics.OverlapSphereNonAlloc(heroPos, radius, BarrelProbeBuffer, enemyProbeMask, QueryTriggerInteraction.Collide);
+            float bestSq = float.MaxValue;
+            for (int i = 0; i < hits; i++)
+            {
+                Collider col = BarrelProbeBuffer[i];
+                BarrelProbeBuffer[i] = null;
+                if (col == null) continue;
+                EnemyBase enemy = col.GetComponentInParent<EnemyBase>();
+                if (enemy == null || enemy.IsDead) continue;
+
+                Vector3 diff = enemy.transform.position - heroPos;
+                diff.y = 0f;
+                float sq = diff.sqrMagnitude;
+                if (sq < bestSq && sq > 0.01f)
+                {
+                    bestSq = sq;
+                    direction = diff;
+                }
+            }
+            return bestSq < float.MaxValue;
+        }
+
+        /// <summary>
+        /// The barrel hint bubble is cloned from the movement hint at runtime (first run only), so it shares the
+        /// themed pill style without an extra baked scene object. A rotated square under the pill acts as a pointer.
+        /// </summary>
+        private void EnsureBarrelHintBuilt()
+        {
+            if (barrelHintRoot != null || moveHintRoot == null) return;
+
+            GameObject clone = Instantiate(moveHintRoot, moveHintRoot.transform.parent);
+            clone.name = "FtueBarrelHint";
+            clone.transform.SetSiblingIndex(moveHintRoot.transform.GetSiblingIndex() + 1);
+
+            var responsive = clone.GetComponent<ResponsiveRect>();
+            if (responsive != null) Destroy(responsive);
+
+            if (clone.transform is RectTransform rect)
+            {
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(600f, 84f);
+            }
+
+            var pill = clone.GetComponent<UnityEngine.UI.Image>();
+            var pointerGo = new GameObject("Pointer", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
+            pointerGo.transform.SetParent(clone.transform, false);
+            pointerGo.transform.SetAsFirstSibling();
+            var pointerRect = (RectTransform)pointerGo.transform;
+            pointerRect.anchorMin = pointerRect.anchorMax = new Vector2(0.5f, 0f);
+            pointerRect.pivot = new Vector2(0.5f, 0.5f);
+            pointerRect.anchoredPosition = new Vector2(0f, 2f);
+            pointerRect.sizeDelta = new Vector2(34f, 34f);
+            pointerRect.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            var pointerImage = pointerGo.GetComponent<UnityEngine.UI.Image>();
+            pointerImage.raycastTarget = false;
+            if (pill != null)
+            {
+                Color c = pill.color;
+                c.a = 1f;
+                pointerImage.color = c;
+            }
+
+            barrelHintRoot = clone;
+            barrelHintGroup = clone.GetComponent<CanvasGroup>();
+            barrelHintText = clone.GetComponentInChildren<TMP_Text>(true);
+            clone.SetActive(false);
+            RefreshLocalizedTexts();
+        }
+
+        private void ShowBarrelHint()
+        {
+            isShowingBarrelHint = true;
+            barrelHintTimer = barrelConfig != null ? barrelConfig.ftueHintTimeout : 14f;
+            if (barrelHintRoot != null) barrelHintRoot.SetActive(true);
+            if (barrelHintGroup != null)
+            {
+                UiTween.Fade(barrelHintGroup, 0f, 1f, UiTheme.Current.durationNormal);
+            }
+            PositionBarrelHint();
+        }
+
+        private void PositionBarrelHint()
+        {
+            if (barrelHintRoot == null || tutorialBarrel == null) return;
+            if (worldCamera == null) worldCamera = Camera.main;
+            if (worldCamera == null) return;
+
+            var rect = barrelHintRoot.transform as RectTransform;
+            var parentRect = rect != null ? rect.parent as RectTransform : null;
+            if (rect == null || parentRect == null) return;
+
+            if (hintCanvas == null) hintCanvas = barrelHintRoot.GetComponentInParent<Canvas>();
+            Camera uiCamera = hintCanvas != null && hintCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? hintCanvas.worldCamera : null;
+
+            Vector3 world = tutorialBarrel.transform.position + Vector3.up * barrelHintWorldHeight;
+            Vector3 screen = worldCamera.WorldToScreenPoint(world);
+            if (screen.z < 0f) return;
+
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screen, uiCamera, out Vector2 local))
+            {
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+                Vector2 half = parentRect.rect.size * 0.5f - rect.rect.size * 0.5f;
+                local.x = Mathf.Clamp(local.x, -half.x, half.x);
+                local.y = Mathf.Clamp(local.y, -half.y, half.y);
+                rect.anchoredPosition = local;
+            }
+        }
+
+        private void CompleteBarrelHint()
+        {
+            if (hasCompletedBarrelHint) return;
+            hasCompletedBarrelHint = true;
+            isShowingBarrelHint = false;
+
+            if (barrelHintGroup != null && barrelHintRoot != null && barrelHintRoot.activeSelf)
+            {
+                UiTween.Fade(barrelHintGroup, barrelHintGroup.alpha, 0f, UiTheme.Current.durationFast, 0f, disableOnComplete: true);
+            }
+            else if (barrelHintRoot != null)
+            {
+                barrelHintRoot.SetActive(false);
+            }
+        }
+
+        private void HandleBarrelIgnited(BarrelIgnitedEvent evt)
+        {
+            if (!isFtueActive) return;
+            CompleteBarrelHint();
+        }
+
+        private void HandleBarrelExploded(BarrelExplodedEvent evt)
+        {
+            if (!isFtueActive) return;
+            CompleteBarrelHint();
         }
 
         public void RefreshLocalizedTexts()
@@ -200,6 +466,13 @@ namespace ProjectB.UI
                     ? localization.Get(LocalizationService.KEY_FTUE_ULTIMATE_HINT, "Ultimate ready! Tap to unleash")
                     : "Ultimate ready! Tap to unleash";
             }
+
+            if (barrelHintText != null)
+            {
+                barrelHintText.text = localization != null
+                    ? localization.Get(LocalizationService.KEY_FTUE_BARREL_HINT, "Kick the barrel into enemies!")
+                    : "Kick the barrel into enemies!";
+            }
         }
 
         private void CacheDelegates()
@@ -209,6 +482,8 @@ namespace ProjectB.UI
             cachedCardsShownHandler ??= HandleCardsShown;
             cachedCardChosenHandler ??= HandleCardChosen;
             cachedLanguageChangedHandler ??= RefreshLocalizedTexts;
+            cachedBarrelIgnitedHandler ??= HandleBarrelIgnited;
+            cachedBarrelExplodedHandler ??= HandleBarrelExploded;
         }
 
         private void Subscribe()
@@ -217,6 +492,8 @@ namespace ProjectB.UI
             subscribed = true;
 
             eventBus?.Subscribe(cachedWaveCompletedHandler);
+            eventBus?.Subscribe(cachedBarrelIgnitedHandler);
+            eventBus?.Subscribe(cachedBarrelExplodedHandler);
             if (heroUltimate != null) heroUltimate.OnStateChanged += cachedUltimateChangedHandler;
             if (cardSelectionUI != null)
             {
@@ -232,6 +509,8 @@ namespace ProjectB.UI
             subscribed = false;
 
             eventBus?.Unsubscribe(cachedWaveCompletedHandler);
+            eventBus?.Unsubscribe(cachedBarrelIgnitedHandler);
+            eventBus?.Unsubscribe(cachedBarrelExplodedHandler);
             if (heroUltimate != null) heroUltimate.OnStateChanged -= cachedUltimateChangedHandler;
             if (cardSelectionUI != null)
             {
@@ -246,7 +525,9 @@ namespace ProjectB.UI
             isShowingMoveHint = false;
             isShowingLevelUpHint = false;
             isShowingUltimateHint = false;
+            isShowingBarrelHint = false;
 
+            if (barrelHintRoot != null) barrelHintRoot.SetActive(false);
             if (moveHintRoot != null) moveHintRoot.SetActive(false);
             if (levelUpHintRoot != null) levelUpHintRoot.SetActive(false);
             if (ultimateHintRoot != null) ultimateHintRoot.SetActive(false);

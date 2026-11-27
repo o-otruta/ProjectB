@@ -70,6 +70,7 @@ namespace ProjectB.Visuals
             "COMBO x50! +20%",
             "COMBO x100! +30%"
         };
+        private static readonly string[] CachedBoomLabels = new string[49];
         private const string CachedShrineStartText = "CHALLENGE! Defeat 6 Elites!";
         private const string CachedShrineCompleteText = "SHRINE CLEARED! +100 Coins";
 
@@ -130,6 +131,8 @@ namespace ProjectB.Visuals
             return labels;
         }
 
+        private BarrelConfig barrelConfig;
+
         [Inject]
         public void Construct(
             GameEventBus eventBus,
@@ -137,8 +140,10 @@ namespace ProjectB.Visuals
             CameraController cameraController = null,
             HeroHealth heroHealth = null,
             HeroUltimate heroUltimate = null,
-            GameManager gameManager = null)
+            GameManager gameManager = null,
+            BarrelConfig barrelConfig = null)
         {
+            this.barrelConfig = barrelConfig;
             this.eventBus = eventBus;
             this.audioManager = audioManager;
             this.cameraController = cameraController;
@@ -445,6 +450,7 @@ namespace ProjectB.Visuals
                 eventBus.Subscribe<ArrowRainWaveEvent>(OnArrowRainWave);
                 eventBus.Subscribe<SoulNovaCastEvent>(OnSoulNovaCast);
                 eventBus.Subscribe<BarrelExplodedEvent>(OnBarrelExploded);
+                eventBus.Subscribe<BarrelIgnitedEvent>(OnBarrelIgnited);
                 eventBus.Subscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
                 eventBus.Subscribe<ChallengeShrineEvent>(OnChallengeShrine);
                 eventBus.Subscribe<ShieldShockwaveEvent>(OnShieldShockwave);
@@ -503,6 +509,7 @@ namespace ProjectB.Visuals
                 eventBus.Unsubscribe<ArrowRainWaveEvent>(OnArrowRainWave);
                 eventBus.Unsubscribe<SoulNovaCastEvent>(OnSoulNovaCast);
                 eventBus.Unsubscribe<BarrelExplodedEvent>(OnBarrelExploded);
+                eventBus.Unsubscribe<BarrelIgnitedEvent>(OnBarrelIgnited);
                 eventBus.Unsubscribe<VacuumMagnetCollectedEvent>(OnVacuumMagnetCollected);
                 eventBus.Unsubscribe<ChallengeShrineEvent>(OnChallengeShrine);
                 eventBus.Unsubscribe<ShieldShockwaveEvent>(OnShieldShockwave);
@@ -1047,8 +1054,40 @@ namespace ProjectB.Visuals
                 size: 0.42f);
             audioManager?.PlaySfx(SfxType.Explosion, volumeScale: 0.95f, randomizePitch: true);
             audioManager?.PlaySfx(SfxType.EnemyDeath, volumeScale: 0.85f, randomizePitch: true);
-            cameraController?.Shake(0.32f, 0.24f);
+
+            float shake = barrelConfig != null ? barrelConfig.GetShakeIntensity(evt.ChainDepth) : Mathf.Min(0.6f, 0.32f + 0.08f * evt.ChainDepth);
+            cameraController?.Shake(shake, 0.24f + 0.04f * Mathf.Min(evt.ChainDepth, 4));
             TryTriggerHitStop(0.03f);
+
+            int minEnemies = barrelConfig != null ? barrelConfig.boomLabelMinEnemies : 2;
+            if (evt.EnemiesHit >= minEnemies && damagePool != null)
+            {
+                var item = AcquireDamageNumberItem();
+                float scale = 1.35f + 0.04f * Mathf.Min(evt.EnemiesHit, 10);
+                item?.ShowText(evt.Position, GetBoomLabel(evt.EnemiesHit), BarrelSecondaryColor, scale, 1.5f, mainCamera, damagePool);
+            }
+        }
+
+        private void OnBarrelIgnited(BarrelIgnitedEvent evt)
+        {
+            EmitExplosionRing(
+                evt.Position + Vector3.up * 1.3f,
+                0.6f,
+                BarrelSecondaryColor,
+                BarrelPrimaryColor,
+                ringCount: 8,
+                centerCount: 4,
+                speed: 3.2f,
+                size: 0.16f);
+            audioManager?.PlaySfx(SfxType.ArrowWhoosh, volumeScale: 0.7f, randomizePitch: true);
+            cameraController?.Shake(0.06f, 0.08f);
+        }
+
+        /// <summary>Cached "BOOM! xN" labels (Zero-GC after first use of each N).</summary>
+        public static string GetBoomLabel(int enemiesHit)
+        {
+            int n = Mathf.Clamp(enemiesHit, 0, CachedBoomLabels.Length - 1);
+            return CachedBoomLabels[n] ??= "BOOM! x" + n;
         }
 
         private void OnVacuumMagnetCollected(VacuumMagnetCollectedEvent evt)

@@ -34,6 +34,7 @@ namespace ProjectB.Arena
         private HeroExperience _heroExperience;
         private RunStatistics _runStatistics;
         private HeroRuntimeStats _runtimeStats;
+        private BarrelConfig _barrelConfig;
         private WaveManager _waveManager;
         private GameManager _gameManager;
 
@@ -65,9 +66,11 @@ namespace ProjectB.Arena
             HeroEconomy heroEconomy = null,
             HeroExperience heroExperience = null,
             RunStatistics runStatistics = null,
-            HeroRuntimeStats runtimeStats = null)
+            HeroRuntimeStats runtimeStats = null,
+            BarrelConfig barrelConfig = null)
         {
             _runtimeStats = runtimeStats;
+            _barrelConfig = barrelConfig;
             _resolver = resolver;
             _eventBus = eventBus;
             _heroHealth = heroHealth;
@@ -576,10 +579,11 @@ namespace ProjectB.Arena
         {
             if (_config == null || _config.ExplosiveBarrelPrefab == null) return null;
             Transform parent = _interactablesContainer != null ? _interactablesContainer : transform;
-            GameObject go = Instantiate(_config.ExplosiveBarrelPrefab, position, Quaternion.Euler(0f, Range(0f, 360f), 0f), parent);
+            float yaw = _rng != null ? Range(0f, 360f) : 0f;
+            GameObject go = Instantiate(_config.ExplosiveBarrelPrefab, position, Quaternion.Euler(0f, yaw, 0f), parent);
             var barrel = go.GetComponent<ExplosiveBarrel>();
             if (barrel == null) barrel = go.AddComponent<ExplosiveBarrel>();
-            barrel.Initialize(_heroHealth, _eventBus, _runStatistics);
+            barrel.Initialize(_heroHealth, _eventBus, _runStatistics, _barrelConfig);
             _spawnedBarrels.Add(barrel);
             return barrel;
         }
@@ -607,6 +611,29 @@ namespace ProjectB.Arena
             pos.x = Mathf.Clamp(pos.x, -maxBound, maxBound);
             pos.z = Mathf.Clamp(pos.z, -maxBound, maxBound);
             return SpawnBarrelAt(pos);
+        }
+
+        /// <summary>
+        /// Spawns (or recycles) a barrel at an explicit world position, clamped to the arena.
+        /// Used by the first-run FTUE to place a barrel on the path of the first enemy pack.
+        /// </summary>
+        public ExplosiveBarrel SpawnBarrelAtPosition(Vector3 position)
+        {
+            if (_config == null || _config.ExplosiveBarrelPrefab == null) return null;
+            position.y = 0f;
+            float maxBound = Mathf.Max(5f, ArenaSize * 0.5f - 3f);
+            position.x = Mathf.Clamp(position.x, -maxBound, maxBound);
+            position.z = Mathf.Clamp(position.z, -maxBound, maxBound);
+
+            ExplosiveBarrel recycled = FindDetonatedBarrel();
+            if (recycled != null)
+            {
+                float yaw = _rng != null ? Range(0f, 360f) : 0f;
+                recycled.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+                recycled.Initialize(_heroHealth, _eventBus, _runStatistics, _barrelConfig);
+                return recycled;
+            }
+            return SpawnBarrelAt(position);
         }
 
         public ChallengeShrine SpawnShrineNearHero(float distance = 5.5f)
@@ -664,7 +691,7 @@ namespace ProjectB.Arena
                     if (recycled != null)
                     {
                         recycled.transform.SetPositionAndRotation(candidate, Quaternion.Euler(0f, Range(0f, 360f), 0f));
-                        recycled.Initialize(_heroHealth, _eventBus, _runStatistics);
+                        recycled.Initialize(_heroHealth, _eventBus, _runStatistics, _barrelConfig);
                         barrelsSpawned++;
                     }
                     else if (SpawnBarrelAt(candidate) != null)

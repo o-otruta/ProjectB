@@ -357,12 +357,30 @@ namespace ProjectB.Core.Events
         public Vector3 Position;
         public float Radius;
         public int EnemiesHit;
+        /// <summary>0 — бочка, взорванная напрямую; N — N-е звено цепной реакции.</summary>
+        public int ChainDepth;
 
-        public BarrelExplodedEvent(Vector3 position, float radius, int enemiesHit)
+        public BarrelExplodedEvent(Vector3 position, float radius, int enemiesHit, int chainDepth = 0)
         {
             Position = position;
             Radius = radius;
             EnemiesHit = enemiesHit;
+            ChainDepth = chainDepth;
+        }
+    }
+
+    /// <summary>
+    /// Герой пнул бочку: подожжён фитиль, бочка откатывается в направлении <see cref="Direction"/>.
+    /// </summary>
+    public struct BarrelIgnitedEvent
+    {
+        public Vector3 Position;
+        public Vector3 Direction;
+
+        public BarrelIgnitedEvent(Vector3 position, Vector3 direction)
+        {
+            Position = position;
+            Direction = direction;
         }
     }
 
