@@ -45,8 +45,6 @@ MonoBehaviour:
   - mage
   - ranger
   - necromancer
-  - paladin
-  - engineer
   strategies: 0000000001000000
   fixedBuildPreset: {fileID: 11400000, guid: a2d4fa86f975ce04bb6cbf37532c5755, type: 2}
   metaProfiles:
