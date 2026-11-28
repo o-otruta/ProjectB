@@ -71,6 +71,12 @@ namespace ProjectB.LevelUp
         public bool IsInputLocked => IsActive && GetUnscaledTime() < inputUnlockTime;
         public IReadOnlyList<CardData> CurrentOfferedCards => currentCards;
         public int FreeSlotsCount => freeCardsCount;
+
+        /// <summary>Card slot view by index (null if out of range); used by onboarding to point at the first card.</summary>
+        public CardUI GetCardSlot(int index)
+        {
+            return cardSlots != null && index >= 0 && index < cardSlots.Length ? cardSlots[index] : null;
+        }
         public int FreeRerollsAvailable => freeRerollsAvailable;
         public bool HasRerolledCurrentOffer => hasRerolledThisLevelUp;
         public bool CanFreeReroll =>

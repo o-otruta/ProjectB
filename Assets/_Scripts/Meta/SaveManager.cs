@@ -54,7 +54,6 @@ namespace ProjectB.Meta
         public bool IsDirty { get; private set; }
         public bool WasInterruptedRunRecovered { get; private set; }
         public bool IsFirstRun => Data == null || Data.totalRuns == 0;
-        public bool IsFtueUpgradesHintDismissed => Data != null && Data.ftueUpgradesHintDismissed;
         public event Action OnDataChanged;
 
         [Inject]
@@ -208,11 +207,51 @@ namespace ProjectB.Meta
             DevLog.Log("[SaveManager] Save Data Reset.");
         }
 
-        public void MarkFtueUpgradesHintDismissed(bool saveImmediately = true)
+        // --- Онбординг / FTUE ---
+
+        /// <summary>
+        /// After the first run, tops the balance up to <paramref name="cheapestUpgradeCost"/> once so the first meta
+        /// purchase is always possible. Returns the granted amount (0 if already granted or already affordable).
+        /// </summary>
+        public int GrantFtueStarterCoins(int cheapestUpgradeCost, bool saveImmediately = true)
         {
-            if (Data == null || Data.ftueUpgradesHintDismissed) return;
-            Data.ftueUpgradesHintDismissed = true;
+            if (Data == null || Data.ftueStarterCoinsGranted) return 0;
+            Data.ftueStarterCoinsGranted = true;
+            int granted = Mathf.Max(0, cheapestUpgradeCost - Data.coins);
+            Data.coins += granted;
             CommitChange(saveImmediately);
+            return granted;
+        }
+
+        public void MarkFtueMenuFlowCompleted(bool saveImmediately = true)
+        {
+            if (Data == null || Data.ftueMenuFlowCompleted) return;
+            Data.ftueMenuFlowCompleted = true;
+            CommitChange(saveImmediately);
+        }
+
+        public void MarkFtueShardHintShown(bool saveImmediately = false)
+        {
+            if (Data == null || Data.ftueShardHintShown) return;
+            Data.ftueShardHintShown = true;
+            CommitChange(saveImmediately);
+        }
+
+        public void MarkFtueConstellationsHintDismissed(bool saveImmediately = true)
+        {
+            if (Data == null || Data.ftueConstellationsHintDismissed) return;
+            Data.ftueConstellationsHintDismissed = true;
+            CommitChange(saveImmediately);
+        }
+
+        public bool HasAnyMetaUpgrade()
+        {
+            if (Data?.metaUpgradeLevels == null) return false;
+            foreach (var kvp in Data.metaUpgradeLevels)
+            {
+                if (kvp.Value > 0) return true;
+            }
+            return false;
         }
 
         // --- Boss Shards & Constellation ---

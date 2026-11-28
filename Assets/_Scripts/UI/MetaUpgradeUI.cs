@@ -136,6 +136,27 @@ namespace ProjectB.UI
             return UiFocusHelper.FindFirstInteractable(panel != null ? panel.transform : transform);
         }
 
+        /// <summary>FTUE: buy button of the cheapest upgrade the player can afford right now (null if none).</summary>
+        public Button GetCheapestAffordableBuyButton()
+        {
+            if (upgradeManager == null) return null;
+            Button best = null;
+            int bestCost = int.MaxValue;
+            for (int i = 0; i < spawnedItems.Count; i++)
+            {
+                UpgradeItemUI item = spawnedItems[i];
+                if (item == null || item.BuyButton == null || string.IsNullOrEmpty(item.UpgradeId)) continue;
+                if (!upgradeManager.CanAfford(item.UpgradeId)) continue;
+                int cost = upgradeManager.GetUpgradeCost(item.UpgradeId);
+                if (cost >= 0 && cost < bestCost)
+                {
+                    bestCost = cost;
+                    best = item.BuyButton;
+                }
+            }
+            return best;
+        }
+
         private void RefreshAllItems()
         {
             foreach (var item in spawnedItems)

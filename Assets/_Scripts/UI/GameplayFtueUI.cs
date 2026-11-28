@@ -16,11 +16,13 @@ namespace ProjectB.UI
     /// <summary>
     /// First-Time User Experience (Sprint 12.2): contextual onboarding hints during the player's first run
     /// (<c>SaveManager.IsFirstRun</c>):
-    /// 1) drag-to-move hint until first movement;
+    /// 1) move hint until first movement (touch or keyboard wording, follows <see cref="InputModeService"/>);
     /// 2) highlight on the first LevelUp card selection;
-    /// 3) highlight on the first ready ultimate after the first LevelUp or wave 2+;
+    /// 3) highlight on the first ready ultimate after the first LevelUp or wave 2+ (keyboard wording names the key);
     /// 4) a tutorial explosive barrel placed on the path of the first enemy pack with a "kick it" hint
     ///    that follows the barrel on screen (<see cref="BarrelConfig"/>).
+    /// Independently of the first run: the very first Boss Shard ever earned shows a short "spend it in the
+    /// Constellations" hint (<c>SaveData.ftueShardHintShown</c>).
     /// Zero-GC during <c>Update</c>.
     /// </summary>
     public sealed class GameplayFtueUI : MonoBehaviour
@@ -50,6 +52,10 @@ namespace ProjectB.UI
         [SerializeField, Min(0f)] private float barrelHintWorldHeight = 2.4f;
         [SerializeField, Min(0.05f)] private float barrelProbeInterval = 0.25f;
 
+        [Header("First Boss Shard Hint")]
+        [Tooltip("Seconds of gameplay the 'spend shards in Constellations' hint stays on screen.")]
+        [SerializeField, Min(0.5f)] private float shardHintDuration = 5f;
+
         private const int BARREL_PROBE_BUFFER = 16;
         private static readonly Collider[] BarrelProbeBuffer = new Collider[BARREL_PROBE_BUFFER];
 
@@ -74,6 +80,19 @@ namespace ProjectB.UI
         private int enemyProbeMask;
         private Action<BarrelIgnitedEvent> cachedBarrelIgnitedHandler;
         private Action<BarrelExplodedEvent> cachedBarrelExplodedHandler;
+        private Action<BossShardsGainedEvent> cachedShardsGainedHandler;
+        private Action<InputMode> cachedInputModeHandler;
+        private GameInputService gameInput;
+
+        private FtueHintBubble moveBubble;
+        private FtueHintBubble barrelBubble;
+        private FtueHintBubble levelUpBubble;
+        private GameObject shardHintRoot;
+        private CanvasGroup shardHintGroup;
+        private TMP_Text shardHintText;
+        private bool isShardHintPending;
+        private bool isShowingShardHint;
+        private float shardHintTimer;
 
         private Action<WaveCompletedEvent> cachedWaveCompletedHandler;
         private Action cachedUltimateChangedHandler;
@@ -104,6 +123,11 @@ namespace ProjectB.UI
         public bool HasDismissedUltimateHint => hasDismissedUltimateHint;
         public bool IsBarrelHintVisible => isShowingBarrelHint;
         public bool HasCompletedBarrelHint => hasCompletedBarrelHint;
+        public bool IsShardHintPending => isShardHintPending;
+        public bool IsShardHintVisible => isShowingShardHint;
+        public TMP_Text MoveHintText => moveHintText;
+        public TMP_Text UltimateHintText => ultimateHintText;
+        public TMP_Text ShardHintText => shardHintText;
         public ExplosiveBarrel TutorialBarrel => tutorialBarrel;
 
         [Inject]
@@ -120,8 +144,10 @@ namespace ProjectB.UI
             MoveInputService moveInputService = null,
             InputModeService inputModeService = null,
             ArenaGenerator arenaGenerator = null,
-            BarrelConfig barrelConfig = null)
+            BarrelConfig barrelConfig = null,
+            GameInputService gameInput = null)
         {
+            this.gameInput = gameInput;
             this.arenaGenerator = arenaGenerator;
             this.barrelConfig = barrelConfig;
             this.saveManager = saveManager;
@@ -155,12 +181,17 @@ namespace ProjectB.UI
             HideAllImmediate();
 
             isFtueActive = saveManager != null && saveManager.IsFirstRun;
+            SaveData data = saveManager?.Data;
+            isShardHintPending = data != null && !data.ftueShardHintShown && data.totalBossShardsEarned == 0;
             RefreshLocalizedTexts();
 
-            if (!isFtueActive) return;
+            if (!isFtueActive && !isShardHintPending) return;
 
+            ApplyBubbleStyle();
             CacheDelegates();
             Subscribe();
+            if (!isFtueActive) return;
+
             EnsureBarrelHintBuilt();
 
             if (heroMovement != null)
@@ -182,7 +213,17 @@ namespace ProjectB.UI
 
         public void TickFtue()
         {
+            if (isShowingShardHint)
+            {
+                TickShardHint(Time.deltaTime);
+            }
+
             if (!isFtueActive) return;
+
+            if (isShowingLevelUpHint)
+            {
+                PositionLevelUpHint();
+            }
 
             if (!hasDismissedMoveHint)
             {
@@ -348,31 +389,13 @@ namespace ProjectB.UI
                 rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 0f);
                 rect.anchoredPosition = Vector2.zero;
-                rect.sizeDelta = new Vector2(600f, 84f);
-            }
-
-            var pill = clone.GetComponent<UnityEngine.UI.Image>();
-            var pointerGo = new GameObject("Pointer", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
-            pointerGo.transform.SetParent(clone.transform, false);
-            pointerGo.transform.SetAsFirstSibling();
-            var pointerRect = (RectTransform)pointerGo.transform;
-            pointerRect.anchorMin = pointerRect.anchorMax = new Vector2(0.5f, 0f);
-            pointerRect.pivot = new Vector2(0.5f, 0.5f);
-            pointerRect.anchoredPosition = new Vector2(0f, 2f);
-            pointerRect.sizeDelta = new Vector2(34f, 34f);
-            pointerRect.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            var pointerImage = pointerGo.GetComponent<UnityEngine.UI.Image>();
-            pointerImage.raycastTarget = false;
-            if (pill != null)
-            {
-                Color c = pill.color;
-                c.a = 1f;
-                pointerImage.color = c;
             }
 
             barrelHintRoot = clone;
             barrelHintGroup = clone.GetComponent<CanvasGroup>();
             barrelHintText = clone.GetComponentInChildren<TMP_Text>(true);
+            barrelBubble = FtueHintBubble.Ensure(clone, barrelHintText, maxWidth: 760f);
+            barrelBubble?.SetPointer(FtuePointerSide.Down);
             clone.SetActive(false);
             RefreshLocalizedTexts();
         }
@@ -408,11 +431,16 @@ namespace ProjectB.UI
 
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screen, uiCamera, out Vector2 local))
             {
+                const float screenMargin = 24f;
                 rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-                Vector2 half = parentRect.rect.size * 0.5f - rect.rect.size * 0.5f;
+                Vector2 half = parentRect.rect.size * 0.5f - rect.rect.size * 0.5f - new Vector2(screenMargin, screenMargin);
+                half = Vector2.Max(half, Vector2.zero);
+                float desiredX = local.x;
                 local.x = Mathf.Clamp(local.x, -half.x, half.x);
                 local.y = Mathf.Clamp(local.y, -half.y, half.y);
                 rect.anchoredPosition = local;
+                // A bubble pushed in from the screen edge keeps its tail over the barrel.
+                if (barrelBubble != null) barrelBubble.SetPointerSlide(desiredX - local.x);
             }
         }
 
@@ -444,13 +472,142 @@ namespace ProjectB.UI
             CompleteBarrelHint();
         }
 
+        /// <summary>
+        /// Large onboarding text + pointers (<see cref="FtueHintBubble"/>). Must run before the barrel / shard hints are
+        /// cloned from the move hint so the clones inherit the style and the pointer child.
+        /// </summary>
+        private void ApplyBubbleStyle()
+        {
+            moveBubble = FtueHintBubble.Ensure(moveHintRoot, moveHintText);
+            // Same look as every other hint; it may cover the build strip, the pointer aims at the first card.
+            levelUpBubble = FtueHintBubble.Ensure(levelUpHintRoot, levelUpHintText);
+            // Positioned above the first card at runtime, so its layout preset must not snap it back.
+            if (levelUpHintRoot != null && levelUpHintRoot.TryGetComponent(out ResponsiveRect levelUpPreset))
+            {
+                levelUpPreset.enabled = false;
+            }
+            FtueHintBubble ultBubble = FtueHintBubble.Ensure(ultimateHintRoot, ultimateHintText, maxWidth: 720f);
+            if (ultBubble != null)
+            {
+                var ultButton = ultimateHighlightRing != null ? ultimateHighlightRing.transform.parent as RectTransform : null;
+                ultBubble.SetPointer(FtuePointerSide.Down, ultButton);
+            }
+            RefreshMovePointer();
+        }
+
+        /// <summary>Touch: the move hint points down at the joystick area; keys need no pointer.</summary>
+        private void RefreshMovePointer()
+        {
+            moveBubble?.SetPointer(IsKeyboardMode ? FtuePointerSide.None : FtuePointerSide.Down);
+        }
+
+        private void HandleShardsGained(BossShardsGainedEvent evt)
+        {
+            if (!isShardHintPending || evt.Amount <= 0) return;
+            ShowShardHint();
+        }
+
+        /// <summary>Shows the one-time "Boss Shard → Constellations" hint and marks it as shown in the save.</summary>
+        public void ShowShardHint()
+        {
+            if (!isShardHintPending) return;
+            isShardHintPending = false;
+            saveManager?.MarkFtueShardHintShown(saveImmediately: false);
+
+            EnsureShardHintBuilt();
+            isShowingShardHint = true;
+            shardHintTimer = shardHintDuration;
+            if (shardHintRoot != null) shardHintRoot.SetActive(true);
+            if (shardHintGroup != null)
+            {
+                UiTween.Fade(shardHintGroup, 0f, 1f, UiTheme.Current.durationNormal);
+            }
+            if (shardHintRoot != null && Application.isPlaying)
+            {
+                UiTween.Punch(shardHintRoot.transform, 0.08f, UiTheme.Current.durationNormal);
+            }
+        }
+
+        private void TickShardHint(float dt)
+        {
+            bool playing = gameManager == null || gameManager.CurrentState == GameState.Playing;
+            if (!playing || dt <= 0f) return;
+
+            shardHintTimer -= dt;
+            if (shardHintTimer > 0f) return;
+
+            isShowingShardHint = false;
+            if (shardHintGroup != null && shardHintRoot != null && shardHintRoot.activeSelf)
+            {
+                UiTween.Fade(shardHintGroup, shardHintGroup.alpha, 0f, UiTheme.Current.durationFast, 0f, disableOnComplete: true);
+            }
+            else if (shardHintRoot != null)
+            {
+                shardHintRoot.SetActive(false);
+            }
+        }
+
+        /// <summary>The shard hint reuses the movement hint pill (same themed style and screen spot) as a runtime clone.</summary>
+        private void EnsureShardHintBuilt()
+        {
+            if (shardHintRoot != null || moveHintRoot == null) return;
+
+            GameObject clone = Instantiate(moveHintRoot, moveHintRoot.transform.parent);
+            clone.name = "FtueShardHint";
+            clone.transform.SetSiblingIndex(moveHintRoot.transform.GetSiblingIndex() + 1);
+            shardHintRoot = clone;
+            shardHintGroup = clone.GetComponent<CanvasGroup>();
+            shardHintText = clone.GetComponentInChildren<TMP_Text>(true);
+            FtueHintBubble.Ensure(clone, shardHintText)?.SetPointer(FtuePointerSide.None);
+            clone.SetActive(false);
+            RefreshLocalizedTexts();
+        }
+
+        private bool IsKeyboardMode => inputModeService != null && inputModeService.Mode == InputMode.KeyboardMouse;
+
+        /// <summary>Human-readable keyboard key of the Ultimate action ("Space"), or null if it has none.</summary>
+        private string GetUltimateKeyLabel()
+        {
+            UnityEngine.InputSystem.InputAction action = gameInput != null ? gameInput.UltimateAction : null;
+            if (action == null) return null;
+
+            var bindings = action.bindings;
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                string path = bindings[i].effectivePath;
+                if (!string.IsNullOrEmpty(path) && path.StartsWith("<Keyboard>", StringComparison.Ordinal))
+                {
+                    return UnityEngine.InputSystem.InputControlPath.ToHumanReadableString(
+                        path, UnityEngine.InputSystem.InputControlPath.HumanReadableStringOptions.OmitDevice);
+                }
+            }
+            return null;
+        }
+
+        private void HandleInputModeChanged(InputMode _)
+        {
+            RefreshLocalizedTexts();
+            RefreshMovePointer();
+        }
+
         public void RefreshLocalizedTexts()
         {
             if (moveHintText != null)
             {
-                moveHintText.text = localization != null
-                    ? localization.Get(LocalizationService.KEY_FTUE_MOVE_HINT, "Drag to move — attack is automatic")
-                    : "Drag to move — attack is automatic";
+                moveHintText.text = IsKeyboardMode
+                    ? (localization != null
+                        ? localization.Get(LocalizationService.KEY_FTUE_MOVE_HINT_KEYBOARD, "WASD or arrows to move — attack is automatic")
+                        : "WASD or arrows to move — attack is automatic")
+                    : (localization != null
+                        ? localization.Get(LocalizationService.KEY_FTUE_MOVE_HINT, "Drag to move — attack is automatic")
+                        : "Drag to move — attack is automatic");
+            }
+
+            if (shardHintText != null)
+            {
+                shardHintText.text = localization != null
+                    ? localization.Get(LocalizationService.KEY_FTUE_SHARD_HINT, "Boss Shard! Spend it in the Constellations menu")
+                    : "Boss Shard! Spend it in the Constellations menu";
             }
 
             if (levelUpHintText != null)
@@ -462,9 +619,19 @@ namespace ProjectB.UI
 
             if (ultimateHintText != null)
             {
-                ultimateHintText.text = localization != null
-                    ? localization.Get(LocalizationService.KEY_FTUE_ULTIMATE_HINT, "Ultimate ready! Tap to unleash")
-                    : "Ultimate ready! Tap to unleash";
+                string key = IsKeyboardMode ? GetUltimateKeyLabel() : null;
+                if (!string.IsNullOrEmpty(key))
+                {
+                    ultimateHintText.text = localization != null
+                        ? localization.Format(LocalizationService.KEY_FTUE_ULTIMATE_HINT_KEYBOARD, key)
+                        : string.Format("Ultimate ready! Press {0}", key);
+                }
+                else
+                {
+                    ultimateHintText.text = localization != null
+                        ? localization.Get(LocalizationService.KEY_FTUE_ULTIMATE_HINT, "Ultimate ready! Tap to unleash")
+                        : "Ultimate ready! Tap to unleash";
+                }
             }
 
             if (barrelHintText != null)
@@ -484,6 +651,8 @@ namespace ProjectB.UI
             cachedLanguageChangedHandler ??= RefreshLocalizedTexts;
             cachedBarrelIgnitedHandler ??= HandleBarrelIgnited;
             cachedBarrelExplodedHandler ??= HandleBarrelExploded;
+            cachedShardsGainedHandler ??= HandleShardsGained;
+            cachedInputModeHandler ??= HandleInputModeChanged;
         }
 
         private void Subscribe()
@@ -494,6 +663,8 @@ namespace ProjectB.UI
             eventBus?.Subscribe(cachedWaveCompletedHandler);
             eventBus?.Subscribe(cachedBarrelIgnitedHandler);
             eventBus?.Subscribe(cachedBarrelExplodedHandler);
+            eventBus?.Subscribe(cachedShardsGainedHandler);
+            if (inputModeService != null) inputModeService.InputModeChanged += cachedInputModeHandler;
             if (heroUltimate != null) heroUltimate.OnStateChanged += cachedUltimateChangedHandler;
             if (cardSelectionUI != null)
             {
@@ -511,6 +682,8 @@ namespace ProjectB.UI
             eventBus?.Unsubscribe(cachedWaveCompletedHandler);
             eventBus?.Unsubscribe(cachedBarrelIgnitedHandler);
             eventBus?.Unsubscribe(cachedBarrelExplodedHandler);
+            eventBus?.Unsubscribe(cachedShardsGainedHandler);
+            if (inputModeService != null) inputModeService.InputModeChanged -= cachedInputModeHandler;
             if (heroUltimate != null) heroUltimate.OnStateChanged -= cachedUltimateChangedHandler;
             if (cardSelectionUI != null)
             {
@@ -566,7 +739,15 @@ namespace ProjectB.UI
             if (!isFtueActive || hasCompletedFirstLevelUp) return;
 
             isShowingLevelUpHint = true;
-            if (levelUpHintRoot != null) levelUpHintRoot.SetActive(true);
+            if (levelUpHintRoot != null)
+            {
+                // Drawn over the build strip it may cover, pointing down at the first card.
+                levelUpHintRoot.transform.SetAsLastSibling();
+                levelUpHintRoot.SetActive(true);
+            }
+            CardUI firstCard = cardSelectionUI != null ? cardSelectionUI.GetCardSlot(0) : null;
+            levelUpBubble?.SetPointer(FtuePointerSide.Down, firstCard != null ? firstCard.transform as RectTransform : null);
+            PositionLevelUpHint();
             if (levelUpHintGroup != null)
             {
                 UiTween.Fade(levelUpHintGroup, 0f, 1f, UiTheme.Current.durationNormal);
@@ -575,6 +756,31 @@ namespace ProjectB.UI
             {
                 UiTween.Punch(levelUpHintRoot.transform, 0.08f, UiTheme.Current.durationNormal);
             }
+        }
+
+        /// <summary>
+        /// Sits the LevelUp hint right above the first card with its tail touching the card's top edge. Uses the card's
+        /// unscaled rect, so the cards' bounce-in animation does not make the bubble jump. Zero-GC.
+        /// </summary>
+        public void PositionLevelUpHint()
+        {
+            if (levelUpHintRoot == null || cardSelectionUI == null) return;
+            CardUI card = cardSelectionUI.GetCardSlot(0);
+            var cardRect = card != null ? card.transform as RectTransform : null;
+            var rect = levelUpHintRoot.transform as RectTransform;
+            var parent = rect != null ? rect.parent as RectTransform : null;
+            var cardParent = cardRect != null ? cardRect.parent : null;
+            if (cardRect == null || parent == null || cardParent == null) return;
+
+            Rect cr = cardRect.rect;
+            Vector3 cardTopWorld = cardParent.TransformPoint(cardRect.localPosition + new Vector3(cr.center.x, cr.yMax, 0f));
+            Vector3 cardTop = parent.InverseTransformPoint(cardTopWorld);
+
+            float tail = levelUpBubble != null ? levelUpBubble.PointerLength : 0f;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            Vector2 parentCenter = parent.rect.center;
+            rect.anchoredPosition = new Vector2(cardTop.x - parentCenter.x, cardTop.y + tail - parentCenter.y);
         }
 
         private void HandleCardChosen()

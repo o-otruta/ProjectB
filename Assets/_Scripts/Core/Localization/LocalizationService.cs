@@ -20,6 +20,12 @@ namespace ProjectB.Core
         public const string KEY_FTUE_ULTIMATE_HINT = "ftue.ultimate_hint";
         public const string KEY_FTUE_UPGRADES_HINT = "ftue.upgrades_hint";
         public const string KEY_FTUE_BARREL_HINT = "ftue.barrel_hint";
+        public const string KEY_FTUE_MOVE_HINT_KEYBOARD = "ftue.move_hint_keyboard";
+        public const string KEY_FTUE_ULTIMATE_HINT_KEYBOARD = "ftue.ultimate_hint_keyboard";
+        public const string KEY_FTUE_SHARD_HINT = "ftue.shard_hint";
+        public const string KEY_FTUE_UPGRADE_BUY_HINT = "ftue.upgrade_buy_hint";
+        public const string KEY_FTUE_CONSTELLATIONS_HINT = "ftue.constellations_hint";
+        public const string KEY_FTUE_PLAY_TAB_HINT = "ftue.play_tab_hint";
 
         public static readonly SystemLanguage[] SupportedLanguages =
         {
@@ -149,6 +155,12 @@ namespace ProjectB.Core
             target[KEY_FTUE_ULTIMATE_HINT] = "Ultimate ready! Tap to unleash";
             target[KEY_FTUE_UPGRADES_HINT] = "Upgrade your hero!";
             target[KEY_FTUE_BARREL_HINT] = "Kick the barrel into enemies!";
+            target[KEY_FTUE_MOVE_HINT_KEYBOARD] = "WASD or arrows to move — attack is automatic";
+            target[KEY_FTUE_ULTIMATE_HINT_KEYBOARD] = "Ultimate ready! Press {0}";
+            target[KEY_FTUE_SHARD_HINT] = "Boss Shard! Spend it in the Constellations menu";
+            target[KEY_FTUE_UPGRADE_BUY_HINT] = "Buy your first upgrade";
+            target[KEY_FTUE_CONSTELLATIONS_HINT] = "Spend Boss Shards on Constellation stars";
+            target[KEY_FTUE_PLAY_TAB_HINT] = "Ready for the next run?";
         }
 
         private static void LoadTableInto(string code, Dictionary<string, string> target)

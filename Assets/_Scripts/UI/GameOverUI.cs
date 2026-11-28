@@ -68,6 +68,9 @@ namespace ProjectB.UI
         [Header("Navigation Buttons")]
         [SerializeField] private Button restartButton;
         [SerializeField] private Button menuButton;
+        [Tooltip("FTUE: on the first run's Game Over the game returns to the menu by itself after this many seconds " +
+                 "unless the player presses a button (countdown shown on the Menu button).")]
+        [SerializeField, Min(0.5f)] private float firstRunAutoMenuDelay = 3f;
 
         [Header("Sprint 13: redesigned layout")]
         [SerializeField] private TMP_Text titleText;
@@ -101,6 +104,12 @@ namespace ProjectB.UI
         private InputModeService inputModeService;
         private Action<InputMode> cachedInputModeHandler;
         private int bestWaveBeforeRun = -1;
+        private bool isFirstRunGameOver;
+        private bool isAutoMenuPending;
+        private float autoMenuRemaining;
+        private int autoMenuShownSeconds = -1;
+        private TMP_Text menuButtonLabel;
+        private string menuButtonOriginalText;
         private readonly char[] numberBuffer = new char[64];
         private readonly StatCounter[] statCounters = new StatCounter[4];
         private int activeCounterCount;
@@ -109,6 +118,9 @@ namespace ProjectB.UI
         private readonly List<DamageSourceEntry> breakdownBuffer = new List<DamageSourceEntry>(16);
 
         public bool IsCounting => activeCounterCount > 0;
+        public bool IsFirstRunGameOver => isFirstRunGameOver;
+        public bool IsAutoMenuPending => isAutoMenuPending;
+        public float AutoMenuRemaining => autoMenuRemaining;
 
         [Inject]
         public void Construct(
@@ -125,6 +137,8 @@ namespace ProjectB.UI
             // Snapshot the record before this run so Game Over can show NEW BEST!
             // (GameManager writes bestWave before raising OnGameOver).
             bestWaveBeforeRun = saveManager != null && saveManager.Data != null ? saveManager.Data.bestWave : -1;
+            // FTUE: the first run's Game Over leads only to the main menu, where the meta-progression is introduced.
+            isFirstRunGameOver = saveManager != null && saveManager.IsFirstRun;
             this.gameManager = gameManager;
             this.achievementManager = achievementManager;
             this.runStatistics = runStatistics;
@@ -167,6 +181,7 @@ namespace ProjectB.UI
 
         private void Update()
         {
+            if (isAutoMenuPending) TickAutoMenu(Time.unscaledDeltaTime);
             if (activeCounterCount <= 0) return;
             TickCounters(Time.unscaledDeltaTime);
         }
@@ -202,7 +217,7 @@ namespace ProjectB.UI
 
         private void FocusPrimaryAction()
         {
-            Selectable first = restartButton != null ? (Selectable)restartButton : menuButton;
+            Selectable first = restartButton != null && restartButton.gameObject.activeSelf ? (Selectable)restartButton : menuButton;
             if (first == null)
             {
                 first = UiFocusHelper.FindFirstInteractable(panel != null ? panel.transform : transform);
@@ -329,7 +344,80 @@ namespace ProjectB.UI
             PopulateDamageBreakdown();
             PopulateRunAchievements();
             RefreshAdButtons();
+            ApplyFirstRunNavigation();
             FocusPrimaryAction();
+        }
+
+        /// <summary>
+        /// FTUE: on the first run's Game Over only "Menu" is offered (and pulses); "Restart" is hidden, and the game
+        /// goes to the menu by itself after <see cref="firstRunAutoMenuDelay"/> seconds unless a button is pressed.
+        /// </summary>
+        private void ApplyFirstRunNavigation()
+        {
+            if (restartButton != null) restartButton.gameObject.SetActive(!isFirstRunGameOver);
+            if (!isFirstRunGameOver || menuButton == null) return;
+
+            if (!menuButton.TryGetComponent(out PulseUI pulse))
+            {
+                pulse = menuButton.gameObject.AddComponent<PulseUI>();
+            }
+            pulse.enabled = true;
+            StartAutoMenu();
+        }
+
+        private void StartAutoMenu()
+        {
+            if (menuButtonLabel == null && menuButton != null)
+            {
+                menuButtonLabel = menuButton.GetComponentInChildren<TMP_Text>(true);
+            }
+            if (menuButtonLabel != null && !isAutoMenuPending) menuButtonOriginalText = menuButtonLabel.text;
+
+            isAutoMenuPending = true;
+            autoMenuRemaining = firstRunAutoMenuDelay;
+            autoMenuShownSeconds = -1;
+            RefreshAutoMenuLabel();
+        }
+
+        /// <summary>Advances the first-run auto return to the menu; returns true on the frame it fires.</summary>
+        public bool TickAutoMenu(float unscaledDeltaTime)
+        {
+            if (!isAutoMenuPending) return false;
+            autoMenuRemaining -= unscaledDeltaTime;
+            if (autoMenuRemaining > 0f)
+            {
+                RefreshAutoMenuLabel();
+                return false;
+            }
+
+            StopAutoMenu();
+            OnMenuClicked();
+            return true;
+        }
+
+        public void StopAutoMenu()
+        {
+            if (!isAutoMenuPending) return;
+            isAutoMenuPending = false;
+            autoMenuShownSeconds = -1;
+            if (menuButtonLabel != null && menuButtonOriginalText != null) menuButtonLabel.text = menuButtonOriginalText;
+        }
+
+        /// <summary>"MENU (3)" countdown, rewritten only when the whole second changes (char buffer, no allocations).</summary>
+        private void RefreshAutoMenuLabel()
+        {
+            if (menuButtonLabel == null || string.IsNullOrEmpty(menuButtonOriginalText)) return;
+            int seconds = Mathf.Max(1, Mathf.CeilToInt(autoMenuRemaining));
+            if (seconds == autoMenuShownSeconds) return;
+            autoMenuShownSeconds = seconds;
+
+            int len = Mathf.Min(menuButtonOriginalText.Length, numberBuffer.Length - 16);
+            menuButtonOriginalText.CopyTo(0, numberBuffer, 0, len);
+            numberBuffer[len++] = ' ';
+            numberBuffer[len++] = '(';
+            len = UiFormat.WriteInt(numberBuffer, len, seconds);
+            numberBuffer[len++] = ')';
+            menuButtonLabel.SetCharArray(numberBuffer, 0, len);
         }
 
         /// <summary>Snaps any active stat &amp; reward count-up animations to their final values.</summary>
@@ -932,6 +1020,7 @@ namespace ProjectB.UI
 
         public void Hide()
         {
+            StopAutoMenu();
             CompleteCountAnimations();
             if (panel != null)
             {
@@ -942,6 +1031,7 @@ namespace ProjectB.UI
 
         public void OnRestartClicked()
         {
+            StopAutoMenu();
             if (gameManager != null)
             {
                 gameManager.RestartGame();
@@ -950,6 +1040,7 @@ namespace ProjectB.UI
 
         public void OnMenuClicked()
         {
+            StopAutoMenu();
             if (gameManager != null)
             {
                 gameManager.GoToMenu();
@@ -958,6 +1049,7 @@ namespace ProjectB.UI
 
         public void OnReviveClicked()
         {
+            StopAutoMenu();
             if (gameManager != null)
             {
                 gameManager.ReviveHero();
@@ -966,6 +1058,7 @@ namespace ProjectB.UI
 
         public void OnDoubleCoinsClicked()
         {
+            StopAutoMenu();
             if (gameManager != null)
             {
                 gameManager.TryDoubleCoins();

@@ -74,8 +74,26 @@ namespace ProjectB.EditorScripts.UiKit
             new FrameSpec { name = "kit_shine", width = 128, height = 128, border = Vector4.zero },
             new FrameSpec { name = "kit_ribbon_tail", width = 64, height = 64, border = Vector4.zero },
             new FrameSpec { name = "kit_menu_bg", width = 256, height = 256, border = Vector4.zero },
-            new FrameSpec { name = "kit_pip", width = 48, height = 28, border = new Vector4(12, 13, 12, 11) }
+            new FrameSpec { name = "kit_pip", width = 48, height = 28, border = new Vector4(12, 13, 12, 11) },
+            new FrameSpec { name = "kit_pointer", width = 64, height = 52, border = Vector4.zero }
         };
+
+        /// <summary>Writes and imports one frame of <see cref="Frames"/> (the folder-packed atlas picks it up).</summary>
+        public static Sprite GenerateSingleFrame(string frameName)
+        {
+            foreach (FrameSpec spec in Frames)
+            {
+                if (spec.name != frameName) continue;
+                EnsureFolder(KIT_DIR);
+                EnsureFolder(FRAMES_DIR);
+                string path = $"{FRAMES_DIR}/{spec.name}.png";
+                WritePng(path, spec.width, spec.height, DrawFrame(spec));
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+                ConfigureSprite(path, spec.border, false);
+                return LoadFrame(spec.name);
+            }
+            return null;
+        }
 
         [MenuItem("ProjectB/UI/Generate UI Kit (Frames Only)")]
         public static void GenerateFramesOnly()
@@ -260,8 +278,36 @@ namespace ProjectB.EditorScripts.UiKit
                 case "kit_ribbon_tail": FillRibbonTail(buf, w, h); break;
                 case "kit_menu_bg": FillMenuBg(buf, w, h); break;
                 case "kit_pip": FillSurfaceBlock(buf, w, h, 7f, outline: 3.2f, ledge: 3f, highlight: 4.0f, shadow: 2f, isButton: false, padX: 1.5f, padTop: 1f); break;
+                case "kit_pointer": FillPointer(buf, w, h, outline: 5.0f); break;
             }
             return buf;
+        }
+
+        // Speech-bubble tail pointing down: open top edge (it tucks under a pill's face), toy-surface face luminance
+        // and the same dark outline as kit_pill on the two slanted edges, so it reads as part of the bubble.
+        private static void FillPointer(Color32[] buf, int w, int h, float outline)
+        {
+            const float faceLum = 0.745f;
+            const float outlineLum = 0.05f;
+            float tipX = w * 0.5f, tipY = 1.5f;
+            float topY = h;
+            // Unit outward normals of the left and right slanted edges.
+            Vector2 leftDir = new Vector2(tipX - 0f, tipY - topY).normalized;
+            Vector2 leftNormal = new Vector2(leftDir.y, -leftDir.x);
+            Vector2 rightDir = new Vector2(w - tipX, topY - tipY).normalized;
+            Vector2 rightNormal = new Vector2(rightDir.y, -rightDir.x);
+
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                var p = new Vector2(x + 0.5f, y + 0.5f);
+                float dLeft = Vector2.Dot(p - new Vector2(0f, topY), leftNormal);
+                float dRight = Vector2.Dot(p - new Vector2(w, topY), rightNormal);
+                float d = Mathf.Max(dLeft, dRight);
+                float alpha = Mathf.Clamp01(0.5f - d);
+                if (alpha <= 0f) { buf[y * w + x] = default; continue; }
+                buf[y * w + x] = Lum(d > -outline ? outlineLum : faceLum, alpha);
+            }
         }
 
         private static float RoundedRectSdf(float px, float py, float w, float h, float r)

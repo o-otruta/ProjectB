@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 using UnityEngine.UI;
 using ProjectB.Core;
 using ProjectB.Core.Events;
@@ -136,6 +137,15 @@ namespace ProjectB.Tests.EditMode
             Assert.IsTrue(loc.HasKey(LocalizationService.KEY_FTUE_LEVELUP_HINT));
             Assert.IsTrue(loc.HasKey(LocalizationService.KEY_FTUE_ULTIMATE_HINT));
             Assert.IsTrue(loc.HasKey(LocalizationService.KEY_FTUE_UPGRADES_HINT));
+            foreach (string key in new[]
+            {
+                LocalizationService.KEY_FTUE_MOVE_HINT_KEYBOARD, LocalizationService.KEY_FTUE_ULTIMATE_HINT_KEYBOARD,
+                LocalizationService.KEY_FTUE_SHARD_HINT, LocalizationService.KEY_FTUE_UPGRADE_BUY_HINT,
+                LocalizationService.KEY_FTUE_CONSTELLATIONS_HINT, LocalizationService.KEY_FTUE_PLAY_TAB_HINT
+            })
+            {
+                Assert.IsTrue(loc.HasKey(key), key);
+            }
 
             Assert.AreEqual("Drag to move — attack is automatic", loc.Get(LocalizationService.KEY_FTUE_MOVE_HINT));
             Assert.AreEqual("Choose an upgrade", loc.Get(LocalizationService.KEY_FTUE_LEVELUP_HINT));
@@ -349,6 +359,9 @@ namespace ProjectB.Tests.EditMode
             cardSelection.ShowCards(new List<CardData> { dummyCard }, _ => selected = true);
             Assert.IsTrue(ftue.IsLevelUpHintVisible);
             Assert.IsTrue(lvlRoot.activeSelf);
+            Assert.IsTrue(lvlRoot.TryGetComponent(out FtueHintBubble lvlBubble), "LevelUp hint uses the shared bubble look");
+            Assert.AreEqual(FtuePointerSide.Down, lvlBubble.PointerSide, "LevelUp hint points down at the first card");
+            Assert.GreaterOrEqual(lvlTxt.fontSize, 44f);
 
             MethodInfo onCardClicked = typeof(CardSelectionUI).GetMethod("OnCardClicked", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(onCardClicked);
@@ -425,7 +438,7 @@ namespace ProjectB.Tests.EditMode
         }
 
         [Test]
-        public void MainMenuUI_FtueUpgradesHint_UsesDynamicUpgradePrices_WaitsUntilAffordable_AndDismissesOnTabClick()
+        public void MainMenuUI_FtueMenuFlow_GrantsStarterCoins_ThenPointsUpgrades_Constellations_Play_AndStart()
         {
             SaveManager sm = CreateSaveManager();
             var upgradeManager = new MetaUpgradeManager(sm);
@@ -434,6 +447,16 @@ namespace ProjectB.Tests.EditMode
 
             int cheapestCost = upgradeManager.GetCheapestAvailableUpgradeCost();
             Assert.Greater(cheapestCost, 0, "MetaUpgrades in Resources must have positive upgrade costs");
+            string cheapestId = null;
+            foreach (MetaUpgradeData data in upgradeManager.GetAllUpgrades())
+            {
+                if (data != null && upgradeManager.GetUpgradeCost(data.id) == cheapestCost)
+                {
+                    cheapestId = data.id;
+                    break;
+                }
+            }
+            Assert.IsNotNull(cheapestId);
 
             var menuGo = Track(new GameObject("Menu", typeof(RectTransform), typeof(MainMenuUI)));
             var glow = new GameObject("FtueGlow", typeof(RectTransform));
@@ -468,38 +491,270 @@ namespace ProjectB.Tests.EditMode
             SetPrivate(menu, "ftueUpgradesHintText", hintTxt);
             menu.Construct(sm, bonusManager, null, null, upgradeManager, loc);
 
-            // Before first run -> hidden even if coins exist
-            sm.AddCoins(cheapestCost, saveImmediately: false);
-            Assert.IsFalse(menu.IsFtueUpgradesHintActive);
+            // Before the first run: no onboarding, no free coins.
+            Assert.IsFalse(menu.BeginFtueMenuFlow());
+            menu.OnPlayClicked();
+            Assert.AreEqual(MenuFtueStep.None, menu.FtueStep);
+            Assert.AreEqual(0, sm.Data.coins);
             Assert.IsFalse(glow.activeSelf);
             Assert.IsFalse(hintRoot.activeSelf);
 
-            // After first death with fewer coins than cheapest upgrade -> still hidden & NOT dismissed
-            sm.ResetAll();
-            sm.RecordRunResult(new RunResult { waveReached = 3, coinsEarned = Mathf.Max(0, cheapestCost - 1) });
-            Assert.IsFalse(menu.IsFtueUpgradesHintActive);
-            Assert.IsFalse(sm.IsFtueUpgradesHintDismissed);
+            // First death with too few coins -> topped up exactly to the cheapest upgrade, only once.
+            sm.RecordRunResult(new RunResult { waveReached = 3, coinsEarned = 10 });
+            Assert.IsTrue(menu.BeginFtueMenuFlow());
+            Assert.AreEqual(cheapestCost, sm.Data.coins);
+            Assert.IsTrue(sm.Data.ftueStarterCoinsGranted);
+            Assert.IsTrue(menu.BeginFtueMenuFlow());
+            Assert.AreEqual(cheapestCost, sm.Data.coins, "Starter coins are granted only once");
 
-            // Clicking Upgrades before having enough coins does NOT dismiss the FTUE hint
-            menu.OnUpgradesClicked();
-            Assert.IsFalse(sm.IsFtueUpgradesHintDismissed);
+            // Step 1: pointer on the Upgrades tab (glow + bubble + badge dot).
             menu.OnPlayClicked();
-
-            // Once coins reach the cheapest MetaUpgradeData cost -> badge, glow, and hint appear
-            sm.AddCoins(1, saveImmediately: false);
-            Assert.IsTrue(menu.IsFtueUpgradesHintActive);
+            Assert.AreEqual(MenuFtueStep.OpenUpgrades, menu.FtueStep);
+            Assert.AreSame(tabs[MainMenuUI.TAB_UPGRADES].transform, menu.FtueSpotlight.Target);
             Assert.IsTrue(glow.activeSelf);
             Assert.IsTrue(hintRoot.activeSelf);
             Assert.IsTrue(badges[MainMenuUI.TAB_UPGRADES].IsVisible);
             Assert.AreEqual(loc.Get(LocalizationService.KEY_FTUE_UPGRADES_HINT), hintTxt.text);
 
-            // Opening Upgrades tab dismisses the FTUE hint permanently
+            // Step 2: inside Upgrades the pointer moves to the buy button.
             menu.OnUpgradesClicked();
-            Assert.IsTrue(sm.IsFtueUpgradesHintDismissed);
-            Assert.IsFalse(menu.IsFtueUpgradesHintActive);
+            Assert.AreEqual(MenuFtueStep.BuyUpgrade, menu.FtueStep);
+
+            // Purchase without shards -> straight to the Play tab.
+            Assert.IsTrue(upgradeManager.TryBuyUpgrade(cheapestId));
+            Assert.AreEqual(MenuFtueStep.OpenPlayTab, menu.FtueStep);
+            Assert.AreSame(tabs[MainMenuUI.TAB_PLAY].transform, menu.FtueSpotlight.Target);
+            Assert.IsFalse(badges[MainMenuUI.TAB_UPGRADES].IsVisible);
+            Assert.AreEqual(loc.Get(LocalizationService.KEY_FTUE_PLAY_TAB_HINT), hintTxt.text);
+
+            // Owning Boss Shards inserts the Constellations step; opening the tab dismisses it for good.
+            sm.AddBossShards(1, saveImmediately: false);
+            Assert.AreEqual(MenuFtueStep.OpenConstellations, menu.FtueStep);
+            Assert.AreSame(tabs[MainMenuUI.TAB_CONSTELLATIONS].transform, menu.FtueSpotlight.Target);
+            Assert.AreEqual(loc.Get(LocalizationService.KEY_FTUE_CONSTELLATIONS_HINT), hintTxt.text);
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("ConstellationTreeUI reference is missing"));
+            menu.OnConstellationClicked();
+            Assert.IsTrue(sm.Data.ftueConstellationsHintDismissed);
+            Assert.AreEqual(MenuFtueStep.OpenPlayTab, menu.FtueStep);
+
+            // Play tab -> pointer on START; starting the run completes the chain.
+            menu.OnPlayClicked();
+            Assert.AreEqual(MenuFtueStep.PressStart, menu.FtueStep);
+            sm.MarkFtueMenuFlowCompleted(saveImmediately: false);
+            menu.RefreshFtueGuide();
+            Assert.AreEqual(MenuFtueStep.None, menu.FtueStep);
             Assert.IsFalse(glow.activeSelf);
             Assert.IsFalse(hintRoot.activeSelf);
-            Assert.IsFalse(badges[MainMenuUI.TAB_UPGRADES].IsVisible);
+        }
+
+        [Test]
+        public void MenuFtueFlow_FirstShardLater_PointsConstellationsOnce_AndSkipsBuyStepWhenUpgradesOwned()
+        {
+            SaveManager sm = CreateSaveManager();
+            sm.RecordRunResult(new RunResult { waveReached = 3 });
+            sm.Data.ftueMenuFlowCompleted = true;
+
+            Assert.AreEqual(MenuFtueStep.None, MenuFtueFlow.Evaluate(sm, MainMenuUI.TAB_PLAY, canAffordAnyUpgrade: true));
+
+            sm.AddBossShards(1, saveImmediately: false);
+            Assert.AreEqual(MenuFtueStep.OpenConstellations, MenuFtueFlow.Evaluate(sm, MainMenuUI.TAB_PLAY, true));
+            Assert.AreEqual(MenuFtueStep.None, MenuFtueFlow.Evaluate(sm, MainMenuUI.TAB_CONSTELLATIONS, true));
+            sm.MarkFtueConstellationsHintDismissed(saveImmediately: false);
+            Assert.AreEqual(MenuFtueStep.None, MenuFtueFlow.Evaluate(sm, MainMenuUI.TAB_PLAY, true));
+
+            // A pending chain with an upgrade already bought skips the buy step.
+            SaveManager sm2 = CreateSaveManager();
+            sm2.ReplaceDataInMemory(new SaveData { totalRuns = 1 }, saveToActiveStorage: false);
+            sm2.SetMetaUpgradeLevel("hero_hp", 1, saveImmediately: false);
+            Assert.AreEqual(MenuFtueStep.OpenPlayTab, MenuFtueFlow.Evaluate(sm2, MainMenuUI.TAB_UPGRADES, true));
+            Assert.AreEqual(MenuFtueStep.PressStart, MenuFtueFlow.Evaluate(sm2, MainMenuUI.TAB_PLAY, true));
+            Assert.AreEqual(0, sm2.GrantFtueStarterCoins(0, saveImmediately: false));
+        }
+
+        [Test]
+        public void BootRouter_FirstLaunchGoesToGameplay_ThenMainMenu_AndBootIsFirstBuildScene()
+        {
+            SaveManager sm = CreateSaveManager();
+            Assert.AreEqual(BootRouter.GAMEPLAY_SCENE, BootRouter.ResolveStartScene(sm));
+            sm.RecordRunResult(new RunResult { waveReached = 2 });
+            Assert.AreEqual(BootRouter.MAIN_MENU_SCENE, BootRouter.ResolveStartScene(sm));
+            Assert.AreEqual(BootRouter.MAIN_MENU_SCENE, BootRouter.ResolveStartScene(null));
+
+            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+            Assert.GreaterOrEqual(scenes.Length, 3);
+            Assert.AreEqual("Assets/_Scenes/Boot.unity", scenes[0].path);
+            Assert.IsTrue(scenes[0].enabled);
+
+            WithScene("Assets/_Scenes/Boot.unity", scene =>
+            {
+                Assert.AreEqual(1, FindInScene<BootRouter>(scene).Count, "Boot.unity must contain one BootRouter");
+            });
+        }
+
+        [Test]
+        public void GameplayFtueUI_FirstShardEver_ShowsConstellationsHintOnce_EvenOutsideFirstRun()
+        {
+            SaveManager sm = CreateSaveManager();
+            sm.RecordRunResult(new RunResult { waveReached = 3 });
+            var loc = new LocalizationService();
+            var bus = new GameEventBus();
+
+            var ftueGo = Track(new GameObject("GameplayFtueShard", typeof(RectTransform), typeof(GameplayFtueUI)));
+            var moveRoot = new GameObject("MoveHint", typeof(RectTransform), typeof(CanvasGroup));
+            moveRoot.transform.SetParent(ftueGo.transform, false);
+            var moveTxt = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            moveTxt.transform.SetParent(moveRoot.transform, false);
+
+            var ftue = ftueGo.GetComponent<GameplayFtueUI>();
+            SetPrivate(ftue, "moveHintRoot", moveRoot);
+            SetPrivate(ftue, "moveHintGroup", moveRoot.GetComponent<CanvasGroup>());
+            SetPrivate(ftue, "moveHintText", moveTxt);
+            ftue.Construct(sm, loc, eventBus: bus);
+            ftue.InitializeFtue();
+
+            Assert.IsFalse(ftue.IsFtueActive);
+            Assert.IsFalse(moveRoot.activeSelf, "Move hint stays hidden outside the first run");
+            Assert.IsTrue(ftue.IsShardHintPending);
+
+            bus.Publish(new BossShardsGainedEvent(Vector3.zero, 1, 1));
+            Assert.IsTrue(ftue.IsShardHintVisible);
+            Assert.IsFalse(ftue.IsShardHintPending);
+            Assert.IsTrue(sm.Data.ftueShardHintShown);
+            Assert.IsNotNull(ftue.ShardHintText);
+            Assert.AreEqual(loc.Get(LocalizationService.KEY_FTUE_SHARD_HINT), ftue.ShardHintText.text);
+
+            // A player who already earned shards never sees it.
+            SaveManager veteran = CreateSaveManager();
+            veteran.ReplaceDataInMemory(new SaveData { totalRuns = 4, totalBossShardsEarned = 3 }, saveToActiveStorage: false);
+            var ftueGo2 = Track(new GameObject("GameplayFtueShard2", typeof(RectTransform), typeof(GameplayFtueUI)));
+            var ftue2 = ftueGo2.GetComponent<GameplayFtueUI>();
+            ftue2.Construct(veteran, loc, eventBus: bus);
+            ftue2.InitializeFtue();
+            Assert.IsFalse(ftue2.IsShardHintPending);
+        }
+
+        [Test]
+        public void GameplayFtueUI_KeyboardMode_UsesKeyboardMoveWording_AndSwitchesBackOnTouch()
+        {
+            SaveManager sm = CreateSaveManager();
+            var loc = new LocalizationService();
+            var inputMode = new InputModeService(InputMode.KeyboardMouse, listenToInputSystem: false);
+
+            var ftueGo = Track(new GameObject("GameplayFtueKeyboard", typeof(RectTransform), typeof(GameplayFtueUI)));
+            var moveRoot = new GameObject("MoveHint", typeof(RectTransform), typeof(CanvasGroup));
+            moveRoot.transform.SetParent(ftueGo.transform, false);
+            var moveTxt = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            moveTxt.transform.SetParent(moveRoot.transform, false);
+
+            var ftue = ftueGo.GetComponent<GameplayFtueUI>();
+            SetPrivate(ftue, "moveHintRoot", moveRoot);
+            SetPrivate(ftue, "moveHintText", moveTxt);
+            ftue.Construct(sm, loc, inputModeService: inputMode);
+            ftue.InitializeFtue();
+
+            Assert.AreEqual(loc.Get(LocalizationService.KEY_FTUE_MOVE_HINT_KEYBOARD), moveTxt.text);
+            Assert.IsTrue(inputMode.RegisterActivity(InputMode.Touch, 100.0));
+            Assert.AreEqual(loc.Get(LocalizationService.KEY_FTUE_MOVE_HINT), moveTxt.text);
+        }
+
+        [Test]
+        public void FtueHintBubble_UsesLargeText_FitsPillToText_AndAimsPointer()
+        {
+            var parentGo = Track(new GameObject("BubbleParent", typeof(RectTransform)));
+            ((RectTransform)parentGo.transform).sizeDelta = new Vector2(1080f, 1920f);
+            var root = new GameObject("Bubble", typeof(RectTransform), typeof(Image));
+            root.transform.SetParent(parentGo.transform, false);
+            var rect = (RectTransform)root.transform;
+            rect.sizeDelta = new Vector2(380f, 68f);
+            var label = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            label.transform.SetParent(root.transform, false);
+            label.enableAutoSizing = true;
+            label.fontSizeMax = 26f;
+            label.text = "Spend Boss Shards on Constellation stars";
+
+            FtueHintBubble bubble = FtueHintBubble.Ensure(root, label);
+            Assert.IsNotNull(bubble);
+            Assert.IsFalse(label.enableAutoSizing);
+            Assert.GreaterOrEqual(label.fontSize, 44f, "Onboarding text must be large");
+            Assert.Greater(rect.sizeDelta.x, 380f, "Pill grows to fit the text");
+            Assert.LessOrEqual(rect.sizeDelta.x, 1080f);
+            Assert.Greater(rect.sizeDelta.y, label.fontSize, "Pill is taller than one text line");
+            Assert.AreSame(bubble, FtueHintBubble.Ensure(root, label), "Ensure is idempotent");
+
+            Assert.IsNotNull(bubble.Pointer);
+            Assert.IsFalse(bubble.Pointer.gameObject.activeSelf, "No pointer until a side is set");
+            bubble.SetPointer(FtuePointerSide.Down);
+            Assert.IsTrue(bubble.Pointer.gameObject.activeSelf);
+            Assert.Less(bubble.Pointer.anchoredPosition.y, 0f, "Down pointer sits on the bottom edge");
+            Assert.AreEqual(0f, bubble.Pointer.anchoredPosition.x, 0.01f);
+            Assert.IsFalse(bubble.Pointer.GetComponent<Image>().raycastTarget);
+
+            bubble.SetPointerSlide(80f);
+            bubble.SetPointer(FtuePointerSide.Down);
+            Assert.AreEqual(80f, bubble.Pointer.anchoredPosition.x, 0.01f, "Pointer slides towards an off-centre target");
+
+            bubble.SetPointer(FtuePointerSide.Left);
+            Assert.Less(bubble.Pointer.anchoredPosition.x, 0f);
+            bubble.SetPointer(FtuePointerSide.None);
+            Assert.IsFalse(bubble.Pointer.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void GameOverUI_FirstRun_HidesRestart_AndPulsesMenu_LaterRunsKeepRestart()
+        {
+            MethodInfo apply = typeof(GameOverUI).GetMethod("ApplyFirstRunNavigation", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(apply);
+
+            GameOverUI Build(SaveManager save, out Button restart, out Button menuBtn)
+            {
+                var go = Track(new GameObject("GameOverFtue", typeof(RectTransform), typeof(GameOverUI)));
+                restart = new GameObject("Restart", typeof(RectTransform), typeof(Image), typeof(Button)).GetComponent<Button>();
+                restart.transform.SetParent(go.transform, false);
+                menuBtn = new GameObject("Menu", typeof(RectTransform), typeof(Image), typeof(Button)).GetComponent<Button>();
+                menuBtn.transform.SetParent(go.transform, false);
+                var ui = go.GetComponent<GameOverUI>();
+                SetPrivate(ui, "restartButton", restart);
+                SetPrivate(ui, "menuButton", menuBtn);
+                ui.Construct(null, null, saveManager: save);
+                return ui;
+            }
+
+            SaveManager first = CreateSaveManager();
+            GameOverUI firstUi = Build(first, out Button firstRestart, out Button firstMenu);
+            var menuLabel = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            menuLabel.transform.SetParent(firstMenu.transform, false);
+            menuLabel.text = "MENU";
+            Assert.IsTrue(firstUi.IsFirstRunGameOver);
+            apply.Invoke(firstUi, null);
+            Assert.IsFalse(firstRestart.gameObject.activeSelf);
+            Assert.IsTrue(firstMenu.TryGetComponent(out PulseUI pulse) && pulse.enabled);
+
+            // Auto return to the menu after 3 s with a countdown on the Menu button.
+            Assert.IsTrue(firstUi.IsAutoMenuPending);
+            Assert.AreEqual("MENU (3)", menuLabel.text);
+            Assert.IsFalse(firstUi.TickAutoMenu(1.2f));
+            Assert.AreEqual("MENU (2)", menuLabel.text);
+
+            // Pressing any button (here: revive) cancels it and restores the label.
+            firstUi.OnReviveClicked();
+            Assert.IsFalse(firstUi.IsAutoMenuPending);
+            Assert.AreEqual("MENU", menuLabel.text);
+            Assert.IsFalse(firstUi.TickAutoMenu(5f));
+
+            // Untouched, it fires once the delay runs out.
+            apply.Invoke(firstUi, null);
+            Assert.IsFalse(firstUi.TickAutoMenu(2.5f));
+            Assert.IsTrue(firstUi.TickAutoMenu(0.6f));
+            Assert.IsFalse(firstUi.IsAutoMenuPending);
+            Assert.AreEqual("MENU", menuLabel.text);
+
+            SaveManager later = CreateSaveManager();
+            later.ReplaceDataInMemory(new SaveData { totalRuns = 2 }, saveToActiveStorage: false);
+            GameOverUI laterUi = Build(later, out Button laterRestart, out _);
+            Assert.IsFalse(laterUi.IsFirstRunGameOver);
+            apply.Invoke(laterUi, null);
+            Assert.IsTrue(laterRestart.gameObject.activeSelf);
+            Assert.IsFalse(laterUi.IsAutoMenuPending, "Later runs keep the normal Game Over without auto exit");
         }
 
         [Test]

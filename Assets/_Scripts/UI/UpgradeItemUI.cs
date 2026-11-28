@@ -36,6 +36,7 @@ namespace ProjectB.UI
         private int lastLevel = -1;
 
         public Button BuyButton => buyButton;
+        public string UpgradeId => upgradeData != null ? upgradeData.id : null;
 
         public void Setup(MetaUpgradeData data, MetaUpgradeManager manager)
         {

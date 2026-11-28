@@ -78,6 +78,7 @@ namespace ProjectB.EditorScripts.UiKit
             theme.ribbonTailSprite = UiKitGenerator.LoadFrame("kit_ribbon_tail");
             theme.menuBgSprite = UiKitGenerator.LoadFrame("kit_menu_bg");
             theme.pipSprite = UiKitGenerator.LoadFrame("kit_pip");
+            theme.pointerSprite = UiKitGenerator.LoadFrame("kit_pointer");
             theme.surfaceMaterial = UiKitGenerator.EnsureSurfaceMaterial();
 
             // Sync v4 palette tokens onto the serialized asset.

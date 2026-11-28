@@ -46,7 +46,10 @@ namespace ProjectB.Core.BalanceBot
             {
                 selectedHeroId = string.IsNullOrEmpty(selectedHeroId) ? "knight" : selectedHeroId,
                 totalRuns = Mathf.Max(1, initialTotalRuns),
-                ftueUpgradesHintDismissed = true,
+                ftueStarterCoinsGranted = true,
+                ftueMenuFlowCompleted = true,
+                ftueShardHintShown = true,
+                ftueConstellationsHintDismissed = true,
                 coins = 0,
                 bossShards = 0,
                 musicVolume = 0f,

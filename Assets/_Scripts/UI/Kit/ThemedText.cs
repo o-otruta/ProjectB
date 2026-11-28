@@ -33,6 +33,17 @@ namespace ProjectB.UI
             ApplyTheme(UiTheme.Current);
         }
 
+        /// <summary>Keeps the style but renders the text at <paramref name="size"/> (survives later theme applies).</summary>
+        public void SetFontSize(float size)
+        {
+            UiTheme theme = UiTheme.Current;
+            float baseSize = theme != null ? theme.GetFontSize(style) : 0f;
+            if (baseSize <= 0f || size <= 0f) return;
+            sizeScale = size / baseSize;
+            applySize = true;
+            ApplyTheme(theme);
+        }
+
         public void ApplyTheme(UiTheme theme)
         {
             if (theme == null) return;

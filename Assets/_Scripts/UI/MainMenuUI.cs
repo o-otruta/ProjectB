@@ -45,7 +45,7 @@ namespace ProjectB.UI
         [SerializeField] private Camera previewCamera;
         [SerializeField] private GameObject heroPreviewRoot;
 
-        [Header("Sprint 12.2: FTUE upgrades hint")]
+        [Header("FTUE pointer (glow + hint bubble, moved between targets by MenuFtueFlow)")]
         [SerializeField] private GameObject ftueUpgradesGlow;
         [SerializeField] private GameObject ftueUpgradesHintRoot;
         [SerializeField] private TMP_Text ftueUpgradesHintText;
@@ -65,11 +65,13 @@ namespace ProjectB.UI
         private int previewCullingMask = -1;
         private bool previewActive = true;
         private int selectedTab = -1;
-        private bool isFtueUpgradesHintActive;
+        private FtueSpotlight ftueSpotlight;
+        private MenuFtueStep ftueStep;
 
         public bool IsHeroPreviewActive => previewActive;
         public int SelectedTab => selectedTab;
-        public bool IsFtueUpgradesHintActive => isFtueUpgradesHintActive;
+        public MenuFtueStep FtueStep => ftueStep;
+        public FtueSpotlight FtueSpotlight => ftueSpotlight;
 
         [Inject]
         public void Construct(
@@ -126,11 +128,10 @@ namespace ProjectB.UI
 
             if (this.localization != null)
             {
-                this.localization.LanguageChanged += RefreshFtueTexts;
+                this.localization.LanguageChanged += RefreshFtueGuide;
             }
 
             SubscribeInputMode();
-            RefreshFtueTexts();
             UpdateBadges();
         }
 
@@ -154,8 +155,37 @@ namespace ProjectB.UI
             UpdateBadges();
             audioManager?.PlayMusic(MusicType.Menu);
 
+            // FTUE: right after the first run the menu opens on Upgrades with enough coins for the cheapest upgrade.
+            if (BeginFtueMenuFlow())
+            {
+                OpenUpgradesTab(playSound: false);
+                return;
+            }
+
             // Set default tab on startup
             OpenPlayTab(playSound: false);
+        }
+
+        private void LateUpdate()
+        {
+            ftueSpotlight?.LateTick();
+        }
+
+        /// <summary>
+        /// Starts the post-first-run menu onboarding: tops coins up to the cheapest upgrade once.
+        /// Returns true when the menu should open on the Upgrades tab.
+        /// </summary>
+        public bool BeginFtueMenuFlow()
+        {
+            if (!MenuFtueFlow.IsFlowPending(saveManager) || saveManager.HasAnyMetaUpgrade()) return false;
+
+            if (metaUpgradeManager != null)
+            {
+                int cheapest = metaUpgradeManager.GetCheapestAvailableUpgradeCost();
+                if (cheapest > 0) saveManager.GrantFtueStarterCoins(cheapest, saveImmediately: true);
+            }
+
+            return MenuFtueFlow.ShouldBuyUpgrade(saveManager, metaUpgradeManager != null && metaUpgradeManager.CanAffordAnyUpgrade());
         }
 
         private void Update()
@@ -232,7 +262,7 @@ namespace ProjectB.UI
             }
             if (localization != null)
             {
-                localization.LanguageChanged -= RefreshFtueTexts;
+                localization.LanguageChanged -= RefreshFtueGuide;
             }
         }
 
@@ -243,21 +273,7 @@ namespace ProjectB.UI
 
         private void HandleMetaUpgradePurchased(string _)
         {
-            if (saveManager != null && !saveManager.IsFtueUpgradesHintDismissed)
-            {
-                saveManager.MarkFtueUpgradesHintDismissed(saveImmediately: true);
-            }
             UpdateBadges();
-        }
-
-        private void RefreshFtueTexts()
-        {
-            if (ftueUpgradesHintText != null)
-            {
-                ftueUpgradesHintText.text = localization != null
-                    ? localization.Get(LocalizationService.KEY_FTUE_UPGRADES_HINT, "Upgrade your hero!")
-                    : "Upgrade your hero!";
-            }
         }
 
         private void UpdateCoinsDisplay()
@@ -272,24 +288,13 @@ namespace ProjectB.UI
             UpdateBadges();
         }
 
-        public bool ShouldShowFtueUpgradesHint()
-        {
-            return saveManager != null
-                && saveManager.Data != null
-                && saveManager.Data.totalRuns >= 1
-                && !saveManager.IsFtueUpgradesHintDismissed
-                && metaUpgradeManager != null
-                && metaUpgradeManager.CanAffordAnyUpgrade();
-        }
-
         private void UpdateBadges()
         {
             int newAchievements = achievementManager != null ? achievementManager.unlockedThisRun.Count : 0;
             int affordableStars = talentTreeManager != null ? talentTreeManager.GetAffordableWithShardsCount() : 0;
             bool bonusAvailable = bonusManager != null && bonusManager.IsRewardAvailable();
-            isFtueUpgradesHintActive = ShouldShowFtueUpgradesHint();
 
-            RefreshFtueHintVisuals();
+            RefreshFtueGuide();
 
             if (dailyBonusBadge != null)
             {
@@ -298,7 +303,8 @@ namespace ProjectB.UI
 
             if (tabBar != null)
             {
-                tabBar.SetBadgeDot(TAB_UPGRADES, isFtueUpgradesHintActive);
+                bool upgradesDot = ftueStep == MenuFtueStep.OpenUpgrades || ftueStep == MenuFtueStep.BuyUpgrade;
+                tabBar.SetBadgeDot(TAB_UPGRADES, upgradesDot);
                 tabBar.SetBadge(TAB_CONSTELLATIONS, affordableStars);
                 tabBar.SetBadge(TAB_ACHIEVEMENTS, newAchievements);
                 return;
@@ -308,20 +314,50 @@ namespace ProjectB.UI
             if (dailyBonusBadge == null && bonusBadge != null) bonusBadge.SetActive(bonusAvailable);
         }
 
-        private void RefreshFtueHintVisuals()
+        /// <summary>Re-evaluates the onboarding step and moves the pointer (glow + bubble) to its target.</summary>
+        public void RefreshFtueGuide()
         {
-            if (ftueUpgradesGlow != null && ftueUpgradesGlow.activeSelf != isFtueUpgradesHintActive)
+            bool canAfford = metaUpgradeManager != null && metaUpgradeManager.CanAffordAnyUpgrade();
+            ftueStep = MenuFtueFlow.Evaluate(saveManager, selectedTab, canAfford);
+
+            ftueSpotlight ??= new FtueSpotlight(ftueUpgradesGlow, ftueUpgradesHintRoot, ftueUpgradesHintText);
+
+            switch (ftueStep)
             {
-                ftueUpgradesGlow.SetActive(isFtueUpgradesHintActive);
+                case MenuFtueStep.OpenUpgrades:
+                    ShowFtueOnTab(TAB_UPGRADES, LocalizationService.KEY_FTUE_UPGRADES_HINT, "Upgrade your hero!");
+                    break;
+                case MenuFtueStep.BuyUpgrade:
+                    Button buy = metaUpgradeUI != null ? metaUpgradeUI.GetCheapestAffordableBuyButton() : null;
+                    ftueSpotlight.Show(buy != null ? buy.transform as RectTransform : null,
+                        FtueText(LocalizationService.KEY_FTUE_UPGRADE_BUY_HINT, "Buy your first upgrade"));
+                    break;
+                case MenuFtueStep.OpenConstellations:
+                    ShowFtueOnTab(TAB_CONSTELLATIONS, LocalizationService.KEY_FTUE_CONSTELLATIONS_HINT, "Spend Boss Shards on Constellation stars");
+                    break;
+                case MenuFtueStep.OpenPlayTab:
+                    ShowFtueOnTab(TAB_PLAY, LocalizationService.KEY_FTUE_PLAY_TAB_HINT, "Ready for the next run?");
+                    break;
+                case MenuFtueStep.PressStart:
+                    // The big START button speaks for itself: pulse only, a bubble would cover the hero tiles.
+                    Button start = heroSelectionUI != null ? heroSelectionUI.StartRunButton : null;
+                    ftueSpotlight.Show(start != null ? start.transform as RectTransform : null, null);
+                    break;
+                default:
+                    ftueSpotlight.Hide();
+                    break;
             }
-            if (ftueUpgradesHintRoot != null)
-            {
-                bool showPopup = isFtueUpgradesHintActive && selectedTab != TAB_UPGRADES;
-                if (ftueUpgradesHintRoot.activeSelf != showPopup)
-                {
-                    ftueUpgradesHintRoot.SetActive(showPopup);
-                }
-            }
+        }
+
+        private void ShowFtueOnTab(int tabIndex, string key, string fallback)
+        {
+            BottomTabUI tab = tabBar != null ? tabBar.GetTab(tabIndex) : (tabs != null && tabIndex < tabs.Length ? tabs[tabIndex] : null);
+            ftueSpotlight.Show(tab != null ? tab.transform as RectTransform : null, FtueText(key, fallback), isTab: true);
+        }
+
+        private string FtueText(string key, string fallback)
+        {
+            return localization != null ? localization.Get(key, fallback) : fallback;
         }
 
         /// <summary>
@@ -362,6 +398,10 @@ namespace ProjectB.UI
         private void OpenConstellationTab(bool playSound)
         {
             if (playSound) audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            if (MenuFtueFlow.IsConstellationsHintPending(saveManager))
+            {
+                saveManager.MarkFtueConstellationsHintDismissed(saveImmediately: true);
+            }
             CloseAllPanels();
             SelectTab(TAB_CONSTELLATIONS);
             if (constellationTreeUI != null)
@@ -389,7 +429,7 @@ namespace ProjectB.UI
         private void SelectTab(int index)
         {
             selectedTab = index;
-            RefreshFtueHintVisuals();
+            RefreshFtueGuide();
             if (tabBar != null)
             {
                 tabBar.Select(index);
@@ -406,6 +446,10 @@ namespace ProjectB.UI
         {
             audioManager?.PlaySfx(SfxType.UiConfirm, randomizePitch: false);
             DevLog.Log("[MainMenuUI] Start Game clicked!");
+            if (MenuFtueFlow.IsFlowPending(saveManager))
+            {
+                saveManager.MarkFtueMenuFlowCompleted(saveImmediately: true);
+            }
             SceneManager.LoadScene("Gameplay");
         }
 
@@ -430,13 +474,13 @@ namespace ProjectB.UI
 
         public void OnUpgradesClicked()
         {
-            audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
+            OpenUpgradesTab(playSound: true);
+        }
+
+        private void OpenUpgradesTab(bool playSound)
+        {
+            if (playSound) audioManager?.PlaySfx(SfxType.UiClick, randomizePitch: false);
             DevLog.Log("[MainMenuUI] Upgrades clicked");
-            if (isFtueUpgradesHintActive || ShouldShowFtueUpgradesHint())
-            {
-                saveManager?.MarkFtueUpgradesHintDismissed(saveImmediately: true);
-                UpdateBadges();
-            }
             CloseAllPanels();
             SelectTab(TAB_UPGRADES);
             if (metaUpgradeUI != null)

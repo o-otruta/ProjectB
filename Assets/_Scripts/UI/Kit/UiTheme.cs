@@ -216,6 +216,8 @@ namespace ProjectB.UI
         public Sprite ribbonTailSprite;
         public Sprite menuBgSprite;
         public Sprite pipSprite;
+        [Tooltip("Speech-bubble tail (points down) for onboarding hint bubbles.")]
+        public Sprite pointerSprite;
         public Material surfaceMaterial;
 
         [Header("Icons")]
@@ -487,7 +489,8 @@ namespace ProjectB.UI
                 || sprite == barFrameSprite
                 || sprite == barFillSprite
                 || sprite == ribbonTailSprite
-                || sprite == pipSprite;
+                || sprite == pipSprite
+                || sprite == pointerSprite;
         }
 
         public static Color Hex(int rgb, float alpha = 1f)

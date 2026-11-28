@@ -63,6 +63,11 @@ namespace ProjectB.UI
             return badges != null && index >= 0 && index < badges.Length ? badges[index] : null;
         }
 
+        public BottomTabUI GetTab(int index)
+        {
+            return tabs != null && index >= 0 && index < tabs.Length ? tabs[index] : null;
+        }
+
 #if UNITY_EDITOR
         public void EditorSetup(BottomTabUI[] tabItems, BadgeUI[] tabBadges, Image background)
         {

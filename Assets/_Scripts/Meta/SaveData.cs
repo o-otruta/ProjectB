@@ -65,8 +65,15 @@ namespace ProjectB.Meta
         // ID открытых узлов Дерева Созвездий
         public List<string> unlockedTalentIds = new List<string>();
 
-        // --- Онбординг / FTUE (Sprint 12.2) ---
-        public bool ftueUpgradesHintDismissed;
+        // --- Онбординг / FTUE ---
+        // Недостающие до самого дешёвого апгрейда монеты выданы после первого забега
+        public bool ftueStarterCoinsGranted;
+        // Цепочка меню после первого забега пройдена: Прокачка → (Созвездия) → вкладка «Играть» → «В бой»
+        public bool ftueMenuFlowCompleted;
+        // Подсказка «Осколок босса → Созвездия» уже показана в забеге
+        public bool ftueShardHintShown;
+        // Игрок открыл вкладку Созвездий, имея Осколки (указатель на вкладку больше не нужен)
+        public bool ftueConstellationsHintDismissed;
 
         // --- Версионирование ---
         public const int CURRENT_SAVE_VERSION = 2;

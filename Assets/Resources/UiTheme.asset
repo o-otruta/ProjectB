@@ -111,6 +111,7 @@ MonoBehaviour:
   ribbonTailSprite: {fileID: 21300000, guid: 5c328d166f4e23c4f850ce25ec8eedca, type: 3}
   menuBgSprite: {fileID: 21300000, guid: d001b3b4f671d2641a297db7f0cfc285, type: 3}
   pipSprite: {fileID: 21300000, guid: b51653855076f5444b07e295641cb4e2, type: 3}
+  pointerSprite: {fileID: 21300000, guid: c3868ebfea06b9a4694226f315020c6e, type: 3}
   surfaceMaterial: {fileID: 2100000, guid: e9b1f5b31ab0e994a8dab66ac2ac4197, type: 2}
   iconCoin: {fileID: 21300000, guid: e3fa1a4e170f02049a98ffc822aff0de, type: 3}
   iconShard: {fileID: 21300000, guid: 46a4d2f13c7caac449242f4e5b24f938, type: 3}
