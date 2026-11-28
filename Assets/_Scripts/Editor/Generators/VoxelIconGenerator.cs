@@ -671,7 +671,7 @@ namespace ProjectB.EditorScripts
             if (node.nodeType == TalentNodeType.Synergy) return ResolveSynergyTemplateKey(node.synergyId);
             if (node.nodeType == TalentNodeType.Mastery)
             {
-                // Path of Mastery: Lv 10 Overdrive → Lv 20 Awakened → Lv 50 Mythic.
+                // Path of Mastery: Lv 5 cap → Lv 20 Awakened → Lv 50 Mythic.
                 float cap = node.GetEffectValue(TalentEffectType.AbilityMaxLevel);
                 return cap >= 30f ? "skyfall_spire" : (cap >= 20f ? "synergy_blades" : "sword");
             }
